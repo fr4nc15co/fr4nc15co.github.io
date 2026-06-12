@@ -25,6 +25,10 @@
           "html": "<p>El PIC32MX230F064D integra un <strong>SAR ADC de 10 bits</strong>: una tensión de 0&nbsp;V se convierte en el código <code>0x000</code> (0) y una de 3,3&nbsp;V en <code>0x3FF</code> (1023).</p>"
         },
         {
+          "tipo": "prosa",
+          "html": "<p>¿Y para qué sirve todo esto? Para que el micro «lea» una magnitud física. Imagina un <strong>sensor de luz</strong> (una LDR en un divisor de tensión): cuanta más luz, más tensión entrega, entre 0 y 3,3&nbsp;V. El AD convierte esa tensión <em>analógica</em> en un <em>número</em> que el programa puede usar. Muévela y míralo:</p><div class=\"mpi-mount\" data-componente=\"sim-adc-sensor\" data-config='{}'></div>"
+        },
+        {
           "tipo": "nota",
           "html": "¡OJO! No introduzcas tensiones mayores que la alimentación: pueden dañar el conversor (y el microcontrolador entero)."
         },
@@ -50,6 +54,10 @@
             "<strong>3er ciclo:</strong> D=1010 → V<sub>DAC</sub>=V<sub>ref</sub>/2+V<sub>ref</sub>/8 → V<sub>DAC</sub> &lt; V<sub>in</sub> → D1 se queda a 1.",
             "<strong>4º ciclo:</strong> D=1011 → V<sub>DAC</sub>=V<sub>ref</sub>/2+V<sub>ref</sub>/8+V<sub>ref</sub>/16 → V<sub>DAC</sub> &lt; V<sub>in</sub> → D0 se queda a 1. Resultado: <code>1011</code>."
           ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Hazlo tú: elige una tensión de entrada y ejecuta la búsqueda binaria ciclo a ciclo. Con 4 bits y V<sub>in</sub> ≈ 11/16·Vref reproduces el ejemplo de arriba (resultado <code>1011</code>); cambia a 10 bits para ver los 10 ciclos del AD del PIC32:</p><div class=\"mpi-mount\" data-componente=\"sim-sar\" data-config='{}'></div>"
         },
         {
           "tipo": "formula",
@@ -270,6 +278,10 @@
           "tipo": "codigo",
           "descripcion": "<p>Inicialización e ISR para medir AN0 a AN5 cada 1 ms (Timer 3) y hacer la media de los seis canales. Ojo a los TRIS: <strong>todas las entradas analógicas deben ser entradas digitales también</strong> (AN0/AN1 están en RA0/RA1 y AN2–AN5 en RB0–RB3):</p>",
           "codigo": "// Entradas analogicas como entradas\nTRISA = (1 << 0) | (1 << 1);                       // AN0, AN1\nTRISB = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3); // AN2..AN5\nTRISC = 0;\n\nAD1CON1 = 0;                     // Apago el ADC por si acaso\nAD1CON2 = (5 << 2) | (1 << 10);  // SMPI = 5 (6 conversiones), CSCNA = 1\nAD1CON3 = 0x0200;                // SAMC = 2, TAD = 2*TPBCLK\nAD1CHS  = 0;                     // No se usa: manda el secuenciador\nAD1CSSL = 0x003F;                // Escanea AN0 a AN5\nAD1CON1bits.SSRC = 2;            // Disparo por Timer 3\nAD1CON1bits.ASAM = 1;            // Automuestreo\nIFS0bits.AD1IF = 0;              // Borro el flag\nIEC0bits.AD1IE = 1;              // Habilito la interrupcion\nIPC5bits.AD1IP = 2;              // Prioridad 2\nIPC5bits.AD1IS = 0;              // Subprioridad 0\nAD1CON1bits.ON = 1;              // Arranco el ADC\n\nT3CON = 0;\nTMR3 = 0;\nPR3 = 4999;                      // 1 ms con PBCLK = 5 MHz\nT3CON = 0x8000;                  // T3 ON, prescaler 1:1\n\nINTCONbits.MVEC = 1;             // Modo multivector\nasm(\"ei\");                       // Interrupciones habilitadas\nwhile (1) {\n    // Hacer cosas interesantes\n}\n\n__attribute__((vector(23), interrupt(IPL2SOFT), nomips16))\nvoid InterrupcionADC(void)\n{\n    int valor_medio, valor_leds;\n\n    IFS0bits.AD1IF = 0;          // Se borra el flag\n\n    valor_medio = (ADC1BUF0 + ADC1BUF1 + ADC1BUF2 +\n                   ADC1BUF3 + ADC1BUF4 + ADC1BUF5) / 6;\n    valor_leds = (valor_medio >> 6) & 0x0F;\n    LATCCLR = valor_leds;\n    LATCSET = ~valor_leds & 0x0F;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El detalle que más confunde: <strong>el índice del buffer es la posición en el barrido, no el número de canal</strong>. Compruébalo — marca y desmarca canales y ejecuta el barrido; fíjate en que al quitar AN1 todos los demás <em>suben</em> un puesto en el buffer:</p><div class=\"mpi-mount\" data-componente=\"sim-adc-scan\" data-config='{}'></div>"
         },
         {
           "tipo": "nota",
