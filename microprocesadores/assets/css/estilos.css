@@ -473,3 +473,54 @@ math.formula { font-size: 1.3rem; margin: 1rem 0; color: var(--txt); display: bl
 .acs-vacio { color: var(--txt-tenue); padding: .35rem .55rem; }
 .acs-estado { margin: .8rem 0; }
 .acs-codigo { margin: 0; }
+
+/* sim-i2c-trama */
+.mpi-i2c-trama { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1rem 1.2rem; margin: 1.2rem 0; }
+.it-controles { display: flex; flex-wrap: wrap; gap: .7rem 1.2rem; align-items: center; margin-bottom: .7rem; }
+.it-controles label { color: var(--txt-2); font-size: .88rem; display: flex; flex-direction: column; gap: .2rem; }
+.it-controles input, .it-controles select { background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .3rem .5rem; font-size: .9rem; width: 9rem; }
+.it-leyenda { display: flex; gap: 1.2rem; font-size: .8rem; color: var(--txt-2); margin-bottom: .5rem; }
+.it-sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: .3rem; }
+.it-sw.it-m { background: var(--acento-2); }
+.it-sw.it-s { background: var(--acento); }
+.it-tira { display: flex; flex-wrap: wrap; gap: 2px; margin: .5rem 0; }
+.it-celda { display: flex; flex-direction: column; align-items: center; min-width: 1.7rem; padding: .35rem .2rem; border-radius: 4px; font-family: var(--mono); border: 1px solid transparent; opacity: .55; transition: opacity .12s; }
+.it-celda b { font-size: .85rem; }
+.it-celda small { font-size: .58rem; opacity: .8; }
+.it-celda.it-m { background: rgba(86,156,214,.16); color: var(--acento-2); }
+.it-celda.it-s { background: rgba(78,201,176,.16); color: var(--acento); }
+.it-celda.it-ctrl b { font-weight: 700; }
+.it-celda.it-activo, .it-celda.it-hecho { opacity: 1; }
+.it-celda.it-activo { box-shadow: 0 0 0 2px var(--amarillo); }
+.it-celda.it-destac { outline: 1px dashed currentColor; }
+.it-msg { margin: .6rem 0; min-height: 2.6rem; }
+.it-botones, .id-botones { display: flex; gap: .6rem; flex-wrap: wrap; }
+.it-botones button, .id-botones button { background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .4rem .8rem; cursor: pointer; font-size: .88rem; }
+.it-botones button:hover:not(:disabled), .id-botones button:hover:not(:disabled) { border-color: var(--acento); }
+.it-botones button:disabled, .id-botones button:disabled { opacity: .4; cursor: default; }
+
+/* sim-i2c-driver */
+.mpi-i2c-driver { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1rem 1.2rem; margin: 1.2rem 0; }
+.id-controles { display: flex; flex-wrap: wrap; gap: .7rem 1.4rem; align-items: center; margin-bottom: .8rem; }
+.id-controles label { color: var(--txt-2); font-size: .88rem; }
+.id-controles input[type=number] { background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .25rem .4rem; width: 5rem; }
+.id-hex, .id-hexr { font-family: var(--mono); color: var(--azul-cl); margin-left: .2rem; }
+.id-pres { display: flex; align-items: center; gap: .4rem; }
+.id-pres input { accent-color: var(--acento); }
+.id-cuerpo { display: flex; flex-wrap: wrap; gap: 1.2rem; align-items: flex-start; }
+.id-codigo { flex: 1 1 340px; min-width: 0; margin: 0; }
+.id-codigo span[data-l] { display: block; padding: 0 .3rem; border-radius: 3px; }
+.id-codigo span.id-curl { background: rgba(220,220,170,.18); box-shadow: inset 2px 0 0 var(--amarillo); }
+.id-bus { flex: 1 1 220px; min-width: 200px; }
+.id-bustit { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--txt-tenue); margin-bottom: .4rem; }
+.id-log { display: flex; flex-wrap: wrap; gap: 4px; }
+.id-pill { font-family: var(--mono); font-size: .8rem; padding: .25rem .5rem; border-radius: 5px; border: 1px solid var(--borde); background: var(--bg); }
+.id-pill small { color: var(--txt-tenue); }
+.id-pill.id-ctrl { color: var(--morado); border-color: var(--morado); }
+.id-pill.id-tx { color: var(--acento-2); border-color: var(--acento-2); }
+.id-pill.id-rx { color: var(--acento); border-color: var(--acento); }
+.id-pill.id-fail { color: var(--rojo); border-color: var(--rojo); }
+.id-pill.id-activo { box-shadow: 0 0 0 2px var(--amarillo); }
+.id-vacio { color: var(--txt-tenue); }
+.id-result { margin-top: .5rem; font-family: var(--mono); color: var(--acento); }
+.id-msg { margin: .7rem 0; min-height: 3rem; }

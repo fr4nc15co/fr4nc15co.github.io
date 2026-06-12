@@ -182,6 +182,10 @@
         {
           "tipo": "nota",
           "html": "<strong>Alargamiento del reloj (<em>clock stretching</em>):</strong> un esclavo lento puede retener SCL a 0 antes de responder con su ACK para hacer esperar al maestro. Cuando libera SCL, la transmisión continúa con normalidad."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Recórrelo tú: elige dirección, sentido y datos, y ve segmento a segmento quién controla la línea en cada momento:</p><div class=\"mpi-mount\" data-componente=\"sim-i2c-trama\" data-config='{}'></div>"
         }
       ]
     },
@@ -300,6 +304,10 @@
             "Leer N bytes, respondiendo con ACK = 0 en todos menos en el último (NACK = 1).",
             "Generar la condición de stop para liberar el bus."
           ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Ejecútalo paso a paso. Cambia la dirección o el registro, y prueba a <strong>desconectar el sensor</strong> para ver la ruta de error (NACK → Stop → return):</p><div class=\"mpi-mount\" data-componente=\"sim-i2c-driver\" data-config='{}'></div>"
         },
         {
           "tipo": "prosa",
