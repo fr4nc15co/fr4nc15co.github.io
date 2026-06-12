@@ -45,7 +45,8 @@ MPI.contenidoTemas = MPI.contenidoTemas || {};
       '<h1>Microprocesadores — PIC32MX230F064D</h1>' +
       '<p class="mpi-sub">Web interactiva de estudio: teoría, visualizadores de registros, simuladores y ejercicios de diseño de drivers.</p>' +
       '<p class="mpi-progreso">' + hechos + ' de ' + MPI.temas.length + ' temas disponibles</p>' +
-      '<p><a class="mpi-boton-examen" href="#/examen">🎓 Modo examen — 10 preguntas al azar, con nota</a></p>' +
+      // Modo examen oculto por el momento (la ruta #/examen sigue operativa):
+      // '<p><a class="mpi-boton-examen" href="#/examen">🎓 Modo examen — 10 preguntas al azar, con nota</a></p>' +
       '</header><div class="mpi-tarjetas">';
     MPI.temas.forEach(function (t) {
       html += '<a class="mpi-tarjeta' + (t.disponible ? '' : ' mpi-tarjeta-pendiente') + '" href="#/tema/' + t.slug + '">' +
