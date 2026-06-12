@@ -177,6 +177,10 @@
           "html": "<p>El ejemplo estrella del tema combina máquina de estados, flancos e interrupciones de temporizador. Se automatiza una <strong>puerta de garaje</strong> gobernada por un mando a distancia de un solo botón: el receptor de radio, en <strong>RB2</strong>, da un pulso de 3,3&nbsp;V durante 10&nbsp;ms con cada pulsación. Dos relés controlan el motor: <strong>RB0</strong> lo enciende (1 = en marcha) y <strong>RB1</strong> fija el sentido (1 = cerrar). Abrir o cerrar del todo lleva <strong>30&nbsp;s</strong>. Cada pulsación alterna el ciclo: abrir → parar → cerrar → parar → abrir… Hacen falta <strong>seis estados</strong>: <em>Cerrado</em>, <em>Abriendo</em>, <em>Abierto</em>, <em>Cerrando</em> y dos estados de parada intermedia, <em>Par_Abri</em> y <em>Par_Cerr</em>, que recuerdan <strong>en qué sentido se movía</strong> la puerta. Para medir los 30&nbsp;s se usa el <strong>Timer1 con interrupción cada 1&nbsp;ms</strong>, cuya ISR lleva dos contadores <code>ms</code> y <code>seg</code>.</p>"
         },
         {
+          "tipo": "prosa",
+          "html": "<p>Antes de ver el código, <strong>maneja la puerta</strong>: cada pulsación del mando recorre el diagrama y los relés responden. Fíjate en que los dos estados de parada «recuerdan» el sentido, y en las dos transiciones que no dispara el mando sino el <em>tiempo</em>:</p><div class=\"mpi-mount\" data-componente=\"fsm-garaje\" data-config='{}'></div>"
+        },
+        {
           "tipo": "lista",
           "ordenada": false,
           "items": [
