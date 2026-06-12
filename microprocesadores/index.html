@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Microprocesadores · PIC32MX230F064D</title>
+  <link rel="stylesheet" href="assets/css/estilos.css">
+</head>
+<body>
+  <button id="mpi-menu-btn" type="button" aria-label="Menú">☰</button>
+  <div class="mpi-layout">
+    <aside class="mpi-sidebar">
+      <a class="mpi-marca" href="#/">
+        <span class="mpi-marca-chip">PIC32MX</span>
+        <span class="mpi-marca-txt">Microprocesadores</span>
+      </a>
+      <nav id="mpi-nav" aria-label="Temas"></nav>
+      <footer class="mpi-pie">Material de estudio · GITT · ICAI</footer>
+    </aside>
+    <main id="mpi-main" class="mpi-main"></main>
+  </div>
+
+  <!-- Sin build, sin módulos ES, sin CDN: funciona bajo file:// y en GitHub Pages -->
+  <script src="assets/js/resaltar-c.js"></script>
+  <script src="datos/registros.js"></script>
+  <script src="datos/pps.js"></script>
+  <script src="assets/js/componentes/visor-bits.js"></script>
+  <script src="assets/js/componentes/sim-timer.js"></script>
+  <script src="assets/js/componentes/pps-remap.js"></script>
+  <script src="assets/js/componentes/ejercicio-driver.js"></script>
+  <script src="assets/js/temas.js"></script>
+  <script src="datos/temas/temporizadores.js"></script>
+  <script src="datos/temas/introduccion-microcontroladores.js"></script>
+  <script src="datos/temas/lenguaje-c-bajo-nivel.js"></script>
+  <script src="datos/temas/puertos-entrada-salida.js"></script>
+  <script src="datos/temas/arquitectura-mips.js"></script>
+  <script src="datos/temas/interrupciones.js"></script>
+  <script src="datos/temas/comunicacion-serie-uart.js"></script>
+  <script src="datos/temas/buses-i2c-spi.js"></script>
+  <script src="datos/temas/conversor-analogico-digital.js"></script>
+  <script src="datos/temas/pwm-output-compare.js"></script>
+  <script src="datos/temas/tecnicas-programacion-fsm.js"></script>
+  <script src="datos/temas/ejemplo-integrador-termostato.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    // Menú lateral en móvil
+    (function () {
+      var btn = document.getElementById('mpi-menu-btn');
+      var lay = document.querySelector('.mpi-layout');
+      btn.addEventListener('click', function () { lay.classList.toggle('mpi-sidebar-abierta'); });
+      document.getElementById('mpi-main').addEventListener('click', function () { lay.classList.remove('mpi-sidebar-abierta'); });
+    })();
+  </script>
+</body>
+</html>

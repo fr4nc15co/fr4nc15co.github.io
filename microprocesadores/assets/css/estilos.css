@@ -1,0 +1,218 @@
+/* =========================================================================
+   Microprocesadores PIC32MX — tema IDE oscuro. Sin dependencias externas.
+   ========================================================================= */
+:root {
+  --bg:        #1e1e1e;
+  --bg-2:      #252526;
+  --bg-3:      #2d2d30;
+  --bg-side:   #181818;
+  --borde:     #3c3c3c;
+  --borde-2:   #2a2a2a;
+  --txt:       #d4d4d4;
+  --txt-2:     #9da5b4;
+  --txt-tenue: #6a737d;
+  --acento:    #4ec9b0;   /* tipos / verde-azulado VS Code */
+  --acento-2:  #569cd6;   /* keyword azul */
+  --rojo:      #f48771;
+  --amarillo:  #dcdcaa;
+  --morado:    #c586c0;
+  --naranja:   #ce9178;
+  --azul-cl:   #9cdcfe;
+  --verde:     #6a9955;
+  --num:       #b5cea8;
+  --mono: "SFMono-Regular", "JetBrains Mono", "Fira Code", Consolas, "Liberation Mono", Menlo, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--acento); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---------- Layout ---------- */
+.mpi-layout { display: flex; min-height: 100vh; }
+.mpi-sidebar {
+  width: 280px; flex: 0 0 280px;
+  background: var(--bg-side);
+  border-right: 1px solid var(--borde);
+  position: sticky; top: 0; height: 100vh;
+  display: flex; flex-direction: column;
+  overflow-y: auto;
+}
+.mpi-main { flex: 1 1 auto; min-width: 0; padding: 2.5rem 3rem 5rem; max-width: 920px; }
+
+/* ---------- Marca ---------- */
+.mpi-marca { display: flex; align-items: center; gap: .6rem; padding: 1.1rem 1rem; border-bottom: 1px solid var(--borde); }
+.mpi-marca:hover { text-decoration: none; }
+.mpi-marca-chip { background: var(--acento); color: #06231d; font-weight: 700; font-size: .72rem; letter-spacing: .05em; padding: .2rem .45rem; border-radius: 4px; font-family: var(--mono); }
+.mpi-marca-txt { color: var(--txt); font-weight: 600; }
+
+/* ---------- Navegación ---------- */
+#mpi-nav { padding: .6rem 0; flex: 1; }
+.mpi-nav-inicio { display: block; padding: .5rem 1rem; color: var(--txt-2); font-size: .82rem; text-transform: uppercase; letter-spacing: .06em; }
+.mpi-nav-lista { list-style: none; margin: 0; padding: 0; counter-reset: none; }
+.mpi-nav-item a { display: flex; align-items: center; gap: .6rem; padding: .5rem 1rem; color: var(--txt-2); border-left: 2px solid transparent; }
+.mpi-nav-item a:hover { background: var(--bg-2); color: var(--txt); text-decoration: none; }
+.mpi-nav-num { font-family: var(--mono); font-size: .72rem; width: 1.4rem; text-align: center; color: var(--txt-tenue); flex: 0 0 auto; }
+.mpi-nav-tit { font-size: .9rem; flex: 1; }
+.mpi-nav-badge { font-size: .62rem; text-transform: uppercase; background: var(--bg-3); color: var(--txt-tenue); padding: .1rem .35rem; border-radius: 3px; }
+.mpi-nav-pendiente a { opacity: .55; }
+.mpi-activo a { background: var(--bg-3); color: var(--acento); border-left-color: var(--acento); }
+.mpi-pie { padding: 1rem; font-size: .72rem; color: var(--txt-tenue); border-top: 1px solid var(--borde); }
+
+/* ---------- Inicio ---------- */
+.mpi-hero { border-bottom: 1px solid var(--borde); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+.mpi-hero h1 { font-size: 2rem; margin: 0 0 .4rem; }
+.mpi-sub { color: var(--txt-2); font-size: 1.05rem; margin: 0 0 .6rem; }
+.mpi-progreso { font-family: var(--mono); font-size: .82rem; color: var(--acento); margin: 0; }
+.mpi-tarjetas { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+.mpi-tarjeta { display: flex; flex-direction: column; gap: .3rem; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 8px; padding: 1rem; transition: border-color .15s, transform .1s; }
+.mpi-tarjeta:hover { border-color: var(--acento); text-decoration: none; transform: translateY(-2px); }
+.mpi-tarjeta-num { font-family: var(--mono); font-size: .72rem; color: var(--txt-tenue); }
+.mpi-tarjeta-tit { color: var(--txt); font-weight: 600; font-size: 1.02rem; }
+.mpi-tarjeta-est { font-size: .74rem; color: var(--acento); margin-top: .3rem; }
+.mpi-tarjeta-pendiente { opacity: .55; }
+.mpi-tarjeta-pendiente .mpi-tarjeta-est { color: var(--txt-tenue); }
+
+/* ---------- Contenido de tema ---------- */
+.tema-num { display: inline-block; font-family: var(--mono); font-size: .78rem; color: var(--acento); border: 1px solid var(--acento); border-radius: 4px; padding: .1rem .5rem; margin-bottom: .8rem; }
+.mpi-tema h1 { font-size: 2.1rem; margin: .2rem 0 .6rem; line-height: 1.2; }
+.tema-lead { font-size: 1.1rem; color: var(--txt-2); }
+.mpi-tema h2 { font-size: 1.5rem; margin: 2.4rem 0 .8rem; padding-bottom: .4rem; border-bottom: 1px solid var(--borde); }
+.mpi-tema h3 { font-size: 1.18rem; margin: 1.8rem 0 .6rem; color: var(--azul-cl); }
+.mpi-tema ul, .mpi-tema ol { padding-left: 1.4rem; }
+.mpi-tema li { margin: .3rem 0; }
+.nota { background: var(--bg-2); border-left: 3px solid var(--acento-2); padding: .7rem 1rem; border-radius: 0 6px 6px 0; color: var(--txt-2); font-size: .95rem; }
+.pasos li { font-family: var(--mono); font-size: .9rem; }
+.tema-cierre { margin-top: 2.5rem; }
+
+/* código inline (registros) */
+code.reg, .mpi-tema p code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .1rem .35rem; border-radius: 4px; }
+
+/* ---------- Bloques de código ---------- */
+pre { background: #1a1a1a; border: 1px solid var(--borde); border-radius: 8px; padding: 1rem 1.1rem; overflow-x: auto; margin: 1rem 0; }
+pre code { font-family: var(--mono); font-size: .86rem; line-height: 1.55; color: var(--txt); white-space: pre; }
+.tok-com { color: var(--verde); font-style: italic; }
+.tok-str { color: var(--naranja); }
+.tok-pre { color: var(--morado); }
+.tok-num { color: var(--num); }
+.tok-kw  { color: var(--acento-2); }
+.tok-reg { color: var(--acento); }
+
+/* ---------- Fórmulas MathML ---------- */
+math.formula { font-size: 1.3rem; margin: 1rem 0; color: var(--txt); display: block; }
+
+/* ---------- Componente: visor de bits ---------- */
+.mpi-visor-bits { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; }
+.vb-cab { display: flex; align-items: baseline; gap: .7rem; }
+.vb-nombre { font-family: var(--mono); font-weight: 700; color: var(--acento); font-size: 1.05rem; }
+.vb-titulo { color: var(--txt-2); font-size: .9rem; }
+.vb-nota { color: var(--txt-tenue); font-size: .82rem; margin: .3rem 0 .8rem; }
+.vb-rejilla { display: flex; flex-wrap: wrap; gap: 3px; }
+.vb-bit { display: flex; flex-direction: column; align-items: center; width: 38px; padding: .25rem 0; background: var(--bg); border: 1.5px solid var(--borde); border-radius: 5px; cursor: pointer; color: var(--txt); font-family: var(--mono); transition: background .1s; }
+.vb-bit:hover:not(:disabled) { background: var(--bg-3); }
+.vb-bit.vb-on { background: rgba(78,201,176,.15); }
+.vb-bit.vb-on .vb-bv { color: var(--acento); font-weight: 700; }
+.vb-reservado { opacity: .35; cursor: not-allowed; }
+.vb-bn { font-size: .6rem; color: var(--txt-tenue); }
+.vb-bv { font-size: .95rem; }
+.vb-controles { display: flex; align-items: center; gap: 1rem; margin: .9rem 0 .4rem; flex-wrap: wrap; }
+.vb-controles label { font-size: .85rem; color: var(--txt-2); }
+.vb-hex { font-family: var(--mono); background: var(--bg); border: 1px solid var(--borde); color: var(--azul-cl); padding: .35rem .5rem; border-radius: 5px; width: 8rem; }
+.vb-cero, .mpi-sim-timer button { background: var(--bg-3); border: 1px solid var(--borde); color: var(--txt); padding: .35rem .7rem; border-radius: 5px; cursor: pointer; font-size: .82rem; }
+.vb-cero:hover { border-color: var(--acento); }
+.vb-decod { width: 100%; border-collapse: collapse; margin-top: .6rem; font-size: .86rem; }
+.vb-decod th, .vb-decod td { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid var(--borde-2); }
+.vb-decod thead th { color: var(--txt-tenue); font-weight: 600; font-size: .76rem; text-transform: uppercase; letter-spacing: .04em; }
+.vb-decod td:first-child, .vb-decod th:first-child { font-family: var(--mono); }
+.vb-val { font-family: var(--mono); color: var(--num); }
+.vb-chip { display: inline-block; width: .65rem; height: .65rem; border-radius: 2px; margin-right: .45rem; vertical-align: middle; }
+
+/* ---------- Componente: simulador de timer ---------- */
+.mpi-sim-timer { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; }
+.st-form { display: flex; flex-direction: column; gap: .7rem; }
+.st-fila { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; }
+.st-form label { font-size: .88rem; color: var(--txt-2); display: inline-flex; align-items: center; gap: .4rem; }
+.st-form select, .st-form input { font-family: var(--mono); background: var(--bg); border: 1px solid var(--borde); color: var(--txt); padding: .35rem .5rem; border-radius: 5px; }
+.st-form input[type=number] { width: 7rem; }
+.st-resultado { margin: 1rem 0 .4rem; }
+.st-tabla { border-collapse: collapse; width: 100%; max-width: 460px; }
+.st-tabla th { text-align: left; color: var(--txt-2); font-weight: 500; padding: .3rem .6rem .3rem 0; font-size: .9rem; }
+.st-tabla td { font-family: var(--mono); color: var(--txt); padding: .3rem 0; }
+.st-tabla b { color: var(--acento); }
+.st-aviso { color: var(--amarillo); font-size: .8rem; }
+.st-exacto { color: var(--acento); font-size: .8rem; }
+.st-codigo { margin-top: .6rem; }
+
+.mpi-error { color: var(--rojo); font-family: var(--mono); font-size: .88rem; }
+.mpi-pendiente-aviso { background: var(--bg-2); border: 1px dashed var(--borde); border-radius: 10px; padding: 2rem; }
+
+/* ---------- Botón menú (móvil) ---------- */
+#mpi-menu-btn { display: none; position: fixed; top: .6rem; left: .6rem; z-index: 30; background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; font-size: 1.2rem; width: 2.4rem; height: 2.4rem; cursor: pointer; }
+
+/* ---------- Responsive ---------- */
+/* ---------- Tablas de datos en el contenido ---------- */
+.tabla-datos { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: .9rem; }
+.tabla-datos th, .tabla-datos td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--borde-2); vertical-align: top; }
+.tabla-datos thead th { color: var(--txt-tenue); font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--borde); }
+.tabla-modos td:nth-child(2), .tabla-modos td:nth-child(3) { font-family: var(--mono); color: var(--num); text-align: center; }
+
+/* ---------- Componente: explorador PPS ---------- */
+.mpi-pps { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; }
+.pps-cab { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.pps-cab label { font-size: .88rem; color: var(--txt-2); }
+.pps-cab select { font-family: var(--mono); background: var(--bg); border: 1px solid var(--borde); color: var(--txt); padding: .35rem .5rem; border-radius: 5px; }
+.pps-estado { font-family: var(--mono); font-size: .82rem; padding: .25rem .6rem; border-radius: 5px; }
+.pps-bloqueado { background: rgba(244,135,113,.12); color: var(--rojo); }
+.pps-desbloqueado { background: rgba(78,201,176,.14); color: var(--acento); }
+.pps-ayuda { color: var(--txt-2); font-size: .85rem; margin: .7rem 0 .5rem; }
+.pps-pines { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: .4rem; }
+.pps-pin { display: flex; flex-direction: column; gap: .15rem; background: var(--bg); border: 1.5px solid var(--borde); border-radius: 6px; padding: .4rem .5rem; cursor: pointer; color: var(--txt); text-align: left; }
+.pps-pin:hover { border-color: var(--acento-2); }
+.pps-pin-sel { border-color: var(--acento); background: rgba(78,201,176,.1); }
+.pps-pin-nom { font-family: var(--mono); font-weight: 700; color: var(--azul-cl); }
+.pps-pin-val { font-family: var(--mono); font-size: .72rem; color: var(--txt-tenue); }
+.pps-acc { display: flex; gap: .6rem; margin: .9rem 0 .2rem; flex-wrap: wrap; }
+.pps-acc button { background: var(--bg-3); border: 1px solid var(--borde); color: var(--txt); padding: .4rem .8rem; border-radius: 6px; cursor: pointer; font-size: .84rem; }
+.pps-acc button:hover:not(:disabled) { border-color: var(--acento); }
+.pps-acc button:disabled { opacity: .5; cursor: default; }
+.pps-codigo .pps-linea { display: block; padding: 0 .2rem; }
+.pps-linea-activa { background: rgba(86,156,214,.2); border-radius: 3px; }
+.pps-linea-hecha { opacity: .5; }
+
+/* ---------- Componente: ejercicio de drivers ---------- */
+.mpi-ejercicio { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.2rem; margin: 1.2rem 0; }
+.ej-tag { font-family: var(--mono); font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--morado); }
+.ej-cab h4 { margin: .3rem 0 0; font-size: 1.12rem; color: var(--txt); }
+.ej-enunciado { margin: .7rem 0; }
+.ej-contexto { background: var(--bg); border-left: 3px solid var(--acento-2); border-radius: 0 6px 6px 0; padding: .5rem .9rem; margin: .6rem 0; font-size: .9rem; }
+.ej-contexto ul { margin: .2rem 0; }
+.ej-preguntas { list-style: none; padding: 0; margin: 1rem 0 0; }
+.ej-pregunta { margin: 1.1rem 0; }
+.ej-texto { font-weight: 600; margin: 0 0 .5rem; }
+.ej-opciones { display: flex; flex-direction: column; gap: .4rem; }
+.ej-opcion { text-align: left; background: var(--bg); border: 1px solid var(--borde); color: var(--txt); padding: .5rem .7rem; border-radius: 6px; cursor: pointer; font-size: .9rem; transition: border-color .12s, background .12s; }
+.ej-opcion:hover { border-color: var(--acento-2); }
+.ej-ok { border-color: var(--acento); background: rgba(78,201,176,.12); color: var(--acento); }
+.ej-mal { border-color: var(--rojo); background: rgba(244,135,113,.1); color: var(--rojo); }
+.ej-feedback { margin-top: .5rem; font-size: .88rem; padding: .5rem .7rem; border-radius: 6px; }
+.ej-feedback-ok { background: rgba(78,201,176,.1); color: var(--txt); }
+.ej-feedback-mal { background: rgba(244,135,113,.08); color: var(--txt); }
+.ej-progreso { margin-top: 1rem; font-family: var(--mono); font-size: .82rem; color: var(--txt-tenue); }
+.ej-progreso-fin { color: var(--acento); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 860px) {
+  #mpi-menu-btn { display: block; }
+  .mpi-sidebar { position: fixed; z-index: 20; transform: translateX(-100%); transition: transform .2s; }
+  .mpi-sidebar-abierta .mpi-sidebar { transform: translateX(0); }
+  .mpi-main { padding: 3.5rem 1.2rem 4rem; }
+}
