@@ -54,6 +54,17 @@ MPI.contenidoTemas = MPI.contenidoTemas || {};
         '</a>';
     });
     html += '</div>';
+    html += '<section class="mpi-inicio-seccion"><h2>Antes de ir a clase</h2>' +
+      '<p>10 minutos de podcast — lo principal de cada tema en Spotify:</p>' +
+      '<iframe style="border-radius:12px; margin-top:1em;" src="https://open.spotify.com/embed/show/71kXCYVjY8jtbpBc2Z9AhU?utm_source=generator" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>' +
+      '</section>';
+    html += '<section class="mpi-inicio-seccion"><h2>Referencias</h2>' +
+      '<ul>' +
+      '<li><strong>Datasheet:</strong> PIC32MX1XX/2XX 32-bit Microcontroller (DS60001168L) — Microchip Technology — especificaciones de registros, periféricos, vectores de interrupción.</li>' +
+      '<li><strong>Transparencias:</strong> 14 temas del curso — Dr. Francisco Martín Martínez — definiciones del temario vigente (no incluye MIPS assembler).</li>' +
+      '<li><strong>Libro de apuntes:</strong> Dr. José Daniel Muñoz Frías — teoría integrada de arquitectura, periféricos (timers, UART, ADC, PWM, I²C/SPI) y patrones de programación.</li>' +
+      '</ul>' +
+      '</section>';
     return html;
   }
 
