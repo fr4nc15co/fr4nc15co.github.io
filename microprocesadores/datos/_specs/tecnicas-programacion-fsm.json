@@ -123,6 +123,10 @@
           "html": "<p>Primer ejemplo completo: una cisterna que se descarga sola. Un sensor de infrarrojos conectado a <strong>RC4</strong> da <strong>0 cuando hay una persona delante</strong> y 1 cuando no hay nadie; una electroválvula conectada a <strong>RC5</strong> descarga la cisterna al ponerse a 1. El sistema debe esperar a detectar una persona y <strong>descargar cuando esta se retire</strong> (cuando RC4 pase de 0 a 1 después de haber detectado a alguien). Eso exige <strong>memoria</strong> —hay que recordar que antes hubo alguien—, así que no vale un circuito combinacional: hace falta una máquina de estados con tres estados: <em>Reposo</em> (esperando que llegue alguien), <em>Espera</em> (hay alguien; esperando que se vaya) y <em>Descarga</em> (activar la electroválvula y volver a <em>Reposo</em>).</p>"
         },
         {
+          "tipo": "prosa",
+          "html": "<p>Pruébala antes de ver el código — y fíjate en el detalle clave: la descarga no salta al <em>llegar</em> la persona, sino al <em>retirarse</em>:</p><div class=\"mpi-mount\" data-componente=\"fsm-cisterna\" data-config='{}'></div>"
+        },
+        {
           "tipo": "codigo",
           "descripcion": "<p>Implantación completa. Observe la separación en tres pasos dentro del bucle: leer entradas, función δ y función λ con actualización de la salida:</p>",
           "codigo": "#include <xc.h>\n#include <stdint.h>\n\n#define PIN_SENSOR   4   // RC4: sensor de infrarrojos (0 = persona delante)\n#define PIN_CISTERNA 5   // RC5: electrovalvula de descarga (1 = descarga)\n\nint main(void) {\n    uint8_t sensor, cisterna;\n    enum {Reposo, Espera, Descarga} estado;\n\n    // RC4 y RC5 no tienen funcion analogica: no hay bits ANSELC que borrar\n\n    LATA = 0;                    // En el arranque todas las salidas a 0\n    LATB = 0;\n    LATC = 0;\n    TRISA = 0;                   // Todo salidas excepto el sensor\n    TRISB = 0;\n    TRISC = 1 << PIN_SENSOR;\n\n    estado = Reposo;             // Estado inicial\n\n    while (1) {\n        // Lectura de la entrada\n        sensor = (PORTC >> PIN_SENSOR) & 1;\n\n        // Transicion de estados (funcion delta)\n        switch (estado) {\n        case Reposo:\n            if (sensor == 0) {       // Ha llegado alguien\n                estado = Espera;\n            }\n            break;\n        case Espera:\n            if (sensor == 1) {       // Ha terminado y se retira\n                estado = Descarga;\n            }\n            break;\n        case Descarga:\n            estado = Reposo;         // Vuelta a esperar\n            break;\n        }\n\n        // Funcion de salida (lambda): solo depende del estado\n        if (estado == Descarga) {\n            cisterna = 1;\n        } else {\n            cisterna = 0;\n        }\n\n        // Actualizacion del bit de salida\n        if (cisterna == 1) {\n            LATC |=  (1 << PIN_CISTERNA);  // Pone a 1\n        } else {\n            LATC &= ~(1 << PIN_CISTERNA);  // Pone a 0\n        }\n    }\n    return 0;\n}"
@@ -157,6 +161,10 @@
         {
           "tipo": "prosa",
           "html": "<p>Con el detector de flanco ya podemos resolver el aparcamiento: si hay <strong>menos de cuatro coches</strong> se enciende la luz <strong>verde</strong> del semáforo de entrada y si hay <strong>cuatro</strong> se enciende la <strong>roja</strong>. Se usan cinco estados que codifican el número de coches (<em>Vacio</em>, <em>Uno</em>, <em>Dos</em>, <em>Tres</em>, <em>Cuatro</em>): cada flanco del sensor de entrada sube un estado y cada flanco del de salida baja uno.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Juega con los dos sensores y comprueba los dos casos «raros» del enunciado: el quinto coche con el semáforo en rojo y el flanco de salida con el aparcamiento vacío:</p><div class=\"mpi-mount\" data-componente=\"fsm-aparcamiento\" data-config='{}'></div>"
         },
         {
           "tipo": "codigo",
