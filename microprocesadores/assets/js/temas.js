@@ -16,5 +16,6 @@ MPI.temas = [
   { num: 9,  slug: 'conversor-analogico-digital',     titulo: 'Conversor A/D (ADC)',                   disponible: true },
   { num: 10, slug: 'pwm-output-compare',              titulo: 'PWM y Output Compare',                  disponible: true },
   { num: 11, slug: 'tecnicas-programacion-fsm',       titulo: 'Técnicas de programación y FSM',        disponible: true },
-  { num: 12, slug: 'ejemplo-integrador-termostato',   titulo: 'Ejemplo integrador: termostato',        disponible: true }
+  { num: 12, slug: 'ejemplo-integrador-termostato',   titulo: 'Ejemplo integrador: termostato',        disponible: true },
+  { num: 13, slug: 'sensores-actuadores',          titulo: 'Sensores y actuadores típicos',         disponible: true }
 ];
