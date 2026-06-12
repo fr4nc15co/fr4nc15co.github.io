@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sistemas Electrónicos · IMAT · ICAI</title>
+  <link rel="stylesheet" href="assets/css/estilos.css">
+</head>
+<body>
+  <button id="mpi-menu-btn" type="button" aria-label="Menú">☰</button>
+  <div class="mpi-layout">
+    <aside class="mpi-sidebar">
+      <a class="mpi-marca" href="#/">
+        <span class="mpi-marca-chip">SE</span>
+        <span class="mpi-marca-txt">Sistemas Electrónicos (Contenido sin verificar) </span>
+      </a>
+      <nav id="mpi-nav" aria-label="Temas"></nav>
+      <footer class="mpi-pie">Sistemas Electrónicos <br>IMAT · ICAI Comillas</footer>
+    </aside>
+    <main id="mpi-main" class="mpi-main"></main>
+  </div>
+
+  <!-- Sin build, sin módulos ES, sin CDN: funciona bajo file:// y en GitHub Pages -->
+  <!-- 1) Motor y utilidades (genéricos, no tocar) -->
+  <script src="assets/js/resaltar-py.js"></script>
+  <!-- 3) Componentes (genéricos + los de Sistemas Electrónicos) -->
+  <script src="assets/js/componentes/ejercicio-driver.js"></script>
+  <script src="assets/js/componentes/muestreo-cuantizacion.js"></script>
+  <script src="assets/js/componentes/niveles-logicos.js"></script>
+  <script src="assets/js/componentes/divisor-tension.js"></script>
+  <script src="assets/js/componentes/transitorio-rc.js"></script>
+  <script src="assets/js/componentes/sim-opamp.js"></script>
+  <script src="assets/js/componentes/acond-ntc.js"></script>
+  <!-- 4) Registro de temas + contenido de cada tema -->
+  <script src="assets/js/temas.js"></script>
+  <script src="datos/temas/introduccion.js"></script>
+  <script src="datos/temas/teoria-circuitos.js"></script>
+  <script src="datos/temas/amplificadores-operacionales.js"></script>
+  <script src="datos/temas/sensores-resistivos.js"></script>
+  <!-- añade aquí cada tema: <script src="datos/temas/<slug>.js"></script> -->
+  <!-- 5) Núcleo (router), buscador y modo examen -->
+  <script src="assets/js/examen.js"></script>
+  <script src="assets/js/buscador.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    // Menú lateral en móvil
+    (function () {
+      var btn = document.getElementById('mpi-menu-btn');
+      var lay = document.querySelector('.mpi-layout');
+      btn.addEventListener('click', function () { lay.classList.toggle('mpi-sidebar-abierta'); });
+      document.getElementById('mpi-main').addEventListener('click', function () { lay.classList.remove('mpi-sidebar-abierta'); });
+    })();
+  </script>
+</body>
+</html>
