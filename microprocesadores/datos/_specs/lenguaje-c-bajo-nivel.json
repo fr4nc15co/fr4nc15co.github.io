@@ -176,16 +176,12 @@
         },
         {
           "tipo": "prosa",
-          "html": "<p>Microchip ya ha definido en <code>&lt;xc.h&gt;</code> estructuras de este tipo para todos los registros del PIC32MX230F064D (<code>T1CONbits</code>, <code>PORTxbits</code>, <code>LATxbits</code>, <code>TRISxbits</code>…). Cada registro se define como una variable <code>volatile</code> anclada a su posición de memoria mediante atributos del compilador, y los campos vacíos (<code>:1</code>, <code>:3</code>) rellenan los bits no implementados:</p>"
+          "html": "<p>Microchip ya ha definido en <code>&lt;xc.h&gt;</code> estructuras de este tipo para todos los registros del PIC32MX230F064D (<code>T1CONbits</code>, <code>PORTxbits</code>, <code>LATxbits</code>, <code>TRISxbits</code>…). Cada registro se define como una variable <code>volatile</code> anclada a su posición de memoria mediante atributos del compilador, y los campos vacíos (<code>:1</code>, <code>:3</code>) rellenan los bits no implementados (la palabra <code>volatile</code> que aparece en la definición se explica en el Tema&nbsp;6, cuando las interrupciones la hagan importante):</p>"
         },
         {
           "tipo": "codigo",
           "descripcion": "<p>Definición (simplificada) de <code class=\"reg\">T1CON</code> y <code>T1CONbits</code> en los archivos del compilador XC32:</p>",
           "codigo": "extern volatile uint32_t T1CON\n       __attribute__((section(\"sfrs\"), address(0xBF800600)));\n\ntypedef union {\n    struct {\n        uint32_t       :1;\n        uint32_t TCS   :1;\n        uint32_t TSYNC :1;\n        uint32_t       :1;\n        uint32_t TCKPS :2;\n        uint32_t       :1;\n        uint32_t TGATE :1;\n        uint32_t       :3;\n        uint32_t TWIP  :1;\n        uint32_t TWDIS :1;\n        uint32_t SIDL  :1;\n        uint32_t       :1;\n        uint32_t TON   :1;\n    };\n} __T1CONbits_t;\n\nextern volatile __T1CONbits_t T1CONbits __asm__(\"T1CON\")\n       __attribute__((section(\"sfrs\"), address(0xBF800600)));\n\n// Uso, tan legible como esto:\n//     T1CONbits.TON = 1;     (arranca el Timer 1)"
-        },
-        {
-          "tipo": "nota",
-          "html": "<strong>¿Por qué <code>volatile</code>?</strong> Indica al compilador que la variable puede cambiar por causas externas al programa (es hardware). Sin él, el compilador optimizaría guardando una copia en un registro de la CPU y el programa no «vería» los cambios — por ejemplo, esperando un flag se quedaría en un bucle infinito. Todos los registros de periféricos se declaran <code>volatile</code>."
         },
         {
           "tipo": "lista",
@@ -316,14 +312,83 @@
       "nota": "Reconstruido del datasheet DS60001168L (REGISTER 12-1). Timer tipo A: prescaler 1, 8, 64 o 256; admite oscilador externo en T1CK. Los bits 31:16, 14, 10:8, 6, 3 y 0 no están implementados (se leen como 0).",
       "ancho": 16,
       "campos": [
-        { "bit": 15, "nombre": "ON", "desc": "Timer On: habilita el temporizador.", "valores": { "0": "Timer parado", "1": "Timer contando" } },
-        { "bit": 13, "nombre": "SIDL", "desc": "Stop in Idle: para el módulo cuando la CPU entra en modo Idle.", "valores": { "0": "Sigue funcionando en Idle", "1": "Se para en Idle" } },
-        { "bit": 12, "nombre": "TWDIS", "desc": "Asynchronous Timer Write Disable: ignora escrituras en TMR1 mientras hay una pendiente (modo asíncrono).", "valores": { "0": "Escrituras consecutivas permitidas", "1": "Escrituras ignoradas hasta completar la pendiente" } },
-        { "bit": 11, "nombre": "TWIP", "desc": "Asynchronous Timer Write in Progress (solo lectura).", "valores": { "0": "Escritura en TMR1 completada", "1": "Escritura asíncrona en curso" } },
-        { "bit": 7, "nombre": "TGATE", "desc": "Modo gated: acumula tiempo solo mientras T1CK está a 1 (requiere TCS=0).", "valores": { "0": "Desactivado", "1": "Medida de ancho de pulso" } },
-        { "bits": [5, 4], "nombre": "TCKPS", "desc": "Prescaler del reloj (tipo A).", "valores": { "0": "1:1", "1": "1:8", "2": "1:64", "3": "1:256" } },
-        { "bit": 2, "nombre": "TSYNC", "desc": "Sincronización de la entrada de reloj externa (solo con TCS=1).", "valores": { "0": "Reloj externo no sincronizado", "1": "Reloj externo sincronizado" } },
-        { "bit": 1, "nombre": "TCS", "desc": "Timer Clock Source: fuente de reloj del temporizador.", "valores": { "0": "PBCLK interno", "1": "Pin externo T1CK" } }
+        {
+          "bit": 15,
+          "nombre": "ON",
+          "desc": "Timer On: habilita el temporizador.",
+          "valores": {
+            "0": "Timer parado",
+            "1": "Timer contando"
+          }
+        },
+        {
+          "bit": 13,
+          "nombre": "SIDL",
+          "desc": "Stop in Idle: para el módulo cuando la CPU entra en modo Idle.",
+          "valores": {
+            "0": "Sigue funcionando en Idle",
+            "1": "Se para en Idle"
+          }
+        },
+        {
+          "bit": 12,
+          "nombre": "TWDIS",
+          "desc": "Asynchronous Timer Write Disable: ignora escrituras en TMR1 mientras hay una pendiente (modo asíncrono).",
+          "valores": {
+            "0": "Escrituras consecutivas permitidas",
+            "1": "Escrituras ignoradas hasta completar la pendiente"
+          }
+        },
+        {
+          "bit": 11,
+          "nombre": "TWIP",
+          "desc": "Asynchronous Timer Write in Progress (solo lectura).",
+          "valores": {
+            "0": "Escritura en TMR1 completada",
+            "1": "Escritura asíncrona en curso"
+          }
+        },
+        {
+          "bit": 7,
+          "nombre": "TGATE",
+          "desc": "Modo gated: acumula tiempo solo mientras T1CK está a 1 (requiere TCS=0).",
+          "valores": {
+            "0": "Desactivado",
+            "1": "Medida de ancho de pulso"
+          }
+        },
+        {
+          "bits": [
+            5,
+            4
+          ],
+          "nombre": "TCKPS",
+          "desc": "Prescaler del reloj (tipo A).",
+          "valores": {
+            "0": "1:1",
+            "1": "1:8",
+            "2": "1:64",
+            "3": "1:256"
+          }
+        },
+        {
+          "bit": 2,
+          "nombre": "TSYNC",
+          "desc": "Sincronización de la entrada de reloj externa (solo con TCS=1).",
+          "valores": {
+            "0": "Reloj externo no sincronizado",
+            "1": "Reloj externo sincronizado"
+          }
+        },
+        {
+          "bit": 1,
+          "nombre": "TCS",
+          "desc": "Timer Clock Source: fuente de reloj del temporizador.",
+          "valores": {
+            "0": "PBCLK interno",
+            "1": "Pin externo T1CK"
+          }
+        }
       ]
     }
   },
@@ -425,7 +490,10 @@
       ]
     }
   },
-  "ejerciciosEnTema": ["lenguaje-c-bajo-nivel-1", "lenguaje-c-bajo-nivel-2"],
+  "ejerciciosEnTema": [
+    "lenguaje-c-bajo-nivel-1",
+    "lenguaje-c-bajo-nivel-2"
+  ],
   "resumen": [
     "El tamaño de <code>int</code> depende de la máquina (en el PIC32MX, 32 bits); para código portable usa los tipos de <code>&lt;stdint.h&gt;</code>: <code>uint8_t</code>, <code>int16_t</code>, <code>uint32_t</code>…",
     "Rangos de <em>n</em> bits: sin signo 0 ↔ 2<sup>n</sup>−1; con signo (complemento a 2, el MSB es el signo) −2<sup>n−1</sup> ↔ 2<sup>n−1</sup>−1. C <strong>no avisa</strong> de los desbordamientos.",

@@ -49,11 +49,6 @@
           "codigo": "#include <xc.h>\n\n// Inicializa el Timer 5 con el periodo del bucle de scan en ms (PBCLK = 5 MHz)\nvoid inicializarTareaInactiva(unsigned int periodo) {\n    T5CON = 0;                   // Timer 5 parado\n    TMR5  = 0;                   // Cuenta a 0\n    IFS0bits.T5IF = 0;           // Borrar el flag de fin de cuenta\n    PR5   = 625 * periodo - 1;   // 5 MHz / 8 = 625 cuentas por ms\n    T5CON = 0x8030;              // ON, prescaler 1:8, reloj interno\n}\n\nvoid tareaInactiva(void) {\n    while (IFS0bits.T5IF == 0)\n        ;                        // Espera el final del periodo Ts\n    IFS0bits.T5IF = 0;           // Borrar el flag para la siguiente vuelta\n}\n\n// Variante con el periodo en DECIMAS de ms (1,5 ms -> periodo = 15),\n// para no usar coma flotante: prescaler 1:1 (500 cuentas por decima)\n//   PR5   = 500 * periodo - 1;\n//   T5CON = 0x8000;             // Periodo maximo: 13,1 ms"
         },
         {
-          "tipo": "registro",
-          "registro": "T5CON",
-          "valor": "0x8030"
-        },
-        {
           "tipo": "nota",
           "html": "La temporización solo funciona si <em>T<sub>s</sub></em> es <strong>mayor que la suma de los tiempos máximos</strong> de ejecución de las tareas del bucle. Si una vuelta se alarga demasiado, el flag ya estará a 1 al llegar a la tarea inactiva: esta retorna de inmediato y el periodo se incumple <em>sin que nada lo avise</em>."
         }
@@ -196,11 +191,6 @@
           "codigo": "#include <xc.h>\n#include <stdint.h>\n\n#define PIN_MANDO 2   // RB2: receptor de radio (pulso de 10 ms al pulsar)\n#define PIN_MOTOR 0   // RB0: rele de encendido del motor (1 = en marcha)\n#define PIN_DIR   1   // RB1: rele de sentido (1 = el motor cierra)\n\nvoid inicializarTarjeta(void);\nvoid inicializaTimer1(void);\nvoid maquinaEstados(void);\n\n// Variables compartidas con la ISR (tiempo de movimiento)\nstatic volatile uint16_t ms = 0, seg = 0;\nstatic uint16_t ms_ref, seg_ref;     // Referencia al parar a mitad\nstatic uint8_t pulso = 0, motor = 0, sentido = 0;\nstatic enum {Cerrado, Abriendo, Abierto,\n             Cerrando, Par_Abri, Par_Cerr} estado;\nstatic uint8_t portb_act, portb_ant; // Deteccion de flanco del mando\n\nint main(void) {\n    inicializarTarjeta();\n    inicializaTimer1();\n    while (1) {\n        maquinaEstados();\n    }\n    return 0;\n}\n\nvoid inicializarTarjeta(void) {\n    ANSELB &= ~((1 << PIN_MANDO) | (1 << PIN_MOTOR) | (1 << PIN_DIR));\n    LATA = 0;                     // Salidas a 0 en el arranque\n    LATB = 0;\n    LATC = 0;\n    TRISA = 0;\n    TRISB = 1 << PIN_MANDO;       // Todo salidas excepto el mando\n    TRISC = 0;\n    estado = Cerrado;             // Al principio la puerta esta cerrada\n    portb_act = (PORTB >> PIN_MANDO) & 1;\n}\n\nvoid inicializaTimer1(void) {\n    T1CON = 0;                // Timer 1 parado\n    TMR1 = 0;                 // Cuenta a 0\n    PR1 = 4999;               // Fin de cuenta cada 1 ms (PBCLK = 5 MHz, 1:1)\n    IPC1bits.T1IP = 2;        // Prioridad 2\n    IPC1bits.T1IS = 0;        // Subprioridad 0\n    IFS0bits.T1IF = 0;        // Borrar el flag\n    IEC0bits.T1IE = 1;        // Habilitar la interrupcion\n    T1CON = 0x8000;           // ON, prescaler 1:1, reloj interno\n    INTCONbits.MVEC = 1;      // Modo multivector\n    asm(\"ei\");                // Interrupciones habilitadas\n}\n\n__attribute__((vector(_TIMER_1_VECTOR), interrupt(IPL2SOFT), nomips16))\nvoid InterrupcionTimer1(void) {\n    IFS0bits.T1IF = 0;\n    ms++;\n    if (ms >= 1000) {\n        ms = 0;\n        seg++;\n    }\n}\n\nvoid maquinaEstados(void) {\n    // Deteccion de flanco de subida del mando\n    portb_ant = portb_act;\n    portb_act = (PORTB >> PIN_MANDO) & 1;\n    if ((portb_ant != portb_act) && (portb_act == 1)) {\n        pulso = 1;\n    } else {\n        pulso = 0;\n    }\n\n    // Transicion de estados (funcion delta)\n    switch (estado) {\n    case Cerrado:\n        if (pulso == 1) estado = Abriendo;\n        break;\n    case Abriendo:\n        if (pulso == 1) {\n            estado = Par_Abri;\n            seg_ref = seg;       // Guardar cuanto llevaba abriendo\n            ms_ref  = ms;\n        }\n        if (seg >= 30) estado = Abierto;\n        break;\n    case Abierto:\n        if (pulso == 1) estado = Cerrando;\n        break;\n    case Cerrando:\n        if (pulso == 1) {\n            estado = Par_Cerr;\n            seg_ref = seg;       // Guardar cuanto llevaba cerrando\n            ms_ref  = ms;\n        }\n        if (seg >= 30) estado = Cerrado;\n        break;\n    case Par_Abri:\n        if (pulso == 1) {\n            estado = Cerrando;\n            seg = 30 - seg_ref;  // Recupero tiempos: tcerrar = 30 - tabrir\n            ms  = 1000 - ms_ref;\n        }\n        break;\n    case Par_Cerr:\n        if (pulso == 1) {\n            estado = Abriendo;\n            seg = 30 - seg_ref;  // Recupero tiempos: tabrir = 30 - tcerrar\n            ms  = 1000 - ms_ref;\n        }\n        break;\n    }\n\n    // Funcion lambda y actuacion sobre las salidas\n    if ((estado == Abierto) || (estado == Cerrado) ||\n        (estado == Par_Abri) || (estado == Par_Cerr)) {\n        motor = 0;\n        ms = 0;                  // Reinicio de tiempos en las paradas\n        seg = 0;\n    } else if (estado == Abriendo) {\n        motor = 1;\n        sentido = 0;\n    } else {                     // Cerrando\n        motor = 1;\n        sentido = 1;\n    }\n\n    if (motor == 1)   LATBSET = 1 << PIN_MOTOR;\n    else              LATBCLR = 1 << PIN_MOTOR;\n    if (sentido == 1) LATBSET = 1 << PIN_DIR;\n    else              LATBCLR = 1 << PIN_DIR;\n}"
         },
         {
-          "tipo": "registro",
-          "registro": "T1CON",
-          "valor": "0x8000"
-        },
-        {
           "tipo": "nota",
           "html": "<code>ms</code> y <code>seg</code> se comparten entre la ISR y el bucle de scan, por lo que se declaran <strong>volatile</strong>. En rigor, sus accesos desde el <code>main</code> deberían protegerse con <code>asm(\"di\")</code>/<code>asm(\"ei\")</code> como se vio en el tema de interrupciones; aquí cada acceso es una única escritura de 16 bits y el riesgo es mínimo, pero en el examen siga el patrón canónico. Ampliación opcional: el enunciado original pide además una variante del proceso de apertura (cerrar 200&nbsp;ms para liberar el pestillo, parar 100&nbsp;ms y abrir 30&nbsp;s), que se resuelve añadiendo dos estados temporizados más, idénticos en estructura a los ya vistos."
         }
@@ -245,31 +235,55 @@
           "bit": 15,
           "nombre": "ON",
           "desc": "Timer On: enciende o apaga el temporizador. Mientras está a 0, el timer conserva su cuenta pero no avanza.",
-          "valores": { "0": "Temporizador parado", "1": "Temporizador en marcha" }
+          "valores": {
+            "0": "Temporizador parado",
+            "1": "Temporizador en marcha"
+          }
         },
         {
           "bit": 13,
           "nombre": "SIDL",
           "desc": "Stop in Idle Mode: comportamiento cuando la CPU entra en modo Idle.",
-          "valores": { "0": "Sigue contando en Idle", "1": "Se detiene en Idle" }
+          "valores": {
+            "0": "Sigue contando en Idle",
+            "1": "Se detiene en Idle"
+          }
         },
         {
           "bit": 7,
           "nombre": "TGATE",
           "desc": "Timer Gated Time Accumulation Enable: con TCS = 0, el timer solo cuenta mientras la entrada TxCK está a 1 (útil para medir anchos de pulso). Con TCS = 1 se ignora.",
-          "valores": { "0": "Acumulación gated deshabilitada", "1": "Acumulación gated habilitada" }
+          "valores": {
+            "0": "Acumulación gated deshabilitada",
+            "1": "Acumulación gated habilitada"
+          }
         },
         {
-          "bits": [6, 4],
+          "bits": [
+            6,
+            4
+          ],
           "nombre": "TCKPS",
           "desc": "Timer Input Clock Prescale Select: divisor del reloj de entrada. El divisor vale 2 elevado a TCKPS, salvo el 7, que divide por 256 (no por 128).",
-          "valores": { "0": "1:1", "1": "1:2", "2": "1:4", "3": "1:8", "4": "1:16", "5": "1:32", "6": "1:64", "7": "1:256" }
+          "valores": {
+            "0": "1:1",
+            "1": "1:2",
+            "2": "1:4",
+            "3": "1:8",
+            "4": "1:16",
+            "5": "1:32",
+            "6": "1:64",
+            "7": "1:256"
+          }
         },
         {
           "bit": 1,
           "nombre": "TCS",
           "desc": "Timer Clock Source Select: selecciona el reloj que incrementa TMRx.",
-          "valores": { "0": "Reloj interno PBCLK (lo habitual)", "1": "Reloj externo en el pin TxCK" }
+          "valores": {
+            "0": "Reloj interno PBCLK (lo habitual)",
+            "1": "Reloj externo en el pin TxCK"
+          }
         }
       ]
     },
@@ -282,37 +296,60 @@
           "bit": 15,
           "nombre": "ON",
           "desc": "Timer On: el reloj solo llega al contador si este bit está a 1. A 0 el timer se para pero mantiene su valor.",
-          "valores": { "0": "Temporizador parado", "1": "Temporizador en marcha" }
+          "valores": {
+            "0": "Temporizador parado",
+            "1": "Temporizador en marcha"
+          }
         },
         {
           "bit": 13,
           "nombre": "SIDL",
           "desc": "Stop in Idle Mode: comportamiento cuando la CPU entra en modo Idle.",
-          "valores": { "0": "Sigue contando en Idle", "1": "Se detiene en Idle" }
+          "valores": {
+            "0": "Sigue contando en Idle",
+            "1": "Se detiene en Idle"
+          }
         },
         {
           "bit": 7,
           "nombre": "TGATE",
           "desc": "Timer Gated Time Accumulation Enable: con TCS = 0, el timer solo cuenta mientras la entrada T1CK está a 1 (modo gated, para medir el ancho de un pulso). T1IF se activa con el flanco de bajada de T1CK.",
-          "valores": { "0": "Acumulación gated deshabilitada", "1": "Acumulación gated habilitada" }
+          "valores": {
+            "0": "Acumulación gated deshabilitada",
+            "1": "Acumulación gated habilitada"
+          }
         },
         {
-          "bits": [5, 4],
+          "bits": [
+            5,
+            4
+          ],
           "nombre": "TCKPS",
           "desc": "Timer Input Clock Prescale Select: prescaler del Timer 1 (tipo A), con solo cuatro divisores disponibles.",
-          "valores": { "0": "1:1", "1": "1:8", "2": "1:64", "3": "1:256" }
+          "valores": {
+            "0": "1:1",
+            "1": "1:8",
+            "2": "1:64",
+            "3": "1:256"
+          }
         },
         {
           "bit": 2,
           "nombre": "TSYNC",
           "desc": "Timer External Clock Input Synchronization: con reloj externo (TCS = 1) permite puentear el sincronizador, necesario para despertar del modo de bajo consumo usando el SOSC. Con TCS = 0 se ignora.",
-          "valores": { "0": "Reloj externo sin sincronizar", "1": "Reloj externo sincronizado" }
+          "valores": {
+            "0": "Reloj externo sin sincronizar",
+            "1": "Reloj externo sincronizado"
+          }
         },
         {
           "bit": 1,
           "nombre": "TCS",
           "desc": "Timer Clock Source Select: selecciona el reloj que incrementa TMR1.",
-          "valores": { "0": "Reloj interno PBCLK (lo habitual)", "1": "Reloj externo en el pin SOSC/T1CK" }
+          "valores": {
+            "0": "Reloj interno PBCLK (lo habitual)",
+            "1": "Reloj externo en el pin SOSC/T1CK"
+          }
         }
       ]
     }
@@ -325,7 +362,12 @@
       "preguntas": [
         {
           "texto": "Con prescaler 1:8 y PBCLK = 5 MHz, ¿qué valor hay que cargar en PR5 para un periodo de 10 ms?",
-          "opciones": ["6249", "6250", "49999", "624"],
+          "opciones": [
+            "6249",
+            "6250",
+            "49999",
+            "624"
+          ],
           "correcta": 0,
           "explicacion": "<p>Con prescaler 1:8 el reloj del timer es 5&nbsp;MHz/8 = 625&nbsp;kHz, es decir, <strong>625 cuentas por ms</strong>. Para 10&nbsp;ms: PR5 = 625·10&nbsp;−&nbsp;1 = <strong>6249</strong> (el −1 es porque la cuenta arranca en 0). El valor 49999 correspondería al prescaler 1:1 (5000·10&nbsp;−&nbsp;1) y 624 sería un periodo de 1&nbsp;ms con 1:8.</p>"
         },
@@ -416,7 +458,10 @@
       ]
     }
   },
-  "ejerciciosEnTema": ["tecnicas-programacion-fsm-1", "tecnicas-programacion-fsm-2"],
+  "ejerciciosEnTema": [
+    "tecnicas-programacion-fsm-1",
+    "tecnicas-programacion-fsm-2"
+  ],
   "resumen": [
     "El <strong>bucle de scan</strong> ejecuta las tareas secuencialmente dentro de un <code>while (1)</code>; ninguna tarea puede bloquear y las interrupciones lo complementan.",
     "La <strong>tarea inactiva</strong>, al final del bucle, fija el periodo de muestreo esperando el flag de un timer <em>free running</em> (PR = T<sub>s</sub>·f<sub>PBCLK</sub>/prescaler − 1); solo funciona si T<sub>s</sub> supera la suma de los tiempos máximos de las tareas.",

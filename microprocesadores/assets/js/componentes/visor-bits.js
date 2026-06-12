@@ -46,6 +46,19 @@ MPI.componentes = MPI.componentes || {};
       else for (var b = c.bits[1]; b <= c.bits[0]; b++) bitCampo[b] = c;
     });
 
+    // Restricción opcional: solo algunos campos son editables
+    // (config.editables = ["ON", "BRGH", ...]); el resto se muestra fijo.
+    var editables = config.editables || null;
+    var bitEditable = null;
+    if (editables) {
+      bitEditable = {};
+      reg.campos.forEach(function (c) {
+        if (editables.indexOf(c.nombre) === -1) return;
+        if (c.bit != null) bitEditable[c.bit] = true;
+        else for (var b = c.bits[1]; b <= c.bits[0]; b++) bitEditable[b] = true;
+      });
+    }
+
     el.classList.add('mpi-visor-bits');
     el.innerHTML =
       '<div class="vb-cab">' +
@@ -75,6 +88,10 @@ MPI.componentes = MPI.componentes || {};
       if (campo) {
         celda.style.borderColor = campo._color;
         celda.title = campo.nombre + ' — ' + campo.desc;
+        if (bitEditable && !bitEditable[b]) {
+          celda.classList.add('vb-fijo');
+          celda.title += ' (fijo en este ejemplo)';
+        }
       } else {
         celda.title = 'Bit ' + b + ' (no usado)';
         celda.disabled = true;
@@ -100,6 +117,7 @@ MPI.componentes = MPI.componentes || {};
         var bits = campo.bit != null ? campo.bit : (campo.bits[0] + ':' + campo.bits[1]);
         var signif = campo.valores && campo.valores[v] != null ? campo.valores[v] : '';
         var tr = document.createElement('tr');
+        if (editables && editables.indexOf(campo.nombre) === -1) tr.className = 'vb-fijo';
         tr.innerHTML =
           '<td><span class="vb-chip" style="background:' + campo._color + '"></span>' + campo.nombre + '</td>' +
           '<td>' + bits + '</td>' +
@@ -113,9 +131,19 @@ MPI.componentes = MPI.componentes || {};
       var btn = e.target.closest('.vb-bit');
       if (!btn || btn.disabled) return;
       var b = parseInt(btn.getAttribute('data-bit'), 10);
+      if (bitEditable && !bitEditable[b]) return;
       valor = (valor ^ (1 << b)) >>> 0;
       pintar();
     });
+
+    if (editables) {
+      inputHex.readOnly = true;
+      el.querySelector('.vb-cero').style.display = 'none';
+      var hint = document.createElement('span');
+      hint.className = 'vb-edit-hint';
+      hint.textContent = 'Campos editables: ' + editables.join(', ') + ' (el resto no se toca en la asignatura)';
+      el.querySelector('.vb-controles').appendChild(hint);
+    }
 
     inputHex.addEventListener('change', function () {
       var v = parseInt(inputHex.value, 16);

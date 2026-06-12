@@ -9,7 +9,21 @@
       "bloques": [
         {
           "tipo": "prosa",
-          "html": "<p>Este tema cierra la asignatura con un <strong>problema libre</strong>, del estilo de los que caen en el examen: el termostato que hay colgado en la pared de clase. Solo vamos a implementar el modo <em>calor</em>: cuando la temperatura medida esté por debajo de la referencia fijada por el usuario, el ventilador soplará aire caliente a la velocidad seleccionada. El primer paso de cualquier problema de este tipo es hacer inventario del hardware y asignar pines (en el examen suelen venir dados; aquí nos los inventamos mirando la tabla de pines del datasheet):</p>"
+          "html": "<p>Este tema cierra la asignatura con un <strong>problema libre</strong>, del estilo de los que caen en el examen: el termostato que hay colgado en la pared de clase (solo el modo <em>calor</em>: cuando la temperatura medida esté por debajo de la referencia del usuario, el ventilador sopla aire caliente a la velocidad seleccionada). Y lo más importante del tema no es el código: es el <strong>método para empezar</strong>. Ante cualquier enunciado, lo primero es clasificarlo en tres columnas:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": true,
+          "items": [
+            "<strong>¿Qué ENTRA?</strong> Subraya todo lo que el sistema <em>lee</em> del mundo: interruptores, sensores, comandos que llegan por el puerto serie… Cada entrada pide un periférico: digital → GPIO de entrada; analógica → un canal del ADC; mensajes → la UART (recepción).",
+            "<strong>¿Qué SALE?</strong> Subraya lo que el sistema <em>actúa</em>: LEDs, motores, zumbadores, displays, mensajes. Otra vez, cada salida pide su periférico: digital → GPIO de salida; potencia regulable → PWM (Output Compare); mensajes → UART (transmisión).",
+            "<strong>¿Qué LÓGICA une las entradas con las salidas?</strong> Las comparaciones, la histéresis, los modos, la máquina de estados… Eso <em>no</em> es de ningún periférico: vive en el main (bucle de scan) o en funciones de control.",
+            "Cada pareja entrada/salida + periférico se convierte en un <strong>driver</strong>: un módulo con un pequeño conjunto de funciones; el main solo llama a los drivers y ejecuta la lógica."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Apliquémoslo al termostato. El inventario de hardware (en el examen suele venir dado; aquí nos lo inventamos mirando la tabla de pines del datasheet) es:</p>"
         },
         {
           "tipo": "lista",
@@ -21,6 +35,10 @@
             "<strong>Sensor de temperatura analógico</strong> en <code>RA0/AN0</code>: mide entre 2 y 50&nbsp;°C, proporcional a la tensión.",
             "<strong>Motor del ventilador</strong> controlado por una señal <strong>PWM de 20&nbsp;kHz</strong> generada con el <strong>Output Compare 4</strong> en <code>RC6</code>."
           ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<table class=\"tabla-datos\"><thead><tr><th>Elemento</th><th>¿Entrada o salida?</th><th>Periférico</th><th>Driver (función o módulo)</th></tr></thead><tbody><tr><td>Interruptores de velocidad (RC0–RC2)</td><td>Entrada digital</td><td>GPIO entrada (¡ANSELC a digital!)</td><td><code>leerVelocidad()</code></td></tr><tr><td>Potenciómetro de referencia (RB3/AN5)</td><td>Entrada analógica</td><td>ADC — escaneo con Timer 3</td><td><code>getReferencia()</code></td></tr><tr><td>Sensor de temperatura (RA0/AN0)</td><td>Entrada analógica</td><td>ADC — el mismo escaneo</td><td><code>getTemperatura()</code></td></tr><tr><td>LED de modo calor (RC3)</td><td>Salida digital</td><td>GPIO salida</td><td><code>LATC</code> directo desde el main</td></tr><tr><td>Motor del ventilador (RC6)</td><td>Salida de potencia regulable</td><td>PWM: OC4 + Timer 2 a 20 kHz</td><td><code>ventiladorVelocidad(duty)</code></td></tr><tr><td>¿Calentar o no? ¿A qué velocidad?</td><td><strong>Lógica</strong></td><td>— (ningún periférico)</td><td>el main, en el bucle de scan</td></tr></tbody></table>"
         },
         {
           "tipo": "nota",
@@ -245,7 +263,10 @@
           }
         },
         {
-          "bits": [2, 0],
+          "bits": [
+            2,
+            0
+          ],
           "nombre": "OCM",
           "desc": "Output Compare Mode: modo de funcionamiento del módulo. Para el ventilador se usa 110 (PWM sin detección de faltas).",
           "valores": {
@@ -291,7 +312,10 @@
           }
         },
         {
-          "bits": [6, 4],
+          "bits": [
+            6,
+            4
+          ],
           "nombre": "TCKPS",
           "desc": "Timer Clock Prescale: divisor del reloj. Vale 2^TCKPS salvo el 7, que divide por 256. Para los 50 µs del PWM basta 1:1.",
           "valores": {
@@ -349,7 +373,10 @@
           }
         },
         {
-          "bits": [10, 8],
+          "bits": [
+            10,
+            8
+          ],
           "nombre": "FORM",
           "desc": "Data Output Format: formato del resultado en ADC1BUFx. En la asignatura se usa siempre el entero de 16 bits sin signo (000).",
           "valores": {
@@ -360,7 +387,10 @@
           }
         },
         {
-          "bits": [7, 5],
+          "bits": [
+            7,
+            5
+          ],
           "nombre": "SSRC",
           "desc": "Conversion Trigger Source Select: quién dispara el fin del muestreo y el comienzo de la conversión. El termostato usa 010 (Timer 3).",
           "valores": {
@@ -423,7 +453,10 @@
           }
         },
         {
-          "bits": [27, 24],
+          "bits": [
+            27,
+            24
+          ],
           "nombre": "CH0SB",
           "desc": "Positive Input Select for Sample B: canal de la entrada positiva del mux B (0 = AN0 ... 12 = AN12). No se usa en el termostato.",
           "valores": {
@@ -442,7 +475,10 @@
           }
         },
         {
-          "bits": [19, 16],
+          "bits": [
+            19,
+            16
+          ],
           "nombre": "CH0SA",
           "desc": "Positive Input Select for Sample A: canal de la entrada positiva del mux A. El termostato alterna 5 (AN5, potenciómetro) y 0 (AN0, sensor) desde la ISR.",
           "valores": {
@@ -469,7 +505,10 @@
           }
         },
         {
-          "bits": [12, 8],
+          "bits": [
+            12,
+            8
+          ],
           "nombre": "SAMC",
           "desc": "Auto-Sample Time: ciclos TAD que dura el muestreo en modo autoconversión (solo se usa con SSRC = 111; con disparo por timer o INT0 el fin del muestreo lo marca el propio disparo). Entre 1 y 31; el 0 está prohibido.",
           "valores": {
@@ -479,7 +518,10 @@
           }
         },
         {
-          "bits": [7, 0],
+          "bits": [
+            7,
+            0
+          ],
           "nombre": "ADCS",
           "desc": "ADC Conversion Clock Select: divisor del PBCLK. TAD = TPBCLK · 2 · (ADCS + 1). Con ADCS = 0 y PBCLK = 5 MHz, TAD = 400 ns (la máxima velocidad).",
           "valores": {

@@ -88,7 +88,92 @@
       ]
     },
     {
-      "titulo": "9.3 El reloj del conversor: AD1CON3",
+      "titulo": "9.3 La medida por partes: el mapa del conversor",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El AD se entiende mejor troceado en <strong>cuatro fases</strong> — seleccionar el canal, muestrear, convertir y almacenar — más una transversal, la gestión de tiempos. Cada fase puede hacerse <em>a mano</em> o <em>automática</em>: configurar el conversor es, simplemente, elegir una casilla por fila de esta tabla.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<table class=\"tabla-datos\"><thead><tr><th>Fase</th><th>Manual</th><th>Automático</th><th>Registros y bits</th></tr></thead><tbody><tr><td><strong>1 · Selección de canal</strong><br><small>¿qué AN<sub>x</sub> mido?</small></td><td>El usuario elige: <code>CH0SA</code> = nº del canal (y <code>CH0NA</code> = 0, referencia V<sub>SS</sub>)</td><td><strong>Escaneo</strong>: <code>CSCNA</code> = 1 y el AD recorre solo los canales marcados en <code class=\"reg\">AD1CSSL</code> (bit x ↔ AN<sub>x</sub>)</td><td><code class=\"reg\">AD1CHS</code> · <code class=\"reg\">AD1CON2</code> (CSCNA) · <code class=\"reg\">AD1CSSL</code></td></tr><tr><td><strong>2 · Muestreo</strong><br><small>se carga el condensador</small></td><td><code>SAMP</code> = 1 a mano antes de cada medida</td><td><code>ASAM</code> = 1: el muestreo se rearma solo tras cada conversión</td><td><code class=\"reg\">AD1CON1</code> (SAMP, ASAM); dura <code>SAMC</code> ciclos T<sub>AD</sub> (1–31)</td></tr><tr><td><strong>3 · Conversión</strong><br><small>12 T<sub>AD</sub> de aproximaciones sucesivas</small></td><td>Con <code>SSRC</code> = 0, poner <code>SAMP</code> = 0 corta el muestreo y arranca la conversión</td><td><code>SSRC</code> = 7: arranca sola tras los SAMC ciclos · <code>SSRC</code> = 2: la dispara el <strong>Timer 3</strong></td><td><code class=\"reg\">AD1CON1</code> (SSRC)</td></tr><tr><td><strong>4 · Almacenamiento</strong><br><small>¿dónde queda la medida?</small></td><td>Buffer único <strong>1×16</strong> (<code>BUFM</code> = 0): resultados en <code class=\"reg\">ADC1BUF0</code>…<code class=\"reg\">ADC1BUFF</code> en orden; <code>SMPI</code> = N → interrupción cada N+1 medidas</td><td>Doble buffer <strong>2×8</strong> (<code>BUFM</code> = 1): el AD llena una mitad mientras lees la otra; <code>BUFS</code> = 0 → lee BUF8–F, <code>BUFS</code> = 1 → lee BUF0–7</td><td><code class=\"reg\">AD1CON2</code> (BUFM, BUFS, SMPI)</td></tr><tr><td><strong>⏱ Gestión de tiempos</strong><br><small>transversal</small></td><td colspan=\"2\">T<sub>AD</sub> = 2 · T<sub>PBCLK</sub> · (ADCS + 1); con <code>ADRC</code> se elige el reloj (0 = PBCLK, 1 = oscilador FRC interno). Se ajustan <code>ADCS</code> y <code>SAMC</code> para alcanzar la velocidad de muestreo necesaria</td><td><code class=\"reg\">AD1CON3</code> (ADCS, SAMC, ADRC)</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "nota",
+          "html": "Esta tabla es el mapa del tema: las secciones siguientes recorren las fases una a una — selección (§9.4), muestreo y conversión (§9.5), tiempos (§9.6) y almacenamiento (§9.7). La configuración estrella del curso combina la columna «automático» entera: <strong>escaneo + ASAM + SSRC = 2 (Timer 3) + SMPI</strong> (§9.9)."
+        }
+      ]
+    },
+    {
+      "titulo": "9.4 Fase 1 — Selección de canal: AD1CHS y el escaneo con AD1CSSL",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Los multiplexores de entrada eligen qué se conecta a las entradas positiva y negativa del amplificador diferencial. Hay dos juegos de selección, <strong>A</strong> y <strong>B</strong> (el B solo se usa si se activa el muestreo alterno con <code class=\"reg\">ALTS</code>); en este curso usamos el A:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Entrada positiva (<code class=\"reg\">CH0SA</code>, bits 19:16):</strong> los 13 pines ANx (valores 0–12), el sensor de temperatura interno (13) o la referencia interna de 1,2&nbsp;V (14).",
+            "<strong>Entrada negativa (<code class=\"reg\">CH0NA</code>, bit 23):</strong> V<sub>REFL</sub> (0, lo normal: medida respecto a 0&nbsp;V) o AN1 (1, medida diferencial)."
+          ]
+        },
+        {
+          "tipo": "registro",
+          "registro": "AD1CHS",
+          "valor": "0x00050000"
+        },
+        {
+          "tipo": "nota",
+          "html": "El valor 0x00050000 (CH0SA = 5, CH0NA = 0) selecciona AN5 —el potenciómetro RV1 de la placa, en el pin RB3— medido respecto a 0 V. Fíjate en que los campos útiles de AD1CHS están en la parte ALTA del registro (bits 16 a 31)."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Además, la entrada positiva del canal A puede conectarse a un <strong>secuenciador de canales</strong> (<em>channel scan</em>): poniendo <code class=\"reg\">CSCNA</code> = 1 (bit 10 de <code class=\"reg\">AD1CON2</code>), el conversor va cambiando automáticamente entre los canales marcados con un 1 en el registro <code class=\"reg\">AD1CSSL</code> (el bit x corresponde al canal ANx), en orden de canal creciente. En ese caso el campo <code class=\"reg\">CH0SA</code> deja de usarse.</p>"
+        },
+        {
+          "tipo": "registro",
+          "registro": "AD1CSSL",
+          "valor": "0x003F"
+        },
+        {
+          "tipo": "nota",
+          "html": "0x003F = 0b111111 escanea AN0 a AN5. Si quisieras los canales 0, 1, 2, 4 y 5, escribirías 0b110111 = 0x37."
+        }
+      ]
+    },
+    {
+      "titulo": "9.5 Fases 2 y 3 — Muestreo y conversión: AD1CON1",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p><code class=\"reg\">AD1CON1</code> es el registro de control principal: <code class=\"reg\">ON</code> enciende el módulo, <code class=\"reg\">FORM</code> elige el formato de salida, <code class=\"reg\">SSRC</code> decide <strong>quién dispara la conversión</strong>, <code class=\"reg\">ASAM</code> decide si el muestreo arranca solo, <code class=\"reg\">SAMP</code> arranca/detiene el muestreo y <code class=\"reg\">DONE</code> avisa del final de la conversión. Combinando <code class=\"reg\">SSRC</code> y <code class=\"reg\">ASAM</code> se obtienen los modos del curso:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Manual total</strong> (SSRC = 0, ASAM = 0): el software pone <code class=\"reg\">SAMP</code> = 1 para muestrear, espera ≥ 200 ns, pone <code class=\"reg\">SAMP</code> = 0 para convertir y espera a <code class=\"reg\">DONE</code>.",
+            "<strong>Manual con automuestreo</strong> (SSRC = 0, ASAM = 1): <code class=\"reg\">SAMP</code> se pone solo a 1 tras cada conversión; el primer muestreo sí hay que arrancarlo a mano. El software sigue disparando la conversión con <code class=\"reg\">SAMP</code> = 0.",
+            "<strong>Autoconversión</strong> (SSRC = 7): al poner <code class=\"reg\">SAMP</code> = 1 se muestrea durante <code class=\"reg\">SAMC</code> ciclos y la conversión empieza sola. Ya no hace falta el retardo software.",
+            "<strong>Continuo</strong> (SSRC = 7 y ASAM = 1): el conversor muestrea y convierte sin parar; con <code class=\"reg\">SMPI</code> avisa cada N+1 medidas. El micro va «a toda pastilla».",
+            "<strong>Disparo por Timer 3</strong> (SSRC = 2) <strong>o por INT0</strong> (SSRC = 1), con ASAM = 1: la conversión se inicia con el fin de cuenta del Timer 3 (o un flanco en INT0). Es la forma correcta de fijar la frecuencia de muestreo."
+          ]
+        },
+        {
+          "tipo": "registro",
+          "registro": "AD1CON1",
+          "valor": "0x8044"
+        },
+        {
+          "tipo": "nota",
+          "html": "0x8044 = ON = 1, SSRC = 2 (disparo por Timer 3) y ASAM = 1 (automuestreo): la configuración estrella de los exámenes. Microchip no recomienda relojes del conversor por debajo de 10 kHz (el condensador del sample&amp;hold se descarga); para muestrear lento se usa el Timer 3, no un T<sub>AD</sub> enorme."
+        }
+      ]
+    },
+    {
+      "titulo": "9.6 Gestión de tiempos: el reloj del conversor (AD1CON3)",
       "bloques": [
         {
           "tipo": "prosa",
@@ -128,46 +213,7 @@
       ]
     },
     {
-      "titulo": "9.4 Selección de canal: AD1CHS y el escaneo con AD1CSSL",
-      "bloques": [
-        {
-          "tipo": "prosa",
-          "html": "<p>Los multiplexores de entrada eligen qué se conecta a las entradas positiva y negativa del amplificador diferencial. Hay dos juegos de selección, <strong>A</strong> y <strong>B</strong> (el B solo se usa si se activa el muestreo alterno con <code class=\"reg\">ALTS</code>); en este curso usamos el A:</p>"
-        },
-        {
-          "tipo": "lista",
-          "ordenada": false,
-          "items": [
-            "<strong>Entrada positiva (<code class=\"reg\">CH0SA</code>, bits 19:16):</strong> los 13 pines ANx (valores 0–12), el sensor de temperatura interno (13) o la referencia interna de 1,2&nbsp;V (14).",
-            "<strong>Entrada negativa (<code class=\"reg\">CH0NA</code>, bit 23):</strong> V<sub>REFL</sub> (0, lo normal: medida respecto a 0&nbsp;V) o AN1 (1, medida diferencial)."
-          ]
-        },
-        {
-          "tipo": "registro",
-          "registro": "AD1CHS",
-          "valor": "0x00050000"
-        },
-        {
-          "tipo": "nota",
-          "html": "El valor 0x00050000 (CH0SA = 5, CH0NA = 0) selecciona AN5 —el potenciómetro RV1 de la placa, en el pin RB3— medido respecto a 0 V. Fíjate en que los campos útiles de AD1CHS están en la parte ALTA del registro (bits 16 a 31)."
-        },
-        {
-          "tipo": "prosa",
-          "html": "<p>Además, la entrada positiva del canal A puede conectarse a un <strong>secuenciador de canales</strong> (<em>channel scan</em>): poniendo <code class=\"reg\">CSCNA</code> = 1 (bit 10 de <code class=\"reg\">AD1CON2</code>), el conversor va cambiando automáticamente entre los canales marcados con un 1 en el registro <code class=\"reg\">AD1CSSL</code> (el bit x corresponde al canal ANx), en orden de canal creciente. En ese caso el campo <code class=\"reg\">CH0SA</code> deja de usarse.</p>"
-        },
-        {
-          "tipo": "registro",
-          "registro": "AD1CSSL",
-          "valor": "0x003F"
-        },
-        {
-          "tipo": "nota",
-          "html": "0x003F = 0b111111 escanea AN0 a AN5. Si quisieras los canales 0, 1, 2, 4 y 5, escribirías 0b110111 = 0x37."
-        }
-      ]
-    },
-    {
-      "titulo": "9.5 Buffer de medidas e interrupciones: AD1CON2",
+      "titulo": "9.7 Fase 4 — Almacenamiento: buffer de medidas e interrupciones (AD1CON2)",
       "bloques": [
         {
           "tipo": "prosa",
@@ -189,36 +235,7 @@
       ]
     },
     {
-      "titulo": "9.6 Modos de muestreo y conversión: AD1CON1",
-      "bloques": [
-        {
-          "tipo": "prosa",
-          "html": "<p><code class=\"reg\">AD1CON1</code> es el registro de control principal: <code class=\"reg\">ON</code> enciende el módulo, <code class=\"reg\">FORM</code> elige el formato de salida, <code class=\"reg\">SSRC</code> decide <strong>quién dispara la conversión</strong>, <code class=\"reg\">ASAM</code> decide si el muestreo arranca solo, <code class=\"reg\">SAMP</code> arranca/detiene el muestreo y <code class=\"reg\">DONE</code> avisa del final de la conversión. Combinando <code class=\"reg\">SSRC</code> y <code class=\"reg\">ASAM</code> se obtienen los modos del curso:</p>"
-        },
-        {
-          "tipo": "lista",
-          "ordenada": false,
-          "items": [
-            "<strong>Manual total</strong> (SSRC = 0, ASAM = 0): el software pone <code class=\"reg\">SAMP</code> = 1 para muestrear, espera ≥ 200 ns, pone <code class=\"reg\">SAMP</code> = 0 para convertir y espera a <code class=\"reg\">DONE</code>.",
-            "<strong>Manual con automuestreo</strong> (SSRC = 0, ASAM = 1): <code class=\"reg\">SAMP</code> se pone solo a 1 tras cada conversión; el primer muestreo sí hay que arrancarlo a mano. El software sigue disparando la conversión con <code class=\"reg\">SAMP</code> = 0.",
-            "<strong>Autoconversión</strong> (SSRC = 7): al poner <code class=\"reg\">SAMP</code> = 1 se muestrea durante <code class=\"reg\">SAMC</code> ciclos y la conversión empieza sola. Ya no hace falta el retardo software.",
-            "<strong>Continuo</strong> (SSRC = 7 y ASAM = 1): el conversor muestrea y convierte sin parar; con <code class=\"reg\">SMPI</code> avisa cada N+1 medidas. El micro va «a toda pastilla».",
-            "<strong>Disparo por Timer 3</strong> (SSRC = 2) <strong>o por INT0</strong> (SSRC = 1), con ASAM = 1: la conversión se inicia con el fin de cuenta del Timer 3 (o un flanco en INT0). Es la forma correcta de fijar la frecuencia de muestreo."
-          ]
-        },
-        {
-          "tipo": "registro",
-          "registro": "AD1CON1",
-          "valor": "0x8044"
-        },
-        {
-          "tipo": "nota",
-          "html": "0x8044 = ON = 1, SSRC = 2 (disparo por Timer 3) y ASAM = 1 (automuestreo): la configuración estrella de los exámenes. Microchip no recomienda relojes del conversor por debajo de 10 kHz (el condensador del sample&amp;hold se descarga); para muestrear lento se usa el Timer 3, no un T<sub>AD</sub> enorme."
-        }
-      ]
-    },
-    {
-      "titulo": "9.7 Ejemplos: del modo manual al disparo por Timer 3",
+      "titulo": "9.8 Ejemplos: del modo manual al disparo por Timer 3",
       "bloques": [
         {
           "tipo": "codigo",
@@ -243,7 +260,7 @@
       ]
     },
     {
-      "titulo": "9.8 Conversión de una secuencia de canales",
+      "titulo": "9.9 Conversión de una secuencia de canales",
       "bloques": [
         {
           "tipo": "prosa",
@@ -275,16 +292,25 @@
           "bit": 15,
           "nombre": "ON",
           "desc": "Encendido del módulo ADC",
-          "valores": { "0": "ADC apagado", "1": "ADC en funcionamiento" }
+          "valores": {
+            "0": "ADC apagado",
+            "1": "ADC en funcionamiento"
+          }
         },
         {
           "bit": 13,
           "nombre": "SIDL",
           "desc": "Comportamiento en modo Idle",
-          "valores": { "0": "Sigue funcionando en Idle", "1": "Se detiene en Idle" }
+          "valores": {
+            "0": "Sigue funcionando en Idle",
+            "1": "Se detiene en Idle"
+          }
         },
         {
-          "bits": [10, 8],
+          "bits": [
+            10,
+            8
+          ],
           "nombre": "FORM",
           "desc": "Formato del dato escrito en el buffer",
           "valores": {
@@ -299,7 +325,10 @@
           }
         },
         {
-          "bits": [7, 5],
+          "bits": [
+            7,
+            5
+          ],
           "nombre": "SSRC",
           "desc": "Fuente de disparo de la conversión (quién termina el muestreo)",
           "valores": {
@@ -314,25 +343,37 @@
           "bit": 4,
           "nombre": "CLRASAM",
           "desc": "Detener la secuencia en la primera interrupción",
-          "valores": { "0": "Funcionamiento normal (el buffer se sobreescribe)", "1": "Para las conversiones y borra ASAM al generar la primera interrupción" }
+          "valores": {
+            "0": "Funcionamiento normal (el buffer se sobreescribe)",
+            "1": "Para las conversiones y borra ASAM al generar la primera interrupción"
+          }
         },
         {
           "bit": 2,
           "nombre": "ASAM",
           "desc": "Inicio automático del muestreo",
-          "valores": { "0": "El muestreo empieza al poner SAMP = 1 (manual)", "1": "El muestreo empieza solo al acabar cada conversión (SAMP se pone solo)" }
+          "valores": {
+            "0": "El muestreo empieza al poner SAMP = 1 (manual)",
+            "1": "El muestreo empieza solo al acabar cada conversión (SAMP se pone solo)"
+          }
         },
         {
           "bit": 1,
           "nombre": "SAMP",
           "desc": "Control/estado del muestreo: a 1 el sample&hold está muestreando; con SSRC = 0, escribir 0 inicia la conversión",
-          "valores": { "0": "Reteniendo (hold) / inicia conversión si SSRC = 0", "1": "Muestreando" }
+          "valores": {
+            "0": "Reteniendo (hold) / inicia conversión si SSRC = 0",
+            "1": "Muestreando"
+          }
         },
         {
           "bit": 0,
           "nombre": "DONE",
           "desc": "Estado de la conversión (lo pone el hardware; se borra al empezar la siguiente)",
-          "valores": { "0": "Conversión en curso o no iniciada", "1": "Conversión terminada" }
+          "valores": {
+            "0": "Conversión en curso o no iniciada",
+            "1": "Conversión terminada"
+          }
         }
       ]
     },
@@ -342,7 +383,10 @@
       "ancho": 16,
       "campos": [
         {
-          "bits": [15, 13],
+          "bits": [
+            15,
+            13
+          ],
           "nombre": "VCFG",
           "desc": "Configuración de las referencias de tensión VREFH/VREFL",
           "valores": {
@@ -356,22 +400,34 @@
           "bit": 12,
           "nombre": "OFFCAL",
           "desc": "Modo de calibración de offset (conecta ambas entradas del sample&hold a VREFL)",
-          "valores": { "0": "Desactivado (entradas según AD1CHS/AD1CSSL)", "1": "Calibración de offset activada" }
+          "valores": {
+            "0": "Desactivado (entradas según AD1CHS/AD1CSSL)",
+            "1": "Calibración de offset activada"
+          }
         },
         {
           "bit": 10,
           "nombre": "CSCNA",
           "desc": "Escaneo automático de los canales marcados en AD1CSSL (sustituye a CH0SA)",
-          "valores": { "0": "Sin escaneo", "1": "Escanear entradas" }
+          "valores": {
+            "0": "Sin escaneo",
+            "1": "Escanear entradas"
+          }
         },
         {
           "bit": 7,
           "nombre": "BUFS",
           "desc": "Estado del buffer (solo lectura, válido con BUFM = 1): qué mitad está llenando el ADC",
-          "valores": { "0": "Llenando BUF0–BUF7 → leer BUF8–BUFF", "1": "Llenando BUF8–BUFF → leer BUF0–BUF7" }
+          "valores": {
+            "0": "Llenando BUF0–BUF7 → leer BUF8–BUFF",
+            "1": "Llenando BUF8–BUFF → leer BUF0–BUF7"
+          }
         },
         {
-          "bits": [5, 2],
+          "bits": [
+            5,
+            2
+          ],
           "nombre": "SMPI",
           "desc": "Conversiones por interrupción: se interrumpe cada SMPI + 1 conversiones",
           "valores": {
@@ -386,13 +442,19 @@
           "bit": 1,
           "nombre": "BUFM",
           "desc": "Modo del buffer de resultados",
-          "valores": { "0": "Un buffer único de 16 palabras (BUF0–BUFF)", "1": "Dos buffers de 8 palabras (doble buffer)" }
+          "valores": {
+            "0": "Un buffer único de 16 palabras (BUF0–BUFF)",
+            "1": "Dos buffers de 8 palabras (doble buffer)"
+          }
         },
         {
           "bit": 0,
           "nombre": "ALTS",
           "desc": "Muestreo alterno entre los multiplexores A y B",
-          "valores": { "0": "Usar siempre el mux A", "1": "Alternar A y B (primera muestra con A)" }
+          "valores": {
+            "0": "Usar siempre el mux A",
+            "1": "Alternar A y B (primera muestra con A)"
+          }
         }
       ]
     },
@@ -405,19 +467,36 @@
           "bit": 15,
           "nombre": "ADRC",
           "desc": "Fuente del reloj de conversión",
-          "valores": { "0": "PBCLK (TAD programable con ADCS)", "1": "Oscilador interno FRC (TAD = 250 ns, funciona en bajo consumo)" }
+          "valores": {
+            "0": "PBCLK (TAD programable con ADCS)",
+            "1": "Oscilador interno FRC (TAD = 250 ns, funciona en bajo consumo)"
+          }
         },
         {
-          "bits": [12, 8],
+          "bits": [
+            12,
+            8
+          ],
           "nombre": "SAMC",
           "desc": "Ciclos TAD de muestreo automático (solo se usa con SSRC = 7); el valor 0 está prohibido",
-          "valores": { "1": "1 TAD (mínimo)", "2": "2 TAD (típico del curso)", "31": "31 TAD (máximo)" }
+          "valores": {
+            "1": "1 TAD (mínimo)",
+            "2": "2 TAD (típico del curso)",
+            "31": "31 TAD (máximo)"
+          }
         },
         {
-          "bits": [7, 0],
+          "bits": [
+            7,
+            0
+          ],
           "nombre": "ADCS",
           "desc": "Preescalado del reloj: TAD = 2 · TPBCLK · (ADCS + 1); no se usa si ADRC = 1",
-          "valores": { "0": "TAD = 2·TPB (400 ns a 5 MHz)", "1": "TAD = 4·TPB (800 ns)", "255": "TAD = 512·TPB" }
+          "valores": {
+            "0": "TAD = 2·TPB (400 ns a 5 MHz)",
+            "1": "TAD = 4·TPB (800 ns)",
+            "255": "TAD = 512·TPB"
+          }
         }
       ]
     },
@@ -430,10 +509,16 @@
           "bit": 31,
           "nombre": "CH0NB",
           "desc": "Entrada negativa del mux B",
-          "valores": { "0": "VREFL (0 V)", "1": "AN1" }
+          "valores": {
+            "0": "VREFL (0 V)",
+            "1": "AN1"
+          }
         },
         {
-          "bits": [27, 24],
+          "bits": [
+            27,
+            24
+          ],
           "nombre": "CH0SB",
           "desc": "Entrada positiva del mux B",
           "valores": {
@@ -449,10 +534,16 @@
           "bit": 23,
           "nombre": "CH0NA",
           "desc": "Entrada negativa del mux A (la que se usa normalmente)",
-          "valores": { "0": "VREFL (0 V) — medida unipolar", "1": "AN1 — medida diferencial" }
+          "valores": {
+            "0": "VREFL (0 V) — medida unipolar",
+            "1": "AN1 — medida diferencial"
+          }
         },
         {
-          "bits": [19, 16],
+          "bits": [
+            19,
+            16
+          ],
           "nombre": "CH0SA",
           "desc": "Entrada positiva del mux A: el canal a medir (se ignora si CSCNA = 1)",
           "valores": {
@@ -472,7 +563,10 @@
       "ancho": 16,
       "campos": [
         {
-          "bits": [15, 0],
+          "bits": [
+            15,
+            0
+          ],
           "nombre": "CSSL",
           "desc": "Selección de canales para el escaneo: el bit x corresponde a ANx para x = 0–12 (1 = se mide, 0 = se omite); los bits 13, 14 y 15 incluyen en el escaneo el sensor CTMU, IVREF y VSS",
           "valores": {
@@ -584,8 +678,12 @@
       ]
     }
   },
-  "ejerciciosEnTema": ["conversor-analogico-digital-1", "conversor-analogico-digital-2"],
+  "ejerciciosEnTema": [
+    "conversor-analogico-digital-1",
+    "conversor-analogico-digital-2"
+  ],
   "resumen": [
+    "El AD por fases: <strong>selección</strong> (CH0SA manual o escaneo CSCNA + AD1CSSL) → <strong>muestreo</strong> (SAMP manual o ASAM, duración SAMC) → <strong>conversión</strong> (SSRC: 0 manual, 7 automática, 2 por Timer 3; dura 12 T<sub>AD</sub>) → <strong>almacenamiento</strong> (ADC1BUF0–F, BUFM/BUFS, SMPI). Tiempos: T<sub>AD</sub> = 2·T<sub>PBCLK</sub>·(ADCS+1).",
     "El PIC32MX230F064D tiene un <strong>SAR ADC de 10 bits</strong>: 0&nbsp;V → 0 y 3,3&nbsp;V → 1023. La medida tiene dos fases: <strong>muestreo</strong> (carga del condensador del sample&amp;hold, ≥ 200&nbsp;ns) y <strong>conversión</strong> (búsqueda binaria, 12 ciclos T<sub>AD</sub>).",
     "Reloj (<code class=\"reg\">AD1CON3</code>): <code class=\"reg\">ADRC</code> elige FRC (250&nbsp;ns) o PBCLK con T<sub>AD</sub> = 2·T<sub>PBCLK</sub>·(ADCS+1); <code class=\"reg\">SAMC</code> = ciclos de muestreo (1–31, solo con SSRC = 7). Con PBCLK = 5&nbsp;MHz el máximo es 192,3&nbsp;ksps.",
     "Canal (<code class=\"reg\">AD1CHS</code>, parte alta): <code class=\"reg\">CH0SA</code> = canal positivo (ANx, 13 = temperatura, 14 = 1,2&nbsp;V), <code class=\"reg\">CH0NA</code> = 0 (V<sub>REFL</sub>) o 1 (AN1, diferencial). Con <code class=\"reg\">CSCNA</code> = 1 manda el secuenciador y los canales se marcan en <code class=\"reg\">AD1CSSL</code> (bit x ↔ ANx).",

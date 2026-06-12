@@ -95,7 +95,7 @@ a:hover { text-decoration: underline; }
 .tema-cierre { margin-top: 2.5rem; }
 
 /* código inline (registros) */
-code.reg, .mpi-tema p code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .1rem .35rem; border-radius: 4px; }
+code.reg, .mpi-tema :not(pre) > code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .1rem .35rem; border-radius: 4px; }
 
 /* ---------- Bloques de código ---------- */
 pre { background: #1a1a1a; border: 1px solid var(--borde); border-radius: 8px; padding: 1rem 1.1rem; overflow-x: auto; margin: 1rem 0; }
@@ -216,3 +216,55 @@ math.formula { font-size: 1.3rem; margin: 1rem 0; color: var(--txt); display: bl
   .mpi-sidebar-abierta .mpi-sidebar { transform: translateX(0); }
   .mpi-main { padding: 3.5rem 1.2rem 4rem; }
 }
+
+/* Figuras (esquemas SVG incrustados en los temas) */
+.figura { margin: 1.4rem auto; text-align: center; }
+.figura svg { max-width: 100%; height: auto; }
+.figura figcaption { margin: .6rem auto 0; max-width: 60ch; color: var(--txt-tenue); font-size: .88rem; line-height: 1.45; }
+
+/* visor-bits: campos no editables */
+.vb-bit.vb-fijo { opacity: .4; cursor: not-allowed; }
+.vb-decod tr.vb-fijo { opacity: .5; }
+.vb-edit-hint { color: var(--txt-tenue); font-size: .82rem; margin-left: .8rem; }
+
+/* trama-uart */
+.mpi-trama, .mpi-calc-baud, .mpi-cola { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1rem 1.2rem; margin: 1.2rem 0; }
+.tr-controles, .cb-controles, .cc-botones { display: flex; flex-wrap: wrap; gap: .8rem 1.4rem; margin: .6rem 0 1rem; align-items: center; }
+.tr-controles label, .cb-controles label { color: var(--txt-2); font-size: .9rem; display: flex; flex-direction: column; gap: .25rem; }
+.tr-controles select, .cb-controles select { background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .3rem .5rem; font-size: .92rem; }
+.tr-linea { display: flex; flex-wrap: wrap; gap: 3px; margin: .4rem 0 .8rem; }
+.tr-bit { min-width: 2.4rem; text-align: center; padding: .45rem .2rem; border-radius: 5px; font-family: var(--mono); font-size: .82rem; border: 1px solid var(--borde); }
+.tr-reposo  { color: var(--txt-tenue); border-style: dashed; }
+.tr-start   { background: #4a3a2a; border-color: var(--naranja); color: var(--naranja); }
+.tr-dato    { background: #1f3a35; border-color: var(--acento); color: var(--acento); }
+.tr-paridad { background: #3a2a3a; border-color: var(--morado); color: var(--morado); }
+.tr-stop    { background: #2f4a39; border-color: var(--verde); color: #8fc28f; }
+.tr-info p { margin: .35rem 0; font-size: .93rem; color: var(--txt-2); }
+
+/* calc-baudios */
+.cb-tarjetas { display: flex; flex-wrap: wrap; gap: 1rem; }
+.cb-tarjeta { flex: 1 1 240px; background: var(--bg-3); border: 1px solid var(--borde); border-radius: 8px; padding: .7rem .9rem; position: relative; }
+.cb-tarjeta h4 { margin: 0 0 .5rem; color: var(--azul-cl); font-size: .98rem; }
+.cb-tarjeta h4 small { color: var(--txt-tenue); font-weight: normal; }
+.cb-tarjeta.cb-elegida { border-color: var(--acento); box-shadow: 0 0 0 1px var(--acento); }
+.cb-tabla { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.cb-tabla td { padding: .25rem .3rem; border-bottom: 1px solid var(--borde-2); color: var(--txt-2); }
+.cb-tabla td:last-child { text-align: right; font-family: var(--mono); color: var(--txt); }
+.cb-ok  { color: var(--acento) !important; }
+.cb-mal { color: var(--rojo) !important; }
+.cb-sello { position: absolute; top: .6rem; right: .7rem; background: var(--acento); color: #10201c; font-size: .72rem; font-weight: 700; padding: .1rem .5rem; border-radius: 10px; text-transform: uppercase; }
+.cb-veredicto { margin-top: 1rem; }
+
+/* cola-circular */
+.cc-celdas { display: flex; flex-wrap: wrap; gap: 6px; margin: .6rem 0; }
+.cc-col { text-align: center; }
+.cc-idx { color: var(--txt-tenue); font-size: .78rem; font-family: var(--mono); margin-bottom: 2px; }
+.cc-celda { width: 2.8rem; height: 2.8rem; border: 1px solid var(--borde); border-radius: 7px; background: var(--bg-3); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 1.1rem; color: var(--txt); }
+.cc-celda.cc-llena { background: #1f3a35; border-color: var(--acento); color: var(--acento); }
+.cc-marcas { height: 1.2rem; font-size: .74rem; font-family: var(--mono); display: flex; gap: .3rem; justify-content: center; }
+.cc-in  { color: var(--acento-2); }
+.cc-out { color: var(--amarillo); }
+.cc-botones button, .cc-botones .cc-reset { background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .4rem .8rem; cursor: pointer; font-size: .88rem; }
+.cc-botones button:hover { border-color: var(--acento); }
+.cc-estado { color: var(--txt-2); font-size: .92rem; margin: .4rem 0; }
+.cc-log { margin-top: .6rem; }

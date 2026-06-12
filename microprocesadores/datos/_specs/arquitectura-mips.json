@@ -125,6 +125,19 @@
         {
           "tipo": "nota",
           "html": "El MIPS32 M4K del PIC32 ordena los bytes en <strong>little-endian</strong>: el byte <em>menos</em> significativo de la palabra se almacena en la dirección <em>más baja</em> de memoria. Así, dentro de la palabra de la dirección 0 están los bytes 0 (LSB), 1, 2 y 3 (MSB); en la palabra de la dirección 4, los bytes 4 a 7, etcétera."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Esta aritmética de direcciones tiene una aplicación muy práctica con los registros de los periféricos. Los 16 buffers del ADC (<code class=\"reg\">ADC1BUF0</code>…<code class=\"reg\">ADC1BUFF</code>) son registros consecutivos del mapa de memoria… pero no contiguos: cada uno dista <strong>0x10 bytes</strong> del siguiente (entre medias viven sus registros CLR/SET/INV). En vez de leerlos uno a uno por su nombre, se pueden recorrer con un puntero:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Recorrido de los 16 buffers del ADC con un puntero. La clave está en el índice: <code>buf</code> apunta a palabras de 32 bits, así que sumar 1 avanza 4 bytes; como de un buffer al siguiente hay 0x10 = 16 bytes (4 palabras), el buffer <em>i</em> está en <code>buf[4*i]</code>:</p>",
+          "codigo": "// Sumar las 16 medidas del ADC sin nombrar ADC1BUF0, ADC1BUF1, ...\nvolatile uint32_t *buf = &ADC1BUF0;   // apunta al primer buffer\nuint32_t suma = 0;\nint i;\n\nfor (i = 0; i < 16; i++) {\n    suma += buf[4 * i];   // buffer i = base + i*0x10 bytes = base + 4*i palabras\n}\n\n// Equivalente con el puntero \"andando\":\nbuf = &ADC1BUF0;\nfor (i = 0; i < 16; i++) {\n    suma += *buf;\n    buf += 4;             // +4 palabras = +0x10 bytes: siguiente buffer\n}"
+        },
+        {
+          "tipo": "nota",
+          "html": "Compruébalo en el mapa de memoria del datasheet: <code class=\"reg\">ADC1BUF0</code> está en 0xBF809070 y <code class=\"reg\">ADC1BUF1</code> en 0xBF809080 — 0x10 bytes de diferencia. Este truco reaparecerá en el Tema&nbsp;9 al recoger los resultados del escaneo multicanal del ADC."
         }
       ]
     },
@@ -139,11 +152,16 @@
           "tipo": "lista",
           "ordenada": true,
           "items": [
-            "<strong>Editar:</strong> escribir los archivos <code>.c</code> y <code>.h</code> del proyecto en MPLAB X.",
-            "<strong>Compilar y enlazar:</strong> el XC32 traduce cada módulo a código máquina MIPS y el enlazador los une en un único ejecutable, asignando cada cosa a su bloque de memoria (código a FLASH, variables a RAM).",
-            "<strong>Grabar:</strong> el programador transfiere el ejecutable a la FLASH del micro.",
-            "<strong>Depurar:</strong> el M4K incluye soporte hardware de depuración: ejecución paso a paso, puntos de ruptura, inspección de variables… sobre el propio circuito."
+            "<strong>Editar</strong> (<em>Edit</em>): escribir los archivos <code>.c</code> y <code>.h</code> del proyecto en MPLAB&nbsp;X. <em>Sin tarjeta.</em>",
+            "<strong>Compilar y enlazar</strong> (<em>Build</em>): el XC32 traduce cada módulo a código máquina MIPS y el enlazador los une en un único ejecutable, asignando cada cosa a su bloque de memoria (código a FLASH, variables a RAM). <em>Sin tarjeta.</em>",
+            "<strong>Simular</strong> (<em>Simulator</em>): MPLAB&nbsp;X puede ejecutar el programa en el propio PC imitando la CPU del PIC32: puntos de parada, inspección de registros y variables, estímulos en los pines… Sirve para probar la lógica <em>antes</em> de tener el hardware (o sin él). <em>Sin tarjeta.</em>",
+            "<strong>Grabar</strong> (<em>Make and Program Device</em>): el programador transfiere el ejecutable a la FLASH del micro. <em>Con la tarjeta conectada</em> — pero solo durante la grabación: después el firmware vive en la FLASH y el micro arranca solo con alimentarlo, sin PC (<em>standalone</em>).",
+            "<strong>Depurar</strong> (<em>Debug Run</em>): el M4K incluye hardware de depuración (ICD) que permite poner <em>breakpoints</em>, ejecutar paso a paso y vigilar variables (<em>watch</em>) mientras el programa corre en el chip real. <em>Con la tarjeta conectada al PC durante toda la sesión.</em>"
           ]
+        },
+        {
+          "tipo": "nota",
+          "html": "Chuleta rápida: <strong>Build</strong> y <strong>Simulator</strong> no necesitan la tarjeta; <strong>Program</strong> la necesita un momento (luego el programa queda en la FLASH y corre solo); <strong>Debug</strong> la necesita conectada toda la sesión."
         },
         {
           "tipo": "nota",
@@ -336,7 +354,10 @@
       ]
     }
   },
-  "ejerciciosEnTema": ["arquitectura-mips-1", "arquitectura-mips-2"],
+  "ejerciciosEnTema": [
+    "arquitectura-mips-1",
+    "arquitectura-mips-2"
+  ],
   "resumen": [
     "El PIC32MX230F064D integra una CPU <strong>MIPS32 M4K</strong> (núcleo licenciado por MIPS Technologies), memoria FLASH de programa, RAM para variables y pila, y los periféricos (puertos, timers, UART/SPI/I2C, ADC, USB).",
     "La CPU es <strong>load/store</strong> y está segmentada en un <strong>pipeline de 5 etapas</strong> (lectura, decodificación, ejecución, acceso a memoria, escritura). Consecuencia práctica: se protegen las secciones críticas frente a interrupciones y <strong>no se escribe dos veces seguidas en el mismo registro</strong> (se intercala un <code>nop</code>).",

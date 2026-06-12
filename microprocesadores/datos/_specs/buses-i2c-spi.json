@@ -57,6 +57,28 @@
           "tipo": "codigo",
           "descripcion": "<p>Tres maneras equivalentes de rellenar un vector desde una función. Al pasar un vector, la función recibe un <strong>puntero a su primer elemento</strong>, no una copia:</p>",
           "codigo": "#include <xc.h>\n#define MAX 50\n\n/* Devuelve un vector con los enteros comprendidos entre min y max */\nvoid get_vector_discreto(int min, int max, int v[]) {\n    int i;\n    for (i = 0; i <= max - min; i++)\n        v[i] = min + i;              // manejo tipo vector\n}\n\nvoid get_vector_discreto_p(int min, int max, int *v) {\n    int i;\n    for (i = 0; i <= max - min; i++)\n        *(v + i) = min + i;          // manejo tipo puntero\n}\n\nvoid get_vector_discreto_pp(int min, int max, int *v) {\n    int i;\n    for (i = 0; i <= max - min; i++)\n        *(v++) = min + i;            // puntero con postincremento\n}\n\nint main(void) {\n    int vector[MAX];\n    get_vector_discreto(1, 4, vector);   // vector = {1, 2, 3, 4}\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Con esto ya se entiende <strong>el patrón de firmas de todos los drivers del curso</strong>. Una función de medida tiene que devolver dos cosas (la medida y si hubo error), pero el <code>return</code> solo devuelve una: la otra viaja por un parámetro puntero. Hay dos estilos, y conviene dominar ambos:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p><strong>Estilo A</strong> (el de los drivers de los exámenes): el <em>error</em> por el <code>return</code> y la <em>medida</em> por el puntero. <strong>Estilo B</strong>, al revés. Fíjate en dónde va cada <code>&amp;</code> y cada <code>*</code>:</p>",
+          "codigo": "// ===== ESTILO A: error por return, medida por puntero =====\nint sensor_getMedida(float *distancia);    // devuelve 0 = OK, -1 = error\n\n// En el MAIN: se pasa LA DIRECCION de tu variable con &\nfloat dist;\nif (sensor_getMedida(&dist) == 0) {\n    // dist ya contiene la medida: la funcion escribio en ella\n}\n\n// DENTRO de la funcion: se escribe A TRAVES del puntero con *\nint sensor_getMedida(float *distancia)\n{\n    uint16_t bruto;\n    // ... lectura del sensor por el bus ...\n    *distancia = (bruto * 200.0) / 0xFFFF;   // *puntero = valor\n    return 0;                                // sin error\n}\n\n// ===== ESTILO B: medida por return, error por puntero =====\nfloat leerTemperatura(int *error);\n\n// En el MAIN:\nint err;\nfloat temp = leerTemperatura(&err);\nif (err == 0) {\n    // temp es valida\n}"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong><code>&amp;variable</code> — al llamar.</strong> Significa «la dirección de mi variable»: le prestas tu variable a la función para que escriba en ella.",
+            "<strong><code>*puntero</code> — dentro de la función.</strong> Significa «lo apuntado»: leer o escribir la variable prestada.",
+            "<strong>Nada — con vectores.</strong> El nombre de un vector ya es su dirección: <code>leerAcel(medidas, 6)</code>, sin <code>&amp;</code>."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Comprueba que lo tienes claro antes de seguir (aquí es donde más se resbala en los exámenes):</p><div class=\"mpi-mount\" data-componente=\"ejercicio-driver\" data-config='{\"ref\":\"buses-i2c-spi-3\"}'></div>"
         }
       ]
     },
@@ -167,6 +189,10 @@
       "titulo": "8.5 El módulo I2C del PIC32MX",
       "bloques": [
         {
+          "tipo": "nota",
+          "html": "<strong>Antes de asustarse:</strong> en los exámenes el driver del I²C <strong>se da hecho</strong> (sus funciones vienen en el anexo). Lo que se evalúa es saber <em>usarlo</em>: el protocolo (start, dirección+R/W, ACK, stop) y el orden de las llamadas. Esta sección explica qué hace el driver por dentro — léela para entender, no para memorizar bits."
+        },
+        {
           "tipo": "prosa",
           "html": "<p>El PIC32MX230F064D dispone de dos módulos, <strong>I2C1</strong> e <strong>I2C2</strong>, que soportan los modos estándar (100 kb/s) y rápido (400 kb/s) funcionando como maestro, como esclavo o como ambos. Sus pines son <strong>fijos</strong> (no se remapean): SCL1/SDA1 en las patillas 44/1 y SCL2/SDA2 en las patillas 24/23 del encapsulado de 44 pines.</p>"
         },
@@ -233,6 +259,15 @@
         {
           "tipo": "prosa",
           "html": "<p>El periférico solo ejecuta <strong>pasos sueltos</strong> del protocolo (un start, un byte, un ACK…); es el software quien secuencia el mensaje completo, por polling o por interrupciones. La técnica del driver: arrancar cada paso escribiendo el bit correspondiente de <code class=\"reg\">I2C1CON</code> y esperar a que <code class=\"reg\">I2C1MIF</code> se ponga a 1.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p><strong>Este es el contrato que importa</strong> — la API del driver que se entrega en los exámenes (anexo). Todo lo que sigue son llamadas a estas seis funciones:</p>",
+          "codigo": "// ====== API del driver I2C que se da en los examenes ======\n#define I2C400KHZ 1\n#define I2C100KHZ 0\n\n// Arranca el I2C1 y configura el BRG segun la velocidad del bus:\n// I2C400KHZ -> 400 kb/s; otro valor -> 100 kb/s.\nvoid I2C1Inicializa(int velocidad);\n\n// Generan la condicion de start / repeated start / stop\n// y esperan a que termine.\nvoid I2C1GeneraStart(void);\nvoid I2C1GeneraReStart(void);\nvoid I2C1GeneraStop(void);\n\n// Envia un byte al bus. Devuelve el ACK recibido: 0 OK, 1 error (NACK).\n// El primer byte tras el start es la direccion: (dir << 1) para\n// escribir, (dir << 1) | 1 para leer.\nint I2C1EscribeByte(uint8_t dato);\n\n// Lee un byte del bus y envia el ack indicado: 0 (ACK) si se va a\n// seguir leyendo, 1 (NACK) en el ultimo byte. Devuelve el dato leido.\nuint8_t I2C1LeeByte(int ack);"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>El patrón de error del curso:</strong> cada <code>I2C1EscribeByte()</code> se comprueba; si devuelve distinto de 0 (NACK), se aborta limpiamente: <code>if (I2C1EscribeByte(...) != 0) { I2C1GeneraStop(); return -1; }</code>. Así el bus queda libre y el main se entera del fallo por el <code>return</code>."
         },
         {
           "tipo": "codigo",
@@ -429,67 +464,100 @@
           "bit": 15,
           "nombre": "ON",
           "desc": "Habilita el módulo I2C y le da el control de los pines SCL/SDA",
-          "valores": { "0": "Módulo deshabilitado (pines como E/S normales)", "1": "Módulo habilitado" }
+          "valores": {
+            "0": "Módulo deshabilitado (pines como E/S normales)",
+            "1": "Módulo habilitado"
+          }
         },
         {
           "bit": 12,
           "nombre": "SCLREL",
           "desc": "Liberación del reloj SCL trabajando como esclavo (clock stretching, junto con STREN)",
-          "valores": { "0": "Mantiene SCL a nivel bajo (alarga el reloj)", "1": "Libera el reloj SCL" }
+          "valores": {
+            "0": "Mantiene SCL a nivel bajo (alarga el reloj)",
+            "1": "Libera el reloj SCL"
+          }
         },
         {
           "bit": 10,
           "nombre": "A10M",
           "desc": "Tamaño de la dirección de esclavo almacenada en I2CxADD",
-          "valores": { "0": "Dirección de 7 bits", "1": "Dirección de 10 bits" }
+          "valores": {
+            "0": "Dirección de 7 bits",
+            "1": "Dirección de 10 bits"
+          }
         },
         {
           "bit": 9,
           "nombre": "DISSLW",
           "desc": "Inhabilita el control de slew rate: a 1 en modo estándar (100 kHz), a 0 en modo rápido (400 kHz)",
-          "valores": { "0": "Control de slew rate activado (400 kHz)", "1": "Control de slew rate desactivado (100 kHz)" }
+          "valores": {
+            "0": "Control de slew rate activado (400 kHz)",
+            "1": "Control de slew rate desactivado (100 kHz)"
+          }
         },
         {
           "bit": 6,
           "nombre": "STREN",
           "desc": "Habilita el alargamiento de reloj trabajando como esclavo (se usa junto a SCLREL)",
-          "valores": { "0": "Clock stretching deshabilitado", "1": "Clock stretching habilitado" }
+          "valores": {
+            "0": "Clock stretching deshabilitado",
+            "1": "Clock stretching habilitado"
+          }
         },
         {
           "bit": 5,
           "nombre": "ACKDT",
           "desc": "Valor del bit ACK que enviará el maestro receptor cuando se active ACKEN",
-          "valores": { "0": "Enviar ACK (quiero más datos)", "1": "Enviar NACK (último dato)" }
+          "valores": {
+            "0": "Enviar ACK (quiero más datos)",
+            "1": "Enviar NACK (último dato)"
+          }
         },
         {
           "bit": 4,
           "nombre": "ACKEN",
           "desc": "Inicia la secuencia de envío del ACK/NACK con el valor de ACKDT. Se borra solo al terminar",
-          "valores": { "0": "Secuencia de ACK no en curso", "1": "Inicia el envío del ACK" }
+          "valores": {
+            "0": "Secuencia de ACK no en curso",
+            "1": "Inicia el envío del ACK"
+          }
         },
         {
           "bit": 3,
           "nombre": "RCEN",
           "desc": "Habilita la recepción de un byte como maestro (genera los 8 ciclos de reloj). Se borra solo",
-          "valores": { "0": "Recepción no en curso", "1": "Inicia la recepción de un byte" }
+          "valores": {
+            "0": "Recepción no en curso",
+            "1": "Inicia la recepción de un byte"
+          }
         },
         {
           "bit": 2,
           "nombre": "PEN",
           "desc": "Genera la condición de stop. Se borra solo al terminar",
-          "valores": { "0": "Stop no en curso", "1": "Inicia la condición de stop" }
+          "valores": {
+            "0": "Stop no en curso",
+            "1": "Inicia la condición de stop"
+          }
         },
         {
           "bit": 1,
           "nombre": "RSEN",
           "desc": "Genera la condición de repeated start. Se borra solo al terminar",
-          "valores": { "0": "Repeated start no en curso", "1": "Inicia el repeated start" }
+          "valores": {
+            "0": "Repeated start no en curso",
+            "1": "Inicia el repeated start"
+          }
         },
         {
           "bit": 0,
           "nombre": "SEN",
           "desc": "Genera la condición de start. Se borra solo al terminar",
-          "valores": { "0": "Start no en curso", "1": "Inicia la condición de start" }
+          "valores": {
+            "0": "Start no en curso",
+            "1": "Inicia la condición de start"
+          }
         }
       ]
     },
@@ -502,67 +570,100 @@
           "bit": 15,
           "nombre": "ACKSTAT",
           "desc": "ACK recibido del esclavo tras transmitir un byte (es lo que devuelve I2C1EscribeByte)",
-          "valores": { "0": "ACK: el esclavo confirmó la recepción", "1": "NACK: no hubo confirmación" }
+          "valores": {
+            "0": "ACK: el esclavo confirmó la recepción",
+            "1": "NACK: no hubo confirmación"
+          }
         },
         {
           "bit": 14,
           "nombre": "TRSTAT",
           "desc": "Transmisión de maestro en curso (8 bits + ACK)",
-          "valores": { "0": "No hay transmisión en curso", "1": "Transmitiendo" }
+          "valores": {
+            "0": "No hay transmisión en curso",
+            "1": "Transmitiendo"
+          }
         },
         {
           "bit": 10,
           "nombre": "BCL",
           "desc": "Colisión de bus detectada durante una operación de maestro (entornos multi-maestro)",
-          "valores": { "0": "Sin colisión", "1": "Colisión detectada (reiniciar el módulo para limpiarlo)" }
+          "valores": {
+            "0": "Sin colisión",
+            "1": "Colisión detectada (reiniciar el módulo para limpiarlo)"
+          }
         },
         {
           "bit": 7,
           "nombre": "IWCOL",
           "desc": "Colisión de escritura: se intentó escribir I2CxTRN con el módulo ocupado (se borra por software)",
-          "valores": { "0": "Sin colisión de escritura", "1": "Escritura de I2CxTRN rechazada" }
+          "valores": {
+            "0": "Sin colisión de escritura",
+            "1": "Escritura de I2CxTRN rechazada"
+          }
         },
         {
           "bit": 6,
           "nombre": "I2COV",
           "desc": "Overflow de recepción: llegó un byte con I2CxRCV todavía lleno (se borra por software)",
-          "valores": { "0": "Sin overflow", "1": "Se perdió un byte recibido" }
+          "valores": {
+            "0": "Sin overflow",
+            "1": "Se perdió un byte recibido"
+          }
         },
         {
           "bit": 5,
           "nombre": "D_A",
           "desc": "Tipo del último byte recibido trabajando como esclavo",
-          "valores": { "0": "Fue una dirección", "1": "Fue un dato" }
+          "valores": {
+            "0": "Fue una dirección",
+            "1": "Fue un dato"
+          }
         },
         {
           "bit": 4,
           "nombre": "P",
           "desc": "Indica que lo último detectado en el bus fue una condición de stop",
-          "valores": { "0": "El último evento no fue un stop", "1": "Stop detectado: bus libre" }
+          "valores": {
+            "0": "El último evento no fue un stop",
+            "1": "Stop detectado: bus libre"
+          }
         },
         {
           "bit": 3,
           "nombre": "S",
           "desc": "Indica que lo último detectado en el bus fue un start (o repeated start)",
-          "valores": { "0": "El último evento no fue un start", "1": "Start o repeated start detectado" }
+          "valores": {
+            "0": "El último evento no fue un start",
+            "1": "Start o repeated start detectado"
+          }
         },
         {
           "bit": 2,
           "nombre": "R_W",
           "desc": "Sentido de la transferencia indicado por el bit R/W recibido (modo esclavo)",
-          "valores": { "0": "Escritura: el esclavo recibe", "1": "Lectura: el esclavo transmite" }
+          "valores": {
+            "0": "Escritura: el esclavo recibe",
+            "1": "Lectura: el esclavo transmite"
+          }
         },
         {
           "bit": 1,
           "nombre": "RBF",
           "desc": "Buffer de recepción lleno",
-          "valores": { "0": "I2CxRCV vacío", "1": "Recepción completa: I2CxRCV lleno" }
+          "valores": {
+            "0": "I2CxRCV vacío",
+            "1": "Recepción completa: I2CxRCV lleno"
+          }
         },
         {
           "bit": 0,
           "nombre": "TBF",
           "desc": "Buffer de transmisión lleno",
-          "valores": { "0": "I2CxTRN vacío (transmisión terminada)", "1": "Transmisión en curso: I2CxTRN lleno" }
+          "valores": {
+            "0": "I2CxTRN vacío (transmisión terminada)",
+            "1": "Transmisión en curso: I2CxTRN lleno"
+          }
         }
       ]
     },
@@ -572,10 +673,16 @@
       "ancho": 16,
       "campos": [
         {
-          "bits": [11, 0],
+          "bits": [
+            11,
+            0
+          ],
           "nombre": "I2CBRG",
           "desc": "Valor de recarga del contador descendente que mide cada semiperiodo de SCL: I2CxBRG = (1/(2·fSCL) − TPGD)·fPBCLK − 2, con TPGD ≈ 104 ns",
-          "valores": { "4": "400 kHz con PBCLK = 5 MHz", "23": "100 kHz con PBCLK = 5 MHz" }
+          "valores": {
+            "4": "400 kHz con PBCLK = 5 MHz",
+            "23": "100 kHz con PBCLK = 5 MHz"
+          }
         }
       ]
     },
@@ -588,76 +695,115 @@
           "bit": 28,
           "nombre": "MSSEN",
           "desc": "Manejo automático de la línea SS en modo maestro",
-          "valores": { "0": "SS se maneja por software (GPIO)", "1": "El módulo activa SS solo en cada transferencia" }
+          "valores": {
+            "0": "SS se maneja por software (GPIO)",
+            "1": "El módulo activa SS solo en cada transferencia"
+          }
         },
         {
           "bit": 23,
           "nombre": "MCLKSEL",
           "desc": "Fuente de reloj del generador de baudios (solo escribible con ON = 0)",
-          "valores": { "0": "PBCLK (5 MHz)", "1": "Reloj principal / de referencia (40 MHz)" }
+          "valores": {
+            "0": "PBCLK (5 MHz)",
+            "1": "Reloj principal / de referencia (40 MHz)"
+          }
         },
         {
           "bit": 16,
           "nombre": "ENHBUF",
           "desc": "Modo de buffer mejorado (solo escribible con ON = 0)",
-          "valores": { "0": "Buffer simple de un solo dato", "1": "FIFO de 16 bytes en transmisión y recepción" }
+          "valores": {
+            "0": "Buffer simple de un solo dato",
+            "1": "FIFO de 16 bytes en transmisión y recepción"
+          }
         },
         {
           "bit": 15,
           "nombre": "ON",
           "desc": "Habilita el módulo SPI",
-          "valores": { "0": "Módulo deshabilitado", "1": "Módulo habilitado" }
+          "valores": {
+            "0": "Módulo deshabilitado",
+            "1": "Módulo habilitado"
+          }
         },
         {
           "bit": 12,
           "nombre": "DISSDO",
           "desc": "Inhabilita el pin SDO; útil si solo se va a leer del bus",
-          "valores": { "0": "SDO controlado por el módulo", "1": "Pin SDO liberado como E/S normal" }
+          "valores": {
+            "0": "SDO controlado por el módulo",
+            "1": "Pin SDO liberado como E/S normal"
+          }
         },
         {
           "bit": 11,
           "nombre": "MODE32",
           "desc": "Transferencias de 32 bits (si vale 1, MODE16 se ignora)",
-          "valores": { "0": "Según MODE16", "1": "Transferencias de 32 bits" }
+          "valores": {
+            "0": "Según MODE16",
+            "1": "Transferencias de 32 bits"
+          }
         },
         {
           "bit": 10,
           "nombre": "MODE16",
           "desc": "Tamaño de la transferencia cuando MODE32 = 0",
-          "valores": { "0": "Transferencias de 8 bits", "1": "Transferencias de 16 bits" }
+          "valores": {
+            "0": "Transferencias de 8 bits",
+            "1": "Transferencias de 16 bits"
+          }
         },
         {
           "bit": 8,
           "nombre": "CKE",
           "desc": "Fase del reloj: flanco en el que cambia la salida de datos. Es el NEGADO del CPHA del estándar",
-          "valores": { "0": "El dato cambia de inactivo a activo (CPHA = 1)", "1": "El dato cambia de activo a inactivo (CPHA = 0)" }
+          "valores": {
+            "0": "El dato cambia de inactivo a activo (CPHA = 1)",
+            "1": "El dato cambia de activo a inactivo (CPHA = 0)"
+          }
         },
         {
           "bit": 7,
           "nombre": "SSEN",
           "desc": "Uso del pin SS trabajando como esclavo",
-          "valores": { "0": "Pin SS no usado", "1": "Pin SS usado en modo esclavo" }
+          "valores": {
+            "0": "Pin SS no usado",
+            "1": "Pin SS usado en modo esclavo"
+          }
         },
         {
           "bit": 6,
           "nombre": "CKP",
           "desc": "Polaridad del reloj: coincide con el CPOL del estándar (valor de reposo)",
-          "valores": { "0": "Reposo a nivel bajo, activo a nivel alto (CPOL = 0)", "1": "Reposo a nivel alto, activo a nivel bajo (CPOL = 1)" }
+          "valores": {
+            "0": "Reposo a nivel bajo, activo a nivel alto (CPOL = 0)",
+            "1": "Reposo a nivel alto, activo a nivel bajo (CPOL = 1)"
+          }
         },
         {
           "bit": 5,
           "nombre": "MSTEN",
           "desc": "Habilita el modo maestro (conecta el generador de baudios al pin SCK)",
-          "valores": { "0": "Modo esclavo", "1": "Modo maestro" }
+          "valores": {
+            "0": "Modo esclavo",
+            "1": "Modo maestro"
+          }
         },
         {
           "bit": 4,
           "nombre": "DISSDI",
           "desc": "Inhabilita el pin SDI; habitual con periféricos que solo reciben (displays)",
-          "valores": { "0": "SDI controlado por el módulo", "1": "Pin SDI liberado como E/S normal" }
+          "valores": {
+            "0": "SDI controlado por el módulo",
+            "1": "Pin SDI liberado como E/S normal"
+          }
         },
         {
-          "bits": [3, 2],
+          "bits": [
+            3,
+            2
+          ],
           "nombre": "STXISEL",
           "desc": "Cuándo interrumpe el buffer de transmisión (SPIxTXB)",
           "valores": {
@@ -668,7 +814,10 @@
           }
         },
         {
-          "bits": [1, 0],
+          "bits": [
+            1,
+            0
+          ],
           "nombre": "SRXISEL",
           "desc": "Cuándo interrumpe el buffer de recepción (SPIxRXB)",
           "valores": {
@@ -686,12 +835,18 @@
       "ancho": 32,
       "campos": [
         {
-          "bits": [28, 24],
+          "bits": [
+            28,
+            24
+          ],
           "nombre": "RXBUFELM",
           "desc": "Número de elementos en el buffer de recepción (solo con ENHBUF = 1); permite vaciarlo en bucle"
         },
         {
-          "bits": [20, 16],
+          "bits": [
+            20,
+            16
+          ],
           "nombre": "TXBUFELM",
           "desc": "Número de elementos en el buffer de transmisión (solo con ENHBUF = 1); permite llenarlo en bucle"
         },
@@ -699,37 +854,55 @@
           "bit": 11,
           "nombre": "SPIBUSY",
           "desc": "El módulo está ocupado transmitiendo",
-          "valores": { "0": "Módulo en reposo", "1": "Transfiriendo datos" }
+          "valores": {
+            "0": "Módulo en reposo",
+            "1": "Transfiriendo datos"
+          }
         },
         {
           "bit": 6,
           "nombre": "SPIROV",
           "desc": "Overflow de recepción: llegó un dato con el buffer lleno y se perdió. Hasta que no se borre (por software) no se reciben más datos",
-          "valores": { "0": "Sin overflow", "1": "Dato perdido: borrar a mano para seguir recibiendo" }
+          "valores": {
+            "0": "Sin overflow",
+            "1": "Dato perdido: borrar a mano para seguir recibiendo"
+          }
         },
         {
           "bit": 5,
           "nombre": "SPIRBE",
           "desc": "Buffer de recepción vacío; en polling se espera a que valga 0 como señal de fin de transferencia",
-          "valores": { "0": "Hay datos recibidos pendientes de leer", "1": "Buffer de recepción vacío" }
+          "valores": {
+            "0": "Hay datos recibidos pendientes de leer",
+            "1": "Buffer de recepción vacío"
+          }
         },
         {
           "bit": 3,
           "nombre": "SPITBE",
           "desc": "Buffer de transmisión vacío (se pone a 1 cuando el dato pasa a SPIxSR)",
-          "valores": { "0": "Buffer de transmisión con datos", "1": "Buffer de transmisión vacío" }
+          "valores": {
+            "0": "Buffer de transmisión con datos",
+            "1": "Buffer de transmisión vacío"
+          }
         },
         {
           "bit": 1,
           "nombre": "SPITBF",
           "desc": "Buffer de transmisión lleno; en polling se espera a que valga 0 antes de escribir en SPIxBUF",
-          "valores": { "0": "Hay sitio en el buffer de transmisión", "1": "Buffer de transmisión lleno: esperar" }
+          "valores": {
+            "0": "Hay sitio en el buffer de transmisión",
+            "1": "Buffer de transmisión lleno: esperar"
+          }
         },
         {
           "bit": 0,
           "nombre": "SPIRBF",
           "desc": "Buffer de recepción lleno",
-          "valores": { "0": "Buffer de recepción no lleno", "1": "Buffer de recepción lleno" }
+          "valores": {
+            "0": "Buffer de recepción no lleno",
+            "1": "Buffer de recepción lleno"
+          }
         }
       ]
     }
@@ -753,7 +926,12 @@
         },
         {
           "texto": "2) ¿Qué byte de configuración hay que escribir en SCON para el sensor H: distancia máxima 8 m, medida habilitada y alimentación a 3,3 V?",
-          "opciones": ["0xEA", "0x8A", "0xE5", "0x75"],
+          "opciones": [
+            "0xEA",
+            "0x8A",
+            "0xE5",
+            "0x75"
+          ],
           "correcta": 0,
           "explicacion": "8 m ⇒ MAX_DIS = 7 (valor + 1 = 8). El byte es <code>(7 &lt;&lt; 5) | (1 &lt;&lt; 3) | (1 &lt;&lt; 1)</code> = 0xE0 + 0x08 + 0x02 = <strong>0xEA</strong>. Es la misma construcción con máscaras y desplazamientos que usa la solución oficial del examen."
         },
@@ -831,9 +1009,115 @@
           "explicacion": "Reteniendo SCL a 0 el esclavo impide que el maestro genere más ciclos de reloj: es el <strong>clock stretching</strong>. El arbitraje es otra cosa: la pelea entre <em>varios maestros</em> por el bus, que gana quien escribe el valor más bajo (las condiciones de start/stop se definen sobre SDA, no reteniendo SCL)."
         }
       ]
+    },
+    "buses-i2c-spi-3": {
+      "titulo": "¿*, & o nada? Firmas de drivers y sus llamadas",
+      "enunciado": "<p>Un driver de un sensor de distancia I²C ofrece la función <code>int medirDistancia(uint16_t *dist)</code>, que deja la medida en <code>*dist</code> y devuelve 0 si todo fue bien o −1 si el sensor no respondió (NACK). Su gemela al estilo B es <code>float leerTemp(int *error)</code>. Decide en cada caso si toca <code>*</code>, <code>&amp;</code>… o nada.</p>",
+      "contexto": "<ul><li><strong>Estilo A:</strong> error por <code>return</code>, medida por puntero — <code>int medirDistancia(uint16_t *dist)</code>.</li><li><strong>Estilo B:</strong> medida por <code>return</code>, error por puntero — <code>float leerTemp(int *error)</code>.</li><li><strong>Vectores:</strong> <code>int leerAcel(uint8_t *buf, int n)</code> rellena <code>n</code> bytes a partir de <code>buf</code>.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Cuál es la llamada correcta a medirDistancia desde el main?",
+          "opciones": [
+            "uint16_t d; medirDistancia(d);",
+            "uint16_t *d; medirDistancia(d);",
+            "uint16_t d; if (medirDistancia(&d) == 0) { /* usar d */ }",
+            "uint16_t d; medirDistancia(*d);"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>La función necesita <strong>la dirección</strong> de tu variable para escribir en ella: <code>&amp;d</code>. Y como el error llega por el <code>return</code>, la llamada va dentro de un <code>if</code>. Pasar <code>d</code> a secas envía su <em>valor</em> como si fuera una dirección (el compilador avisa y en ejecución escribiría en memoria aleatoria); <code>uint16_t *d</code> sin inicializar es un puntero a ninguna parte; y <code>*d</code> sobre algo que no es puntero ni compila.</p>"
+        },
+        {
+          "texto": "Dentro de medirDistancia, ¿cómo se guarda la medida en la variable del main?",
+          "opciones": [
+            "dist = medida;",
+            "*dist = medida;",
+            "&dist = medida;",
+            "return medida;"
+          ],
+          "correcta": 1,
+          "explicacion": "<p><code>*dist = medida;</code> escribe «en lo apuntado»: la variable del main. <code>dist = medida;</code> solo cambia la copia local del puntero (el main no ve nada — error clásico). <code>&amp;dist</code> no es asignable. Y <code>return medida;</code> rompería el contrato: el <code>return</code> de esta función está reservado para el código de error.</p>"
+        },
+        {
+          "texto": "Ahora el estilo B: float leerTemp(int *error). ¿Llamada correcta?",
+          "opciones": [
+            "int err; float t = leerTemp(&err); if (err == 0) { /* t valida */ }",
+            "int err; float t = leerTemp(err);",
+            "float t = leerTemp(int *error);",
+            "int *err; float t = leerTemp(*err);"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Mismo razonamiento con los papeles cambiados: la medida llega por el <code>return</code> (se recoge en <code>t</code>) y el error lo escribe la función a través del puntero, así que se le pasa <code>&amp;err</code> y <em>después</em> se comprueba <code>err</code>. Repetir el tipo en la llamada (<code>leerTemp(int *error)</code>) no es C válido: los tipos solo van en la declaración.</p>"
+        },
+        {
+          "texto": "Tenemos uint8_t medidas[6]; y el driver int leerAcel(uint8_t *buf, int n). ¿Llamada correcta?",
+          "opciones": [
+            "leerAcel(&medidas, 6);",
+            "leerAcel(medidas, 6);",
+            "leerAcel(*medidas, 6);",
+            "leerAcel(&medidas[6], 6);"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Con vectores no hace falta <code>&amp;</code>: <strong>el nombre del vector ya es la dirección de su primer elemento</strong>. <code>&amp;medidas</code> es un «puntero a vector de 6» (otro tipo: el compilador protesta), <code>*medidas</code> pasa el primer elemento por valor, y <code>&amp;medidas[6]</code> apunta justo <em>después</em> del vector: la función escribiría fuera.</p>"
+        }
+      ]
+    },
+    "buses-i2c-spi-4": {
+      "titulo": "El reloj del SPI (Examen Extraordinario, junio 2024)",
+      "enunciado": "<p>Se pidió escribir <code>int InicializaRelojSPI2(int frecuencia)</code> para el SPI2 del PIC32MX230F064D: la función elige la fuente de reloj con <code>MCLKSEL</code> (0 → PBCLK = 5&nbsp;MHz; 1 → reloj maestro = SYSCLK = 40&nbsp;MHz), calcula <code>SPI2BRG</code> y devuelve 0 si lo consigue o −1 si la frecuencia pedida no es alcanzable.</p>",
+      "contexto": "<ul><li>F<sub>SCK</sub> = F<sub>fuente</sub> / (2 · (SPI2BRG + 1)); despejando, <code>SPI2BRG = F_fuente / (2 · F_SCK) − 1</code>.</li><li><code>SPI2BRG</code> admite valores de hasta <strong>12 bits</strong>: si sale ≥ 8192, esa fuente no puede generar la frecuencia.</li><li>La frecuencia máxima de cada fuente es F<sub>fuente</sub>/2 (con BRG = 0).</li><li>Antes de tocar la configuración: <code>SPI2CONbits.ON = 0;</code></li></ul>",
+      "preguntas": [
+        {
+          "texto": "Piden F_SCK = 4 MHz. ¿Qué fuente de reloj hay que elegir?",
+          "opciones": [
+            "PBCLK (MCLKSEL = 0), porque consume menos.",
+            "El reloj maestro de 40 MHz (MCLKSEL = 1): desde PBCLK el máximo es 5/2 = 2,5 MHz y no llega.",
+            "Cualquiera de las dos: el BRG lo compensa.",
+            "Ninguna: 4 MHz no es alcanzable y se devuelve −1."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>El divisor mínimo es 2 (BRG = 0), así que desde PBCLK lo máximo es 5/2 = <strong>2,5 MHz</strong>: para 4 MHz hay que pasarse al reloj maestro con <code>MCLKSEL = 1</code> (40/2 = 20 MHz de tope). La solución del examen sigue justo ese orden: si F &gt; SYSCLK/2 → −1; si F &gt; PBCLK/2 → MCLKSEL = 1; si no → MCLKSEL = 0.</p>"
+        },
+        {
+          "texto": "Con la fuente de 40 MHz, ¿qué valor de SPI2BRG genera 4 MHz?",
+          "opciones": [
+            "4",
+            "5",
+            "9",
+            "10"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>SPI2BRG = 40&nbsp;MHz / (2 · 4&nbsp;MHz) − 1 = 5 − 1 = <strong>4</strong>. Los distractores son los despistes de siempre: 5 es olvidarse del −1, 9 es olvidarse del factor 2 (40/4 − 1) y 10 es olvidar las dos cosas.</p>"
+        },
+        {
+          "texto": "¿Cuál es la frecuencia mínima generable desde PBCLK (5 MHz)?",
+          "opciones": [
+            "No hay mínimo: el BRG puede crecer lo que haga falta.",
+            "Unos 305 Hz: con el BRG máximo (8191), 5 MHz / (2 · 8192) ≈ 305 Hz. Por debajo, −1.",
+            "610 Hz: 5 MHz / 8192.",
+            "1 kHz exacto."
+          ],
+          "correcta": 1,
+          "explicacion": "<p><code>SPI2BRG</code> es de 12 bits: máximo 8191. La frecuencia mínima es 5&nbsp;MHz / (2 · (8191 + 1)) ≈ <strong>305 Hz</strong>. Pedir menos hace que el BRG calculado sea ≥ 8192 y la función debe devolver <strong>−1</strong> — la comprobación <code>if (baudrate &gt;= 8192) return -1;</code> de la solución oficial.</p>"
+        },
+        {
+          "texto": "¿Por qué la función empieza con SPI2CONbits.ON = 0?",
+          "opciones": [
+            "Para ahorrar energía mientras se calcula el BRG.",
+            "Porque los registros de configuración del módulo no deben modificarse con el periférico en marcha: se apaga, se configura y se enciende.",
+            "Para borrar las FIFO de transmisión y recepción.",
+            "Es opcional: solo es una buena costumbre."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Regla general de todos los periféricos del curso (timers, UART, ADC, SPI…): <strong>apagar → configurar → encender</strong>. Cambiar <code>SPI2BRG</code> o <code>MCLKSEL</code> con <code>ON = 1</code> tiene comportamiento no garantizado según el datasheet. No es opcional ni borra las FIFO.</p>"
+        }
+      ]
     }
   },
-  "ejerciciosEnTema": ["buses-i2c-spi-1", "buses-i2c-spi-2"],
+  "ejerciciosEnTema": [
+    "buses-i2c-spi-1",
+    "buses-i2c-spi-2",
+    "buses-i2c-spi-4"
+  ],
   "resumen": [
     "<strong>I2C:</strong> 2 hilos (<strong>SCL</strong> + <strong>SDA</strong>) en drenador abierto con pull-ups; bus maestro-esclavo multi-maestro, half-duplex, direcciones de 7 bits y ACK tras cada byte.",
     "<strong>Pull-ups:</strong> R<sub>max</sub> = t<sub>r</sub>/(0,847·C) por tiempo de subida (1000 ns a 100 kHz, 300 ns a 400 kHz); R<sub>min</sub> = V<sub>DD</sub>/I<sub>OL</sub> ≈ 1,1 kΩ a 3,3 V. Valor típico: 4,7 kΩ.",

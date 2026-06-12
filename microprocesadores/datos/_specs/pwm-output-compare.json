@@ -12,6 +12,10 @@
           "html": "<p>Una señal PWM (<em>Pulse Width Modulation</em>) no es más que una <strong>señal cuadrada periódica</strong> de periodo <em>T</em> en la que el <strong>tiempo de activación</strong> <em>t<sub>a</sub></em> (tiempo que la señal está a nivel alto) es variable. A primera vista puede parecer poco útil, pero es justo al revés: es una de las formas más baratas y eficientes de <strong>regular potencia</strong> con un microcontrolador, porque la salida solo conmuta entre 0 y 1 (el transistor que la amplifica trabaja en corte o saturación, donde apenas disipa).</p>"
         },
         {
+          "tipo": "prosa",
+          "html": "<figure class=\"figura\"><svg viewBox=\"0 0 700 320\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"-apple-system,Segoe UI,Roboto,sans-serif\" role=\"img\" aria-label=\"Dos señales PWM con factores de servicio del 25 y del 75 por ciento\"><text x=\"68\" y=\"86\" text-anchor=\"end\" font-size=\"13\" fill=\"var(--txt,#d4d4d4)\" font-weight=\"600\">duty 25 %</text><rect x=\"80\" y=\"55\" width=\"30\" height=\"55\" fill=\"var(--acento,#4ec9b0)\" opacity=\"0.08\"/><rect x=\"200\" y=\"55\" width=\"30\" height=\"55\" fill=\"var(--acento,#4ec9b0)\" opacity=\"0.08\"/><rect x=\"320\" y=\"55\" width=\"30\" height=\"55\" fill=\"var(--acento,#4ec9b0)\" opacity=\"0.08\"/><rect x=\"440\" y=\"55\" width=\"30\" height=\"55\" fill=\"var(--acento,#4ec9b0)\" opacity=\"0.08\"/><path d=\"M80 110 V55 H110 V110 H200 V55 H230 V110 H320 V55 H350 V110 H440 V55 H470 V110 H560\" stroke=\"var(--acento,#4ec9b0)\" stroke-width=\"2.5\" fill=\"none\"/><line x1=\"80\" y1=\"97\" x2=\"560\" y2=\"97\" stroke=\"var(--amarillo,#dcdcaa)\" stroke-width=\"1.5\" stroke-dasharray=\"6 4\"/><text x=\"568\" y=\"101\" font-size=\"12\" fill=\"var(--amarillo,#dcdcaa)\">media ≈ 0,83 V</text><text x=\"68\" y=\"216\" text-anchor=\"end\" font-size=\"13\" fill=\"var(--txt,#d4d4d4)\" font-weight=\"600\">duty 75 %</text><rect x=\"80\" y=\"185\" width=\"90\" height=\"55\" fill=\"var(--acento,#4ec9b0)\" opacity=\"0.08\"/><rect x=\"200\" y=\"185\" width=\"90\" height=\"55\" fill=\"var(--acento,#4ec9b0)\" opacity=\"0.08\"/><rect x=\"320\" y=\"185\" width=\"90\" height=\"55\" fill=\"var(--acento,#4ec9b0)\" opacity=\"0.08\"/><rect x=\"440\" y=\"185\" width=\"90\" height=\"55\" fill=\"var(--acento,#4ec9b0)\" opacity=\"0.08\"/><path d=\"M80 240 V185 H170 V240 H200 V185 H290 V240 H320 V185 H410 V240 H440 V185 H530 V240 H560\" stroke=\"var(--acento,#4ec9b0)\" stroke-width=\"2.5\" fill=\"none\"/><line x1=\"80\" y1=\"199\" x2=\"560\" y2=\"199\" stroke=\"var(--amarillo,#dcdcaa)\" stroke-width=\"1.5\" stroke-dasharray=\"6 4\"/><text x=\"568\" y=\"203\" font-size=\"12\" fill=\"var(--amarillo,#dcdcaa)\">media ≈ 2,48 V</text><path d=\"M80 132 H200\" stroke=\"var(--txt-tenue,#6a737d)\" stroke-width=\"1.2\" marker-start=\"url(#f1)\" marker-end=\"url(#f2)\"/><line x1=\"80\" y1=\"124\" x2=\"80\" y2=\"140\" stroke=\"var(--txt-tenue,#6a737d)\" stroke-width=\"1.2\"/><line x1=\"200\" y1=\"124\" x2=\"200\" y2=\"140\" stroke=\"var(--txt-tenue,#6a737d)\" stroke-width=\"1.2\"/><text x=\"140\" y=\"152\" text-anchor=\"middle\" font-size=\"12.5\" fill=\"var(--txt-2,#9da5b4)\">T (periodo, fijo)</text><line x1=\"80\" y1=\"44\" x2=\"110\" y2=\"44\" stroke=\"var(--naranja,#ce9178)\" stroke-width=\"2\"/><line x1=\"80\" y1=\"38\" x2=\"80\" y2=\"50\" stroke=\"var(--naranja,#ce9178)\" stroke-width=\"1.4\"/><line x1=\"110\" y1=\"38\" x2=\"110\" y2=\"50\" stroke=\"var(--naranja,#ce9178)\" stroke-width=\"1.4\"/><text x=\"118\" y=\"48\" font-size=\"12.5\" fill=\"var(--naranja,#ce9178)\">t<tspan font-size=\"9\" dy=\"3\">ON</tspan><tspan dy=\"-3\"> (lo que se varía)</tspan></text><text x=\"350\" y=\"296\" text-anchor=\"middle\" font-size=\"12.5\" fill=\"var(--txt-2,#9da5b4)\">duty = t<tspan font-size=\"9\" dy=\"3\">ON</tspan><tspan dy=\"-3\"> / T · 100 % — a más duty, más valor medio (3,3 V · duty)</tspan></text></svg><figcaption>Dos señales PWM con el mismo periodo T y distinto factor de servicio (<em>duty</em>). La carga «ve» el valor medio (línea discontinua): variando t<sub>ON</sub> se regula la potencia entregada sin tocar la frecuencia.</figcaption></figure>"
+        },
+        {
           "tipo": "formula",
           "descripcion": "<p>La relación entre el tiempo en alto y el periodo se denomina <strong>factor de servicio</strong> o <em>duty cycle</em> (DC), y se suele expresar en tanto por ciento:</p>",
           "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mi>DC</mi><mo stretchy=\"false\">(</mo><mi mathvariant=\"normal\">%</mi><mo stretchy=\"false\">)</mo><mo>=</mo><mfrac><msub><mi>t</mi><mi>a</mi></msub><mi>T</mi></mfrac><mo>&#183;</mo><mn>100</mn></mrow></math>"
@@ -46,6 +50,10 @@
         {
           "tipo": "prosa",
           "html": "<p><strong>Recordatorio: el BJT como conmutador.</strong> Un pin del microcontrolador solo puede dar unos pocos miliamperios, así que para alimentar una carga real (motor, lámpara) hace falta un transistor trabajando en <strong>corte y saturación</strong>. En un BJT NPN la corriente de colector es proporcional a la de base (<em>I<sub>C</sub> = h<sub>FE</sub>·I<sub>B</sub></em>, con <em>h<sub>FE</sub></em> típica de 150); en saturación se comporta como un diodo entre colector y emisor (<em>V<sub>CE</sub></em>) y otro entre base y emisor (<em>V<sub>BE</sub></em>).</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<figure class=\"figura\"><svg viewBox=\"0 0 660 340\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"-apple-system,Segoe UI,Roboto,sans-serif\" role=\"img\" aria-label=\"Carga conectada a un pin mediante un transistor NPN con diodo volante\"><circle cx=\"430\" cy=\"42\" r=\"5\" stroke=\"var(--txt-2,#9da5b4)\" stroke-width=\"2\" fill=\"none\"/><text x=\"430\" y=\"24\" text-anchor=\"middle\" font-size=\"12.5\" fill=\"var(--txt-2,#9da5b4)\">+12 V (alimentación de la carga)</text><line x1=\"430\" y1=\"47\" x2=\"430\" y2=\"70\" stroke=\"var(--txt-2,#9da5b4)\" stroke-width=\"2\" fill=\"none\"/><circle cx=\"430\" cy=\"95\" r=\"23\" stroke=\"var(--txt-2,#9da5b4)\" stroke-width=\"2\" fill=\"none\"/><text x=\"430\" y=\"100\" text-anchor=\"middle\" font-size=\"15\" fill=\"var(--txt,#d4d4d4)\">M</text><text x=\"398\" y=\"99\" text-anchor=\"end\" font-size=\"12.5\" fill=\"var(--txt-2,#9da5b4)\">carga (motor)</text><line x1=\"430\" y1=\"118\" x2=\"430\" y2=\"170\" stroke=\"var(--txt-2,#9da5b4)\" stroke-width=\"2\" fill=\"none\"/><line x1=\"430\" y1=\"64\" x2=\"520\" y2=\"64\" stroke=\"var(--txt-2,#9da5b4)\" stroke-width=\"2\" fill=\"none\"/><line x1=\"430\" y1=\"130\" x2=\"520\" y2=\"130\" stroke=\"var(--txt-2,#9da5b4)\" stroke-width=\"2\" fill=\"none\"/><line x1=\"520\" y1=\"130\" x2=\"520\" y2=\"112\" stroke=\"var(--txt-2,#9da5b4)\" stroke-width=\"2\" fill=\"none\"/><path d=\"M506 112 L534 112 L520 88 Z\" fill=\"none\" stroke=\"var(--rojo,#f48771)\" stroke-width=\"2\" fill=\"none\"/><line x1=\"506\" y1=\"88\" x2=\"534\" y2=\"88\" stroke=\"var(--rojo,#f48771)\" stroke-width=\"2\" fill=\"none\"/><line x1=\"520\" y1=\"88\" x2=\"520\" y2=\"64\" stroke=\"var(--txt-2,#9da5b4)\" stroke-width=\"2\" fill=\"none\"/><text x=\"544\" y=\"104\" font-size=\"12.5\" fill=\"var(--rojo,#f48771)\">diodo volante</text><circle cx=\"430\" cy=\"208\" r=\"34\" stroke=\"var(--txt-2,#9da5b4)\" stroke-width=\"2\" fill=\"none\"/><line x1=\"412\" y1=\"188\" x2=\"412\" y2=\"228\" stroke=\"var(--txt,#d4d4d4)\" stroke-width=\"3\"/><line x1=\"430\" y1=\"170\" x2=\"430\" y2=\"182\" stroke=\"var(--txt-2,#9da5b4)\" stroke-width=\"2\" fill=\"none\"/><line x1=\"412\" y1=\"198\" x2=\"430\" y2=\"182\" stroke=\"var(--txt-2,#9da5b4)\" stroke-width=\"2\" fill=\"none\"/><line x1=\"412\" y1=\"218\" x2=\"430\" y2=\"234\" stroke=\"var(--txt-2,#9da5b4)\" stroke-width=\"2\" fill=\"none\"/><path d=\"M424 230 L430 234 L424 222\" fill=\"none\" stroke=\"var(--txt-2,#9da5b4)\" stroke-width=\"2\" fill=\"none\"/><line x1=\"430\" y1=\"234\" x2=\"430\" y2=\"268\" stroke=\"var(--txt-2,#9da5b4)\" stroke-width=\"2\" fill=\"none\"/><text x=\"472\" y=\"212\" font-size=\"12.5\" fill=\"var(--txt-2,#9da5b4)\">NPN (conmutador)</text><line x1=\"414\" y1=\"268\" x2=\"446\" y2=\"268\" stroke=\"var(--txt-2,#9da5b4)\" stroke-width=\"2\" fill=\"none\"/><line x1=\"420\" y1=\"275\" x2=\"440\" y2=\"275\" stroke=\"var(--txt-2,#9da5b4)\" stroke-width=\"2\" fill=\"none\"/><line x1=\"426\" y1=\"282\" x2=\"434\" y2=\"282\" stroke=\"var(--txt-2,#9da5b4)\" stroke-width=\"2\" fill=\"none\"/><line x1=\"412\" y1=\"208\" x2=\"360\" y2=\"208\" stroke=\"var(--txt-2,#9da5b4)\" stroke-width=\"2\" fill=\"none\"/><rect x=\"300\" y=\"200\" width=\"60\" height=\"16\" stroke=\"var(--txt-2,#9da5b4)\" stroke-width=\"2\" fill=\"none\"/><text x=\"330\" y=\"192\" text-anchor=\"middle\" font-size=\"12.5\" fill=\"var(--txt-2,#9da5b4)\">R base (1 kΩ)</text><line x1=\"300\" y1=\"208\" x2=\"252\" y2=\"208\" stroke=\"var(--txt-2,#9da5b4)\" stroke-width=\"2\" fill=\"none\"/><rect x=\"230\" y=\"197\" width=\"22\" height=\"22\" rx=\"3\" fill=\"var(--bg-3,#2d2d30)\" stroke=\"var(--acento-2,#569cd6)\" stroke-width=\"2\"/><text x=\"241\" y=\"190\" text-anchor=\"middle\" font-size=\"12.5\" fill=\"var(--txt-2,#9da5b4)\">pin RCx (PWM)</text><text x=\"120\" y=\"248\" font-size=\"12\" fill=\"var(--txt-tenue,#6a737d)\">pin a 1 → transistor saturado → carga ON</text><text x=\"120\" y=\"268\" font-size=\"12\" fill=\"var(--txt-tenue,#6a737d)\">pin a 0 → transistor en corte → carga OFF</text></svg><figcaption>Cómo se conecta una carga de verdad a un pin: el pin del micro solo puede dar ≈&nbsp;6&nbsp;mA, así que ataca la base de un transistor (a través de su resistencia) y es el transistor quien conmuta la corriente grande de la carga, alimentada con su propia fuente. Con cargas inductivas (motores, relés) el <strong>diodo volante</strong> es obligatorio: da camino a la corriente de la bobina cuando el transistor corta.</figcaption></figure>"
         },
         {
           "tipo": "formula",
@@ -238,34 +246,52 @@
           "bit": 15,
           "nombre": "ON",
           "desc": "Output Compare Peripheral On: enciende o apaga el módulo. Apagarlo es la forma correcta de dejar de consumir (mejor que OCM = 000).",
-          "valores": { "0": "Módulo apagado", "1": "Módulo encendido" }
+          "valores": {
+            "0": "Módulo apagado",
+            "1": "Módulo encendido"
+          }
         },
         {
           "bit": 13,
           "nombre": "SIDL",
           "desc": "Stop in Idle Mode: comportamiento cuando la CPU entra en modo Idle.",
-          "valores": { "0": "Sigue funcionando en Idle", "1": "Se detiene en Idle" }
+          "valores": {
+            "0": "Sigue funcionando en Idle",
+            "1": "Se detiene en Idle"
+          }
         },
         {
           "bit": 5,
           "nombre": "OC32",
           "desc": "32-bit Compare Mode: indica si la comparación se hace contra un temporizador de 16 o de 32 bits.",
-          "valores": { "0": "Temporizador de 16 bits (Timer2 o Timer3)", "1": "Temporizador de 32 bits (Timer2+Timer3 en cascada)" }
+          "valores": {
+            "0": "Temporizador de 16 bits (Timer2 o Timer3)",
+            "1": "Temporizador de 32 bits (Timer2+Timer3 en cascada)"
+          }
         },
         {
           "bit": 4,
           "nombre": "OCFLT",
           "desc": "PWM Fault Condition Status (solo lectura): indica si se ha producido una falta PWM. Solo se usa con OCM = 111 y solo lo borra el hardware.",
-          "valores": { "0": "Sin falta PWM", "1": "Falta PWM detectada (salida desconectada)" }
+          "valores": {
+            "0": "Sin falta PWM",
+            "1": "Falta PWM detectada (salida desconectada)"
+          }
         },
         {
           "bit": 3,
           "nombre": "OCTSEL",
           "desc": "Output Compare Timer Select: temporizador usado como base de tiempos cuando se trabaja en modo de 16 bits.",
-          "valores": { "0": "Timer2", "1": "Timer3" }
+          "valores": {
+            "0": "Timer2",
+            "1": "Timer3"
+          }
         },
         {
-          "bits": [2, 0],
+          "bits": [
+            2,
+            0
+          ],
           "nombre": "OCM",
           "desc": "Output Compare Mode Select: modo de funcionamiento del módulo.",
           "valores": {
@@ -290,19 +316,34 @@
       "preguntas": [
         {
           "texto": "¿Qué valor hay que escribir en OC1CON para arrancar el módulo en modo PWM sin faltas usando el Timer3 como base de tiempos?",
-          "opciones": ["0x8006", "0x800E", "0x8016", "0xC006"],
+          "opciones": [
+            "0x8006",
+            "0x800E",
+            "0x8016",
+            "0xC006"
+          ],
           "correcta": 1,
           "explicacion": "<p>Hay que poner ON = 1 (bit 15 &#8594; 0x8000), OCM = 110 (PWM sin faltas &#8594; 0x0006) y, como la base de tiempos es el Timer3, OCTSEL = 1 (bit 3 &#8594; 0x0008). En total: <strong>0x8000 + 0x0008 + 0x0006 = 0x800E</strong>. El valor 0x8006 dejaría el OC1 colgado del Timer2, que está ocupado contando milisegundos.</p>"
         },
         {
           "texto": "Con prescaler 1:1, ¿qué valor hay que cargar en PR3 para tocar la nota LA (440 Hz)?",
-          "opciones": ["11362", "11363", "5681", "2840"],
+          "opciones": [
+            "11362",
+            "11363",
+            "5681",
+            "2840"
+          ],
           "correcta": 0,
           "explicacion": "<p>El periodo de la onda en cuentas es <em>f<sub>PBCLK</sub>/f<sub>nota</sub></em> = 5&#8201;000&#8201;000&nbsp;/&nbsp;440 = 11&#8201;363 (división entera). Como el temporizador cuenta desde 0, <strong>PR3 = 11&#8201;363 &#8722; 1 = 11&#8201;362</strong>. Es la fórmula general PR = T·f<sub>PBCLK</sub>/Prescaler &#8722; 1.</p>"
         },
         {
           "texto": "¿Qué valor hay que escribir en OC1R y OC1RS para que la onda tenga un factor de servicio del 50 %?",
-          "opciones": ["11362", "5681", "2500", "Cualquiera, el 50 % lo fija el modo OCM"],
+          "opciones": [
+            "11362",
+            "5681",
+            "2500",
+            "Cualquiera, el 50 % lo fija el modo OCM"
+          ],
           "correcta": 1,
           "explicacion": "<p>El tiempo en alto en cuentas es la mitad del periodo: 11&#8201;363&nbsp;/&nbsp;2 = <strong>5681</strong> (división entera). Se escribe en OC1R (primer pulso, antes de encender el módulo) y en OC1RS (pulsos siguientes). El modo PWM no fija ningún factor de servicio por sí mismo: lo determina siempre el valor de OCxR/OCxRS frente a PR3 + 1.</p>"
         },
@@ -326,7 +367,12 @@
       "preguntas": [
         {
           "texto": "¿Qué valor hay que cargar en PR3 para generar la señal PWM de 25 kHz con prescaler 1:1?",
-          "opciones": ["199", "200", "249", "99"],
+          "opciones": [
+            "199",
+            "200",
+            "249",
+            "99"
+          ],
           "correcta": 0,
           "explicacion": "<p>El periodo es T = 1/25&nbsp;kHz = 40&nbsp;&#181;s. En cuentas del Timer3: PR3 = 40&nbsp;&#181;s · 5&nbsp;MHz &#8722; 1 = 200 &#8722; 1 = <strong>199</strong>. El valor 249 correspondería a 20&nbsp;kHz (50&nbsp;&#181;s), el del ejemplo del motor del tema.</p>"
         },
@@ -343,20 +389,33 @@
         },
         {
           "texto": "¿Qué valor hay que escribir en OC3CON para arrancar en modo PWM sin faltas con el Timer3?",
-          "opciones": ["0x8006", "0x800E", "0x800F", "0x8026"],
+          "opciones": [
+            "0x8006",
+            "0x800E",
+            "0x800F",
+            "0x8026"
+          ],
           "correcta": 1,
           "explicacion": "<p>ON = 1 (0x8000), OCTSEL = 1 para usar el Timer3 (0x0008) y OCM = 110, PWM sin faltas (0x0006): <strong>0x800E</strong>. Con 0x800F (OCM = 111) activaríamos la detección de faltas, que necesita la entrada OCFA remapeada (OCFA atiende a OC1&#8211;OC4; OCFB, solo a OC5); 0x8026 pondría además OC32 = 1 (modo 32 bits), que no procede; y 0x8006 usaría el Timer2.</p>"
         },
         {
           "texto": "Para bombear al 50 % de potencia, ¿qué valor debe escribir bombeaAl(50) en OC3RS?",
-          "opciones": ["100", "50", "99", "199"],
+          "opciones": [
+            "100",
+            "50",
+            "99",
+            "199"
+          ],
           "correcta": 0,
           "explicacion": "<p>El tiempo en alto en cuentas es DC·(PR3 + 1)/100 = 50 · 200 / 100 = <strong>100</strong>. Escribir 50 daría solo un 25&nbsp;% y 199 daría prácticamente el 100&nbsp;%. Recuerda que se escribe en <code>OC3RS</code> (no en <code>OC3R</code>): el hardware lo cargará en OC3R al empezar el siguiente periodo sin perturbar la onda en curso.</p>"
         }
       ]
     }
   },
-  "ejerciciosEnTema": ["pwm-output-compare-1", "pwm-output-compare-2"],
+  "ejerciciosEnTema": [
+    "pwm-output-compare-1",
+    "pwm-output-compare-2"
+  ],
   "resumen": [
     "Una señal <strong>PWM</strong> es una señal cuadrada periódica de periodo <em>T</em> con tiempo en alto <em>t<sub>a</sub></em> variable; su <strong>factor de servicio</strong> es DC = <em>t<sub>a</sub></em>/<em>T</em> y la tensión media entregada es <em>V<sub>pico</sub></em>·DC.",
     "Aplicaciones: <strong>regulación de luces</strong> (el ojo filtra a ~20&nbsp;Hz), <strong>velocidad de motores CC</strong> (el rotor y su inercia filtran) y <strong>posición de servos</strong>. En luces y motores se usan frecuencias &gt; 20&nbsp;kHz para que no se oigan; la carga se excita con un BJT en corte/saturación.",

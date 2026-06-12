@@ -59,6 +59,10 @@
         },
         {
           "tipo": "prosa",
+          "html": "<p>Juega con el formato y los baudios para ver la trama resultante, cuántos bits ocupa cada carácter y cuánto dura cada bit:</p><div class=\"mpi-mount\" data-componente=\"trama-uart\" data-config='{}'></div>"
+        },
+        {
+          "tipo": "prosa",
           "html": "<p>El estándar físico más usado para conectar un PC con un microcontrolador es el <strong>RS-232</strong>. Define niveles de tensión con <strong>lógica negativa</strong>: nivel alto entre <strong>−3&nbsp;V y −15&nbsp;V</strong> y nivel bajo entre <strong>+3&nbsp;V y +15&nbsp;V</strong>, con una longitud máxima de cable de unos 15&nbsp;m. Las velocidades estándar van de 75 a 115200 baudios (9600, 19200, 38400, 57600, 115200…).</p>"
         },
         {
@@ -117,14 +121,23 @@
           ]
         },
         {
-          "tipo": "registro",
-          "registro": "U1BRG",
-          "valor": "0x0020"
+          "tipo": "prosa",
+          "html": "<p>La decisión BRGH = 0 o 1 no se memoriza: <strong>se calcula el error y se aplica la regla</strong>. Pruébalo con todas las velocidades:</p><div class=\"mpi-mount\" data-componente=\"calc-baudios\" data-config='{}'></div>"
+        },
+        {
+          "tipo": "nota",
+          "html": "Cuando los <strong>dos</strong> modos quedan por debajo del 2&nbsp;% hay una decisión de diseño que tomar: preferir el modo de <strong>menor velocidad</strong> (BRGH&nbsp;=&nbsp;0, el estándar) o el de <strong>menor error</strong>. En este curso, mientras BRGH&nbsp;=&nbsp;0 cumpla la regla del 2&nbsp;%, se usa BRGH&nbsp;=&nbsp;0."
         },
         {
           "tipo": "registro",
           "registro": "U1MODE",
-          "valor": "0x8000"
+          "valor": "0x8000",
+          "editables": [
+            "ON",
+            "BRGH",
+            "PDSEL",
+            "STSEL"
+          ]
         },
         {
           "tipo": "nota",
@@ -256,6 +269,10 @@
           ]
         },
         {
+          "tipo": "prosa",
+          "html": "<p>El concepto se entiende en un minuto jugando con una cola de verdad. Escribe (como haría la ISR de recepción) y lee (como haría el main) hasta ver a los índices <strong>dar la vuelta</strong>:</p><div class=\"mpi-mount\" data-componente=\"cola-circular\" data-config='{\"tam\":8}'></div>"
+        },
+        {
           "tipo": "codigo",
           "descripcion": "<p>Rutina de atención a la interrupción con las dos colas circulares:</p>",
           "codigo": "#define TAM_COLA 100\nstatic char cola_rx[TAM_COLA], cola_tx[TAM_COLA];\nstatic int icab_rx = 0, icol_rx = 0;    // Índices de la cola de recepción\nstatic int icab_tx = 0, icol_tx = 0;    // Índices de la cola de transmisión\n\n__attribute__((vector(32), interrupt(IPL3SOFT), nomips16))\nvoid InterrupcionUART1(void) {\n    if (IFS1bits.U1RXIF == 1) {                 // Receptor: meter en cola_rx\n        if ((icab_rx + 1 == icol_rx) ||\n            (icab_rx + 1 == TAM_COLA && icol_rx == 0)) {\n            // La cola está llena: el carácter se pierde\n        } else {\n            cola_rx[icab_rx] = U1RXREG;         // Lee el carácter de la UART\n            icab_rx++;\n            if (icab_rx == TAM_COLA) {\n                icab_rx = 0;                    // El buffer es circular\n            }\n        }\n        IFS1bits.U1RXIF = 0;                    // Se borra el flag\n    }\n    if (IFS1bits.U1TXIF == 1) {                 // Transmisor: sacar de cola_tx\n        if (icol_tx != icab_tx) {               // Hay datos pendientes\n            U1TXREG = cola_tx[icol_tx];\n            icol_tx++;\n            if (icol_tx == TAM_COLA) {\n                icol_tx = 0;\n            }\n        } else {                                // Se ha vaciado la cola\n            IEC1bits.U1TXIE = 0;                // Para evitar el bucle sin fin\n        }\n        IFS1bits.U1TXIF = 0;                    // Se borra el flag\n    }\n}"
@@ -278,18 +295,124 @@
       "nota": "Modo de funcionamiento de la UART. Tras el reset vale 0: formato 8N1 y velocidad estándar. U1MODE = 0x8000 arranca la UART en la configuración más habitual.",
       "ancho": 16,
       "campos": [
-        { "bit": 15, "nombre": "ON", "desc": "Habilita la UART.", "valores": { "0": "UART apagada: los pines los controla el puerto digital (TRIS/LAT)", "1": "UART encendida: controla los pines según UEN y UTXEN" } },
-        { "bit": 13, "nombre": "SIDL", "desc": "Comportamiento en modo Idle de la CPU.", "valores": { "0": "Sigue funcionando en Idle", "1": "Se para en Idle" } },
-        { "bit": 12, "nombre": "IREN", "desc": "Habilita el codificador/decodificador IrDA (infrarrojos).", "valores": { "0": "IrDA deshabilitado", "1": "IrDA habilitado" } },
-        { "bit": 11, "nombre": "RTSMD", "desc": "Modo del pin UxRTS.", "valores": { "0": "Modo control de flujo", "1": "Modo símplex" } },
-        { "bits": [9, 8], "nombre": "UEN", "desc": "Pines que usa la UART.", "valores": { "0": "Solo UxTX y UxRX (sin control de flujo)", "1": "UxTX, UxRX y UxRTS", "2": "UxTX, UxRX, UxCTS y UxRTS (control de flujo hardware RTS-CTS)", "3": "UxTX, UxRX y UxBCLK" } },
-        { "bit": 7, "nombre": "WAKE", "desc": "Despierta al micro del modo Sleep al detectar un bit de start.", "valores": { "0": "Deshabilitado", "1": "Habilitado" } },
-        { "bit": 6, "nombre": "LPBACK", "desc": "Modo loopback (conecta TX con RX internamente, útil para pruebas).", "valores": { "0": "Deshabilitado", "1": "Habilitado" } },
-        { "bit": 5, "nombre": "ABAUD", "desc": "Medida automática de baudios con el siguiente carácter Sync (0x55).", "valores": { "0": "Deshabilitada o completada", "1": "Habilitada" } },
-        { "bit": 4, "nombre": "RXINV", "desc": "Inversión de polaridad de la recepción.", "valores": { "0": "Reposo de UxRX a 1 (normal)", "1": "Reposo de UxRX a 0" } },
-        { "bit": 3, "nombre": "BRGH", "desc": "Modo de alta velocidad del generador de baudios.", "valores": { "0": "Estándar: PBCLK/16; muestrea 3 veces cada bit y filtra el ruido (moda)", "1": "Alta velocidad: PBCLK/4; muestrea 1 vez" } },
-        { "bits": [2, 1], "nombre": "PDSEL", "desc": "Número de bits de datos y paridad.", "valores": { "0": "8 bits sin paridad (8N, por defecto)", "1": "8 bits con paridad par (8E)", "2": "8 bits con paridad impar (8O)", "3": "9 bits sin paridad" } },
-        { "bit": 0, "nombre": "STSEL", "desc": "Número de bits de stop.", "valores": { "0": "1 bit de stop (por defecto)", "1": "2 bits de stop" } }
+        {
+          "bit": 15,
+          "nombre": "ON",
+          "desc": "Habilita la UART.",
+          "valores": {
+            "0": "UART apagada: los pines los controla el puerto digital (TRIS/LAT)",
+            "1": "UART encendida: controla los pines según UEN y UTXEN"
+          }
+        },
+        {
+          "bit": 13,
+          "nombre": "SIDL",
+          "desc": "Comportamiento en modo Idle de la CPU.",
+          "valores": {
+            "0": "Sigue funcionando en Idle",
+            "1": "Se para en Idle"
+          }
+        },
+        {
+          "bit": 12,
+          "nombre": "IREN",
+          "desc": "Habilita el codificador/decodificador IrDA (infrarrojos).",
+          "valores": {
+            "0": "IrDA deshabilitado",
+            "1": "IrDA habilitado"
+          }
+        },
+        {
+          "bit": 11,
+          "nombre": "RTSMD",
+          "desc": "Modo del pin UxRTS.",
+          "valores": {
+            "0": "Modo control de flujo",
+            "1": "Modo símplex"
+          }
+        },
+        {
+          "bits": [
+            9,
+            8
+          ],
+          "nombre": "UEN",
+          "desc": "Pines que usa la UART.",
+          "valores": {
+            "0": "Solo UxTX y UxRX (sin control de flujo)",
+            "1": "UxTX, UxRX y UxRTS",
+            "2": "UxTX, UxRX, UxCTS y UxRTS (control de flujo hardware RTS-CTS)",
+            "3": "UxTX, UxRX y UxBCLK"
+          }
+        },
+        {
+          "bit": 7,
+          "nombre": "WAKE",
+          "desc": "Despierta al micro del modo Sleep al detectar un bit de start.",
+          "valores": {
+            "0": "Deshabilitado",
+            "1": "Habilitado"
+          }
+        },
+        {
+          "bit": 6,
+          "nombre": "LPBACK",
+          "desc": "Modo loopback (conecta TX con RX internamente, útil para pruebas).",
+          "valores": {
+            "0": "Deshabilitado",
+            "1": "Habilitado"
+          }
+        },
+        {
+          "bit": 5,
+          "nombre": "ABAUD",
+          "desc": "Medida automática de baudios con el siguiente carácter Sync (0x55).",
+          "valores": {
+            "0": "Deshabilitada o completada",
+            "1": "Habilitada"
+          }
+        },
+        {
+          "bit": 4,
+          "nombre": "RXINV",
+          "desc": "Inversión de polaridad de la recepción.",
+          "valores": {
+            "0": "Reposo de UxRX a 1 (normal)",
+            "1": "Reposo de UxRX a 0"
+          }
+        },
+        {
+          "bit": 3,
+          "nombre": "BRGH",
+          "desc": "Modo de alta velocidad del generador de baudios.",
+          "valores": {
+            "0": "Estándar: PBCLK/16; muestrea 3 veces cada bit y filtra el ruido (moda)",
+            "1": "Alta velocidad: PBCLK/4; muestrea 1 vez"
+          }
+        },
+        {
+          "bits": [
+            2,
+            1
+          ],
+          "nombre": "PDSEL",
+          "desc": "Número de bits de datos y paridad.",
+          "valores": {
+            "0": "8 bits sin paridad (8N, por defecto)",
+            "1": "8 bits con paridad par (8E)",
+            "2": "8 bits con paridad impar (8O)",
+            "3": "9 bits sin paridad"
+          }
+        },
+        {
+          "bit": 0,
+          "nombre": "STSEL",
+          "desc": "Número de bits de stop.",
+          "valores": {
+            "0": "1 bit de stop (por defecto)",
+            "1": "2 bits de stop"
+          }
+        }
       ]
     },
     "U1STA": {
@@ -297,22 +420,159 @@
       "nota": "Estado y control del transmisor y el receptor. 0x9400 es la configuración típica del driver por interrupciones (UTXISEL=2, URXEN=1, UTXEN=1, URXISEL=0).",
       "ancho": 32,
       "campos": [
-        { "bit": 24, "nombre": "ADM_EN", "desc": "Detección automática de dirección (modo 9 bits, poco usado en la asignatura).", "valores": { "0": "Deshabilitada", "1": "Habilitada" } },
-        { "bits": [23, 16], "nombre": "ADDR", "desc": "Carácter de dirección para la detección automática (con ADM_EN = 1)." },
-        { "bits": [15, 14], "nombre": "UTXISEL", "desc": "Cuándo interrumpe el transmisor.", "valores": { "0": "Mientras haya al menos un hueco libre en la FIFO de TX", "1": "Cuando se ha transmitido todo, incluido el registro de desplazamiento (no recomendable)", "2": "Cuando la FIFO de TX queda vacía", "3": "Reservado: no usar" } },
-        { "bit": 13, "nombre": "UTXINV", "desc": "Inversión de polaridad de la transmisión.", "valores": { "0": "Reposo de UxTX a 1 (normal)", "1": "Reposo de UxTX a 0" } },
-        { "bit": 12, "nombre": "URXEN", "desc": "Habilita el receptor (normalmente siempre a 1).", "valores": { "0": "Receptor deshabilitado: el pin UxRX lo controla el puerto", "1": "Receptor habilitado: el pin UxRX lo controla la UART (si ON = 1)" } },
-        { "bit": 11, "nombre": "UTXBRK", "desc": "Envía un Break en la siguiente transmisión (start + doce ceros + stop).", "valores": { "0": "Deshabilitado o completado", "1": "Enviar Break" } },
-        { "bit": 10, "nombre": "UTXEN", "desc": "Habilita el transmisor.", "valores": { "0": "Transmisor deshabilitado: se aborta lo pendiente y se resetea la FIFO", "1": "Transmisor habilitado: el pin UxTX lo controla la UART (si ON = 1)" } },
-        { "bit": 9, "nombre": "UTXBF", "desc": "FIFO de transmisión llena (solo lectura).", "valores": { "0": "Queda sitio: se puede escribir al menos un carácter más", "1": "FIFO de TX llena" } },
-        { "bit": 8, "nombre": "TRMT", "desc": "Transmisión terminada (solo lectura): FIFO y registro de desplazamiento vacíos.", "valores": { "0": "Hay una transmisión en curso o pendiente", "1": "Todo vacío: la última transmisión ha terminado" } },
-        { "bits": [7, 6], "nombre": "URXISEL", "desc": "Cuándo interrumpe el receptor.", "valores": { "0": "En cuanto hay al menos 1 carácter en la FIFO", "1": "Con la FIFO medio llena (4 o más caracteres)", "2": "Con la FIFO a 3/4 (6 o más caracteres)", "3": "Reservado: no usar" } },
-        { "bit": 5, "nombre": "ADDEN", "desc": "Detección de carácter de dirección (solo en modo 9 bits).", "valores": { "0": "Deshabilitada", "1": "Habilitada" } },
-        { "bit": 4, "nombre": "RIDLE", "desc": "Receptor en reposo (solo lectura).", "valores": { "0": "Recibiendo un dato", "1": "Receptor en reposo" } },
-        { "bit": 3, "nombre": "PERR", "desc": "Error de paridad en el carácter actual (solo lectura).", "valores": { "0": "Sin error", "1": "Error de paridad detectado" } },
-        { "bit": 2, "nombre": "FERR", "desc": "Error de trama: start o stop no detectado (solo lectura).", "valores": { "0": "Sin error", "1": "Error de trama detectado" } },
-        { "bit": 1, "nombre": "OERR", "desc": "Overrun: la FIFO de RX se llenó y llegó un nuevo carácter (que se pierde). Se borra por software, lo que resetea el receptor.", "valores": { "0": "Sin desbordamiento", "1": "FIFO de recepción desbordada" } },
-        { "bit": 0, "nombre": "URXDA", "desc": "Dato disponible en la FIFO de recepción (solo lectura).", "valores": { "0": "FIFO de RX vacía", "1": "Hay al menos un carácter para leer" } }
+        {
+          "bit": 24,
+          "nombre": "ADM_EN",
+          "desc": "Detección automática de dirección (modo 9 bits, poco usado en la asignatura).",
+          "valores": {
+            "0": "Deshabilitada",
+            "1": "Habilitada"
+          }
+        },
+        {
+          "bits": [
+            23,
+            16
+          ],
+          "nombre": "ADDR",
+          "desc": "Carácter de dirección para la detección automática (con ADM_EN = 1)."
+        },
+        {
+          "bits": [
+            15,
+            14
+          ],
+          "nombre": "UTXISEL",
+          "desc": "Cuándo interrumpe el transmisor.",
+          "valores": {
+            "0": "Mientras haya al menos un hueco libre en la FIFO de TX",
+            "1": "Cuando se ha transmitido todo, incluido el registro de desplazamiento (no recomendable)",
+            "2": "Cuando la FIFO de TX queda vacía",
+            "3": "Reservado: no usar"
+          }
+        },
+        {
+          "bit": 13,
+          "nombre": "UTXINV",
+          "desc": "Inversión de polaridad de la transmisión.",
+          "valores": {
+            "0": "Reposo de UxTX a 1 (normal)",
+            "1": "Reposo de UxTX a 0"
+          }
+        },
+        {
+          "bit": 12,
+          "nombre": "URXEN",
+          "desc": "Habilita el receptor (normalmente siempre a 1).",
+          "valores": {
+            "0": "Receptor deshabilitado: el pin UxRX lo controla el puerto",
+            "1": "Receptor habilitado: el pin UxRX lo controla la UART (si ON = 1)"
+          }
+        },
+        {
+          "bit": 11,
+          "nombre": "UTXBRK",
+          "desc": "Envía un Break en la siguiente transmisión (start + doce ceros + stop).",
+          "valores": {
+            "0": "Deshabilitado o completado",
+            "1": "Enviar Break"
+          }
+        },
+        {
+          "bit": 10,
+          "nombre": "UTXEN",
+          "desc": "Habilita el transmisor.",
+          "valores": {
+            "0": "Transmisor deshabilitado: se aborta lo pendiente y se resetea la FIFO",
+            "1": "Transmisor habilitado: el pin UxTX lo controla la UART (si ON = 1)"
+          }
+        },
+        {
+          "bit": 9,
+          "nombre": "UTXBF",
+          "desc": "FIFO de transmisión llena (solo lectura).",
+          "valores": {
+            "0": "Queda sitio: se puede escribir al menos un carácter más",
+            "1": "FIFO de TX llena"
+          }
+        },
+        {
+          "bit": 8,
+          "nombre": "TRMT",
+          "desc": "Transmisión terminada (solo lectura): FIFO y registro de desplazamiento vacíos.",
+          "valores": {
+            "0": "Hay una transmisión en curso o pendiente",
+            "1": "Todo vacío: la última transmisión ha terminado"
+          }
+        },
+        {
+          "bits": [
+            7,
+            6
+          ],
+          "nombre": "URXISEL",
+          "desc": "Cuándo interrumpe el receptor.",
+          "valores": {
+            "0": "En cuanto hay al menos 1 carácter en la FIFO",
+            "1": "Con la FIFO medio llena (4 o más caracteres)",
+            "2": "Con la FIFO a 3/4 (6 o más caracteres)",
+            "3": "Reservado: no usar"
+          }
+        },
+        {
+          "bit": 5,
+          "nombre": "ADDEN",
+          "desc": "Detección de carácter de dirección (solo en modo 9 bits).",
+          "valores": {
+            "0": "Deshabilitada",
+            "1": "Habilitada"
+          }
+        },
+        {
+          "bit": 4,
+          "nombre": "RIDLE",
+          "desc": "Receptor en reposo (solo lectura).",
+          "valores": {
+            "0": "Recibiendo un dato",
+            "1": "Receptor en reposo"
+          }
+        },
+        {
+          "bit": 3,
+          "nombre": "PERR",
+          "desc": "Error de paridad en el carácter actual (solo lectura).",
+          "valores": {
+            "0": "Sin error",
+            "1": "Error de paridad detectado"
+          }
+        },
+        {
+          "bit": 2,
+          "nombre": "FERR",
+          "desc": "Error de trama: start o stop no detectado (solo lectura).",
+          "valores": {
+            "0": "Sin error",
+            "1": "Error de trama detectado"
+          }
+        },
+        {
+          "bit": 1,
+          "nombre": "OERR",
+          "desc": "Overrun: la FIFO de RX se llenó y llegó un nuevo carácter (que se pierde). Se borra por software, lo que resetea el receptor.",
+          "valores": {
+            "0": "Sin desbordamiento",
+            "1": "FIFO de recepción desbordada"
+          }
+        },
+        {
+          "bit": 0,
+          "nombre": "URXDA",
+          "desc": "Dato disponible en la FIFO de recepción (solo lectura).",
+          "valores": {
+            "0": "FIFO de RX vacía",
+            "1": "Hay al menos un carácter para leer"
+          }
+        }
       ]
     },
     "U1BRG": {
@@ -320,7 +580,14 @@
       "nota": "Divisor del generador de baudios. Con PBCLK = 5 MHz: U1BRG = 32 da 9600 baudios (BRGH = 0) y U1BRG = 10 da 115200 baudios (BRGH = 1).",
       "ancho": 16,
       "campos": [
-        { "bits": [15, 0], "nombre": "BRG", "desc": "Valor del divisor: BaudRate = PBCLK / (16·(BRG+1)) con BRGH = 0, o PBCLK / (4·(BRG+1)) con BRGH = 1." }
+        {
+          "bits": [
+            15,
+            0
+          ],
+          "nombre": "BRG",
+          "desc": "Valor del divisor: BaudRate = PBCLK / (16·(BRG+1)) con BRGH = 0, o PBCLK / (4·(BRG+1)) con BRGH = 1."
+        }
       ]
     }
   },
@@ -332,7 +599,12 @@
       "preguntas": [
         {
           "texto": "1) ¿Qué valor hay que cargar en U1BRG para comunicar a 9600 baudios?",
-          "opciones": ["U1BRG = 32", "U1BRG = 52", "U1BRG = 129", "U1BRG = 16"],
+          "opciones": [
+            "U1BRG = 32",
+            "U1BRG = 52",
+            "U1BRG = 129",
+            "U1BRG = 16"
+          ],
           "correcta": 0,
           "explicacion": "U1BRG = 5·10⁶/(16·9600) − 1 = 31,55, que se redondea a <strong>32</strong>. La velocidad real queda en 5·10⁶/(16·33) = 9469,7 baudios, un error del 1,36 %, aceptable por ser menor del 2 %."
         },
@@ -378,13 +650,23 @@
       "preguntas": [
         {
           "texto": "1) ¿Cómo se remapea la recepción (U2RX debe llegar desde el pin RC8)?",
-          "opciones": ["U2RXR = 6;", "RPC8R = 6;", "U2RXR = 8;", "RPC8R = 1;"],
+          "opciones": [
+            "U2RXR = 6;",
+            "RPC8R = 6;",
+            "U2RXR = 8;",
+            "RPC8R = 1;"
+          ],
           "correcta": 0,
           "explicacion": "Las <strong>entradas</strong> se remapean con el registro del <em>periférico</em> (<code class=\"reg\">U2RXR</code>) cuyo valor selecciona el pin: en el grupo de U2RX, 0110 = RPC8, luego <code>U2RXR = 6</code>. Todo dentro de la secuencia SYSKEY (0xAA996655, 0x556699AA, … , 0x1CA11CA1). <code class=\"reg\">RPC8R</code> sería para sacar un periférico <em>por</em> RC8 (salida), que es el sentido contrario."
         },
         {
           "texto": "2) ¿Y la transmisión (sacar U2TX por el pin RC9)?",
-          "opciones": ["RPC9R = 2;", "RPC9R = 1;", "U2TXR = 9;", "RPC9R = 5;"],
+          "opciones": [
+            "RPC9R = 2;",
+            "RPC9R = 1;",
+            "U2TXR = 9;",
+            "RPC9R = 5;"
+          ],
           "correcta": 0,
           "explicacion": "Las <strong>salidas</strong> se remapean con el registro del <em>pin</em> (<code class=\"reg\">RPC9R</code>) cuyo valor selecciona el periférico: en su grupo, 0010 = U2TX, luego <code>RPC9R = 2</code>. Cuidado: el valor 1 en ese grupo es U1RTS y el 5 es OC3. El registro U2TXR no existe (las salidas no se remapean desde el periférico)."
         },
@@ -413,7 +695,10 @@
       ]
     }
   },
-  "ejerciciosEnTema": ["comunicacion-serie-uart-1", "comunicacion-serie-uart-2"],
+  "ejerciciosEnTema": [
+    "comunicacion-serie-uart-1",
+    "comunicacion-serie-uart-2"
+  ],
   "resumen": [
     "<strong>Asíncrona</strong> = sin reloj común: consenso previo en la velocidad; línea en reposo a 1, <strong>start</strong> = 0, datos LSB primero, <strong>stop</strong> = 1; se transmite byte a byte para resincronizar con cada start.",
     "Formato <strong>8N1</strong>: 10 bits por byte (a 9600 baudios → 960 bytes/s). La paridad (E/O) detecta errores: el receptor activa <code class=\"reg\">PERR</code>.",

@@ -161,7 +161,7 @@
         },
         {
           "tipo": "prosa",
-          "html": "<p>El registro <code class=\"reg\">INTCON</code> contiene el bit <code class=\"reg\">MVEC</code> y, además, los bits <code class=\"reg\">INT4EP</code>…<code class=\"reg\">INT0EP</code> que eligen el flanco (subida/bajada) que dispara las interrupciones externas <code class=\"reg\">INT0</code>–<code class=\"reg\">INT4</code> &#8212; por ejemplo, para contar los pulsos de un encoder conectado a INT0:</p>"
+          "html": "<p>El registro <code class=\"reg\">INTCON</code> es el interruptor general del modo multivector, y para la asignatura se reduce a una línea: <code>INTCONbits.MVEC = 1;</code> una sola vez en el main, justo antes de <code>asm(\"ei\")</code>. <strong><code class=\"reg\">MVEC</code> es el único bit que nos importa</strong>; el resto (polaridad de las interrupciones externas INTx, temporizador de proximidad…) existe, pero no se usa en el curso:</p>"
         },
         {
           "tipo": "registro",
@@ -202,15 +202,55 @@
             "<strong>Lo primero es borrar el flag</strong>: si no, al salir se vuelve a entrar inmediatamente (un bucle sin fin encubierto).",
             "Las interrupciones son <strong>mejor sistema que el polling</strong> para señales periódicas: alivian de trabajo a la CPU. Úsalas siempre que puedas."
           ]
-        },
-        {
-          "tipo": "nota",
-          "html": "<strong>Errores graves (tarjeta roja &#8594; 0 automático):</strong> &#9312; llamar a la rutina de interrupción desde el código &#8212; <em>nadie</em> llama a <code>InterrupcionTimer1()</code>, la dispara el hardware; &#9313; esperar un flag con <code>while (REGISTRObits.FLAG == 0);</code> cuando se trabaja con interrupciones; &#9314; inicializar la interrupción dentro de su propia rutina; &#9315; meter bucles <code>while</code> de espera dentro de la rutina."
         }
       ]
     },
     {
-      "titulo": "6.5 Datos compartidos",
+      "titulo": "6.5 Polling vs. interrupciones: qué se hace en cada modo (y qué no)",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Un mismo problema —atender el fin de cuenta de un timer— se puede resolver de dos maneras. Compararlas lado a lado es la mejor vacuna contra los errores graves del examen, porque <strong>lo que es obligatorio en un modo está prohibido en el otro</strong>:</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<table class=\"tabla-datos\"><thead><tr><th></th><th>Polling</th><th>Interrupciones</th></tr></thead><tbody><tr><td>¿Quién vigila el flag <code class=\"reg\">TxIF</code>?</td><td>El <strong>main</strong>, consultándolo en el bucle de scan</td><td>El <strong>hardware</strong>: la CPU salta sola a la ISR</td></tr><tr><td>¿Quién borra el flag?</td><td>El main, justo tras detectarlo a 1</td><td>La ISR, <strong>como primera instrucción</strong></td></tr><tr><td><code class=\"reg\">IECx</code> (enable)</td><td><strong>0</strong> — no se habilita</td><td><strong>1</strong> — imprescindible</td></tr><tr><td>Prioridad <code class=\"reg\">IPCx</code></td><td>No se configura</td><td>Obligatoria (y coincide con el IPLxSOFT de la ISR)</td></tr><tr><td><code>MVEC = 1</code> + <code>asm(\"ei\")</code></td><td>No se usan</td><td>Al final del main, una sola vez</td></tr><tr><td>Rutina ISR</td><td><strong>No existe</strong></td><td>Obligatoria: corta y sin esperas</td></tr><tr><td>La CPU mientras tanto</td><td>Ocupada preguntando una y otra vez</td><td>Libre para el resto del bucle de scan</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>El mismo Timer&nbsp;1 atendido por <strong>polling</strong>: sin IEC, sin IPC, sin ISR — el main pregunta y borra el flag:</p>",
+          "codigo": "// POLLING: el flag se consulta y se borra en el main\nvoid InicializarTimer1(void)\n{\n    T1CON = 0;\n    TMR1  = 0;\n    PR1   = 4999;          // 1 ms con PBCLK = 5 MHz y prescaler 1:1\n    IFS0bits.T1IF = 0;     // Flag a 0... y NADA de IEC ni IPC\n    T1CON = 0x8000;\n}\n\nint main(void)\n{\n    // ... inicializacion de pines ...\n    InicializarTimer1();   // Sin MVEC, sin asm(\"ei\")\n\n    while (1) {\n        if (IFS0bits.T1IF) {       // ¿Ha terminado la cuenta?\n            IFS0bits.T1IF = 0;     // El MAIN borra el flag\n            // ... accion periodica (1 ms) ...\n        }\n        // ... resto de tareas del scan (sin bloquearse) ...\n    }\n    return 0;\n}"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Y el mismo Timer&nbsp;1 por <strong>interrupciones</strong>: el main no vuelve a mirar el flag — eso sí, prioridad, enable, MVEC y <code>asm(\"ei\")</code> son obligatorios:</p>",
+          "codigo": "// INTERRUPCIONES: el hardware avisa, la ISR borra el flag\nvoid InicializarTimer1(void)\n{\n    T1CON = 0;\n    TMR1  = 0;\n    PR1   = 4999;\n    IPC1bits.T1IP = 2;     // Prioridad (coincide con IPL2SOFT)\n    IPC1bits.T1IS = 0;\n    IFS0bits.T1IF = 0;     // Flag a 0 ANTES de habilitar\n    IEC0bits.T1IE = 1;     // Enable\n    T1CON = 0x8000;\n}\n\n__attribute__((vector(_TIMER_1_VECTOR), interrupt(IPL2SOFT), nomips16))\nvoid InterrupcionTimer1(void)\n{\n    IFS0bits.T1IF = 0;     // SIEMPRE lo primero: borrar el flag\n    // ... accion periodica corta ...\n}\n\nint main(void)\n{\n    // ... inicializacion de pines ...\n    InicializarTimer1();\n    INTCONbits.MVEC = 1;   // Multivector\n    asm(\"ei\");             // Interrupciones globales: AL FINAL\n\n    while (1) {\n        // El main NO consulta T1IF ni espera nada:\n        // el bucle de scan sigue con sus otras tareas\n    }\n    return 0;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>Errores graves: lo que NO se debe hacer</h3><p>Lo que sigue no es una lista de «cosas mejorables»: son <strong>prohibiciones</strong>. Cualquiera de ellas penaliza en el examen:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "❌ <strong>Consultar o borrar el flag en el main cuando se trabaja con interrupciones</strong> (mezclar los modos). Con <code class=\"reg\">IECx</code> = 1 la ISR salta antes y el main nunca verá el flag a 1. Y al revés: habilitar el enable <em>sin haber escrito la ISR</em> cuelga el programa al primer disparo.",
+            "❌ <strong>Esperar un flag con <code>while (IFS0bits.xxIF == 0);</code> trabajando con interrupciones</strong>: es una espera bloqueante — el bucle de scan se para.",
+            "❌ <strong>Salir de la ISR sin borrar el flag</strong>: la interrupción vuelve a dispararse una y otra vez y el main no avanza nunca.",
+            "❌ <strong>Llamar a la rutina de interrupción desde el código</strong>: nadie llama a <code>InterrupcionTimer1()</code>; la dispara el hardware.",
+            "❌ <strong>Inicializar la interrupción dentro de su propia rutina</strong>: si nunca se ha configurado, nunca saltará; la inicialización va en el main (o en el driver).",
+            "❌ <strong>Meter esperas o bucles dentro de la ISR</strong>: la rutina debe ser corta — borrar el flag, actualizar variables y salir.",
+            "❌ <strong>Olvidar <code>INTCONbits.MVEC = 1</code> o <code>asm(\"ei\")</code> al final del main</strong>: todo perfectamente configurado… y no salta nunca nada."
+          ]
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Para recordarlo en negativo:</strong> si trabajas con interrupciones, el main <em>no mira flags ni espera nada</em>; si trabajas por polling, <em>no hay ISR, ni IECx, ni prioridades, ni MVEC, ni <code>asm(\"ei\")</code></em>. Cada cosa que «sobra» del otro modo es un error."
+        }
+      ]
+    },
+    {
+      "titulo": "6.6 Datos compartidos",
       "bloques": [
         {
           "tipo": "prosa",
@@ -224,6 +264,15 @@
         {
           "tipo": "prosa",
           "html": "<p>Si la interrupción llega, por ejemplo, justo antes del <code>sw</code> y dentro de ella se hace <code>LATC |= 2;</code>, al volver al main la instrucción <code>sw</code> escribirá el valor antiguo y <strong>sobrescribirá el trabajo de la interrupción</strong>: como si nunca hubiera ocurrido. ¿Hay que protegerse en lecturas <em>y</em> escrituras? <strong>SÍ</strong>: según Microchip, que una operación sea atómica depende del procesador, del tipo de las variables y hasta del nivel de optimización. Es decir: <em>o se protege siempre, o no se garantiza que funcione el 100&nbsp;% de las veces… y el examen es mal sitio para que pase</em>. Para que el acceso a un recurso compartido sea seguro hay que hacerlo <strong>atómico</strong>, de una de estas dos formas (en el lugar que tenga <em>menos</em> prioridad):</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>¿Por qué también las lecturas?</strong> Una lectura parece inocente, pero solo es atómica si la variable cabe en <strong>un único acceso del bus</strong> — y saber eso obliga a conocer el tamaño de acceso del micro. En el PIC32 (bus de 32 bits) leer un <code>uint32_t</code> alineado es una sola instrucción <code>lw</code>; pero leer un <code>uint64_t</code> son <em>dos</em>, y si la ISR se cuela entre ambas el main se lleva una mitad vieja y una mitad nueva: un valor que <em>nunca existió</em>. En un micro de 8 bits le pasaría lo mismo a un simple <code>uint16_t</code>. Conclusión: o se analiza caso por caso para cada micro (frágil y nada portable), o se protege <strong>siempre, lectura y escritura</strong> — que es lo que exige la asignatura.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Una lectura «rota» (<em>torn read</em>) con una variable de 64 bits:</p>",
+          "codigo": "volatile uint64_t tiempo_us;   // la ISR la incrementa\nuint64_t copia;\n\n// En el main, SIN proteger, la lectura son DOS instrucciones lw:\ncopia = tiempo_us;   // lw parte baja   <-- ¡aqui puede colarse la ISR!\n                     // lw parte alta\n\n// Si entre ambas tiempo_us pasa de 0x00000000_FFFFFFFF\n// a                            0x00000001_00000000,\n// copia vale 0x00000001_FFFFFFFF: un instante que nunca existio.\n\n// BIEN: zona critica tambien para LEER\nasm(\"di\");\ncopia = tiempo_us;\nasm(\"ei\");"
         },
         {
           "tipo": "lista",
@@ -249,12 +298,12 @@
         },
         {
           "tipo": "nota",
-          "html": "<strong>¿Y <code>volatile</code>?</strong> Declarar <code>volatile uint8_t flag;</code> informa al compilador de que la variable puede cambiar fuera de su análisis (p.ej. dentro de una ISR), obligándole a leerla y escribirla siempre en memoria SRAM en vez de cachearla en un registro. Pero <strong>no sustituye a la protección</strong>: habilitar/inhabilitar interrupciones sigue siendo necesario. En nuestro micro no hace falta declarar las variables como <code>volatile</code>, pero sí proteger <em>todas</em> las variables compartidas."
+          "html": "<strong>¿Y <code>volatile</code>?</strong> Declarar <code>volatile uint8_t flag;</code> informa al compilador de que la variable puede cambiar fuera del ámbito de su análisis (por ejemplo, dentro de una ISR) y le obliga a leerla de la memoria y escribirla de vuelta en cada acceso, en vez de quedarse con una copia en un registro de la CPU. El caso típico: un main que espera con <code>while (flag == 0);</code> un aviso de la ISR podría no «ver» nunca el cambio si el compilador optimizó la lectura. Por la misma razón <code>&lt;xc.h&gt;</code> declara <code>volatile</code> todos los registros de periféricos: son hardware y cambian «solos» (lo viste en el Tema&nbsp;2, en la definición de <code>T1CONbits</code>). Eso sí: <code>volatile</code> <strong>no sustituye a la protección</strong> — inhabilitar/habilitar las interrupciones sigue siendo necesario. En nuestro micro no hace falta declarar <code>volatile</code> las variables compartidas, pero sí proteger <em>todas</em>."
         }
       ]
     },
     {
-      "titulo": "6.6 Ejemplo completo: driver del temporizador (ticks de 1 ms)",
+      "titulo": "6.7 Ejemplo completo: driver del temporizador (ticks de 1 ms)",
       "bloques": [
         {
           "tipo": "prosa",
@@ -287,6 +336,24 @@
         {
           "tipo": "prosa",
           "html": "<p><strong>Señal cuadrada vs. señal periódica.</strong> En una señal <em>cuadrada</em> el tiempo a '1' y a '0' coincide, así que basta invertir el pin cada semiperiodo (<code class=\"reg\">LATCINV</code> o <code>^</code>) cuando los ticks llegan a T/2. En una señal <em>periódica no simétrica</em> (como el pulso de un servo) los ticks gestionan el periodo por un lado y, por otro, el nivel de la señal se decide comparando el valor de ticks: ahí <strong>no se usa INV</strong>, porque hay que asegurar explícitamente si toca un '1' o un '0'.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Con el driver de ticks en la mano, hay dos patrones que caen una y otra vez en los exámenes: <strong>generar una señal</strong> (PWM por software) y <strong>cronometrar eventos</strong>.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p><strong>Patrón 1 — generar una señal PWM por software.</strong> La ISR del timer marca la resolución (aquí, ticks de 0,1 ms): un contador recorre el periodo y el pin está a 1 mientras la cuenta no llegue al <em>duty</em>. Con N = 100 niveles, el periodo es 10 ms (100 Hz) y <code>duty</code> es directamente el % a nivel alto. Para una señal cuadrada simple basta <code class=\"reg\">LATxINV</code> cada semiperiodo:</p>",
+          "codigo": "#define N_NIVELES 100          // resolucion del PWM (ticks por periodo)\nvolatile uint8_t duty = 30;    // 30 % del tiempo a nivel alto\n\n__attribute__((vector(_TIMER_1_VECTOR), interrupt(IPL2SOFT), nomips16))\nvoid InterrupcionTimer1(void)   // un tick cada 0,1 ms\n{\n    static uint8_t cuenta = 0;\n\n    IFS0bits.T1IF = 0;          // SIEMPRE lo primero\n    if (cuenta < duty) {\n        LATCSET = 1 << 1;       // RC1 a 1 (acceso atomico)\n    } else {\n        LATCCLR = 1 << 1;       // RC1 a 0\n    }\n    cuenta++;\n    if (cuenta >= N_NIVELES) {\n        cuenta = 0;             // empieza otro periodo\n    }\n}"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p><strong>Patrón 2 — contar el tiempo entre dos eventos.</strong> Se captura <code>getTicks()</code> en cada evento (un flanco del pulsador, un eco, una vuelta del encoder…) y se restan. La resta entre <code>uint32_t</code> da el resultado correcto incluso si los ticks desbordan entre medias:</p>",
+          "codigo": "// ¿Cuanto tiempo pasa entre dos pulsaciones? (flanco + driver de ticks)\nuint32_t t_ant = 0, intervalo_ms = 0;\nuint8_t  puls_act, puls_ant = 1;\n\nwhile (1) {\n    puls_ant = puls_act;\n    puls_act = (PORTB >> PIN_PULSADOR) & 1;\n\n    if (puls_act < puls_ant) {          // flanco de bajada = evento\n        uint32_t t_act = getTicks();\n        intervalo_ms = t_act - t_ant;   // ms entre eventos (ticks de 1 ms)\n        t_ant = t_act;\n    }\n    // ... resto del scan ...\n}"
+        },
+        {
+          "tipo": "nota",
+          "html": "Estos dos patrones (generar señales y cronometrar eventos con un timer + ISR) son la base de medio examen: el servo, el zumbador, el cronómetro, la velocidad de un ventilador… Domínalos y la mitad del trabajo está hecho."
         }
       ]
     }
@@ -294,50 +361,33 @@
   "registros": {
     "INTCON": {
       "titulo": "INTCON: Interrupt Control Register",
-      "nota": "Control global del controlador de interrupciones (Register 7-1 del datasheet DS60001168). MVEC selecciona single vector/multivector; INTxEP elige el flanco activo de las interrupciones externas.",
+      "nota": "Para la asignatura, INTCON = MVEC: se pone a 1 (multivector) una vez en el main y no se vuelve a tocar. Los demás campos no se usan en el curso.",
       "ancho": 32,
       "campos": [
         {
           "bit": 12,
           "nombre": "MVEC",
-          "desc": "Multi Vector Configuration: modo del controlador de interrupciones",
-          "valores": { "0": "Modo single vector (todas al mismo vector)", "1": "Modo multivector (un vector por fuente)" }
+          "desc": "Multi Vector Configuration: el bit importante. A 1, cada fuente salta a su propio vector.",
+          "valores": {
+            "0": "Single vector (todas al mismo vector)",
+            "1": "Multivector (un vector por fuente) — lo que usamos siempre"
+          }
         },
         {
-          "bits": [10, 8],
+          "bits": [
+            10,
+            8
+          ],
           "nombre": "TPC",
-          "desc": "Interrupt Proximity Timer Control: qué prioridades arrancan el temporizador de proximidad",
-          "valores": { "0": "Temporizador de proximidad desactivado", "7": "Lo arrancan interrupciones de prioridad 7 o inferior" }
+          "desc": "Temporizador de proximidad (no se usa en la asignatura)."
         },
         {
-          "bit": 4,
-          "nombre": "INT4EP",
-          "desc": "Polaridad del flanco de la interrupción externa INT4",
-          "valores": { "0": "Flanco de bajada", "1": "Flanco de subida" }
-        },
-        {
-          "bit": 3,
-          "nombre": "INT3EP",
-          "desc": "Polaridad del flanco de la interrupción externa INT3",
-          "valores": { "0": "Flanco de bajada", "1": "Flanco de subida" }
-        },
-        {
-          "bit": 2,
-          "nombre": "INT2EP",
-          "desc": "Polaridad del flanco de la interrupción externa INT2",
-          "valores": { "0": "Flanco de bajada", "1": "Flanco de subida" }
-        },
-        {
-          "bit": 1,
-          "nombre": "INT1EP",
-          "desc": "Polaridad del flanco de la interrupción externa INT1",
-          "valores": { "0": "Flanco de bajada", "1": "Flanco de subida" }
-        },
-        {
-          "bit": 0,
-          "nombre": "INT0EP",
-          "desc": "Polaridad del flanco de la interrupción externa INT0 (pin RB7; p.ej. encoder)",
-          "valores": { "0": "Flanco de bajada", "1": "Flanco de subida" }
+          "bits": [
+            4,
+            0
+          ],
+          "nombre": "INTxEP",
+          "desc": "Polaridad del flanco de las interrupciones externas INT4–INT0 (no se usa en la asignatura)."
         }
       ]
     },
@@ -346,18 +396,114 @@
       "nota": "Flags de interrupción de las fuentes IRQ 0 a 31 (Register 7-4 y Tabla 7-1 del datasheet). El hardware los pone a 1; la rutina de atención DEBE borrarlos. Se muestran los flags con interés didáctico.",
       "ancho": 32,
       "campos": [
-        { "bit": 28, "nombre": "AD1IF", "desc": "Flag de fin de conversión del ADC1 (IRQ 28, vector 23)", "valores": { "0": "Sin petición pendiente", "1": "Petición de interrupción pendiente" } },
-        { "bit": 24, "nombre": "T5IF", "desc": "Flag de fin de cuenta del Timer 5 (IRQ 24, vector 20)", "valores": { "0": "Sin petición pendiente", "1": "Petición de interrupción pendiente" } },
-        { "bit": 19, "nombre": "T4IF", "desc": "Flag de fin de cuenta del Timer 4 (IRQ 19, vector 16)", "valores": { "0": "Sin petición pendiente", "1": "Petición de interrupción pendiente" } },
-        { "bit": 14, "nombre": "T3IF", "desc": "Flag de fin de cuenta del Timer 3 (IRQ 14, vector 12)", "valores": { "0": "Sin petición pendiente", "1": "Petición de interrupción pendiente" } },
-        { "bit": 13, "nombre": "INT2IF", "desc": "Flag de la interrupción externa INT2 (IRQ 13, vector 11)", "valores": { "0": "Sin petición pendiente", "1": "Petición de interrupción pendiente" } },
-        { "bit": 12, "nombre": "OC2IF", "desc": "Flag del Output Compare 2 (IRQ 12, vector 10)", "valores": { "0": "Sin petición pendiente", "1": "Petición de interrupción pendiente" } },
-        { "bit": 9, "nombre": "T2IF", "desc": "Flag de fin de cuenta del Timer 2 (IRQ 9, vector 8)", "valores": { "0": "Sin petición pendiente", "1": "Petición de interrupción pendiente" } },
-        { "bit": 8, "nombre": "INT1IF", "desc": "Flag de la interrupción externa INT1 (IRQ 8, vector 7)", "valores": { "0": "Sin petición pendiente", "1": "Petición de interrupción pendiente" } },
-        { "bit": 7, "nombre": "OC1IF", "desc": "Flag del Output Compare 1 (IRQ 7, vector 6)", "valores": { "0": "Sin petición pendiente", "1": "Petición de interrupción pendiente" } },
-        { "bit": 4, "nombre": "T1IF", "desc": "Flag de fin de cuenta del Timer 1 (IRQ 4, vector 4): se pone a 1 cuando TMR1 alcanza PR1", "valores": { "0": "Sin petición pendiente", "1": "Petición de interrupción pendiente" } },
-        { "bit": 3, "nombre": "INT0IF", "desc": "Flag de la interrupción externa INT0 (IRQ 3, vector 3)", "valores": { "0": "Sin petición pendiente", "1": "Petición de interrupción pendiente" } },
-        { "bit": 0, "nombre": "CTIF", "desc": "Flag del Core Timer (IRQ 0, vector 0)", "valores": { "0": "Sin petición pendiente", "1": "Petición de interrupción pendiente" } }
+        {
+          "bit": 28,
+          "nombre": "AD1IF",
+          "desc": "Flag de fin de conversión del ADC1 (IRQ 28, vector 23)",
+          "valores": {
+            "0": "Sin petición pendiente",
+            "1": "Petición de interrupción pendiente"
+          }
+        },
+        {
+          "bit": 24,
+          "nombre": "T5IF",
+          "desc": "Flag de fin de cuenta del Timer 5 (IRQ 24, vector 20)",
+          "valores": {
+            "0": "Sin petición pendiente",
+            "1": "Petición de interrupción pendiente"
+          }
+        },
+        {
+          "bit": 19,
+          "nombre": "T4IF",
+          "desc": "Flag de fin de cuenta del Timer 4 (IRQ 19, vector 16)",
+          "valores": {
+            "0": "Sin petición pendiente",
+            "1": "Petición de interrupción pendiente"
+          }
+        },
+        {
+          "bit": 14,
+          "nombre": "T3IF",
+          "desc": "Flag de fin de cuenta del Timer 3 (IRQ 14, vector 12)",
+          "valores": {
+            "0": "Sin petición pendiente",
+            "1": "Petición de interrupción pendiente"
+          }
+        },
+        {
+          "bit": 13,
+          "nombre": "INT2IF",
+          "desc": "Flag de la interrupción externa INT2 (IRQ 13, vector 11)",
+          "valores": {
+            "0": "Sin petición pendiente",
+            "1": "Petición de interrupción pendiente"
+          }
+        },
+        {
+          "bit": 12,
+          "nombre": "OC2IF",
+          "desc": "Flag del Output Compare 2 (IRQ 12, vector 10)",
+          "valores": {
+            "0": "Sin petición pendiente",
+            "1": "Petición de interrupción pendiente"
+          }
+        },
+        {
+          "bit": 9,
+          "nombre": "T2IF",
+          "desc": "Flag de fin de cuenta del Timer 2 (IRQ 9, vector 8)",
+          "valores": {
+            "0": "Sin petición pendiente",
+            "1": "Petición de interrupción pendiente"
+          }
+        },
+        {
+          "bit": 8,
+          "nombre": "INT1IF",
+          "desc": "Flag de la interrupción externa INT1 (IRQ 8, vector 7)",
+          "valores": {
+            "0": "Sin petición pendiente",
+            "1": "Petición de interrupción pendiente"
+          }
+        },
+        {
+          "bit": 7,
+          "nombre": "OC1IF",
+          "desc": "Flag del Output Compare 1 (IRQ 7, vector 6)",
+          "valores": {
+            "0": "Sin petición pendiente",
+            "1": "Petición de interrupción pendiente"
+          }
+        },
+        {
+          "bit": 4,
+          "nombre": "T1IF",
+          "desc": "Flag de fin de cuenta del Timer 1 (IRQ 4, vector 4): se pone a 1 cuando TMR1 alcanza PR1",
+          "valores": {
+            "0": "Sin petición pendiente",
+            "1": "Petición de interrupción pendiente"
+          }
+        },
+        {
+          "bit": 3,
+          "nombre": "INT0IF",
+          "desc": "Flag de la interrupción externa INT0 (IRQ 3, vector 3)",
+          "valores": {
+            "0": "Sin petición pendiente",
+            "1": "Petición de interrupción pendiente"
+          }
+        },
+        {
+          "bit": 0,
+          "nombre": "CTIF",
+          "desc": "Flag del Core Timer (IRQ 0, vector 0)",
+          "valores": {
+            "0": "Sin petición pendiente",
+            "1": "Petición de interrupción pendiente"
+          }
+        }
       ]
     },
     "IEC0": {
@@ -365,18 +511,114 @@
       "nota": "Habilitaciones individuales de las fuentes IRQ 0 a 31 (Register 7-5 del datasheet). Misma disposición de bits que IFS0: cada flag tiene su enable en el mismo bit.",
       "ancho": 32,
       "campos": [
-        { "bit": 28, "nombre": "AD1IE", "desc": "Habilita la interrupción del ADC1", "valores": { "0": "Interrupción inhabilitada", "1": "Interrupción habilitada" } },
-        { "bit": 24, "nombre": "T5IE", "desc": "Habilita la interrupción del Timer 5", "valores": { "0": "Interrupción inhabilitada", "1": "Interrupción habilitada" } },
-        { "bit": 19, "nombre": "T4IE", "desc": "Habilita la interrupción del Timer 4", "valores": { "0": "Interrupción inhabilitada", "1": "Interrupción habilitada" } },
-        { "bit": 14, "nombre": "T3IE", "desc": "Habilita la interrupción del Timer 3", "valores": { "0": "Interrupción inhabilitada", "1": "Interrupción habilitada" } },
-        { "bit": 13, "nombre": "INT2IE", "desc": "Habilita la interrupción externa INT2", "valores": { "0": "Interrupción inhabilitada", "1": "Interrupción habilitada" } },
-        { "bit": 12, "nombre": "OC2IE", "desc": "Habilita la interrupción del Output Compare 2", "valores": { "0": "Interrupción inhabilitada", "1": "Interrupción habilitada" } },
-        { "bit": 9, "nombre": "T2IE", "desc": "Habilita la interrupción del Timer 2", "valores": { "0": "Interrupción inhabilitada", "1": "Interrupción habilitada" } },
-        { "bit": 8, "nombre": "INT1IE", "desc": "Habilita la interrupción externa INT1", "valores": { "0": "Interrupción inhabilitada", "1": "Interrupción habilitada" } },
-        { "bit": 7, "nombre": "OC1IE", "desc": "Habilita la interrupción del Output Compare 1", "valores": { "0": "Interrupción inhabilitada", "1": "Interrupción habilitada" } },
-        { "bit": 4, "nombre": "T1IE", "desc": "Habilita la interrupción del Timer 1", "valores": { "0": "Interrupción inhabilitada", "1": "Interrupción habilitada" } },
-        { "bit": 3, "nombre": "INT0IE", "desc": "Habilita la interrupción externa INT0", "valores": { "0": "Interrupción inhabilitada", "1": "Interrupción habilitada" } },
-        { "bit": 0, "nombre": "CTIE", "desc": "Habilita la interrupción del Core Timer", "valores": { "0": "Interrupción inhabilitada", "1": "Interrupción habilitada" } }
+        {
+          "bit": 28,
+          "nombre": "AD1IE",
+          "desc": "Habilita la interrupción del ADC1",
+          "valores": {
+            "0": "Interrupción inhabilitada",
+            "1": "Interrupción habilitada"
+          }
+        },
+        {
+          "bit": 24,
+          "nombre": "T5IE",
+          "desc": "Habilita la interrupción del Timer 5",
+          "valores": {
+            "0": "Interrupción inhabilitada",
+            "1": "Interrupción habilitada"
+          }
+        },
+        {
+          "bit": 19,
+          "nombre": "T4IE",
+          "desc": "Habilita la interrupción del Timer 4",
+          "valores": {
+            "0": "Interrupción inhabilitada",
+            "1": "Interrupción habilitada"
+          }
+        },
+        {
+          "bit": 14,
+          "nombre": "T3IE",
+          "desc": "Habilita la interrupción del Timer 3",
+          "valores": {
+            "0": "Interrupción inhabilitada",
+            "1": "Interrupción habilitada"
+          }
+        },
+        {
+          "bit": 13,
+          "nombre": "INT2IE",
+          "desc": "Habilita la interrupción externa INT2",
+          "valores": {
+            "0": "Interrupción inhabilitada",
+            "1": "Interrupción habilitada"
+          }
+        },
+        {
+          "bit": 12,
+          "nombre": "OC2IE",
+          "desc": "Habilita la interrupción del Output Compare 2",
+          "valores": {
+            "0": "Interrupción inhabilitada",
+            "1": "Interrupción habilitada"
+          }
+        },
+        {
+          "bit": 9,
+          "nombre": "T2IE",
+          "desc": "Habilita la interrupción del Timer 2",
+          "valores": {
+            "0": "Interrupción inhabilitada",
+            "1": "Interrupción habilitada"
+          }
+        },
+        {
+          "bit": 8,
+          "nombre": "INT1IE",
+          "desc": "Habilita la interrupción externa INT1",
+          "valores": {
+            "0": "Interrupción inhabilitada",
+            "1": "Interrupción habilitada"
+          }
+        },
+        {
+          "bit": 7,
+          "nombre": "OC1IE",
+          "desc": "Habilita la interrupción del Output Compare 1",
+          "valores": {
+            "0": "Interrupción inhabilitada",
+            "1": "Interrupción habilitada"
+          }
+        },
+        {
+          "bit": 4,
+          "nombre": "T1IE",
+          "desc": "Habilita la interrupción del Timer 1",
+          "valores": {
+            "0": "Interrupción inhabilitada",
+            "1": "Interrupción habilitada"
+          }
+        },
+        {
+          "bit": 3,
+          "nombre": "INT0IE",
+          "desc": "Habilita la interrupción externa INT0",
+          "valores": {
+            "0": "Interrupción inhabilitada",
+            "1": "Interrupción habilitada"
+          }
+        },
+        {
+          "bit": 0,
+          "nombre": "CTIE",
+          "desc": "Habilita la interrupción del Core Timer",
+          "valores": {
+            "0": "Interrupción inhabilitada",
+            "1": "Interrupción habilitada"
+          }
+        }
       ]
     },
     "IPC1": {
@@ -384,14 +626,107 @@
       "nota": "Prioridad y subprioridad de Timer 1, Input Capture 1, Output Compare 1 e INT1 (Register 7-6 y Tabla 7-1 del datasheet). La prioridad del Timer 1 vive aquí, en los bits 4:2.",
       "ancho": 32,
       "campos": [
-        { "bits": [28, 26], "nombre": "INT1IP", "desc": "Prioridad de la interrupción externa INT1", "valores": { "0": "Interrupción inhabilitada", "1": "Prioridad 1 (mínima)", "7": "Prioridad 7 (máxima)" } },
-        { "bits": [25, 24], "nombre": "INT1IS", "desc": "Subprioridad de INT1", "valores": { "0": "Subprioridad 0 (mínima)", "3": "Subprioridad 3 (máxima)" } },
-        { "bits": [20, 18], "nombre": "OC1IP", "desc": "Prioridad del Output Compare 1", "valores": { "0": "Interrupción inhabilitada", "1": "Prioridad 1 (mínima)", "7": "Prioridad 7 (máxima)" } },
-        { "bits": [17, 16], "nombre": "OC1IS", "desc": "Subprioridad del Output Compare 1", "valores": { "0": "Subprioridad 0 (mínima)", "3": "Subprioridad 3 (máxima)" } },
-        { "bits": [12, 10], "nombre": "IC1IP", "desc": "Prioridad del Input Capture 1", "valores": { "0": "Interrupción inhabilitada", "1": "Prioridad 1 (mínima)", "7": "Prioridad 7 (máxima)" } },
-        { "bits": [9, 8], "nombre": "IC1IS", "desc": "Subprioridad del Input Capture 1", "valores": { "0": "Subprioridad 0 (mínima)", "3": "Subprioridad 3 (máxima)" } },
-        { "bits": [4, 2], "nombre": "T1IP", "desc": "Prioridad de la interrupción del Timer 1 (IPC1bits.T1IP; debe coincidir con el IPLxSOFT de la rutina)", "valores": { "0": "Interrupción inhabilitada", "1": "Prioridad 1 (mínima)", "2": "Prioridad 2 (la del driver del tema)", "7": "Prioridad 7 (máxima)" } },
-        { "bits": [1, 0], "nombre": "T1IS", "desc": "Subprioridad de la interrupción del Timer 1", "valores": { "0": "Subprioridad 0 (mínima)", "3": "Subprioridad 3 (máxima)" } }
+        {
+          "bits": [
+            28,
+            26
+          ],
+          "nombre": "INT1IP",
+          "desc": "Prioridad de la interrupción externa INT1",
+          "valores": {
+            "0": "Interrupción inhabilitada",
+            "1": "Prioridad 1 (mínima)",
+            "7": "Prioridad 7 (máxima)"
+          }
+        },
+        {
+          "bits": [
+            25,
+            24
+          ],
+          "nombre": "INT1IS",
+          "desc": "Subprioridad de INT1",
+          "valores": {
+            "0": "Subprioridad 0 (mínima)",
+            "3": "Subprioridad 3 (máxima)"
+          }
+        },
+        {
+          "bits": [
+            20,
+            18
+          ],
+          "nombre": "OC1IP",
+          "desc": "Prioridad del Output Compare 1",
+          "valores": {
+            "0": "Interrupción inhabilitada",
+            "1": "Prioridad 1 (mínima)",
+            "7": "Prioridad 7 (máxima)"
+          }
+        },
+        {
+          "bits": [
+            17,
+            16
+          ],
+          "nombre": "OC1IS",
+          "desc": "Subprioridad del Output Compare 1",
+          "valores": {
+            "0": "Subprioridad 0 (mínima)",
+            "3": "Subprioridad 3 (máxima)"
+          }
+        },
+        {
+          "bits": [
+            12,
+            10
+          ],
+          "nombre": "IC1IP",
+          "desc": "Prioridad del Input Capture 1",
+          "valores": {
+            "0": "Interrupción inhabilitada",
+            "1": "Prioridad 1 (mínima)",
+            "7": "Prioridad 7 (máxima)"
+          }
+        },
+        {
+          "bits": [
+            9,
+            8
+          ],
+          "nombre": "IC1IS",
+          "desc": "Subprioridad del Input Capture 1",
+          "valores": {
+            "0": "Subprioridad 0 (mínima)",
+            "3": "Subprioridad 3 (máxima)"
+          }
+        },
+        {
+          "bits": [
+            4,
+            2
+          ],
+          "nombre": "T1IP",
+          "desc": "Prioridad de la interrupción del Timer 1 (IPC1bits.T1IP; debe coincidir con el IPLxSOFT de la rutina)",
+          "valores": {
+            "0": "Interrupción inhabilitada",
+            "1": "Prioridad 1 (mínima)",
+            "2": "Prioridad 2 (la del driver del tema)",
+            "7": "Prioridad 7 (máxima)"
+          }
+        },
+        {
+          "bits": [
+            1,
+            0
+          ],
+          "nombre": "T1IS",
+          "desc": "Subprioridad de la interrupción del Timer 1",
+          "valores": {
+            "0": "Subprioridad 0 (mínima)",
+            "3": "Subprioridad 3 (máxima)"
+          }
+        }
       ]
     },
     "IPC2": {
@@ -399,14 +734,107 @@
       "nota": "Prioridad y subprioridad de Timer 2, Input Capture 2, Output Compare 2 e INT2 (Register 7-6 y Tabla 7-1 del datasheet). Ojo: la prioridad del Timer 2 está AQUÍ (bits 4:2), no en IPC1.",
       "ancho": 32,
       "campos": [
-        { "bits": [28, 26], "nombre": "INT2IP", "desc": "Prioridad de la interrupción externa INT2", "valores": { "0": "Interrupción inhabilitada", "1": "Prioridad 1 (mínima)", "7": "Prioridad 7 (máxima)" } },
-        { "bits": [25, 24], "nombre": "INT2IS", "desc": "Subprioridad de INT2", "valores": { "0": "Subprioridad 0 (mínima)", "3": "Subprioridad 3 (máxima)" } },
-        { "bits": [20, 18], "nombre": "OC2IP", "desc": "Prioridad del Output Compare 2", "valores": { "0": "Interrupción inhabilitada", "1": "Prioridad 1 (mínima)", "7": "Prioridad 7 (máxima)" } },
-        { "bits": [17, 16], "nombre": "OC2IS", "desc": "Subprioridad del Output Compare 2", "valores": { "0": "Subprioridad 0 (mínima)", "3": "Subprioridad 3 (máxima)" } },
-        { "bits": [12, 10], "nombre": "IC2IP", "desc": "Prioridad del Input Capture 2", "valores": { "0": "Interrupción inhabilitada", "1": "Prioridad 1 (mínima)", "7": "Prioridad 7 (máxima)" } },
-        { "bits": [9, 8], "nombre": "IC2IS", "desc": "Subprioridad del Input Capture 2", "valores": { "0": "Subprioridad 0 (mínima)", "3": "Subprioridad 3 (máxima)" } },
-        { "bits": [4, 2], "nombre": "T2IP", "desc": "Prioridad de la interrupción del Timer 2 (IPC2bits.T2IP; debe coincidir con el IPLxSOFT de la rutina)", "valores": { "0": "Interrupción inhabilitada", "1": "Prioridad 1 (mínima)", "2": "Prioridad 2", "7": "Prioridad 7 (máxima)" } },
-        { "bits": [1, 0], "nombre": "T2IS", "desc": "Subprioridad de la interrupción del Timer 2", "valores": { "0": "Subprioridad 0 (mínima)", "3": "Subprioridad 3 (máxima)" } }
+        {
+          "bits": [
+            28,
+            26
+          ],
+          "nombre": "INT2IP",
+          "desc": "Prioridad de la interrupción externa INT2",
+          "valores": {
+            "0": "Interrupción inhabilitada",
+            "1": "Prioridad 1 (mínima)",
+            "7": "Prioridad 7 (máxima)"
+          }
+        },
+        {
+          "bits": [
+            25,
+            24
+          ],
+          "nombre": "INT2IS",
+          "desc": "Subprioridad de INT2",
+          "valores": {
+            "0": "Subprioridad 0 (mínima)",
+            "3": "Subprioridad 3 (máxima)"
+          }
+        },
+        {
+          "bits": [
+            20,
+            18
+          ],
+          "nombre": "OC2IP",
+          "desc": "Prioridad del Output Compare 2",
+          "valores": {
+            "0": "Interrupción inhabilitada",
+            "1": "Prioridad 1 (mínima)",
+            "7": "Prioridad 7 (máxima)"
+          }
+        },
+        {
+          "bits": [
+            17,
+            16
+          ],
+          "nombre": "OC2IS",
+          "desc": "Subprioridad del Output Compare 2",
+          "valores": {
+            "0": "Subprioridad 0 (mínima)",
+            "3": "Subprioridad 3 (máxima)"
+          }
+        },
+        {
+          "bits": [
+            12,
+            10
+          ],
+          "nombre": "IC2IP",
+          "desc": "Prioridad del Input Capture 2",
+          "valores": {
+            "0": "Interrupción inhabilitada",
+            "1": "Prioridad 1 (mínima)",
+            "7": "Prioridad 7 (máxima)"
+          }
+        },
+        {
+          "bits": [
+            9,
+            8
+          ],
+          "nombre": "IC2IS",
+          "desc": "Subprioridad del Input Capture 2",
+          "valores": {
+            "0": "Subprioridad 0 (mínima)",
+            "3": "Subprioridad 3 (máxima)"
+          }
+        },
+        {
+          "bits": [
+            4,
+            2
+          ],
+          "nombre": "T2IP",
+          "desc": "Prioridad de la interrupción del Timer 2 (IPC2bits.T2IP; debe coincidir con el IPLxSOFT de la rutina)",
+          "valores": {
+            "0": "Interrupción inhabilitada",
+            "1": "Prioridad 1 (mínima)",
+            "2": "Prioridad 2",
+            "7": "Prioridad 7 (máxima)"
+          }
+        },
+        {
+          "bits": [
+            1,
+            0
+          ],
+          "nombre": "T2IS",
+          "desc": "Subprioridad de la interrupción del Timer 2",
+          "valores": {
+            "0": "Subprioridad 0 (mínima)",
+            "3": "Subprioridad 3 (máxima)"
+          }
+        }
       ]
     }
   },
@@ -454,7 +882,7 @@
             "En la primera línea de la rutina de interrupción"
           ],
           "correcta": 0,
-          "explicacion": "Las interrupciones globales se habilitan <strong>al final del arranque</strong>, cuando todo está inicializado: así ningún periférico interrumpe a medio configurar. Ponerlas en el driver acopla el módulo al sistema; ponerlas en la ISR es tarjeta roja (la interrupción no puede inicializarse a sí misma: ¡nunca llegaría a saltar!)."
+          "explicacion": "Las interrupciones globales se habilitan <strong>al final del arranque</strong>, cuando todo está inicializado: así ningún periférico interrumpe a medio configurar. Ponerlas en el driver acopla el módulo al sistema; ponerlas en la ISR penaliza en el examen (la interrupción no puede inicializarse a sí misma: ¡nunca llegaría a saltar!)."
         }
       ]
     },
@@ -496,7 +924,7 @@
         {
           "texto": "4) En el main aparece while (IFS0bits.T2IF == 0); para esperar la medida. ¿Es correcto?",
           "opciones": [
-            "No: con interrupciones, el flag lo gestiona la ISR; esperar por polling es tarjeta roja",
+            "No: con interrupciones, el flag lo gestiona la ISR; esperar por polling penaliza en el examen",
             "Sí, siempre que después se borre el flag",
             "Sí, si la prioridad de la interrupción es baja"
           ],
@@ -506,13 +934,17 @@
       ]
     }
   },
-  "ejerciciosEnTema": ["interrupciones-1", "interrupciones-2"],
+  "ejerciciosEnTema": [
+    "interrupciones-1",
+    "interrupciones-2"
+  ],
   "resumen": [
     "Una <strong>excepción</strong> nace de un error; una <strong>interrupción</strong>, de un periférico que pide atención. En ambas: se termina la instrucción, PC &#8594; <code class=\"reg\">EPC</code>, causa &#8594; <code class=\"reg\">Cause</code>, modo kernel, rutina y <code>eret</code> para reanudar.",
     "El PIC32MX230F064D usa un controlador externo con <strong>64 fuentes (IRQ#) y 44 vectores</strong>; prioridades de 1 a 7 (el main es 0) y subprioridades de 0 a 3. A igualdad total gana el IRQ menor.",
     "Cada fuente se gobierna con cuatro campos: flag <code class=\"reg\">IFSx</code>bits.xxIF, enable <code class=\"reg\">IECx</code>bits.xxIE, prioridad <code class=\"reg\">IPCx</code>bits.xxIP y subprioridad <code class=\"reg\">IPCx</code>bits.xxIS.",
     "Dirección de salto: <strong>Dir = Ebase + 0x200 + N&#186;Vector &#183; VS</strong> (VS = 0x20 por defecto). El compilador coloca allí la rutina con <code>__attribute__((vector(V), interrupt(IPLxSOFT), nomips16))</code>; la x <strong>debe coincidir</strong> con IPCxbits.xxIP.",
     "Orden de arranque: inicializar periféricos (prioridad &#8594; flag a 0 &#8594; enable a 1 &#8594; encender), luego <code>INTCONbits.MVEC = 1;</code> y <code>asm(\"ei\");</code> al final, antes del bucle infinito.",
+    "<strong>Polling</strong>: el main consulta y borra el flag (IEC = 0, sin ISR). <strong>Interrupciones</strong>: la ISR borra el flag y el main ni lo mira (IEC = 1, IPC, MVEC y <code>asm(\"ei\")</code>). Mezclar los dos modos es error grave.",
     "Las rutinas: sin parámetros ni retorno, cortas, sin llamadas a funciones ni bucles, y <strong>lo primero es borrar el flag</strong> (si no, reentrada infinita).",
     "<strong>Datos compartidos</strong>: protege siempre en el lado de menor prioridad, con accesos atómicos (<code class=\"reg\">LATxSET</code>/<code class=\"reg\">CLR</code>/<code class=\"reg\">INV</code>) o con <code>asm(\"di\")</code>/<code>asm(\"ei\")</code>; en los getters, copia local dentro de la zona crítica. <code>volatile</code> no sustituye a la protección.",
     "Patrón estrella: driver de ticks de 1 ms (Timer 1, PR = 4999, prioridad 2) con <code>getTicks()</code> protegido; el main gestiona tiempos restando ticks y actúa con <code class=\"reg\">LATCINV</code>."

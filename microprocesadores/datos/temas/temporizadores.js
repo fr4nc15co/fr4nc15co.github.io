@@ -80,6 +80,24 @@ MPI.contenidoTemas['temporizadores'] = {
   </table>
   <p class="nota"><strong>Cuidado con el modo gated:</strong> el reloj sigue siendo el <em>interno</em>, por eso <code class="reg">TCS</code> debe ser <strong>0</strong>. El pin <code class="reg">TxCK</code> no aporta reloj — actúa como <em>enable</em> que deja contar mientras está a 1. Al llegar el flanco de bajada en <code class="reg">TxCK</code> se activa <code class="reg">TxIF</code>; el programa lee entonces <code class="reg">TMRx</code> (el ancho del pulso) y lo pone a 0 para la siguiente medida. No lo confundas con el <em>contador de eventos</em>, donde <code class="reg">TCS</code> = 1 y el pin sí es el reloj.</p>
 
+  <h3>Configurar el modo gated: el prescaler manda</h3>
+  <p>En gated <strong>no se configura <code class="reg">PRx</code></strong>: no se espera ningún «fin de cuenta», sino que se lee <code class="reg">TMRx</code> al acabar el pulso (tras el Reset, <code class="reg">PRx</code> ya vale 0xFFFF, el máximo). Lo que sí se elige con cuidado es el prescaler <code class="reg">TCKPS</code>, porque <strong>fija cuánto tiempo vale cada cuenta de <code class="reg">TMRx</code></strong>: t<sub>cuenta</sub> = divisor / f<sub>PBCLK</sub>. La medida final es <em>tiempo&nbsp;=&nbsp;TMRx&nbsp;·&nbsp;t<sub>cuenta</sub></em>.</p>
+  <p>Y una comprobación obligatoria: el pulso más largo que se quiera medir debe caber en el contador, es decir, debe implicar <strong>TMRx &lt; 65535</strong> con el TCKPS elegido. Con PBCLK = 5&nbsp;MHz:</p>
+  <table class="tabla-datos">
+    <thead><tr><th>TCKPS (tipo B)</th><th>Divisor</th><th>Tiempo por cuenta</th><th>Tiempo máximo medible</th></tr></thead>
+    <tbody>
+      <tr><td>0</td><td>1:1</td><td>0,2 µs</td><td>13,1 ms</td></tr>
+      <tr><td>1</td><td>1:2</td><td>0,4 µs</td><td>26,2 ms</td></tr>
+      <tr><td>2</td><td>1:4</td><td>0,8 µs</td><td>52,4 ms</td></tr>
+      <tr><td>3</td><td>1:8</td><td>1,6 µs</td><td>104,9 ms</td></tr>
+      <tr><td>4</td><td>1:16</td><td>3,2 µs</td><td>209,7 ms</td></tr>
+      <tr><td>5</td><td>1:32</td><td>6,4 µs</td><td>419,4 ms</td></tr>
+      <tr><td>6</td><td>1:64</td><td>12,8 µs</td><td>838,9 ms</td></tr>
+      <tr><td>7</td><td>1:256</td><td>51,2 µs</td><td>3,36 s</td></tr>
+    </tbody>
+  </table>
+  <p class="nota"><strong>Regla:</strong> elige el TCKPS más pequeño cuyo tiempo máximo supere el pulso más largo esperado: garantizas TMRx &lt; 65535 con la máxima resolución. Ejemplo: el eco del HC-SR04 puede llegar a ≈&nbsp;30&nbsp;ms → 1:4 (mide hasta 52,4&nbsp;ms con resolución de 0,8&nbsp;µs). En el Timer&nbsp;1 (tipo A) las opciones son solo 1, 8, 64 y 256.</p>
+
   <h3>Los temporizadores 2 a 5 (tipo B)</h3>
   <p>Funcionan igual que el Timer&nbsp;1, con dos diferencias: la entrada externa es un único pin <code class="reg">TxCK</code> (sin circuitería de cuarzo) y el prescaler tiene 8 opciones (campo <code class="reg">TCKPS</code> de 3 bits: divisor = 2<sup>TCKPS</sup>, salvo 7 → 256). Solo el <strong>Timer&nbsp;3</strong> puede además disparar una conversión del ADC. Los flags de fin de cuenta están en <code class="reg">IFS0</code>: T2IF (bit 9), T3IF (bit 14), T4IF (bit 19), T5IF (bit 24).</p>
   <div class="mpi-mount" data-componente="visor-bits" data-config='{"registro":"T2CON","valor":"0x8030"}'></div>
@@ -212,7 +230,7 @@ int main(void) {
     <li>Encender siempre en un único write: <code class="reg">TxCON = 0x8000 | (TCKPS &lt;&lt; 4)</code>.</li>
     <li>Para tiempos &gt; 3,355&nbsp;s: timer de 32 bits (bit T32) o varias cuentas encadenadas.</li>
     <li><strong>Uso normal</strong> (TCS=0, TGATE=0): el timer cuenta el reloj interno hasta lo que le pongamos en <code class="reg">PRx</code> → retardos y periodos. Es lo habitual.</li>
-    <li><strong>Modo gated</strong> (TCS=0, TGATE=1): mide el tiempo que está a 1 una señal conectada al pin <code class="reg">TxCK</code> (mide anchos de pulso).</li>
+    <li><strong>Modo gated</strong> (TCS=0, TGATE=1): mide el tiempo que está a 1 una señal conectada al pin <code class="reg">TxCK</code> (mide anchos de pulso). Sin configurar <code class="reg">PRx</code>: se elige <code class="reg">TCKPS</code> de modo que el pulso más largo dé TMRx &lt; 65535, y se lee <code class="reg">TMRx</code>.</li>
     <li><strong>Contador de eventos</strong> (TCS=1): el pin <code class="reg">TxCK</code> es el reloj; cuenta flancos externos. Remapeo con SYSKEY + <code class="reg">TxCKR</code>.</li>
   </ul>
 </section>
