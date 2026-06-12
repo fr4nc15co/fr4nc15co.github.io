@@ -1,0 +1,430 @@
+{
+  "slug": "tecnicas-programacion-fsm",
+  "titulo": "Técnicas de programación y máquinas de estados",
+  "temaNum": 11,
+  "lead": "Hasta ahora todos nuestros programas han seguido la estructura del <strong>bucle de scan</strong>: un bucle infinito que ejecuta tareas que no pueden bloquear. Este tema añade las dos herramientas que faltaban: la <strong>tarea inactiva</strong>, que fija el periodo de muestreo con un temporizador (sondeando su flag, sin interrupción), y las <strong>máquinas de estados de Moore</strong>, que permiten a cada tarea recordar en qué punto está usando una simple variable y un <code>switch</code>.",
+  "secciones": [
+    {
+      "titulo": "11.1 El bucle de scan: la estructura que hemos usado",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>La estructura de programa más sencilla para controlar un dispositivo con un microcontrolador es el <strong>bucle de scan</strong>: tras la inicialización del sistema (pines, periféricos y estado inicial de cada tarea), el programa entra en un <code>while&nbsp;(1)</code> del que nunca sale y en el que las tareas se ejecutan <strong>secuencialmente</strong>, una a continuación de otra, complementadas por las interrupciones que atienden a los periféricos.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Esqueleto canónico de un programa con bucle de scan en el PIC32MX230F064D:</p>",
+          "codigo": "int main(void) {\n    // Inicializacion del sistema: pines y su estado inicial\n    inicializaTareaA(argumentos);\n    inicializaTareaB(argumentos);\n    // ...\n    INTCONbits.MVEC = 1;     // Solo si hay interrupciones\n    asm(\"ei\");\n\n    while (1) {              // Bucle de scan\n        // Lecturas y escrituras segun la tarea (NO pueden bloquear)\n        tareaA();\n        tareaB();\n        tareaC();\n    }\n    return 0;\n}"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Las tareas no pueden bloquear:</strong> solo existe un bucle infinito, el del <code>main</code>. Si una tarea se queda atrapada en un <code>while</code> propio, las demás dejan de ejecutarse.",
+            "<strong>Las tareas se repiten una tras otra:</strong> el tiempo entre dos ejecuciones de la misma tarea depende de lo que tarden todas en esa vuelta, por lo que <em>t<sub>n</sub></em> puede ser distinto de <em>t<sub>m</sub></em>: el periodo no está controlado.",
+            "<strong>Las interrupciones complementan al bucle:</strong> los sucesos que necesitan atención inmediata (fin de cuenta de un temporizador, llegada de un carácter por la UART…) se atienden en su ISR y se comunican con las tareas mediante variables compartidas."
+          ]
+        },
+        {
+          "tipo": "nota",
+          "html": "Regla de oro del bucle de scan: <strong>ninguna tarea puede bloquear la ejecución</strong>. Si el programa no tiene tareas (todo se hace por interrupción), el bucle se reduce a <code>while&nbsp;(1);</code>."
+        }
+      ]
+    },
+    {
+      "titulo": "11.2 Temporización del bucle: la tarea inactiva",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Hay aplicaciones en las que las tareas deben ejecutarse con un <strong>periodo exacto</strong>. El caso típico son los <strong>algoritmos de control digital</strong>: en cada periodo de muestreo <em>T<sub>s</sub></em> se toman medidas, se ejecuta el algoritmo y se actualizan las salidas. Si <em>T<sub>s</sub></em> varía, las propiedades del regulador cambian, porque el algoritmo lo considera en sus decisiones (piense en un termostato que mide cada 15 minutos). La solución es añadir <strong>al final del bucle</strong> una <strong>tarea inactiva</strong> (<em>idle</em>): un bucle de espera que detiene el scan hasta que un temporizador en modo <em>free running</em>, con periodo <em>T<sub>s</sub></em>, señala el final del periodo. La tarea inactiva «absorbe» el tiempo que sobra en cada vuelta, de forma que el periodo del bucle deja de depender de cuánto tarde cada tarea (o de lo rápido que sea el procesador).</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>El temporizador se configura igual que siempre: con PBCLK = 5&nbsp;MHz, el valor del registro de periodo se calcula como (el −1 es porque la cuenta arranca en 0):</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>PR</mi><mi>x</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>T</mi><mi>s</mi></msub><mo>&#183;</mo><msub><mi>f</mi><mtext>PBCLK</mtext></msub></mrow><mtext>prescaler</mtext></mfrac><mo>&#8722;</mo><mn>1</mn></mrow></math>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Implantación con el <strong>Timer 5</strong> sondeando su flag <code class=\"reg\">T5IF</code> (sin interrupción). Con prescaler 1:8 salen 625 cuentas por milisegundo, número entero, y el periodo máximo llega a unos 104&nbsp;ms:</p>",
+          "codigo": "#include <xc.h>\n\n// Inicializa el Timer 5 con el periodo del bucle de scan en ms (PBCLK = 5 MHz)\nvoid inicializarTareaInactiva(unsigned int periodo) {\n    T5CON = 0;                   // Timer 5 parado\n    TMR5  = 0;                   // Cuenta a 0\n    IFS0bits.T5IF = 0;           // Borrar el flag de fin de cuenta\n    PR5   = 625 * periodo - 1;   // 5 MHz / 8 = 625 cuentas por ms\n    T5CON = 0x8030;              // ON, prescaler 1:8, reloj interno\n}\n\nvoid tareaInactiva(void) {\n    while (IFS0bits.T5IF == 0)\n        ;                        // Espera el final del periodo Ts\n    IFS0bits.T5IF = 0;           // Borrar el flag para la siguiente vuelta\n}\n\n// Variante con el periodo en DECIMAS de ms (1,5 ms -> periodo = 15),\n// para no usar coma flotante: prescaler 1:1 (500 cuentas por decima)\n//   PR5   = 500 * periodo - 1;\n//   T5CON = 0x8000;             // Periodo maximo: 13,1 ms"
+        },
+        {
+          "tipo": "registro",
+          "registro": "T5CON",
+          "valor": "0x8030"
+        },
+        {
+          "tipo": "nota",
+          "html": "La temporización solo funciona si <em>T<sub>s</sub></em> es <strong>mayor que la suma de los tiempos máximos</strong> de ejecución de las tareas del bucle. Si una vuelta se alarga demasiado, el flag ya estará a 1 al llegar a la tarea inactiva: esta retorna de inmediato y el periodo se incumple <em>sin que nada lo avise</em>."
+        }
+      ]
+    },
+    {
+      "titulo": "11.3 Tareas con distinto periodo de muestreo",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Si unas tareas deben ejecutarse más despacio que otras, lo único que permite el bucle de scan es jugar con <strong>múltiplos del periodo de muestreo menor</strong>: una tarea se ejecuta cada <em>n</em> vueltas y su periodo resulta <em>n·T<sub>s</sub></em>. Para ello se cuentan las vueltas del bucle con una variable. Veamos las dos formas de implantarlo para una tarea B que se ejecuta cada 2<em>T<sub>s</sub></em>:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Forma 1 (con el operador resto) frente a forma 2 (contador acotado):</p>",
+          "codigo": "// Forma 1: poco eficiente (division y rebose del contador)\nn = 0;\nwhile (1) {\n    tareaA();\n    if (n % 2 == 0) {\n        tareaB();        // Se ejecuta cada 2*Ts\n    }\n    n++;\n    tareaC();\n    tareaInactiva();\n}\n\n// Forma 2: mas eficiente (sin division y el contador no rebosa)\nn = 2;\nwhile (1) {\n    tareaA();\n    if (n == 2) {\n        tareaB();        // Se ejecuta cada 2*Ts\n        n = 0;\n    }\n    n++;\n    tareaC();\n    tareaInactiva();\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La forma 1 tiene dos pegas. La primera es que el operador <code>%</code> necesita <strong>dividir</strong>, y muchos microcontroladores de bajo coste no tienen hardware de división, por lo que esta se hace por software con la sobrecarga que conlleva. La segunda es el <strong>rebose del contador</strong>: cuando <code>n</code> pasa de su valor máximo a 0, la tarea puede ejecutarse con un periodo distinto del estipulado si el periodo no divide exactamente al rango del contador. La forma 2 evita ambas cosas: el contador se mantiene siempre acotado entre 0 y el periodo de la tarea, sin división y sin rebose.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "11.4 Tareas largas: trocear con una variable de estado",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>¿Qué pasa si una tarea dura tanto que hace superar el periodo de muestreo? Imagine que la tarea B tiene periodo 2<em>T<sub>s</sub></em> pero tarda más de medio periodo en ejecutarse: la tarea C ya no termina antes del final del periodo y el sistema incumple <em>T<sub>s</sub></em> la mitad de las veces. Cambiar el procesador por uno más rápido es lo cómodo, pero no lo eficiente. La solución es <strong>dividir la tarea B en dos subtareas</strong> (B.1 y B.2) que se ejecutan en vueltas consecutivas del bucle. Para saber qué subtarea le toca, B necesita <strong>recordar en qué punto está</strong>: una variable de estado. Acabamos de llegar, sin querer, a las máquinas de estados.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Tarea larga repartida entre varios periodos de muestreo. El bucle principal la sigue llamando en todas las vueltas; es la propia tarea la que decide qué mitad ejecutar:</p>",
+          "codigo": "void tareaB(void) {\n    static int estado = 1;   // static: conserva su valor entre llamadas\n\n    switch (estado) {\n    case 1:\n        // Subtareas B.1\n        estado = 2;\n        break;\n    case 2:\n        // Subtareas B.2\n        estado = 1;\n        break;\n    }\n}"
+        },
+        {
+          "tipo": "nota",
+          "html": "Una variable <code>static</code> dentro de una función <strong>conserva su valor entre llamadas</strong>. Cualquier resultado intermedio que B.1 deba pasar a B.2 también ha de declararse <code>static</code>. Si hay muchas tareas con muchos periodos y duraciones, trocearlas todas a mano puede ser imposible: ahí es donde haría falta un sistema operativo en tiempo real, que queda fuera de esta asignatura."
+        }
+      ]
+    },
+    {
+      "titulo": "11.5 Máquinas de estados de Moore",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Las máquinas de estados, ya estudiadas en Sistemas Digitales, son la herramienta estándar para controlar dispositivos cuyo comportamiento depende de la <strong>historia</strong> de las entradas, no solo de su valor actual. En una <strong>máquina de Moore</strong> hay tres elementos: el <strong>estado E</strong>, que en el microcontrolador se almacena en una <strong>variable</strong> (un <code>enum</code>) en lugar de en biestables; la <strong>función δ</strong> de transición, que a partir de las entradas <strong>X</strong> y del estado actual calcula el estado siguiente; y la <strong>función λ</strong> de salida, que obtiene las salidas <strong>Z</strong> mirando <em>únicamente</em> el estado. Ambas funciones se implantan en C con un <code>switch</code>-<code>case</code> o con sentencias <code>if</code>.</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Formalmente, en cada iteración del bucle de scan se evalúan las dos funciones de la máquina:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>E</mi><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><mi>&#948;</mi><mo stretchy=\"false\">(</mo><msub><mi>E</mi><mi>t</mi></msub><mo>,</mo><mi>X</mi><mo stretchy=\"false\">)</mo><mspace width=\"2em\"></mspace><msub><mi>Z</mi><mi>t</mi></msub><mo>=</mo><mi>&#955;</mi><mo stretchy=\"false\">(</mo><msub><mi>E</mi><mi>t</mi></msub><mo stretchy=\"false\">)</mo></mrow></math>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": true,
+          "items": [
+            "Definir los estados con un <code>enum</code> y una <strong>variable de estado</strong>, inicializada al estado de arranque antes de entrar en el bucle.",
+            "Al principio de cada vuelta del bucle de scan, <strong>leer las entradas</strong> (y detectar flancos si hace falta, como veremos en 11.7).",
+            "<strong>Función δ:</strong> un <code>switch (estado)</code> que, según las entradas, asigna el estado siguiente. Cada <code>case</code> termina en <code>break</code>.",
+            "<strong>Función λ:</strong> calcular las salidas mirando <em>solo</em> la variable de estado (con <code>if</code> o con otro <code>switch</code>), fuera del switch anterior.",
+            "<strong>Actualizar los pines</strong> de salida (<code class=\"reg\">LATx</code>) con los valores calculados."
+          ]
+        }
+      ]
+    },
+    {
+      "titulo": "11.6 Ejemplo: cisterna automática",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Primer ejemplo completo: una cisterna que se descarga sola. Un sensor de infrarrojos conectado a <strong>RC4</strong> da <strong>0 cuando hay una persona delante</strong> y 1 cuando no hay nadie; una electroválvula conectada a <strong>RC5</strong> descarga la cisterna al ponerse a 1. El sistema debe esperar a detectar una persona y <strong>descargar cuando esta se retire</strong> (cuando RC4 pase de 0 a 1 después de haber detectado a alguien). Eso exige <strong>memoria</strong> —hay que recordar que antes hubo alguien—, así que no vale un circuito combinacional: hace falta una máquina de estados con tres estados: <em>Reposo</em> (esperando que llegue alguien), <em>Espera</em> (hay alguien; esperando que se vaya) y <em>Descarga</em> (activar la electroválvula y volver a <em>Reposo</em>).</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Implantación completa. Observe la separación en tres pasos dentro del bucle: leer entradas, función δ y función λ con actualización de la salida:</p>",
+          "codigo": "#include <xc.h>\n#include <stdint.h>\n\n#define PIN_SENSOR   4   // RC4: sensor de infrarrojos (0 = persona delante)\n#define PIN_CISTERNA 5   // RC5: electrovalvula de descarga (1 = descarga)\n\nint main(void) {\n    uint8_t sensor, cisterna;\n    enum {Reposo, Espera, Descarga} estado;\n\n    // RC4 y RC5 no tienen funcion analogica: no hay bits ANSELC que borrar\n\n    LATA = 0;                    // En el arranque todas las salidas a 0\n    LATB = 0;\n    LATC = 0;\n    TRISA = 0;                   // Todo salidas excepto el sensor\n    TRISB = 0;\n    TRISC = 1 << PIN_SENSOR;\n\n    estado = Reposo;             // Estado inicial\n\n    while (1) {\n        // Lectura de la entrada\n        sensor = (PORTC >> PIN_SENSOR) & 1;\n\n        // Transicion de estados (funcion delta)\n        switch (estado) {\n        case Reposo:\n            if (sensor == 0) {       // Ha llegado alguien\n                estado = Espera;\n            }\n            break;\n        case Espera:\n            if (sensor == 1) {       // Ha terminado y se retira\n                estado = Descarga;\n            }\n            break;\n        case Descarga:\n            estado = Reposo;         // Vuelta a esperar\n            break;\n        }\n\n        // Funcion de salida (lambda): solo depende del estado\n        if (estado == Descarga) {\n            cisterna = 1;\n        } else {\n            cisterna = 0;\n        }\n\n        // Actualizacion del bit de salida\n        if (cisterna == 1) {\n            LATC |=  (1 << PIN_CISTERNA);  // Pone a 1\n        } else {\n            LATC &= ~(1 << PIN_CISTERNA);  // Pone a 0\n        }\n    }\n    return 0;\n}"
+        },
+        {
+          "tipo": "nota",
+          "html": "Fíjese en que la función λ está <strong>fuera</strong> del <code>switch</code> de transiciones y solo mira <code>estado</code>: eso es lo que hace de esta una máquina de <strong>Moore</strong>. La salida de descarga dura un único ciclo de scan; si la electroválvula necesitara más tiempo, se añadiría un estado temporizado como los de la puerta de garaje (11.9)."
+        }
+      ]
+    },
+    {
+      "titulo": "11.7 Detección de flancos",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Considere ahora el <strong>control de un aparcamiento de cuatro plazas</strong>: dos sensores, uno en la entrada y otro en la salida, se ponen a 1 cuando pasa un coche. ¿Se pueden usar tal cual las salidas de los sensores? <strong>No</strong>: la señal del sensor permanece activa un tiempo finito (mientras pasa el coche), durante el cual el bucle de scan se ejecuta <em>miles de veces</em>. Si la máquina contara un coche por vuelta, se iría siempre a los estados extremos. Lo mismo ocurre con cualquier pulsador: cada pulsación dura muchas iteraciones. La solución es un <strong>detector de flanco</strong>: generar una señal que valga 1 durante <em>una única iteración</em> del bucle cuando la entrada pasa de 0 a 1, comparando el valor actual con el de la vuelta anterior.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Patrón canónico de detección de flanco de subida dentro del bucle de scan:</p>",
+          "codigo": "// Antes del bucle: inicializar el valor anterior leyendo el puerto\nentra_ant = (PORTC >> PIN_ENTRA) & 1;\n\nwhile (1) {\n    // Dentro del bucle: detectar el flanco de subida\n    entra_act = (PORTC >> PIN_ENTRA) & 1;\n    if ((entra_act != entra_ant) && (entra_act == 1)) {\n        entra = 1;            // Flanco: activo SOLO en esta iteracion\n    } else {\n        entra = 0;\n    }\n    entra_ant = entra_act;    // Preparar la siguiente iteracion\n\n    // ... la maquina de estados usa 'entra', no el nivel del sensor\n}"
+        },
+        {
+          "tipo": "nota",
+          "html": "Patrón de examen: <strong>inicializar la variable <code>_ant</code> antes del bucle</strong> (leyendo el puerto) y <strong>copiar <code>act</code> → <code>ant</code> al final de cada iteración</strong>. Para un flanco de bajada basta cambiar la condición a <code>act == 0</code>. Recuerde además que cada pulsación de un botón dura mucho tiempo: o se detecta pulsación y liberación con estados, o se usa un detector de flanco."
+        }
+      ]
+    },
+    {
+      "titulo": "11.8 Ejemplo: control de aparcamiento",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Con el detector de flanco ya podemos resolver el aparcamiento: si hay <strong>menos de cuatro coches</strong> se enciende la luz <strong>verde</strong> del semáforo de entrada y si hay <strong>cuatro</strong> se enciende la <strong>roja</strong>. Se usan cinco estados que codifican el número de coches (<em>Vacio</em>, <em>Uno</em>, <em>Dos</em>, <em>Tres</em>, <em>Cuatro</em>): cada flanco del sensor de entrada sube un estado y cada flanco del de salida baja uno.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Implantación completa con detección de flancos en ambos sensores:</p>",
+          "codigo": "#include <xc.h>\n#include <stdint.h>\n\n#define PIN_ENTRA 4   // RC4: sensor de entrada (1 cuando pasa un coche)\n#define PIN_SALE  5   // RC5: sensor de salida\n#define PIN_ROJO  6   // RC6: luz roja del semaforo\n#define PIN_VERDE 7   // RC7: luz verde del semaforo\n\nint main(void) {\n    uint8_t entra, sale, rojo, verde;\n    uint8_t entra_ant, entra_act, sale_ant, sale_act;\n    enum {Vacio, Uno, Dos, Tres, Cuatro} estado;\n\n    // RC4-RC7 no tienen funcion analogica: no hay bits ANSELC que borrar\n\n    LATA = 0;                    // En el arranque todas las salidas a 0\n    LATB = 0;\n    LATC = 0;\n    TRISA = 0;                   // Todo salidas excepto los sensores\n    TRISB = 0;\n    TRISC = (1 << PIN_ENTRA) | (1 << PIN_SALE);\n\n    estado = Vacio;\n    entra_ant = (PORTC >> PIN_ENTRA) & 1;  // Valor inicial de los sensores\n    sale_ant  = (PORTC >> PIN_SALE) & 1;\n\n    while (1) {\n        // Deteccion de flancos de subida en los dos sensores\n        entra_act = (PORTC >> PIN_ENTRA) & 1;\n        sale_act  = (PORTC >> PIN_SALE) & 1;\n        if ((entra_act != entra_ant) && (entra_act == 1)) {\n            entra = 1;\n        } else {\n            entra = 0;\n        }\n        if ((sale_act != sale_ant) && (sale_act == 1)) {\n            sale = 1;\n        } else {\n            sale = 0;\n        }\n        entra_ant = entra_act;\n        sale_ant  = sale_act;\n\n        // Transicion de estados (funcion delta)\n        switch (estado) {\n        case Vacio:\n            if ((entra == 1) && (sale == 0)) estado = Uno;\n            break;\n        case Uno:\n            if ((entra == 1) && (sale == 0))      estado = Dos;\n            else if ((entra == 0) && (sale == 1)) estado = Vacio;\n            break;\n        case Dos:\n            if ((entra == 1) && (sale == 0))      estado = Tres;\n            else if ((entra == 0) && (sale == 1)) estado = Uno;\n            break;\n        case Tres:\n            if ((entra == 1) && (sale == 0))      estado = Cuatro;\n            else if ((entra == 0) && (sale == 1)) estado = Dos;\n            break;\n        case Cuatro:\n            if ((entra == 0) && (sale == 1))      estado = Tres;\n            break;\n        }\n\n        // Funcion lambda\n        if (estado == Cuatro) {        // Aparcamiento lleno\n            verde = 0;\n            rojo  = 1;\n        } else {\n            verde = 1;\n            rojo  = 0;\n        }\n\n        // Actualizacion de las salidas\n        if (verde == 1) LATC |=  (1 << PIN_VERDE);\n        else            LATC &= ~(1 << PIN_VERDE);\n        if (rojo == 1)  LATC |=  (1 << PIN_ROJO);\n        else            LATC &= ~(1 << PIN_ROJO);\n    }\n    return 0;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Dos detalles del diagrama: si <code>entra</code> y <code>sale</code> se activan <strong>a la vez</strong>, las condiciones (que exigen exclusividad) no se cumplen y el estado no cambia, lo cual es correcto porque el número de coches no varía. Y si en el estado <em>Cuatro</em> algún listillo se salta el semáforo en rojo, la máquina permanece en <em>Cuatro</em>: no procede contabilizar un coche que no tendrá sitio.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "11.9 Máquinas de estados con tiempos: la puerta de garaje",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El ejemplo estrella del tema combina máquina de estados, flancos e interrupciones de temporizador. Se automatiza una <strong>puerta de garaje</strong> gobernada por un mando a distancia de un solo botón: el receptor de radio, en <strong>RB2</strong>, da un pulso de 3,3&nbsp;V durante 10&nbsp;ms con cada pulsación. Dos relés controlan el motor: <strong>RB0</strong> lo enciende (1 = en marcha) y <strong>RB1</strong> fija el sentido (1 = cerrar). Abrir o cerrar del todo lleva <strong>30&nbsp;s</strong>. Cada pulsación alterna el ciclo: abrir → parar → cerrar → parar → abrir… Hacen falta <strong>seis estados</strong>: <em>Cerrado</em>, <em>Abriendo</em>, <em>Abierto</em>, <em>Cerrando</em> y dos estados de parada intermedia, <em>Par_Abri</em> y <em>Par_Cerr</em>, que recuerdan <strong>en qué sentido se movía</strong> la puerta. Para medir los 30&nbsp;s se usa el <strong>Timer1 con interrupción cada 1&nbsp;ms</strong>, cuya ISR lleva dos contadores <code>ms</code> y <code>seg</code>.</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Medir la posición:</strong> hay varias opciones válidas (una variable única de <em>ticks</em> que sube al abrir y baja al cerrar; varias variables separadas; o medir los 30&nbsp;s desde la posición de abierto/cerrado hasta la contraria, que es la usada en la solución).",
+            "<strong>Al parar a mitad:</strong> tomar una referencia de tiempos (<code>seg_ref</code>, <code>ms_ref</code>) y restaurarla al reanudar —la opción usada—, o bien parar el Timer y rehabilitarlo al volver a moverse, o combinar ambas.",
+            "<strong>Al reanudar en sentido contrario</strong> se aprovecha que <em>t<sub>abrir</sub></em> = 30 − <em>t<sub>cerrar</sub></em>: así el motor no tiene que estar 30&nbsp;s si la puerta estaba a medio camino."
+          ]
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Una posible solución completa. La ISR solo cuenta tiempo; la máquina de estados se evalúa en cada vuelta del scan:</p>",
+          "codigo": "#include <xc.h>\n#include <stdint.h>\n\n#define PIN_MANDO 2   // RB2: receptor de radio (pulso de 10 ms al pulsar)\n#define PIN_MOTOR 0   // RB0: rele de encendido del motor (1 = en marcha)\n#define PIN_DIR   1   // RB1: rele de sentido (1 = el motor cierra)\n\nvoid inicializarTarjeta(void);\nvoid inicializaTimer1(void);\nvoid maquinaEstados(void);\n\n// Variables compartidas con la ISR (tiempo de movimiento)\nstatic volatile uint16_t ms = 0, seg = 0;\nstatic uint16_t ms_ref, seg_ref;     // Referencia al parar a mitad\nstatic uint8_t pulso = 0, motor = 0, sentido = 0;\nstatic enum {Cerrado, Abriendo, Abierto,\n             Cerrando, Par_Abri, Par_Cerr} estado;\nstatic uint8_t portb_act, portb_ant; // Deteccion de flanco del mando\n\nint main(void) {\n    inicializarTarjeta();\n    inicializaTimer1();\n    while (1) {\n        maquinaEstados();\n    }\n    return 0;\n}\n\nvoid inicializarTarjeta(void) {\n    ANSELB &= ~((1 << PIN_MANDO) | (1 << PIN_MOTOR) | (1 << PIN_DIR));\n    LATA = 0;                     // Salidas a 0 en el arranque\n    LATB = 0;\n    LATC = 0;\n    TRISA = 0;\n    TRISB = 1 << PIN_MANDO;       // Todo salidas excepto el mando\n    TRISC = 0;\n    estado = Cerrado;             // Al principio la puerta esta cerrada\n    portb_act = (PORTB >> PIN_MANDO) & 1;\n}\n\nvoid inicializaTimer1(void) {\n    T1CON = 0;                // Timer 1 parado\n    TMR1 = 0;                 // Cuenta a 0\n    PR1 = 4999;               // Fin de cuenta cada 1 ms (PBCLK = 5 MHz, 1:1)\n    IPC1bits.T1IP = 2;        // Prioridad 2\n    IPC1bits.T1IS = 0;        // Subprioridad 0\n    IFS0bits.T1IF = 0;        // Borrar el flag\n    IEC0bits.T1IE = 1;        // Habilitar la interrupcion\n    T1CON = 0x8000;           // ON, prescaler 1:1, reloj interno\n    INTCONbits.MVEC = 1;      // Modo multivector\n    asm(\"ei\");                // Interrupciones habilitadas\n}\n\n__attribute__((vector(_TIMER_1_VECTOR), interrupt(IPL2SOFT), nomips16))\nvoid InterrupcionTimer1(void) {\n    IFS0bits.T1IF = 0;\n    ms++;\n    if (ms >= 1000) {\n        ms = 0;\n        seg++;\n    }\n}\n\nvoid maquinaEstados(void) {\n    // Deteccion de flanco de subida del mando\n    portb_ant = portb_act;\n    portb_act = (PORTB >> PIN_MANDO) & 1;\n    if ((portb_ant != portb_act) && (portb_act == 1)) {\n        pulso = 1;\n    } else {\n        pulso = 0;\n    }\n\n    // Transicion de estados (funcion delta)\n    switch (estado) {\n    case Cerrado:\n        if (pulso == 1) estado = Abriendo;\n        break;\n    case Abriendo:\n        if (pulso == 1) {\n            estado = Par_Abri;\n            seg_ref = seg;       // Guardar cuanto llevaba abriendo\n            ms_ref  = ms;\n        }\n        if (seg >= 30) estado = Abierto;\n        break;\n    case Abierto:\n        if (pulso == 1) estado = Cerrando;\n        break;\n    case Cerrando:\n        if (pulso == 1) {\n            estado = Par_Cerr;\n            seg_ref = seg;       // Guardar cuanto llevaba cerrando\n            ms_ref  = ms;\n        }\n        if (seg >= 30) estado = Cerrado;\n        break;\n    case Par_Abri:\n        if (pulso == 1) {\n            estado = Cerrando;\n            seg = 30 - seg_ref;  // Recupero tiempos: tcerrar = 30 - tabrir\n            ms  = 1000 - ms_ref;\n        }\n        break;\n    case Par_Cerr:\n        if (pulso == 1) {\n            estado = Abriendo;\n            seg = 30 - seg_ref;  // Recupero tiempos: tabrir = 30 - tcerrar\n            ms  = 1000 - ms_ref;\n        }\n        break;\n    }\n\n    // Funcion lambda y actuacion sobre las salidas\n    if ((estado == Abierto) || (estado == Cerrado) ||\n        (estado == Par_Abri) || (estado == Par_Cerr)) {\n        motor = 0;\n        ms = 0;                  // Reinicio de tiempos en las paradas\n        seg = 0;\n    } else if (estado == Abriendo) {\n        motor = 1;\n        sentido = 0;\n    } else {                     // Cerrando\n        motor = 1;\n        sentido = 1;\n    }\n\n    if (motor == 1)   LATBSET = 1 << PIN_MOTOR;\n    else              LATBCLR = 1 << PIN_MOTOR;\n    if (sentido == 1) LATBSET = 1 << PIN_DIR;\n    else              LATBCLR = 1 << PIN_DIR;\n}"
+        },
+        {
+          "tipo": "registro",
+          "registro": "T1CON",
+          "valor": "0x8000"
+        },
+        {
+          "tipo": "nota",
+          "html": "<code>ms</code> y <code>seg</code> se comparten entre la ISR y el bucle de scan, por lo que se declaran <strong>volatile</strong>. En rigor, sus accesos desde el <code>main</code> deberían protegerse con <code>asm(\"di\")</code>/<code>asm(\"ei\")</code> como se vio en el tema de interrupciones; aquí cada acceso es una única escritura de 16 bits y el riesgo es mínimo, pero en el examen siga el patrón canónico. Ampliación opcional: el enunciado original pide además una variante del proceso de apertura (cerrar 200&nbsp;ms para liberar el pestillo, parar 100&nbsp;ms y abrir 30&nbsp;s), que se resuelve añadiendo dos estados temporizados más, idénticos en estructura a los ya vistos."
+        }
+      ]
+    },
+    {
+      "titulo": "11.10 Multitarea cooperativa: varias máquinas anidadas",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Cuando el sistema tiene <strong>varias tareas concurrentes</strong>, cada una se implanta como su propia máquina de estados y todas se llaman desde el bucle de scan: es la <strong>multitarea cooperativa</strong>. El ejemplo de las transparencias lo ilustra bien: un pulsador en RB1 abre una ventana de 10 minutos durante la cual deben ejecutarse tres tareas a la vez (un pulso temporizado en RB0, una onda de 50&nbsp;Hz en RB2 cuyo ancho de pulso cambia con los minutos pares e impares, y un pulso de 2&nbsp;s en RB5 al detectar un flanco en RB4). Una <strong>máquina principal</strong> controla la ventana de 10 minutos y, anidadas bajo ella, cada tarea evoluciona con su propia variable de estado. El código se organiza de forma modular: cada tarea aporta una función de <strong>inicialización</strong> (llamada desde el <code>main</code>), una función de <strong>ejecución</strong> (llamada en cada vuelta del scan) y, si necesita base de tiempos, otra función llamada desde la <strong>interrupción del Timer1</strong>.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Esqueleto de la multitarea cooperativa con base de tiempos común:</p>",
+          "codigo": "// Cada tarea es una maquina de estados con su propia variable 'estado'\nint main(void) {\n    inicializarSistema();    // ANSEL, LAT, TRIS...\n    inicializaTimer1();      // Base de tiempos comun (tick de 1 ms)\n    inicializaTarea1();\n    inicializaTarea2();\n    inicializaTarea3();\n    INTCONbits.MVEC = 1;\n    asm(\"ei\");\n\n    while (1) {              // Bucle de scan\n        tarea1();            // Cada tareaX() ejecuta UNA pasada de su\n        tarea2();            // maquina de estados y devuelve el control\n        tarea3();\n    }\n    return 0;\n}\n\n__attribute__((vector(_TIMER_1_VECTOR), interrupt(IPL2SOFT), nomips16))\nvoid InterrupcionTimer1(void) {\n    IFS0bits.T1IF = 0;\n    tickTarea1();            // Cada tarea actualiza sus contadores\n    tickTarea2();            // de tiempo: la ISR no decide nada mas\n    tickTarea3();\n}"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Cada tarea guarda su estado</strong> en variables <code>static</code> y ejecuta una sola pasada de su máquina por vuelta del bucle: nunca bloquea.",
+            "<strong>Las esperas se convierten en estados</strong> que comprueban contadores de tiempo, nunca en bucles de espera dentro de la tarea.",
+            "<strong>Una única base de tiempos</strong> (Timer1 a 1&nbsp;ms) sirve a todas las tareas; la ISR se limita a incrementar contadores y borrar el flag.",
+            "<strong>Las variables compartidas</strong> entre la ISR y las tareas se declaran <code>volatile</code> y se protegen en el main con <code>asm(\"di\")</code>/<code>asm(\"ei\")</code>."
+          ]
+        },
+        {
+          "tipo": "nota",
+          "html": "Esta estructura (driver con <code>iniciaX()</code> + <code>tareaX()</code> + máquina de estados en el main) es exactamente la que piden los problemas de examen: el horno (2022), la máquina de recreativos (2023), la bomba de agua (2024) o el Rockit Rocker (2026) siguen todos este patrón."
+        }
+      ]
+    }
+  ],
+  "registros": {
+    "T5CON": {
+      "titulo": "T5CON: Type B Timer Control Register",
+      "nota": "Reconstruido del datasheet DS60001168 (Register 13-1). Los temporizadores 2 a 5 son de tipo B y comparten este formato; los bits 31-16 no están implementados. El bit T32 (bit 3) solo existe en los timers pares (T2CON y T4CON), por lo que no aparece aquí.",
+      "ancho": 16,
+      "campos": [
+        {
+          "bit": 15,
+          "nombre": "ON",
+          "desc": "Timer On: enciende o apaga el temporizador. Mientras está a 0, el timer conserva su cuenta pero no avanza.",
+          "valores": { "0": "Temporizador parado", "1": "Temporizador en marcha" }
+        },
+        {
+          "bit": 13,
+          "nombre": "SIDL",
+          "desc": "Stop in Idle Mode: comportamiento cuando la CPU entra en modo Idle.",
+          "valores": { "0": "Sigue contando en Idle", "1": "Se detiene en Idle" }
+        },
+        {
+          "bit": 7,
+          "nombre": "TGATE",
+          "desc": "Timer Gated Time Accumulation Enable: con TCS = 0, el timer solo cuenta mientras la entrada TxCK está a 1 (útil para medir anchos de pulso). Con TCS = 1 se ignora.",
+          "valores": { "0": "Acumulación gated deshabilitada", "1": "Acumulación gated habilitada" }
+        },
+        {
+          "bits": [6, 4],
+          "nombre": "TCKPS",
+          "desc": "Timer Input Clock Prescale Select: divisor del reloj de entrada. El divisor vale 2 elevado a TCKPS, salvo el 7, que divide por 256 (no por 128).",
+          "valores": { "0": "1:1", "1": "1:2", "2": "1:4", "3": "1:8", "4": "1:16", "5": "1:32", "6": "1:64", "7": "1:256" }
+        },
+        {
+          "bit": 1,
+          "nombre": "TCS",
+          "desc": "Timer Clock Source Select: selecciona el reloj que incrementa TMRx.",
+          "valores": { "0": "Reloj interno PBCLK (lo habitual)", "1": "Reloj externo en el pin TxCK" }
+        }
+      ]
+    },
+    "T1CON": {
+      "titulo": "T1CON: Type A Timer Control Register",
+      "nota": "Reconstruido del datasheet DS60001168 (Register 12-1). El temporizador 1 es el único de tipo A: puede funcionar con el oscilador secundario externo (SOSC) y su prescaler TCKPS solo tiene 2 bits (cuatro divisores).",
+      "ancho": 16,
+      "campos": [
+        {
+          "bit": 15,
+          "nombre": "ON",
+          "desc": "Timer On: el reloj solo llega al contador si este bit está a 1. A 0 el timer se para pero mantiene su valor.",
+          "valores": { "0": "Temporizador parado", "1": "Temporizador en marcha" }
+        },
+        {
+          "bit": 13,
+          "nombre": "SIDL",
+          "desc": "Stop in Idle Mode: comportamiento cuando la CPU entra en modo Idle.",
+          "valores": { "0": "Sigue contando en Idle", "1": "Se detiene en Idle" }
+        },
+        {
+          "bit": 7,
+          "nombre": "TGATE",
+          "desc": "Timer Gated Time Accumulation Enable: con TCS = 0, el timer solo cuenta mientras la entrada T1CK está a 1 (modo gated, para medir el ancho de un pulso). T1IF se activa con el flanco de bajada de T1CK.",
+          "valores": { "0": "Acumulación gated deshabilitada", "1": "Acumulación gated habilitada" }
+        },
+        {
+          "bits": [5, 4],
+          "nombre": "TCKPS",
+          "desc": "Timer Input Clock Prescale Select: prescaler del Timer 1 (tipo A), con solo cuatro divisores disponibles.",
+          "valores": { "0": "1:1", "1": "1:8", "2": "1:64", "3": "1:256" }
+        },
+        {
+          "bit": 2,
+          "nombre": "TSYNC",
+          "desc": "Timer External Clock Input Synchronization: con reloj externo (TCS = 1) permite puentear el sincronizador, necesario para despertar del modo de bajo consumo usando el SOSC. Con TCS = 0 se ignora.",
+          "valores": { "0": "Reloj externo sin sincronizar", "1": "Reloj externo sincronizado" }
+        },
+        {
+          "bit": 1,
+          "nombre": "TCS",
+          "desc": "Timer Clock Source Select: selecciona el reloj que incrementa TMR1.",
+          "valores": { "0": "Reloj interno PBCLK (lo habitual)", "1": "Reloj externo en el pin SOSC/T1CK" }
+        }
+      ]
+    }
+  },
+  "ejercicios": {
+    "tecnicas-programacion-fsm-1": {
+      "titulo": "La tarea inactiva con el Timer 5",
+      "enunciado": "<p>Codifique la <strong>tarea inactiva</strong> del bucle de scan junto con su función de inicialización, usando el <strong>Timer 5</strong> para realizar la espera (sin interrupciones: se sondea el flag <code>T5IF</code>). Los prototipos son <code>void inicializarTareaInactiva(unsigned int periodo);</code> y <code>void tareaInactiva(void);</code>, donde <code>periodo</code> es el periodo de ejecución del bucle en <strong>milisegundos</strong>. A continuación, modifique el diseño para que el periodo se exprese en <strong>décimas de milisegundo</strong>, de modo que para fijar un periodo de muestreo de 1,5&nbsp;ms baste con pasar un 15 como argumento, evitando los números en coma flotante.</p>",
+      "contexto": "<ul><li>PBCLK = 5&nbsp;MHz.</li><li>El Timer 5 es de tipo B: prescaler TCKPS de 3 bits (1:1 a 1:256).</li><li>Versión en ms: con prescaler 1:8 salen 625 cuentas por milisegundo.</li><li>Versión en décimas de ms: con prescaler 1:1 salen 500 cuentas por décima.</li><li>La tarea inactiva se llama la última dentro del <code>while (1)</code>.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "Con prescaler 1:8 y PBCLK = 5 MHz, ¿qué valor hay que cargar en PR5 para un periodo de 10 ms?",
+          "opciones": ["6249", "6250", "49999", "624"],
+          "correcta": 0,
+          "explicacion": "<p>Con prescaler 1:8 el reloj del timer es 5&nbsp;MHz/8 = 625&nbsp;kHz, es decir, <strong>625 cuentas por ms</strong>. Para 10&nbsp;ms: PR5 = 625·10&nbsp;−&nbsp;1 = <strong>6249</strong> (el −1 es porque la cuenta arranca en 0). El valor 49999 correspondería al prescaler 1:1 (5000·10&nbsp;−&nbsp;1) y 624 sería un periodo de 1&nbsp;ms con 1:8.</p>"
+        },
+        {
+          "texto": "¿Qué hace tareaInactiva() en una vuelta del bucle en la que las demás tareas han tardado más que el periodo Ts?",
+          "opciones": [
+            "Espera un periodo completo extra, duplicando Ts",
+            "Retorna inmediatamente: T5IF ya está a 1, y esa vuelta del bucle incumple Ts sin que nada lo avise",
+            "Genera una interrupción de error del Timer 5",
+            "Reinicia TMR5 y recupera el tiempo perdido en la vuelta siguiente"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>El timer es <em>free running</em>: termina su cuenta y pone <code>T5IF</code> a 1 aunque las tareas no hayan acabado. Cuando por fin se llama a <code>tareaInactiva()</code>, el <code>while</code> de espera encuentra el flag ya a 1 y <strong>retorna de inmediato</strong>. Esa vuelta del bucle ha durado más que <em>T<sub>s</sub></em> y nada lo señala: por eso la temporización solo es válida si <em>T<sub>s</sub></em> supera la suma de los tiempos máximos de las tareas.</p>"
+        },
+        {
+          "texto": "Si se olvida borrar el flag T5IF al salir de la espera dentro de tareaInactiva(), ¿qué ocurre?",
+          "opciones": [
+            "Nada: el flag se borra solo cuando el timer rebosa",
+            "El programa se queda bloqueado para siempre en el while de espera",
+            "Solo se espera el primer periodo: el flag queda a 1 y, a partir de entonces, el bucle de scan corre a toda velocidad",
+            "El Timer 5 se detiene al terminar la primera cuenta"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>Los flags de interrupción <strong>no se borran solos</strong>: los borra el software. La primera espera funciona, pero <code>T5IF</code> se queda a 1, así que en todas las vueltas siguientes el <code>while (IFS0bits.T5IF == 0);</code> termina al instante y el bucle deja de estar temporizado. Es el mismo error que olvidar borrar el flag en una ISR, solo que aquí no hay interrupción que se repita: simplemente se pierde la temporización.</p>"
+        },
+        {
+          "texto": "Para la versión con el periodo en décimas de milisegundo, ¿qué combinación permite trabajar solo con números enteros?",
+          "opciones": [
+            "Prescaler 1:1 y PR5 = 500·periodo − 1",
+            "Prescaler 1:8 y PR5 = 62,5·periodo − 1",
+            "Prescaler 1:64 y PR5 = 7,8125·periodo − 1",
+            "Es imposible sin usar coma flotante"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Con prescaler 1:1 el timer cuenta a 5&nbsp;MHz: en 0,1&nbsp;ms caben exactamente <strong>500 cuentas</strong>, así que PR5 = 500·periodo&nbsp;−&nbsp;1 con aritmética entera exacta (para 1,5&nbsp;ms: 500·15&nbsp;−&nbsp;1 = 7499). Con 1:8 saldrían 62,5 cuentas por décima, que no es entero. La pega del 1:1 es el rango: 65536/500 ≈ 131 décimas, unos 13,1&nbsp;ms de periodo máximo, suficiente para periodos de muestreo cortos.</p>"
+        }
+      ]
+    },
+    "tecnicas-programacion-fsm-2": {
+      "titulo": "Máquina de estados del Rockit Rocker (examen mayo 2026)",
+      "enunciado": "<p>El <strong>Rockit Rocker</strong> mece automáticamente un carro de bebé: un sensor acústico (gestionado por un driver que ofrece <code>getLlanto()</code>) indica si el bebé llora, y un motor por PWM (driver con <code>mueveMotor(potencia)</code>) genera el balanceo. El programa principal gestiona el funcionamiento con la máquina de estados <code>maqEstados(llantoOn, flancoOn)</code>, llamada una vez por vuelta del bucle de scan, con tres estados: <code>REPOSO</code> (sistema deshabilitado), <code>HABILITADO_REPOSO</code> (a la escucha) y <code>LLANTO_MOTOR_ON</code> (meciendo al 60&nbsp;% y con el LED encendido). Cada pulsación del botón <em>On</em> alterna entre habilitar el sistema y devolverlo a reposo; estando habilitado, el llanto activa el motor y su cese lo devuelve a la escucha. Tras el <code>switch</code> de transiciones, las salidas se calculan así: si el estado es <code>LLANTO_MOTOR_ON</code> se enciende el LED y se llama a <code>mueveMotor(60)</code>; en cualquier otro estado se apaga el LED y se llama a <code>mueveMotor(0)</code>.</p>",
+      "contexto": "<ul><li>Pulsador <em>On</em> en RC4, activo a nivel bajo; un detector de flanco en el main genera <code>flancoOn</code>, que vale 1 durante una única iteración por pulsación.</li><li><code>llantoOn = getLlanto()</code>: vale 1 mientras el driver considera que el bebé llora.</li><li>LED de alarma en RC0, activo a nivel alto.</li><li><code>mueveMotor(potencia)</code> recibe el ciclo de trabajo en % (0 desactiva el periférico).</li><li>La variable <code>estado</code> está declarada como global, inicializada a <code>REPOSO</code>.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Qué tipo de máquina de estados implementa maqEstados()?",
+          "opciones": [
+            "De Mealy, porque las salidas dependen directamente de las entradas llantoOn y flancoOn",
+            "De Moore: las salidas (LED y motor) se calculan únicamente a partir del estado, después del switch de transiciones",
+            "Un circuito combinacional, porque no usa biestables",
+            "Una máquina jerárquica con subestados anidados"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Es una máquina de <strong>Moore</strong>: la función λ (el <code>if (estado == LLANTO_MOTOR_ON)</code> tras el <code>switch</code>) solo mira la variable de estado, nunca las entradas. Las entradas solo intervienen en la función δ para decidir el estado siguiente. Y sí usa memoria: el estado se guarda en una variable en lugar de en biestables, que es justo como se implanta una FSM por software.</p>"
+        },
+        {
+          "texto": "¿Por qué la máquina recibe flancoOn (detector de flanco) en lugar del nivel del pulsador On?",
+          "opciones": [
+            "Para reducir el consumo del pin RC4",
+            "Porque una pulsación dura muchas vueltas del bucle de scan: usando el nivel, la máquina alternaría REPOSO ↔ HABILITADO_REPOSO en cada iteración mientras el botón siga pulsado",
+            "Porque PORTC solo permite una lectura por pulsación",
+            "Porque el flanco elimina la necesidad de configurar ANSELC"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>El bucle de scan se ejecuta miles de veces durante una pulsación. Si la transición dependiera del <strong>nivel</strong>, la condición se cumpliría en todas esas vueltas y el estado oscilaría sin control. El <strong>detector de flanco</strong> genera una señal que vale 1 exactamente durante una iteración por pulsación, igual que con los sensores del aparcamiento. Es el patrón obligado para pulsadores y sensores lentos en máquinas de estados.</p>"
+        },
+        {
+          "texto": "Estando en LLANTO_MOTOR_ON, en la misma iteración llegan flancoOn = 1 y llantoOn = 0. El case evalúa primero if (flancoOn) y después else if (!llantoOn). ¿A qué estado pasa la máquina?",
+          "opciones": [
+            "A HABILITADO_REPOSO, porque el cese del llanto tiene prioridad",
+            "A REPOSO: el if (flancoOn) se evalúa primero, dando prioridad al botón On sobre el sensor",
+            "Se queda en LLANTO_MOTOR_ON: las dos condiciones se anulan",
+            "El comportamiento es indeterminado"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>En un <code>if / else if</code> el orden <strong>establece la prioridad</strong>: como <code>flancoOn</code> se comprueba primero, la pulsación del botón gana y la máquina pasa a <code>REPOSO</code> (el usuario deshabilita el sistema). Si se hubiera escrito al revés, iría a <code>HABILITADO_REPOSO</code> y quedaría habilitada. Al diseñar la función δ hay que decidir conscientemente estas prioridades entre transiciones simultáneas.</p>"
+        },
+        {
+          "texto": "Si estado se declarara como variable local no static dentro de maqEstados(), ¿qué ocurriría?",
+          "opciones": [
+            "Nada: el compilador la conserva igualmente entre llamadas",
+            "Funcionaría, pero consumiendo más memoria RAM",
+            "La variable se crearía y destruiría en cada llamada: la máquina olvidaría su estado en cada vuelta del scan y no evolucionaría de forma fiable",
+            "Daría un error de compilación por usarla en un switch"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>Una variable local automática vive en la pila y <strong>desaparece al retornar</strong> la función: en cada llamada nacería sin valor definido (o reinicializada, si tuviera inicializador), perdiendo la memoria de la máquina. Por eso la variable de estado debe ser <strong>global o static</strong>: necesita conservar su valor entre vueltas del bucle de scan, exactamente igual que la variable <code>estado</code> de la tarea troceada de la sección 11.4.</p>"
+        }
+      ]
+    }
+  },
+  "ejerciciosEnTema": ["tecnicas-programacion-fsm-1", "tecnicas-programacion-fsm-2"],
+  "resumen": [
+    "El <strong>bucle de scan</strong> ejecuta las tareas secuencialmente dentro de un <code>while (1)</code>; ninguna tarea puede bloquear y las interrupciones lo complementan.",
+    "La <strong>tarea inactiva</strong>, al final del bucle, fija el periodo de muestreo esperando el flag de un timer <em>free running</em> (PR = T<sub>s</sub>·f<sub>PBCLK</sub>/prescaler − 1); solo funciona si T<sub>s</sub> supera la suma de los tiempos máximos de las tareas.",
+    "Tareas con periodo n·T<sub>s</sub>: contador de vueltas que se reinicia al llegar a n (evita la división del operador % y el rebose del contador).",
+    "Una tarea demasiado larga se trocea en subtareas seleccionadas con una variable <code>static</code>: el embrión de una máquina de estados.",
+    "En una máquina de <strong>Moore</strong> el estado es una variable (<code>enum</code>), la función δ (un <code>switch</code>) calcula el estado siguiente a partir de estado y entradas, y la función λ calcula las salidas mirando solo el estado.",
+    "Pulsadores y sensores permanecen activos durante miles de vueltas del bucle: hay que usar un <strong>detector de flanco</strong> (comparar valor actual y anterior) para generar señales de una sola iteración.",
+    "Para estados con tiempos (puerta de garaje) se usa el <strong>Timer1 con interrupción de 1 ms</strong> que lleva contadores ms/seg <code>volatile</code>; al parar a mitad se guarda una referencia de tiempos y al reanudar se aprovecha que t<sub>abrir</sub> = 30 − t<sub>cerrar</sub>.",
+    "La <strong>multitarea cooperativa</strong> anida varias máquinas de estados, cada una con su estado <code>static</code> y su función llamada una vez por vuelta del scan, con una base de tiempos común en la ISR."
+  ]
+}

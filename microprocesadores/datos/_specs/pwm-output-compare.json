@@ -1,0 +1,368 @@
+{
+  "slug": "pwm-output-compare",
+  "titulo": "Modulación por ancho de pulso (PWM) y Output Compare",
+  "temaNum": 10,
+  "lead": "La <strong>modulación por ancho de pulso</strong> (PWM) permite regular la potencia entregada a luces, motores y servos variando el <em>tiempo en alto</em> de una señal periódica. En el PIC32MX la genera por hardware la unidad <strong>Output Compare</strong>, que se configura con el registro <code class=\"reg\">OC1CON</code> y los registros de comparación <code class=\"reg\">OC1R</code> y <code class=\"reg\">OC1RS</code>.",
+  "secciones": [
+    {
+      "titulo": "10.1 La señal PWM: periodo y factor de servicio",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Una señal PWM (<em>Pulse Width Modulation</em>) no es más que una <strong>señal cuadrada periódica</strong> de periodo <em>T</em> en la que el <strong>tiempo de activación</strong> <em>t<sub>a</sub></em> (tiempo que la señal está a nivel alto) es variable. A primera vista puede parecer poco útil, pero es justo al revés: es una de las formas más baratas y eficientes de <strong>regular potencia</strong> con un microcontrolador, porque la salida solo conmuta entre 0 y 1 (el transistor que la amplifica trabaja en corte o saturación, donde apenas disipa).</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>La relación entre el tiempo en alto y el periodo se denomina <strong>factor de servicio</strong> o <em>duty cycle</em> (DC), y se suele expresar en tanto por ciento:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mi>DC</mi><mo stretchy=\"false\">(</mo><mi mathvariant=\"normal\">%</mi><mo stretchy=\"false\">)</mo><mo>=</mo><mfrac><msub><mi>t</mi><mi>a</mi></msub><mi>T</mi></mfrac><mo>&#183;</mo><mn>100</mn></mrow></math>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Si la carga (o nuestro ojo, o el rotor de un motor) se comporta como un <strong>filtro paso bajo</strong>, lo que «ve» es la <strong>tensión media</strong> de la onda, que crece linealmente con el factor de servicio:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>V</mi><mtext>med</mtext></msub><mo>=</mo><msub><mi>V</mi><mtext>pico</mtext></msub><mo>&#183;</mo><mfrac><msub><mi>t</mi><mi>a</mi></msub><mi>T</mi></mfrac></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Una señal PWM se puede generar por software con las interrupciones de un temporizador, pero la mayoría de los microcontroladores incluyen <strong>hardware especializado</strong> para ello. En el PIC32MX esa unidad se llama <strong>Output Compare</strong>. Usar el hardware libera a la CPU para otras tareas y genera una onda más precisa, ya que no depende de que la interrupción se atienda a tiempo (podría retrasarse si el programa corta las interrupciones o si hay otra de mayor prioridad en curso).</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "10.2 Aplicaciones: luces, motores y el transistor como conmutador",
+      "bloques": [
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Regulación de luces:</strong> nuestro ojo es un estupendo filtro paso bajo con una frecuencia de corte de unos <strong>20&nbsp;Hz</strong>. Si alimentamos una lámpara con una señal PWM de frecuencia bastante mayor, percibimos solo el brillo medio: regulamos la intensidad sin más que variar el ancho de pulso.",
+            "<strong>Control de velocidad de motores CC:</strong> el rotor es una bobina (filtro paso bajo) y además tiene inercia mecánica, que filtra aún más. Con una frecuencia de PWM de unos cuantos kilohercios el motor gira suave, y su velocidad media es proporcional al factor de servicio.",
+            "<strong>Control de posición de servos:</strong> los servos de modelismo se controlan con una señal PWM muy concreta que veremos en la sección siguiente."
+          ]
+        },
+        {
+          "tipo": "nota",
+          "html": "En luces y motores se suelen elegir frecuencias de PWM <strong>superiores a 20&nbsp;kHz</strong>, fuera del rango auditivo humano. Los condensadores cerámicos (por efecto piezoeléctrico) y los hilos de las bobinas vibran a la frecuencia a la que se alimentan: si esa frecuencia es audible, el circuito «silba» y resulta molesto."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>Recordatorio: el BJT como conmutador.</strong> Un pin del microcontrolador solo puede dar unos pocos miliamperios, así que para alimentar una carga real (motor, lámpara) hace falta un transistor trabajando en <strong>corte y saturación</strong>. En un BJT NPN la corriente de colector es proporcional a la de base (<em>I<sub>C</sub> = h<sub>FE</sub>·I<sub>B</sub></em>, con <em>h<sub>FE</sub></em> típica de 150); en saturación se comporta como un diodo entre colector y emisor (<em>V<sub>CE</sub></em>) y otro entre base y emisor (<em>V<sub>BE</sub></em>).</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Ejemplo: queremos alimentar una carga de 200&nbsp;mA a 12&nbsp;V con un transistor de <em>h<sub>FE</sub></em>(min) = 100 y <em>V<sub>BE</sub></em> = 0,7&nbsp;V, excitando la base desde un pin a 3,3&nbsp;V. La corriente de base necesaria y la resistencia de base resultan:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>I</mi><mi>B</mi></msub><mo>=</mo><mfrac><msub><mi>I</mi><mi>C</mi></msub><mrow><msub><mi>h</mi><mtext>FE</mtext></msub><mo stretchy=\"false\">(</mo><mtext>min</mtext><mo stretchy=\"false\">)</mo></mrow></mfrac><mo>=</mo><mfrac><mrow><mn>200</mn><mtext>&#8201;mA</mtext></mrow><mn>100</mn></mfrac><mo>=</mo><mn>2</mn><mtext>&#8201;mA</mtext><mspace width=\"2em\"></mspace><msub><mi>R</mi><mi>B</mi></msub><mo>=</mo><mfrac><mrow><mn>3,3</mn><mtext>&#8201;V</mtext><mo>&#8722;</mo><mn>0,7</mn><mtext>&#8201;V</mtext></mrow><mrow><mn>2</mn><mtext>&#8201;mA</mtext></mrow></mfrac><mo>=</mo><mn>1,3</mn><mtext>&#8201;k&#937;</mtext></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Se elige la <strong>resistencia normalizada inferior</strong> (1,2&nbsp;kΩ) para garantizar corriente de base de sobra, y se comprueba en las curvas del <em>datasheet</em> del transistor que con esa corriente realmente entra en saturación.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "10.3 Servos de modelismo",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Los servos de modelismo permiten <strong>controlar la posición</strong> de su eje mediante una señal PWM con unas características muy concretas: el periodo ha de ser de <strong>20&nbsp;ms</strong> y el tiempo en alto ha de variar entre <strong>1&nbsp;ms</strong> (ángulo de &#8722;90&#176;) y <strong>2&nbsp;ms</strong> (ángulo de +90&#176;). Con 1,5&nbsp;ms el servo se sitúa en la posición de reposo (0&#176;).</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "Eso dice la teoría. En la práctica los servos se ponen en reposo con un pulso de 1,5&nbsp;ms y giran a derechas con pulsos más anchos o a izquierdas con pulsos más estrechos; dependiendo del fabricante, el ángulo girado para un mismo ancho de pulso puede variar."
+        }
+      ]
+    },
+    {
+      "titulo": "10.4 La unidad Output Compare del PIC32",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El PIC32MX230F064D dispone de <strong>cinco salidas Output Compare</strong> (OC1 a OC5). El módulo funciona en conjunción con el <strong>temporizador 2, el 3, o ambos</strong> si se configura en modo de 32 bits: compara continuamente la cuenta del temporizador con los valores almacenados en sus registros y, cuando hay coincidencia (<em>match</em>), actúa sobre el pin de salida según el modo seleccionado. Cuando el temporizador rebosa (<em>rollover</em>) al llegar a PRx, comienza un nuevo ciclo.</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong><code>OCxR</code></strong> (<em>Output Compare Register</em>) y <strong><code>OCxRS</code></strong> (<em>Output Compare Register Secondary</em>): dos registros que almacenan los valores con los que se compara la cuenta del temporizador.",
+            "<strong>Un comparador</strong> que compara la cuenta del temporizador (TMR2 o TMR3) con los valores de los dos registros anteriores.",
+            "<strong>Una lógica de salida</strong> que controla el pin OCx en función del modo de funcionamiento. Los pines de salida son <strong>remapeables</strong> (<em>Peripheral Pin Select</em>): hay que asignarlos con la secuencia SYSKEY + <code>RPxR</code>.",
+            "<strong>Dos entradas de falta:</strong> <code>OCFA</code>, compartida por las salidas OC1 a OC4, y <code>OCFB</code>, para OC5. Permiten desconectar la salida por hardware si se detecta un fallo (por ejemplo un cortocircuito) cuando se trabaja en el modo apropiado. También son remapeables."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La selección del temporizador se hace con dos bits del registro de control: <strong>OC32</strong> (bit 5) indica si se compara con un temporizador de 16 bits (0) o con el de 32 bits formado por Timer2+Timer3 (1); y <strong>OCTSEL</strong> (bit 3) elige, en modo 16 bits, entre el Timer2 (0) y el Timer3 (1).</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "10.5 El registro OCxCON y los modos de funcionamiento",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Cada salida OCx se controla con un registro <code>OCxCON</code> idéntico. Además del bit <strong>ON</strong> (bit 15) que enciende el módulo, el campo <strong>OCM</strong> (bits 2-0, <em>Output Compare Mode</em>) selecciona uno de los ocho modos de funcionamiento:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>000 — Salida inactiva.</strong> La salida no cambia, pero el periférico sigue gastando energía. Es mejor desconectar el módulo poniendo el bit ON a cero.",
+            "<strong>001 — Pin bajo a pin alto.</strong> Inicializa OCx a nivel bajo; cuando la cuenta llega al valor de <code>OCxR</code>, el pin pasa a nivel alto.",
+            "<strong>010 — Pin alto a pin bajo.</strong> Inicializa OCx a nivel alto; cuando la cuenta llega a <code>OCxR</code>, el pin pasa a nivel bajo.",
+            "<strong>011 — Inversión.</strong> Cada vez que la cuenta llega a <code>OCxR</code>, el pin OCx se invierte (<em>toggle</em>).",
+            "<strong>100 — Pulso único.</strong> Inicializa OCx a nivel bajo; al llegar la cuenta a <code>OCxR</code> el pin pasa a alto y al llegar a <code>OCxRS</code> vuelve a bajo. Se genera un único pulso.",
+            "<strong>101 — Pulsos continuos.</strong> Igual que el anterior, pero cuando el temporizador rebosa el ciclo se repite: tren de pulsos continuo.",
+            "<strong>110 — PWM sin detección de faltas.</strong> El modo que usaremos en la práctica.",
+            "<strong>111 — PWM con detección de faltas.</strong> Igual que el anterior, pero si se detecta un nivel bajo en la entrada OCFx correspondiente, la salida se desconecta y el bit OCFLT se pone a 1."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El valor de <code>OC1CON</code> que usaremos casi siempre es <strong>0x8006</strong>: bit ON a 1 (0x8000) más OCM&nbsp;=&nbsp;110 (0x0006), es decir, módulo encendido en modo PWM sin faltas con el Timer2 como base de tiempos (OCTSEL&nbsp;=&nbsp;0). Explóralo en el visor:</p>"
+        },
+        {
+          "tipo": "registro",
+          "registro": "OC1CON",
+          "valor": "0x8006"
+        }
+      ]
+    },
+    {
+      "titulo": "10.6 El modo PWM sin faltas (OCM = 110)",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El funcionamiento del modo PWM es el siguiente:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": true,
+          "items": [
+            "Cuando se arranca el módulo, la salida se pone a <strong>nivel alto</strong> y permanece así hasta que el temporizador llega al valor almacenado en <code>OCxR</code>.",
+            "En ese momento la salida pasa a <strong>nivel bajo</strong> y permanece así hasta que el temporizador llega al final de su cuenta (PRx) y se reinicia.",
+            "Cuando el temporizador pasa de 0 a 1, la salida vuelve a ponerse a 1 y el valor almacenado en <code>OCxRS</code> <strong>se copia automáticamente en <code>OCxR</code></strong>, repitiéndose el ciclo indefinidamente."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Gracias a esta <em>doble carga</em> (<em>double buffering</em>), el programa puede actualizar el factor de servicio escribiendo en <code>OCxRS</code> en cualquier momento <strong>sin interferir en la onda que se está generando</strong>: el nuevo valor solo se aplica al empezar el siguiente periodo. De hecho, para evitar tentaciones, el módulo <strong>impide escribir en <code>OCxR</code></strong> mientras funciona en modo PWM. Por eso el ancho del <strong>primer pulso</strong> debe escribirse en <code>OCxR</code> <em>antes</em> de arrancar el módulo poniendo el bit ON a 1.</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>El periodo de la señal PWM lo fija el temporizador (registro PRx y prescaler) y el tiempo en alto lo fija <code>OCxRS</code>, ambos medidos en «cuentas» del temporizador. Con PBCLK = 5&nbsp;MHz:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mtext>PR</mtext><mi>x</mi></msub><mo>=</mo><mfrac><mrow><mi>T</mi><mo>&#183;</mo><msub><mi>f</mi><mtext>PBCLK</mtext></msub></mrow><mtext>Prescaler</mtext></mfrac><mo>&#8722;</mo><mn>1</mn><mspace width=\"2em\"></mspace><mi>DC</mi><mo stretchy=\"false\">(</mo><mi mathvariant=\"normal\">%</mi><mo stretchy=\"false\">)</mo><mo>=</mo><mfrac><mtext>OCxRS</mtext><mrow><msub><mtext>PR</mtext><mi>x</mi></msub><mo>+</mo><mn>1</mn></mrow></mfrac><mo>&#183;</mo><mn>100</mn></mrow></math>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Orden canónico de inicialización:</strong> primero el remapeo del pin (SYSKEY + <code>RPxR</code>), después el Output Compare (<code>OCxCON = 0</code> &#8594; <code>OCxR</code> y <code>OCxRS</code> &#8594; <code>OCxCON</code> con ON a 1) y <strong>por último el temporizador</strong> (<code>TxCON = 0</code> &#8594; <code>TMRx = 0</code> &#8594; <code>PRx</code> &#8594; <code>TxCON</code> con ON a 1). Así, cuando el temporizador arranca, el módulo OC ya está listo y el primer periodo sale correcto."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Si en lugar del Timer2 se quiere usar el <strong>Timer3</strong> como base de tiempos (por ejemplo porque el Timer2 ya está ocupado contando milisegundos), basta con poner además el bit OCTSEL a 1: el valor pasa a ser <strong>0x800E</strong>. Compruébalo en el visor:</p>"
+        },
+        {
+          "tipo": "registro",
+          "registro": "OC1CON",
+          "valor": "0x800E"
+        }
+      ]
+    },
+    {
+      "titulo": "10.7 Ejemplo: control de un motor de corriente continua",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Vamos a controlar un motor de continua conectado (a través de su driver) al pin <strong>RC7</strong>, generando una señal PWM con factor de servicio variable entre el 0&nbsp;% y el 100&nbsp;%. Cada vez que se pulse el pulsador de la placa (RB5) el factor de servicio se incrementará un 10&nbsp;%; al superar el 100&nbsp;% se volverá a empezar desde 0.</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Elegimos una frecuencia de PWM de <strong>20&nbsp;kHz</strong> (inaudible), es decir, un periodo de 50&nbsp;&#181;s. Es un tiempo tan pequeño que basta el prescaler 1:1 del Timer2:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mtext>PR2</mtext><mo>=</mo><mn>50</mn><mtext>&#8201;&#181;s</mtext><mo>&#183;</mo><mn>5</mn><mtext>&#8201;MHz</mtext><mo>&#8722;</mo><mn>1</mn><mo>=</mo><mn>250</mn><mo>&#8722;</mo><mn>1</mn><mo>=</mo><mn>249</mn></mrow></math>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Para fijar el factor de servicio basta escribir en <code>OC1RS</code> la fracción correspondiente del periodo. Por ejemplo, para un 10&nbsp;% (la división entera de C trunca el resultado):</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mtext>OC1RS</mtext><mo>=</mo><mfrac><mrow><mtext>PERIODO</mtext><mo>&#183;</mo><mn>10</mn></mrow><mn>100</mn></mfrac><mo>=</mo><mfrac><mrow><mn>249</mn><mo>&#183;</mo><mn>10</mn></mrow><mn>100</mn></mfrac><mo>=</mo><mn>24,9</mn><mo>&#8594;</mo><mn>24</mn></mrow></math>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Programa completo. Observa el orden: remapeo &#8594; Output Compare &#8594; Timer2, y que el factor de servicio se actualiza en marcha escribiendo solo en <code>OC1RS</code>:</p>",
+          "codigo": "#include <xc.h>\n#include <stdint.h>\n\n#define PIN_PULSADOR   5    // RB5: pulsador de la placa\n#define PIN_PWM_MOTOR  7    // RC7: senal PWM al driver del motor\n#define PERIODO        249  // 50 us -> 20 kHz con PBCLK = 5 MHz\n\nint main(void)\n{\n    int pulsador_ant, pulsador_act;\n    int factor_servicio = 0;            // En tanto por ciento\n\n    // Pines de los LEDs y del motor como digitales\n    ANSELC &= ~(0xF | (1 << PIN_PWM_MOTOR));\n\n    LATA = 0;                           // En el arranque, salidas a 0\n    LATB = 0;\n    LATC = 0xF;                         // Apago los LEDs de la placa\n\n    // Todos los pines como salidas excepto RB5 (pulsador)\n    TRISA = 0;\n    TRISB = (1 << PIN_PULSADOR);\n    TRISC = 0;\n\n    // 1. Remapeo: salida OC1 al pin RC7\n    SYSKEY = 0xAA996655;\n    SYSKEY = 0x556699AA;\n    RPC7R  = 5;                         // OC1 conectado a RC7\n    SYSKEY = 0x1CA11CA1;\n\n    // 2. Primero el Output Compare...\n    OC1CON = 0;                         // OC1 apagado para configurarlo\n    OC1R   = 0;                         // Primer pulso: factor de servicio 0 %\n    OC1RS  = 0;\n    OC1CON = 0x8006;                    // ON, PWM sin faltas, fuente Timer2\n\n    // 3. ...y despues el Timer2\n    T2CON = 0;\n    TMR2  = 0;\n    PR2   = PERIODO;                    // Periodo de 50 us (20 kHz)\n    T2CON = 0x8000;                     // T2 ON, prescaler 1:1\n\n    pulsador_ant = (PORTB >> PIN_PULSADOR) & 1;\n    while (1) {\n        // Se lee el estado del pulsador\n        pulsador_act = (PORTB >> PIN_PULSADOR) & 1;\n        if ((pulsador_act != pulsador_ant) && (pulsador_act == 0)) {\n            // Flanco de bajada del pulsador\n            factor_servicio += 10;\n            if (factor_servicio > 100) {\n                factor_servicio = 0;\n            }\n            OC1RS = (PERIODO * factor_servicio) / 100;\n        }\n        pulsador_ant = pulsador_act;\n    }\n}"
+        },
+        {
+          "tipo": "nota",
+          "html": "Fíjate en que se arranca con <code>OC1R = OC1RS = 0</code> (motor parado) y en que <strong>nunca se vuelve a tocar <code>OC1R</code></strong>: el módulo lo actualiza solo desde <code>OC1RS</code> al final de cada periodo. Para parar el motor no hace falta apagar el OC ni el Timer: basta con <code>OC1RS = 0</code>."
+        }
+      ]
+    },
+    {
+      "titulo": "10.8 Ejemplo: control de un servo de modelismo",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>En este segundo ejemplo controlamos un servo con la salida OC1 conectada a <strong>RB15</strong>. El programa arranca con el servo en &#8722;90&#176; y cada pulsación del pulsador incrementa la posición 10&#176;; al llegar a +90&#176; se vuelve a &#8722;90&#176;, repitiéndose el ciclo.</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Primero configuramos el Timer2 para generar el periodo de <strong>20&nbsp;ms</strong> del servo. Con prescaler 1:1 harían falta 100&#8201;000 cuentas, que no caben en 16 bits, así que calculamos el prescaler mínimo necesario y con él el valor de PR2:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mtext>Prescaler</mtext><mo>&#8805;</mo><mfrac><mrow><mn>20</mn><mtext>&#8201;ms</mtext><mo>&#183;</mo><mn>5</mn><mtext>&#8201;MHz</mtext></mrow><mn>65536</mn></mfrac><mo>=</mo><mn>1,53</mn><mo>&#8594;</mo><mn>2</mn><mspace width=\"2em\"></mspace><mtext>PR2</mtext><mo>=</mo><mfrac><mrow><mn>20</mn><mtext>&#8201;ms</mtext><mo>&#183;</mo><mn>5</mn><mtext>&#8201;MHz</mtext></mrow><mn>2</mn></mfrac><mo>&#8722;</mo><mn>1</mn><mo>=</mo><mn>49999</mn></mrow></math>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Con el prescaler 1:2 el temporizador se incrementa a 2,5&nbsp;MHz (una cuenta cada 0,4&nbsp;&#181;s). Los anchos de pulso de los extremos del servo en cuentas son:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mtext>OC1RS</mtext><mo stretchy=\"false\">(</mo><mo>&#8722;</mo><mn>90</mn><mo>&#176;</mo><mo stretchy=\"false\">)</mo><mo>=</mo><mn>1</mn><mtext>&#8201;ms</mtext><mo>&#183;</mo><mn>2,5</mn><mtext>&#8201;MHz</mtext><mo>=</mo><mn>2500</mn><mspace width=\"2em\"></mspace><mtext>OC1RS</mtext><mo stretchy=\"false\">(</mo><mo>+</mo><mn>90</mn><mo>&#176;</mo><mo stretchy=\"false\">)</mo><mo>=</mo><mn>2</mn><mtext>&#8201;ms</mtext><mo>&#183;</mo><mn>2,5</mn><mtext>&#8201;MHz</mtext><mo>=</mo><mn>5000</mn></mrow></math>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>El recorrido de 180&#176; se reparte por tanto en 2500 cuentas (resolución de 0,072&#176; por cuenta, de sobra frente a la tolerancia mecánica del servo). El incremento de <code>OC1RS</code> para girar 10&#176; es:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mi>&#916;</mi><mtext>OC1RS</mtext><mo>=</mo><mfrac><mrow><mn>5000</mn><mo>&#8722;</mo><mn>2500</mn></mrow><mrow><mn>180</mn><mo>&#176;</mo></mrow></mfrac><mo>&#183;</mo><mn>10</mn><mo>&#176;</mo><mo>=</mo><mn>138,9</mn><mo>&#8776;</mo><mn>139</mn><mtext>&#8201;cuentas</mtext></mrow></math>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Programa completo. La estructura es idéntica a la del motor; cambian el pin remapeado (RB15), el periodo (20&nbsp;ms con prescaler 1:2) y los valores de comparación:</p>",
+          "codigo": "#include <xc.h>\n#include <stdint.h>\n\n#define PIN_PULSADOR   5    // RB5: pulsador de la placa\n#define INC_10_GRADOS  139  // cada 139 cuentas el servo gira 10 grados\n\nint main(void)\n{\n    int pulsador_ant, pulsador_act;\n    int t_alto = 2500;                  // 1 ms -> servo en -90 grados\n\n    // Pines de los LEDs y RB15 (AN9) como digitales\n    ANSELC &= ~0xF;\n    ANSELB &= ~(1 << 15);               // RB15 es analogico: digital para OC1\n\n    LATA = 0;                           // En el arranque, salidas a 0\n    LATB = 0;\n    LATC = 0xF;                         // Apago los LEDs de la placa\n\n    // Todos los pines como salidas excepto RB5 (pulsador)\n    TRISA = 0;\n    TRISB = (1 << PIN_PULSADOR);\n    TRISC = 0;\n\n    // 1. Remapeo: salida OC1 al pin RB15\n    SYSKEY = 0xAA996655;\n    SYSKEY = 0x556699AA;\n    RPB15R = 5;                         // OC1 conectado a RB15\n    SYSKEY = 0x1CA11CA1;\n\n    // 2. Primero el Output Compare...\n    OC1CON = 0;                         // OC1 apagado para configurarlo\n    OC1R   = 2500;                      // Primer pulso de 1 ms (-90 grados)\n    OC1RS  = 2500;\n    OC1CON = 0x8006;                    // ON, PWM sin faltas, fuente Timer2\n\n    // 3. ...y despues el Timer2\n    T2CON = 0;\n    TMR2  = 0;\n    PR2   = 49999;                      // Periodo de 20 ms con prescaler 1:2\n    T2CON = 0x8010;                     // T2 ON, prescaler 1:2\n\n    pulsador_ant = (PORTB >> PIN_PULSADOR) & 1;\n    while (1) {\n        // Se lee el estado del pulsador\n        pulsador_act = (PORTB >> PIN_PULSADOR) & 1;\n        if ((pulsador_act != pulsador_ant) && (pulsador_act == 0)) {\n            // Flanco de bajada del pulsador\n            t_alto += INC_10_GRADOS;\n            if (t_alto > 5000) {\n                t_alto = 2500;          // Vuelta a -90 grados\n            }\n            OC1RS = t_alto;\n        }\n        pulsador_ant = pulsador_act;\n    }\n}"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Ampliación opcional</strong> (del libro, fuera de las transparencias): una señal PWM filtrada con un simple filtro RC paso bajo se puede usar como <em>conversor digital/analógico de bajo coste</em>: la tensión de salida es la media de la onda, <em>V<sub>pico</sub>·t<sub>a</sub>/T</em>. Sus prestaciones son modestas, pero puede sacarte de un apuro."
+        }
+      ]
+    }
+  ],
+  "registros": {
+    "OC1CON": {
+      "titulo": "OC1CON: Output Compare 1 Control Register",
+      "nota": "Reconstruido del datasheet DS60001168 (Register 16-1). Los bits 31-16 no están implementados; se muestran los 16 bits bajos. Cada salida OC1 a OC5 tiene un registro OCxCON idéntico.",
+      "ancho": 16,
+      "campos": [
+        {
+          "bit": 15,
+          "nombre": "ON",
+          "desc": "Output Compare Peripheral On: enciende o apaga el módulo. Apagarlo es la forma correcta de dejar de consumir (mejor que OCM = 000).",
+          "valores": { "0": "Módulo apagado", "1": "Módulo encendido" }
+        },
+        {
+          "bit": 13,
+          "nombre": "SIDL",
+          "desc": "Stop in Idle Mode: comportamiento cuando la CPU entra en modo Idle.",
+          "valores": { "0": "Sigue funcionando en Idle", "1": "Se detiene en Idle" }
+        },
+        {
+          "bit": 5,
+          "nombre": "OC32",
+          "desc": "32-bit Compare Mode: indica si la comparación se hace contra un temporizador de 16 o de 32 bits.",
+          "valores": { "0": "Temporizador de 16 bits (Timer2 o Timer3)", "1": "Temporizador de 32 bits (Timer2+Timer3 en cascada)" }
+        },
+        {
+          "bit": 4,
+          "nombre": "OCFLT",
+          "desc": "PWM Fault Condition Status (solo lectura): indica si se ha producido una falta PWM. Solo se usa con OCM = 111 y solo lo borra el hardware.",
+          "valores": { "0": "Sin falta PWM", "1": "Falta PWM detectada (salida desconectada)" }
+        },
+        {
+          "bit": 3,
+          "nombre": "OCTSEL",
+          "desc": "Output Compare Timer Select: temporizador usado como base de tiempos cuando se trabaja en modo de 16 bits.",
+          "valores": { "0": "Timer2", "1": "Timer3" }
+        },
+        {
+          "bits": [2, 0],
+          "nombre": "OCM",
+          "desc": "Output Compare Mode Select: modo de funcionamiento del módulo.",
+          "valores": {
+            "0": "Salida inactiva (el periférico sigue consumiendo)",
+            "1": "Pin a nivel bajo; pasa a alto al llegar la cuenta a OCxR",
+            "2": "Pin a nivel alto; pasa a bajo al llegar la cuenta a OCxR",
+            "3": "Inversión del pin cada vez que la cuenta llega a OCxR",
+            "4": "Pulso único (alto en OCxR, bajo en OCxRS)",
+            "5": "Pulsos continuos (alto en OCxR, bajo en OCxRS)",
+            "6": "PWM sin detección de faltas",
+            "7": "PWM con detección de faltas (entrada OCFx habilitada)"
+          }
+        }
+      ]
+    }
+  },
+  "ejercicios": {
+    "pwm-output-compare-1": {
+      "titulo": "Música con el zumbador (examen mayo 2022)",
+      "enunciado": "<p>Se quiere diseñar un programa para la placa del laboratorio que toque una escala de notas con el zumbador (<em>buzzer</em>). El zumbador se maneja con el <strong>Output Compare 1</strong> (OC1), conectado a <strong>RB15</strong> y controlado con el <strong>Temporizador 3</strong>; el Temporizador 2 se reserva para contar los milisegundos que dura cada nota. Cada nota se define por su frecuencia en Hz y se toca generando en OC1 una onda cuadrada de esa frecuencia con un <strong>factor de servicio del 50&nbsp;%</strong> (mismo tiempo a 1 que a 0). La función <code>void setNota(int f_nota)</code> configura el OC1 y el Timer3 para tocar la nota que se le pasa como argumento, usando prescaler 1:1.</p>",
+      "contexto": "<ul><li>PBCLK = 5&nbsp;MHz.</li><li>OC1 remapeado a RB15 (<code>RPB15R = 5</code>, grupo RPA0).</li><li>El Timer3 es la base de tiempos del OC1; el Timer2 está ocupado contando milisegundos por interrupción.</li><li>Prescaler del Timer3: 1:1.</li><li>Nota LA = 440&nbsp;Hz.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Qué valor hay que escribir en OC1CON para arrancar el módulo en modo PWM sin faltas usando el Timer3 como base de tiempos?",
+          "opciones": ["0x8006", "0x800E", "0x8016", "0xC006"],
+          "correcta": 1,
+          "explicacion": "<p>Hay que poner ON = 1 (bit 15 &#8594; 0x8000), OCM = 110 (PWM sin faltas &#8594; 0x0006) y, como la base de tiempos es el Timer3, OCTSEL = 1 (bit 3 &#8594; 0x0008). En total: <strong>0x8000 + 0x0008 + 0x0006 = 0x800E</strong>. El valor 0x8006 dejaría el OC1 colgado del Timer2, que está ocupado contando milisegundos.</p>"
+        },
+        {
+          "texto": "Con prescaler 1:1, ¿qué valor hay que cargar en PR3 para tocar la nota LA (440 Hz)?",
+          "opciones": ["11362", "11363", "5681", "2840"],
+          "correcta": 0,
+          "explicacion": "<p>El periodo de la onda en cuentas es <em>f<sub>PBCLK</sub>/f<sub>nota</sub></em> = 5&#8201;000&#8201;000&nbsp;/&nbsp;440 = 11&#8201;363 (división entera). Como el temporizador cuenta desde 0, <strong>PR3 = 11&#8201;363 &#8722; 1 = 11&#8201;362</strong>. Es la fórmula general PR = T·f<sub>PBCLK</sub>/Prescaler &#8722; 1.</p>"
+        },
+        {
+          "texto": "¿Qué valor hay que escribir en OC1R y OC1RS para que la onda tenga un factor de servicio del 50 %?",
+          "opciones": ["11362", "5681", "2500", "Cualquiera, el 50 % lo fija el modo OCM"],
+          "correcta": 1,
+          "explicacion": "<p>El tiempo en alto en cuentas es la mitad del periodo: 11&#8201;363&nbsp;/&nbsp;2 = <strong>5681</strong> (división entera). Se escribe en OC1R (primer pulso, antes de encender el módulo) y en OC1RS (pulsos siguientes). El modo PWM no fija ningún factor de servicio por sí mismo: lo determina siempre el valor de OCxR/OCxRS frente a PR3 + 1.</p>"
+        },
+        {
+          "texto": "En setNota() se escribe OC1R antes de poner el bit ON de OC1CON a 1. ¿Por qué?",
+          "opciones": [
+            "Porque OC1R es un registro de solo lectura en todos los modos",
+            "Porque en modo PWM el hardware bloquea la escritura en OC1R: el primer pulso sale de OC1R y los siguientes se cargan solos desde OC1RS",
+            "Porque al poner ON a 1 el valor de OC1R se copia automáticamente en PR3",
+            "Por eficiencia: escribir OC1R con el módulo encendido consume más ciclos de CPU"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Mientras el módulo funciona en modo PWM, <strong>impide modificar OC1R</strong> para evitar cambios a mitad de periodo que estropearían la onda. El ancho del primer pulso debe estar ya en OC1R al arrancar; a partir de ahí, en cada rebose del temporizador el hardware copia OC1RS en OC1R, y el programa solo actualiza OC1RS.</p>"
+        }
+      ]
+    },
+    "pwm-output-compare-2": {
+      "titulo": "Bomba de agua por PWM (examen mayo 2024)",
+      "enunciado": "<p>Un sistema de riego cuenta con una <strong>bomba de agua</strong> conectada al pin <strong>AN10/RB14</strong> para rellenar un tanque. La bomba se comporta como un motor que recibe una señal PWM de <strong>25&nbsp;kHz</strong> cuyo ancho de pulso (porcentaje de tiempo a 1) se traduce en potencia de bombeo. Se usará el <strong>OC3</strong> conectado al <strong>Timer3</strong>. Hay que escribir la función <code>void iniciaBomba(void)</code>, que configura el pin, el OC3 y el Timer3, y la función <code>void bombeaAl(uint8_t nivelpotencia)</code>, que recibe el porcentaje de ancho de pulso.</p>",
+      "contexto": "<ul><li>PBCLK = 5&nbsp;MHz.</li><li>OC3 remapeado a RB14 (<code>RPB14R = 5</code>).</li><li>RB14 es un pin analógico (AN10): hay que ponerlo en modo digital con <code>ANSELB</code>.</li><li>Prescaler del Timer3: 1:1.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Qué valor hay que cargar en PR3 para generar la señal PWM de 25 kHz con prescaler 1:1?",
+          "opciones": ["199", "200", "249", "99"],
+          "correcta": 0,
+          "explicacion": "<p>El periodo es T = 1/25&nbsp;kHz = 40&nbsp;&#181;s. En cuentas del Timer3: PR3 = 40&nbsp;&#181;s · 5&nbsp;MHz &#8722; 1 = 200 &#8722; 1 = <strong>199</strong>. El valor 249 correspondería a 20&nbsp;kHz (50&nbsp;&#181;s), el del ejemplo del motor del tema.</p>"
+        },
+        {
+          "texto": "¿Cuál es la secuencia correcta para conectar la salida OC3 al pin RB14?",
+          "opciones": [
+            "Basta con escribir RPB14R = 5",
+            "SYSKEY = 0xAA996655; SYSKEY = 0x556699AA; RPB14R = 5; SYSKEY = 0x1CA11CA1;",
+            "SYSKEY = 0x1CA11CA1; RPB14R = 5; SYSKEY = 0xAA996655;",
+            "TRISB &= ~(1 << 14); basta con configurar el pin como salida"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Los registros de remapeo están protegidos contra escrituras accidentales: hay que <strong>desbloquearlos</strong> escribiendo en SYSKEY las dos claves (0xAA996655 y 0x556699AA), escribir el valor en <code>RPB14R</code> (5 = OC3 en ese grupo de pines) y <strong>volver a bloquear</strong> con una clave incorrecta (0x1CA11CA1). Configurar TRIS no conecta el periférico al pin.</p>"
+        },
+        {
+          "texto": "¿Qué valor hay que escribir en OC3CON para arrancar en modo PWM sin faltas con el Timer3?",
+          "opciones": ["0x8006", "0x800E", "0x800F", "0x8026"],
+          "correcta": 1,
+          "explicacion": "<p>ON = 1 (0x8000), OCTSEL = 1 para usar el Timer3 (0x0008) y OCM = 110, PWM sin faltas (0x0006): <strong>0x800E</strong>. Con 0x800F (OCM = 111) activaríamos la detección de faltas, que necesita la entrada OCFA remapeada (OCFA atiende a OC1&#8211;OC4; OCFB, solo a OC5); 0x8026 pondría además OC32 = 1 (modo 32 bits), que no procede; y 0x8006 usaría el Timer2.</p>"
+        },
+        {
+          "texto": "Para bombear al 50 % de potencia, ¿qué valor debe escribir bombeaAl(50) en OC3RS?",
+          "opciones": ["100", "50", "99", "199"],
+          "correcta": 0,
+          "explicacion": "<p>El tiempo en alto en cuentas es DC·(PR3 + 1)/100 = 50 · 200 / 100 = <strong>100</strong>. Escribir 50 daría solo un 25&nbsp;% y 199 daría prácticamente el 100&nbsp;%. Recuerda que se escribe en <code>OC3RS</code> (no en <code>OC3R</code>): el hardware lo cargará en OC3R al empezar el siguiente periodo sin perturbar la onda en curso.</p>"
+        }
+      ]
+    }
+  },
+  "ejerciciosEnTema": ["pwm-output-compare-1", "pwm-output-compare-2"],
+  "resumen": [
+    "Una señal <strong>PWM</strong> es una señal cuadrada periódica de periodo <em>T</em> con tiempo en alto <em>t<sub>a</sub></em> variable; su <strong>factor de servicio</strong> es DC = <em>t<sub>a</sub></em>/<em>T</em> y la tensión media entregada es <em>V<sub>pico</sub></em>·DC.",
+    "Aplicaciones: <strong>regulación de luces</strong> (el ojo filtra a ~20&nbsp;Hz), <strong>velocidad de motores CC</strong> (el rotor y su inercia filtran) y <strong>posición de servos</strong>. En luces y motores se usan frecuencias &gt; 20&nbsp;kHz para que no se oigan; la carga se excita con un BJT en corte/saturación.",
+    "Los <strong>servos de modelismo</strong> requieren una PWM de periodo 20&nbsp;ms con tiempo en alto entre 1&nbsp;ms (&#8722;90&#176;) y 2&nbsp;ms (+90&#176;).",
+    "La unidad <strong>Output Compare</strong> (5 salidas, OC1–OC5) genera la PWM por hardware comparando la cuenta del <strong>Timer2 o Timer3</strong> (bits OC32 y OCTSEL de <code class=\"reg\">OC1CON</code>) con los registros <code class=\"reg\">OC1R</code> y <code class=\"reg\">OC1RS</code>; sus pines son remapeables (SYSKEY + RPxR, valor 5 para OC1).",
+    "En el <strong>modo PWM sin faltas</strong> (OCM = 110, <code class=\"reg\">OC1CON</code> = 0x8006 con Timer2 o 0x800E con Timer3) la salida arranca en alto, baja al llegar la cuenta a OC1R y en cada rebose del temporizador OC1RS se copia en OC1R: el duty se cambia en marcha escribiendo solo en <strong>OC1RS</strong>; OC1R queda bloqueado y debe escribirse antes de poner ON a 1.",
+    "Orden canónico de inicialización: <strong>remapeo &#8594; Output Compare &#8594; Timer</strong>. El periodo lo fija el temporizador: PR = <em>T</em>·<em>f<sub>PBCLK</sub></em>/Prescaler &#8722; 1 (motor a 20&nbsp;kHz: PR2 = 249 con prescaler 1:1; servo a 20&nbsp;ms: PR2 = 49999 con prescaler 1:2)."
+  ]
+}

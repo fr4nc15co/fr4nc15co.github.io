@@ -1,0 +1,847 @@
+{
+  "slug": "buses-i2c-spi",
+  "titulo": "Comunicaciones síncronas: buses I2C y SPI",
+  "temaNum": 8,
+  "lead": "Cuando el microcontrolador necesita hablar con sensores, memorias o displays dentro de la misma placa se usan los buses serie síncronos <strong>I2C</strong> y <strong>SPI</strong>. Aquí verás su hardware y su protocolo, y cómo construir drivers por <em>polling</em> con los módulos del PIC32MX a base de <code class=\"reg\">I2C1CON</code>, <code class=\"reg\">I2C1BRG</code>, <code class=\"reg\">SPI1CON</code> y compañía.",
+  "secciones": [
+    {
+      "titulo": "8.1 Introducción: buses serie síncronos",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Para conectar periféricos (sensores, memorias, displays…) a un microprocesador, los buses paralelos clásicos obligaban a cablear al menos 8 líneas de datos hasta cada chip más la lógica de selección. En los años 80 nacieron dos buses <strong>serie síncronos</strong> que hoy son estándares de facto: el <strong>I2C</strong> (<em>Inter-Integrated Circuit</em>, Philips —hoy NXP—, 1982) y el <strong>SPI</strong> (<em>Serial Peripheral Interface</em>, Motorola —hoy también NXP—). A diferencia de la UART (asíncrona), ambos llevan una <strong>línea de reloj explícita</strong> generada por el maestro, así que no hay que acordar velocidades de antemano.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El I2C usa solo dos hilos y admite varios maestros; el SPI necesita más hilos pero alcanza mayores velocidades y es <em>full-duplex</em>. Los dos comparten la misma terminología:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Maestro:</strong> inicia la transmisión en el bus, genera la señal de reloj y termina la transmisión. Típicamente es el microcontrolador.",
+            "<strong>Esclavo:</strong> dispositivo direccionado por el maestro. Puede haber varios conectados, pero solo uno estará activo en cada transmisión. Típicamente es un periférico (display LCD, conversores, sensores…).",
+            "<strong>Transmisor:</strong> el dispositivo que envía datos al bus en un momento dado. A veces será el maestro y a veces el esclavo.",
+            "<strong>Receptor:</strong> el dispositivo que recibe datos del bus. Ídem: unas veces el esclavo, otras el maestro."
+          ]
+        },
+        {
+          "tipo": "nota",
+          "html": "Maestro/esclavo y transmisor/receptor <strong>no</strong> son sinónimos: en una lectura I2C el maestro sigue generando el reloj pero actúa de <em>receptor</em>, y el esclavo de <em>transmisor</em>."
+        }
+      ]
+    },
+    {
+      "titulo": "8.2 Repaso de C: punteros",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Los drivers de estos buses devuelven medidas y reciben buffers <strong>mediante punteros</strong>, así que conviene repasarlos. Un puntero almacena una <strong>dirección de memoria</strong>: <code>int *pti</code> y <code>char *ptc</code> ocupan lo mismo (una dirección); lo que cambia es el tamaño de aquello a lo que apuntan.</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Operador <code>&amp;</code>:</strong> obtiene la dirección de una variable (<code>pti = &amp;i;</code> hace que pti apunte a i).",
+            "<strong>Operador <code>*</code> (indirección):</strong> accede al valor apuntado (<code>*pti = 78;</code> equivale a <code>i = 78;</code>).",
+            "<strong>Aritmética de punteros:</strong> <code>pti++</code> avanza a la dirección siguiente <em>en unidades del tipo apuntado</em>: suma <code>sizeof(int)</code> bytes si apunta a un <code>int</code>.",
+            "<strong>Vectores:</strong> el nombre de un vector es la dirección de su primer elemento (<code>pti = v;</code> apunta a <code>v[0]</code>)."
+          ]
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Cuidado con dónde se aplica cada operador: no es lo mismo operar sobre el <em>valor apuntado</em> que sobre el <em>puntero</em>.</p>",
+          "codigo": "int  i;       // variable entera\nint  v[20];   // vector de enteros\nint *pti;     // puntero a entero\n\npti  = &i;    // pti apunta a i\n*pti = 78;    // i = 78\n*pti += 32;   // i += 32: suma 32 al ENTERO apuntado\npti  += 32;   // ¡OJO! desplaza el PUNTERO 32 enteros (128 bytes)\n\npti = v;      // pti apunta a v[0]\npti++;        // ahora apunta a v[1]: avanza sizeof(int) bytes"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Tres maneras equivalentes de rellenar un vector desde una función. Al pasar un vector, la función recibe un <strong>puntero a su primer elemento</strong>, no una copia:</p>",
+          "codigo": "#include <xc.h>\n#define MAX 50\n\n/* Devuelve un vector con los enteros comprendidos entre min y max */\nvoid get_vector_discreto(int min, int max, int v[]) {\n    int i;\n    for (i = 0; i <= max - min; i++)\n        v[i] = min + i;              // manejo tipo vector\n}\n\nvoid get_vector_discreto_p(int min, int max, int *v) {\n    int i;\n    for (i = 0; i <= max - min; i++)\n        *(v + i) = min + i;          // manejo tipo puntero\n}\n\nvoid get_vector_discreto_pp(int min, int max, int *v) {\n    int i;\n    for (i = 0; i <= max - min; i++)\n        *(v++) = min + i;            // puntero con postincremento\n}\n\nint main(void) {\n    int vector[MAX];\n    get_vector_discreto(1, 4, vector);   // vector = {1, 2, 3, 4}\n}"
+        }
+      ]
+    },
+    {
+      "titulo": "8.3 El bus I2C: características y hardware",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El bus I2C consta de <strong>dos líneas</strong>: el reloj <strong>SCL</strong> (<em>Serial CLock</em>) y los datos <strong>SDA</strong> (<em>Serial DAta</em>). Ambas son bidireccionales: los datos pueden ir del maestro al esclavo o viceversa (comunicación <em>half-duplex</em>), y es un bus <strong>maestro-esclavo con soporte multi-maestro</strong> gracias a su protocolo de arbitraje.</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Paquetes de 8 bits</strong> (1 byte), bit más significativo primero.",
+            "<strong>Dirección única de 7 bits</strong> por esclavo: 128 posibles, de las que solo 111 son útiles al existir 17 reservadas. Las versiones recientes añaden direcciones de 10 bits.",
+            "<strong>Velocidades:</strong> <em>Standard Mode</em> 100 kb/s y <em>Fast Mode</em> 400 kb/s (las que soporta el PIC32MX); además existen <em>Fast Mode Plus</em> (1 Mb/s), <em>High Speed</em> (3,4 Mb/s) y <em>Ultra Fast</em> (5 Mb/s, unidireccional).",
+            "<strong>Capacidad total del bus &lt; 400 pF:</strong> a unos 10 pF por dispositivo, el máximo práctico ronda los 40 chips."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>SCL y SDA se implementan en los chips como salidas en <strong>drenador abierto</strong> (<em>open drain</em>): para poner un 0 el chip activa su transistor; para el 1 lo desactiva y la línea queda «flotando», y son las <strong>resistencias de pull-up</strong> las que la suben a 1. Como ningún dispositivo fuerza un 1, no hay riesgo de cortocircuito por contención del bus.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La pull-up no puede ser muy grande: junto con la capacidad C del bus forma un circuito RC, y el <strong>tiempo de subida</strong> t<sub>r</sub> (de V<sub>IL</sub> = 30 % de V<sub>DD</sub> a V<sub>IH</sub> = 70 % de V<sub>DD</sub>) debe quedar por debajo de <strong>1000 ns</strong> en modo estándar y de <strong>300 ns</strong> en modo rápido. De la carga del RC se obtiene:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Tiempo de subida de una línea del bus con pull-up R y capacidad C:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>t</mi><mi>r</mi></msub><mo>=</mo><mi>R</mi><mo>·</mo><mi>C</mi><mo>·</mo><mi>ln</mi><mrow><mo>(</mo><mfrac><mrow><mn>0,7</mn></mrow><mrow><mn>0,3</mn></mrow></mfrac><mo>)</mo></mrow><mo>≈</mo><mn>0,847</mn><mo>·</mo><mi>R</mi><mo>·</mo><mi>C</mi></mrow></math>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Despejando, la <strong>resistencia máxima</strong> que cumple el tiempo de subida exigido por el estándar es:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>R</mi><mtext>max</mtext></msub><mo>=</mo><mfrac><msub><mi>t</mi><mrow><mi>r</mi><mo>,</mo><mtext>max</mtext></mrow></msub><mrow><mn>0,847</mn><mo>·</mo><mi>C</mi></mrow></mfrac></mrow></math>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Y la <strong>resistencia mínima</strong> la fija la corriente I<sub>OL</sub> = 3 mA que soporta el transistor del chip al poner el bus a 0 (despreciando V<sub>OL</sub>):</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>R</mi><mtext>min</mtext></msub><mo>=</mo><mfrac><mrow><msub><mi>V</mi><mtext>DD</mtext></msub><mo>−</mo><msub><mi>V</mi><mtext>OL</mtext></msub></mrow><msub><mi>I</mi><mtext>OL</mtext></msub></mfrac><mo>≈</mo><mfrac><mrow><mn>3,3</mn><mo>&#8201;</mo><mtext>V</mtext></mrow><mrow><mn>3</mn><mo>&#8201;</mo><mtext>mA</mtext></mrow></mfrac><mo>=</mo><mn>1,1</mn><mo>&#8201;</mo><mtext>kΩ</mtext></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Ejemplo en modo rápido (t<sub>r</sub> ≤ 300 ns): con C = 50 pF sale R<sub>max</sub> ≈ 7,1 kΩ, así que el clásico <strong>4,7 kΩ</strong> encaja de sobra. Pero con C = 400 pF sale R<sub>max</sub> ≈ 885 Ω &lt; R<sub>min</sub>: <strong>no existe resistencia válida</strong>. La solución es bajar a 100 kb/s o partir el bus con un <strong>repetidor</strong> (p. ej. el PCA9515), que también se usa para mezclar secciones a 5 V y 3,3 V o a distintas velocidades.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "8.4 El protocolo I2C",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>La regla de oro del bus: <strong>SDA solo puede cambiar mientras SCL está a nivel bajo</strong>, y los receptores muestrean SDA cuando SCL está en alto. Las dos violaciones deliberadas de esta regla delimitan los mensajes:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Condición de start:</strong> flanco de <em>bajada</em> de SDA mientras SCL está en nivel alto.",
+            "<strong>Condición de stop:</strong> flanco de <em>subida</em> de SDA mientras SCL está en nivel alto."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El maestro genera el start y envía un byte con la <strong>dirección del esclavo (7 bits)</strong> y el bit <strong>R/W</strong> (0 = escritura, 1 = lectura), bit más significativo primero. Después libera SDA para que el esclavo responda con su <strong>ACK</strong>. Si el mensaje es de escritura, el maestro envía N bytes esperando un ACK tras cada uno; si es de lectura, es el esclavo quien envía los bytes y el maestro quien responde con el ACK. Al terminar, el maestro genera el stop para liberar el bus. <strong>El reloj lo genera siempre el maestro</strong>, también cuando recibe.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El bit ACK del receptor vale <strong>0 si todo ha ido bien</strong>. Un 1 se denomina <strong>NACK</strong> y puede deberse a:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "No hay esclavo con esa dirección (o está muerto o desconectado): nadie baja SDA y la pull-up la deja a 1.",
+            "El receptor está demasiado ocupado para atender (típico cuando el receptor es otro micro).",
+            "Llegan comandos incorrectos o incoherentes que el esclavo no entiende.",
+            "Se ha llenado el espacio de recepción del receptor (buffer saturado).",
+            "El maestro receptor lo usa adrede para avisar de que ya no quiere más datos antes del stop."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Para encadenar una escritura y una lectura sin que otro maestro «se cuele» entre ambas, se omite el stop y se genera un <strong>repeated start</strong> (subir SDA con SCL en bajo y repetir la condición de start): el bus nunca queda libre entre los dos mensajes. El acceso típico a un periférico sigue el patrón <em>escribir la dirección del registro interno + leer</em>:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Escritura:</strong> S | dir+W | A | reg | A | dato | A | … | P &nbsp;(blanco: maestro, gris: esclavo).",
+            "<strong>Lectura:</strong> S | dir+W | A | reg | A | <strong>RS</strong> | dir+R | A | dato | A | … | dato | <strong>NA</strong> | P.",
+            "Muchos periféricos <strong>autoincrementan</strong> la dirección del registro interno con cada byte: se puede leer/escribir un bloque entero con un solo mensaje."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>Arbitraje</strong> (solo importa con varios maestros): el reloj se <strong>sincroniza</strong> solo — cada maestro, al soltar SCL, espera a que la línea suba <em>de verdad</em> antes de contar su tiempo en alto. En SDA cada maestro <strong>compara lo que envía con lo que hay</strong>: si transmite un 1 y lee un 0, otro maestro está pisando el bus y deja de transmitir (aunque sigue escuchando por si el mensaje es para él). Gana quien escribe a la <strong>dirección más baja</strong>.</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Alargamiento del reloj (<em>clock stretching</em>):</strong> un esclavo lento puede retener SCL a 0 antes de responder con su ACK para hacer esperar al maestro. Cuando libera SCL, la transmisión continúa con normalidad."
+        }
+      ]
+    },
+    {
+      "titulo": "8.5 El módulo I2C del PIC32MX",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El PIC32MX230F064D dispone de dos módulos, <strong>I2C1</strong> e <strong>I2C2</strong>, que soportan los modos estándar (100 kb/s) y rápido (400 kb/s) funcionando como maestro, como esclavo o como ambos. Sus pines son <strong>fijos</strong> (no se remapean): SCL1/SDA1 en las patillas 44/1 y SCL2/SDA2 en las patillas 24/23 del encapsulado de 44 pines.</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<code class=\"reg\">I2CxCON</code> y <code class=\"reg\">I2CxSTAT</code>: control y estado del módulo.",
+            "<code class=\"reg\">I2CxBRG</code>: velocidad del reloj SCL (generador de baudios).",
+            "<code class=\"reg\">I2CxTRN</code>: byte a transmitir — escribirlo arranca el envío.",
+            "<code class=\"reg\">I2CxRCV</code>: byte recibido. El dato entra por el registro de desplazamiento interno I2CxRSR (no visible) y se copia aquí al completarse.",
+            "<code class=\"reg\">I2CxADD</code> e <code class=\"reg\">I2CxMSK</code>: dirección propia (y máscara de bits «no importa») cuando el micro trabaja como esclavo."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Explora <code class=\"reg\">I2C1CON</code> con su valor de inicialización a 100 kHz (<code class=\"reg\">ON</code> = 1 y <code class=\"reg\">DISSLW</code> = 1):</p>"
+        },
+        {
+          "tipo": "registro",
+          "registro": "I2C1CON",
+          "valor": "0x8200"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Y el registro de estado tal y como queda tras generar una condición de stop (bit <code class=\"reg\">P</code> = 1, bus libre):</p>"
+        },
+        {
+          "tipo": "registro",
+          "registro": "I2C1STAT",
+          "valor": "0x0010"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>Generador de reloj:</strong> como maestro, el módulo construye SCL contando <strong>semiperiodos</strong>. Cuando SCL baja, un contador descendente cargado con <code class=\"reg\">I2CxBRG</code> cuenta hasta 0 y entonces suelta la línea; cuando detecta que SCL ha subido <em>de verdad</em> (otro dispositivo podría estar alargando el reloj) vuelve a contar y, al terminar, la baja de nuevo. El valor a cargar es:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Valor de <code class=\"reg\">I2CxBRG</code> para una frecuencia de bus f<sub>SCL</sub>, con T<sub>PGD</sub> ≈ 104 ns (retardo interno del <em>pulse gobbler</em>) y f<sub>PBCLK</sub> el reloj de periféricos:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mtext>I2CxBRG</mtext><mo>=</mo><mrow><mo>(</mo><mfrac><mn>1</mn><mrow><mn>2</mn><mo>·</mo><msub><mi>f</mi><mtext>SCL</mtext></msub></mrow></mfrac><mo>−</mo><msub><mi>T</mi><mtext>PGD</mtext></msub><mo>)</mo></mrow><mo>·</mo><msub><mi>f</mi><mtext>PBCLK</mtext></msub><mo>−</mo><mn>2</mn></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Con <strong>PBCLK = 5 MHz</strong>: a 100 kHz sale 22,48, que se redondea <strong>hacia arriba</strong> a <strong>23</strong> (con 22 el reloj quedaría algo más rápido de 100 kHz y algún esclavo podría protestar); a 400 kHz sale 3,73, que se redondea a <strong>4</strong>.</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<code class=\"reg\">I2CxBRG</code> debe valer siempre <strong>más de 1</strong>: el fabricante prohíbe los valores 0 y 1 porque generan comportamientos indeterminados."
+        },
+        {
+          "tipo": "registro",
+          "registro": "I2C1BRG",
+          "valor": "0x0017"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>Interrupciones:</strong> el módulo genera tres — <em>colisión de bus</em> (entornos multi-maestro), <em>evento de esclavo</em> (nos direccionan, llega un dato o nos piden uno) y <em>evento de maestro</em>. Esta última se activa <strong>al final de cada paso</strong> de una transmisión: al acabar un start, un stop o un repeated start, al recibirse un byte (se rellena <code class=\"reg\">I2CxRCV</code>), al transmitirse el bit de ACK/NACK y al terminar el envío de un byte con su ACK. En el I2C1 las tres fuentes (IRQ 42, 43 y 44) comparten el <strong>vector 33</strong> (el I2C2 usa el 38), y el flag del evento de maestro es <code class=\"reg\">IFS1bits.I2C1MIF</code>: la base del driver por <em>polling</em> de la siguiente sección.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "8.6 Driver I2C del maestro (polling)",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El periférico solo ejecuta <strong>pasos sueltos</strong> del protocolo (un start, un byte, un ACK…); es el software quien secuencia el mensaje completo, por polling o por interrupciones. La técnica del driver: arrancar cada paso escribiendo el bit correspondiente de <code class=\"reg\">I2C1CON</code> y esperar a que <code class=\"reg\">I2C1MIF</code> se ponga a 1.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Inicialización (elige <code class=\"reg\">I2C1BRG</code> y el control de <em>slew rate</em> según la velocidad) y generación del start con el bit <code class=\"reg\">SEN</code>:</p>",
+          "codigo": "void I2C1Inicializa(int velocidad) {\n    if (velocidad == 1) {             // 400 kb/s\n        I2C1BRG = 4;\n        I2C1CON = 0x8000;             // I2C ON, con control de slew rate\n    } else {                          // 100 kb/s\n        I2C1BRG = 23;\n        I2C1CON = 0x8200;             // I2C ON, sin control de slew rate (DISSLW = 1)\n    }\n    IFS1bits.I2C1MIF = 0;             // Borra el flag por si acaso\n}\n\nvoid I2C1GeneraStart(void) {\n    I2C1CONbits.SEN = 1;              // Genera la condición de start en el bus\n    while (IFS1bits.I2C1MIF == 0) ;   // Espera el final de la condición\n    IFS1bits.I2C1MIF = 0;             // Borra el flag\n}"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>El envío de un byte arranca al escribir <code class=\"reg\">I2C1TRN</code>; al terminar, el ACK del esclavo queda en <code class=\"reg\">ACKSTAT</code> (bit 15 de <code class=\"reg\">I2C1STAT</code>). El repeated start y el stop usan los bits <code class=\"reg\">RSEN</code> y <code class=\"reg\">PEN</code>:</p>",
+          "codigo": "int I2C1EscribeByte(uint8_t dato) {\n    I2C1TRN = dato;                   // Escribir en I2C1TRN inicia el envío\n    while (IFS1bits.I2C1MIF == 0) ;   // Espera el final del envío (byte + ACK)\n    IFS1bits.I2C1MIF = 0;             // Borra el flag\n    return I2C1STATbits.ACKSTAT;      // ACK recibido: 0 = OK, 1 = NACK\n}\n\nvoid I2C1GeneraReStart(void) {\n    I2C1CONbits.RSEN = 1;             // Genera la condición de repeated start\n    while (IFS1bits.I2C1MIF == 0) ;   // Espera el final de la condición\n    IFS1bits.I2C1MIF = 0;             // Borra el flag\n}\n\nvoid I2C1GeneraStop(void) {\n    I2C1CONbits.PEN = 1;              // Genera la condición de stop\n    while (IFS1bits.I2C1MIF == 0) ;   // Espera el final de la condición\n    IFS1bits.I2C1MIF = 0;             // Borra el flag\n}"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>La lectura tiene dos fases: recibir el byte (<code class=\"reg\">RCEN</code>, que genera los 8 ciclos de reloj) y responder con el ACK del maestro (<code class=\"reg\">ACKDT</code> + <code class=\"reg\">ACKEN</code>): 0 para pedir más datos, 1 (NACK) antes del último stop.</p>",
+          "codigo": "uint8_t I2C1LeeByte(int ack) {\n    uint8_t dato;\n\n    // Recepción del byte\n    I2C1CONbits.RCEN = 1;             // Activa la recepción (genera el reloj)\n    while (IFS1bits.I2C1MIF == 0) ;   // Espera la llegada del dato\n    IFS1bits.I2C1MIF = 0;             // Borra el flag\n    dato = I2C1RCV;\n\n    // Envío del bit de ACK (0 = quiero más datos; 1 = NACK, último byte)\n    I2C1CONbits.ACKDT = ack & 1;      // Valor del ACK a enviar (bit 5 de I2C1CON)\n    I2C1CONbits.ACKEN = 1;            // Inicia el envío del ACK\n    while (IFS1bits.I2C1MIF == 0) ;   // Espera el final del envío\n    IFS1bits.I2C1MIF = 0;             // Borra el flag\n\n    return dato;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Con estas piezas, la secuencia para <strong>leer un registro</strong> de un periférico es:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": true,
+          "items": [
+            "Generar la condición de start.",
+            "Enviar la dirección del esclavo con R/W = 0 (escritura). Si no hay ACK, generar el stop y abortar.",
+            "Enviar la dirección del registro interno a leer, comprobando su ACK.",
+            "Generar un <strong>repeated start</strong> para cambiar el sentido sin soltar el bus.",
+            "Enviar la dirección del esclavo con R/W = 1 (lectura) y esperar su ACK.",
+            "Leer N bytes, respondiendo con ACK = 0 en todos menos en el último (NACK = 1).",
+            "Generar la condición de stop para liberar el bus."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Ejemplo completo con el <strong>VCNL4010</strong>, un detector de proximidad y luz ambiente: dirección <strong>0x13</strong> (7 bits, asignada por el fabricante), bus a 400 kHz y 16 registros internos (0x80–0x8F). En el registro 0x81 están el identificador del chip (4 bits altos) y su revisión (4 bits bajos):</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Lectura del identificador del chip. Fíjate en cómo se construye el byte de dirección: <code>dirección &lt;&lt; 1</code> para escritura y <code>(dirección &lt;&lt; 1) | 1</code> para lectura:</p>",
+          "codigo": "#define I2C400KHZ        1\n#define I2C100KHZ        0\n#define VCNL4010_ADDRESS 0x13   // Dirección de 7 bits\n#define REGISTER_ID      0x81   // Registro con el ID del chip\n\nint main(void) {\n    // ...\n    I2C1Inicializa(I2C400KHZ);\n    // ...\n}\n\nint LeerChipIdVCNL4010(void) {\n    int chip_id = 0;                  // 0 indica error de recepción\n\n    I2C1GeneraStart();\n    if (I2C1EscribeByte(VCNL4010_ADDRESS << 1) != 0) {        // NACK\n        I2C1GeneraStop();             // Abortamos\n        return chip_id;\n    }\n    if (I2C1EscribeByte(REGISTER_ID) != 0) {                  // NACK\n        I2C1GeneraStop();             // Abortamos\n        return chip_id;\n    }\n    I2C1GeneraReStart();              // Cambio de sentido sin soltar el bus\n    if (I2C1EscribeByte((VCNL4010_ADDRESS << 1) | 1) != 0) {  // NACK\n        I2C1GeneraStop();             // Abortamos\n        return chip_id;\n    }\n    chip_id = I2C1LeeByte(1);         // NACK: ya no queremos más datos\n    I2C1GeneraStop();\n    return chip_id;\n}"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>La luz ambiente es un valor de <strong>16 bits</strong> repartido en los registros 0x85 (parte alta) y 0x86 (parte baja). Gracias al <strong>autoincremento</strong> basta enviar la dirección 0x85 y leer dos bytes seguidos; el resultado se devuelve mediante un <strong>puntero</strong>:</p>",
+          "codigo": "#define VCNL4010_ADDRESS 0x13   // Dirección de 7 bits\n#define REGISTER_LIGHT   0x85   // Parte alta de la medida de luz\n\nuint8_t LeerLuzVCNL4010(uint16_t *light) {\n    uint8_t alto, bajo;\n\n    *light = 0;\n    I2C1GeneraStart();\n    if (I2C1EscribeByte(VCNL4010_ADDRESS << 1) != 0) {        // NACK\n        I2C1GeneraStop();             // Abortamos\n        return 1;\n    }\n    if (I2C1EscribeByte(REGISTER_LIGHT) != 0) {               // NACK\n        I2C1GeneraStop();             // Abortamos\n        return 1;\n    }\n    I2C1GeneraReStart();\n    if (I2C1EscribeByte((VCNL4010_ADDRESS << 1) | 1) != 0) {  // NACK\n        I2C1GeneraStop();             // Abortamos\n        return 1;\n    }\n    alto = I2C1LeeByte(0);   // ACK: el autoincremento pasa a 0x86\n    bajo = I2C1LeeByte(1);   // NACK: último byte\n    I2C1GeneraStop();\n\n    *light = ((uint16_t)alto << 8) | bajo;\n    return 0;\n}"
+        }
+      ]
+    },
+    {
+      "titulo": "8.7 El bus SPI",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El SPI es también un bus serie síncrono maestro-esclavo, pero <strong>solo admite un maestro</strong> y usa <strong>cuatro líneas</strong>:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>SCLK:</strong> el reloj. Lo genera el maestro respetando la frecuencia máxima del esclavo. Compartida por todos.",
+            "<strong>MOSI</strong> (<em>Master Out Slave In</em>): datos del maestro hacia los esclavos. Compartida.",
+            "<strong>MISO</strong> (<em>Master In Slave Out</em>): datos de los esclavos hacia el maestro. Compartida.",
+            "<strong>SS</strong> (<em>Slave Select</em>): selección de esclavo, <strong>activa a nivel bajo</strong>. Hace falta una por esclavo."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Al haber dos líneas de datos la comunicación es <strong>full-duplex</strong>: maestro y esclavo cargan sendos <strong>registros de desplazamiento</strong> conectados en anillo, se generan N ciclos de reloj (N = bits a transmitir) y, al acabar, <strong>los datos se han intercambiado</strong>: el del maestro está en el esclavo y el del esclavo en el maestro. (El I2C, con una sola línea de datos, es half-duplex.)</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El protocolo es mínimo: el maestro <strong>baja la SS</strong> del esclavo elegido, genera el reloj mientras se desplazan los datos y <strong>sube la SS</strong> al terminar para que el esclavo «descanse». No hay direcciones, ni ACK, ni arbitraje: la selección es puramente hardware. Si escasean pines, los esclavos pueden conectarse en <strong>daisy chain</strong> (en cascada: la salida de datos de uno a la entrada del siguiente, compartiendo una única SS).</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El estándar no fija en qué flanco se muestrea: cada periférico define su <strong>modo</strong> con dos parámetros, <strong>CPOL</strong> (polaridad: valor de reposo del reloj) y <strong>CPHA</strong> (fase: en qué flancos se muestrea el dato), siendo Modo = CPOL·2 + CPHA:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Modo 0</strong> (CPOL = 0, CPHA = 0): reloj en reposo a 0; el dato se muestrea en los flancos <em>impares</em> y cambia en los <em>pares</em>. Es el más común.",
+            "<strong>Modo 1</strong> (CPOL = 0, CPHA = 1): reposo a 0; se muestrea en los flancos <em>pares</em> y el dato cambia en los <em>impares</em>.",
+            "<strong>Modo 2</strong> (CPOL = 1, CPHA = 0): reposo a 1; se muestrea en los flancos <em>impares</em>.",
+            "<strong>Modo 3</strong> (CPOL = 1, CPHA = 1): reposo a 1; se muestrea en los flancos <em>pares</em>."
+          ]
+        },
+        {
+          "tipo": "nota",
+          "html": "CPOL dice <em>cómo descansa</em> el reloj (0 = reposo a nivel bajo, 1 = reposo a nivel alto) y CPHA <em>cuándo se muestrea</em> (0 = flancos impares, 1 = flancos pares). Mira siempre el datasheet del periférico para conocer su modo antes de configurar el SPI."
+        }
+      ]
+    },
+    {
+      "titulo": "8.8 El módulo SPI del PIC32MX",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El PIC32MX230F064D tiene dos módulos, <strong>SPI1</strong> y <strong>SPI2</strong>, con transferencias de <strong>8, 16 o 32 bits</strong> (y modos de audio que no veremos). El corazón es el registro de desplazamiento SPIxSR, no accesible por software: se llega a él a través de dos FIFO — una de transmisión (SPIxTXB) y otra de recepción (SPIxRXB) — mapeadas en una misma dirección, <code class=\"reg\">SPIxBUF</code>. Al <strong>escribir</strong> en <code class=\"reg\">SPIxBUF</code> se carga la FIFO de transmisión y al <strong>leer</strong> se vacía la de recepción. SDI se conecta al bit 0 y SDO al bit más significativo: por el bus sale primero el <strong>MSB</strong>, como manda el estándar.</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>SCK</strong> (el reloj: salida en maestro, entrada en esclavo): pin <strong>fijo</strong> — SCK1 = RB14 y SCK2 = RB15.",
+            "<strong>SDI</strong> (el MISO del micro maestro) y <strong>SDO</strong> (el MOSI): <strong>remapeables</strong> con la secuencia SYSKEY (p. ej. <code>RPA8R = 4</code> conecta SDO2 a RA8).",
+            "<strong>SS</strong>: el módulo puede manejarla solo (<code class=\"reg\">MSSEN</code> = 1, con SS a 0 se conecta SDO al bus), pero lo habitual es gobernarla por software como un GPIO.",
+            "<strong>Interrupciones:</strong> tres fuentes por módulo (fallo, recepción y transmisión); en el SPI1 comparten el vector 31 y en el SPI2 el 36."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>Generador de reloj:</strong> el divisor puede alimentarse del <strong>reloj de periféricos</strong> PBCLK = 5 MHz (<code class=\"reg\">MCLKSEL</code> = 0) o del <strong>reloj principal</strong> de 40 MHz (<code class=\"reg\">MCLKSEL</code> = 1), pensado para velocidades altas:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Frecuencia del reloj SCK en función de la fuente f<sub>CLKIN</sub> y del registro <code class=\"reg\">SPIxBRG</code> (13 bits, valor máximo 8191), y su despeje para calcular el divisor:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>f</mi><mtext>SCK</mtext></msub><mo>=</mo><mfrac><msub><mi>f</mi><mtext>CLKIN</mtext></msub><mrow><mn>2</mn><mo>·</mo><mrow><mo>(</mo><mtext>SPIxBRG</mtext><mo>+</mo><mn>1</mn><mo>)</mo></mrow></mrow></mfrac><mspace width=\"2em\"></mspace><mo>⇒</mo><mspace width=\"2em\"></mspace><mtext>SPIxBRG</mtext><mo>=</mo><mfrac><msub><mi>f</mi><mtext>CLKIN</mtext></msub><mrow><mn>2</mn><mo>·</mo><msub><mi>f</mi><mtext>SCK</mtext></msub></mrow></mfrac><mo>−</mo><mn>1</mn></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>A diferencia del I2C, <code class=\"reg\">SPIxBRG</code> <strong>sí puede valer 0</strong>: la frecuencia máxima del bus es SYSCLK/2 = <strong>20 MHz</strong> con el reloj principal de 40 MHz. La configuración vive en <code class=\"reg\">SPIxCON</code> (el segundo registro de control, <code class=\"reg\">SPIxCON2</code>, solo se usa en modos de audio: déjalo a 0). Los bits que importan como maestro:</p>"
+        },
+        {
+          "tipo": "registro",
+          "registro": "SPI1CON",
+          "valor": "0x00008130"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>¡Trampa clásica!</strong> <code class=\"reg\">CKP</code> coincide con el CPOL del estándar, pero <code class=\"reg\">CKE</code> es el <strong>negado</strong> de CPHA. El modo 0 (CPOL = 0, CPHA = 0) se programa con CKP = 0 y <strong>CKE = 1</strong>."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Si se trabaja con interrupciones, <code class=\"reg\">STXISEL</code> y <code class=\"reg\">SRXISEL</code> eligen cuándo avisa cada FIFO. En transmisión, «al menos un hueco» (11) mantiene el bus sin tiempos muertos, «buffer vacío» (01) minimiza interrupciones a costa de complicar el software, y 00 (todo transmitido) no es recomendable porque el registro de desplazamiento se queda vacío. En recepción, «al menos un dato» (01) es lo más seguro contra pérdidas, «buffer lleno» (11) minimiza interrupciones a riesgo de perder datos, y los modos 10 son estrategias intermedias.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El estado se consulta en <code class=\"reg\">SPIxSTAT</code>. Para el polling importan sobre todo <code class=\"reg\">SPITBF</code> (buffer de transmisión lleno: esperar antes de escribir), <code class=\"reg\">SPIRBE</code> (buffer de recepción vacío: esperar a que se complete la transferencia) y <code class=\"reg\">SPIROV</code> (overflow de recepción):</p>"
+        },
+        {
+          "tipo": "registro",
+          "registro": "SPI1STAT",
+          "valor": "0x00000008"
+        },
+        {
+          "tipo": "nota",
+          "html": "Si llega un dato con la FIFO de recepción llena, se pierde y <code class=\"reg\">SPIROV</code> queda a 1: el módulo <strong>no vuelve a recibir</strong> hasta que lo borres a mano (<code>SPI1STATbits.SPIROV = 0;</code> o <code>SPI1STATCLR = 1&lt;&lt;6;</code>). De ahí la regla de oro: <strong>lee siempre <code class=\"reg\">SPIxBUF</code> tras cada transferencia</strong>, aunque el dato no te interese."
+        }
+      ]
+    },
+    {
+      "titulo": "8.9 Driver SPI: display TFT (ST7735)",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Como ejemplo se controla un display TFT basado en el controlador <strong>ST7735</strong>, que usa el <strong>modo 0</strong> del SPI (CPOL = 0, CPHA = 0) a 1 MHz. Se emplea el <strong>SPI2</strong>: el reloj SCK2 sale fijo por <strong>RB15</strong>, la salida de datos SDO2 se remapea a <strong>RA8</strong> y la SS se maneja por software en <strong>RA10</strong>. Como el display solo recibe, se inhabilita SDI (<code class=\"reg\">DISSDI</code> = 1).</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Inicialización con el <strong>orden canónico</strong>: pines (TRIS/ANSEL/LAT), remapeo con SYSKEY, módulo apagado y limpio, reloj y configuración con el módulo aún parado y, por último, <code class=\"reg\">ON</code>:</p>",
+          "codigo": "#define PIN_SS       10   // Puerto A (RA10): selección de esclavo\n#define PIN_SCK      15   // Puerto B (RB15): SCK2 (fijo, no remapeable)\n#define PIN_SDO       8   // Puerto A (RA8):  SDO2 (remapeable)\n#define PIN_CMD_DAT   9   // Puerto C (RC9):  línea comando/dato del display\n\nint InicializaRelojSPI2(int frecuencia);\n\nvoid InicializarSPI2(int frec) {\n    char dato;\n\n    // 1. Pines como salidas digitales (se incluyen los del SPI por si acaso)\n    TRISA &= ~((1 << PIN_SS) | (1 << PIN_SDO));\n    TRISB &= ~(1 << PIN_SCK);\n    TRISC &= ~(1 << PIN_CMD_DAT);\n    ANSELA &= ~((1 << PIN_SS) | (1 << PIN_SDO));\n    ANSELB &= ~(1 << PIN_SCK);\n    ANSELC &= ~(1 << PIN_CMD_DAT);\n    LATASET = 1 << PIN_SS;        // Arrancamos con SS desactivado (nivel alto)\n\n    // 2. Remapeo de SDO2 (SCK2 está asignado a fuego a RB15)\n    SYSKEY = 0xAA996655;          // Se desbloquean los registros\n    SYSKEY = 0x556699AA;          // de configuración\n    RPA8R  = 4;                   // SDO2 conectado a RA8\n    SYSKEY = 0x1CA11CA1;          // Se vuelven a bloquear\n\n    // 3. Módulo apagado y en estado de reset\n    SPI2STAT = 0;\n    SPI2CON  = 0;\n    SPI2CON2 = 0;                 // Solo se usa en modos de audio\n    dato = SPI2BUF;               // Vacía el buffer de recepción por si acaso\n\n    // 4. Reloj SCK a la frecuencia pedida (con el módulo aún apagado)\n    InicializaRelojSPI2(frec);\n\n    // 5. Configuración: maestro, modo 0 (CPOL = 0, CPHA = 0)\n    SPI2CONbits.MSTEN  = 1;       // Modo maestro\n    SPI2CONbits.CKE    = 1;       // CPHA = 0 (¡CKE es el negado de CPHA!)\n    SPI2CONbits.CKP    = 0;       // CPOL = 0 (ya estaba a 0; se deja explícito)\n    SPI2CONbits.DISSDI = 1;       // SDI no se usa: el display solo recibe\n\n    // 6. Encender y limpiar el overflow por si acaso\n    SPI2CONbits.ON = 1;\n    SPI2STATbits.SPIROV = 0;\n}"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Configuración del reloj — ejercicio clásico (cayó en el Ordinario de 2024): si se piden más de 2,5 MHz se usa el reloj principal de 40 MHz y, si no, el PBCLK de 5 MHz. Recuerda que <code class=\"reg\">MCLKSEL</code> solo puede escribirse con el módulo apagado:</p>",
+          "codigo": "#define SYSCLK 40000000L   // Reloj del sistema: 40 MHz\n#define PBCLK   5000000L   // Reloj de periféricos: 5 MHz\n\nint InicializaRelojSPI2(int frecuencia) {\n    long fclkin;\n    long brg;\n\n    if (frecuencia <= 0 || frecuencia > SYSCLK / 2)\n        return -1;                    // Imposible: más de 20 MHz (BRG = 0)\n\n    if (frecuencia > 2500000) {       // > 2,5 MHz: reloj principal (40 MHz)\n        SPI2CONbits.MCLKSEL = 1;      // (solo escribible con ON = 0)\n        fclkin = SYSCLK;\n    } else {                          // <= 2,5 MHz: reloj de periféricos\n        SPI2CONbits.MCLKSEL = 0;\n        fclkin = PBCLK;\n    }\n\n    brg = fclkin / (2 * frecuencia) - 1;\n    if (brg > 8191)                   // No cabe en el registro (13 bits):\n        return -1;                    // frecuencia demasiado pequeña\n\n    SPI2BRG = brg;\n    return 0;\n}"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Envío de un byte por polling. La clave está en las dos esperas y en la <strong>lectura final</strong> de <code class=\"reg\">SPI2BUF</code>:</p>",
+          "codigo": "void SPI_SendFrame(uint8_t dato) {\n    LATACLR = 1 << PIN_SS;            // Activa SS (nivel bajo)\n    while (SPI2STATbits.SPITBF) ;     // Espera hueco en el buffer de transmisión\n    SPI2BUF = dato;                   // Carga el dato: comienza la transferencia\n    while (SPI2STATbits.SPIRBE) ;     // Fin de transferencia = ha llegado un dato\n    dato = SPI2BUF;                   // Se lee y descarta: si no, ¡overflow (SPIROV)\n                                      // y el módulo se queda bloqueado!\n    LATASET = 1 << PIN_SS;            // Desactiva SS para terminar la trama\n}"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Para <strong>recibir</strong> hay que transmitir un dato <em>dummy</em>, porque el reloj solo lo genera el maestro. En este caso el pin SDI debe estar habilitado (<code class=\"reg\">DISSDI</code> = 0):</p>",
+          "codigo": "uint8_t SPI_ReceiveFrame(void) {\n    uint8_t dato;\n\n    LATACLR = 1 << PIN_SS;            // Activa SS\n    while (SPI2STATbits.SPITBF) ;     // Espera hueco en transmisión\n    SPI2BUF = 0xFF;                   // Dato 'dummy': el maestro debe generar\n                                      // el reloj para que el esclavo conteste\n    while (SPI2STATbits.SPIRBE) ;     // Espera la llegada del dato\n    dato = SPI2BUF;                   // Este sí nos interesa\n    LATASET = 1 << PIN_SS;            // Desactiva SS\n    return dato;\n}"
+        },
+        {
+          "tipo": "nota",
+          "html": "En el laboratorio y en los exámenes el driver del TFT suele darse hecho: lo importante es <strong>entender su configuración</strong> (modo CPOL/CPHA, fuente de reloj, remapeo de SDO, manejo de SS) para poder adaptarla a cualquier otro periférico SPI."
+        }
+      ]
+    }
+  ],
+  "registros": {
+    "I2C1CON": {
+      "titulo": "I2C1CON — Control del módulo I2C1",
+      "nota": "Los bits SEN, RSEN, PEN, RCEN y ACKEN arrancan cada paso del protocolo y se borran solos por hardware al terminar. El I2C2 tiene un registro idéntico (I2C2CON).",
+      "ancho": 16,
+      "campos": [
+        {
+          "bit": 15,
+          "nombre": "ON",
+          "desc": "Habilita el módulo I2C y le da el control de los pines SCL/SDA",
+          "valores": { "0": "Módulo deshabilitado (pines como E/S normales)", "1": "Módulo habilitado" }
+        },
+        {
+          "bit": 12,
+          "nombre": "SCLREL",
+          "desc": "Liberación del reloj SCL trabajando como esclavo (clock stretching, junto con STREN)",
+          "valores": { "0": "Mantiene SCL a nivel bajo (alarga el reloj)", "1": "Libera el reloj SCL" }
+        },
+        {
+          "bit": 10,
+          "nombre": "A10M",
+          "desc": "Tamaño de la dirección de esclavo almacenada en I2CxADD",
+          "valores": { "0": "Dirección de 7 bits", "1": "Dirección de 10 bits" }
+        },
+        {
+          "bit": 9,
+          "nombre": "DISSLW",
+          "desc": "Inhabilita el control de slew rate: a 1 en modo estándar (100 kHz), a 0 en modo rápido (400 kHz)",
+          "valores": { "0": "Control de slew rate activado (400 kHz)", "1": "Control de slew rate desactivado (100 kHz)" }
+        },
+        {
+          "bit": 6,
+          "nombre": "STREN",
+          "desc": "Habilita el alargamiento de reloj trabajando como esclavo (se usa junto a SCLREL)",
+          "valores": { "0": "Clock stretching deshabilitado", "1": "Clock stretching habilitado" }
+        },
+        {
+          "bit": 5,
+          "nombre": "ACKDT",
+          "desc": "Valor del bit ACK que enviará el maestro receptor cuando se active ACKEN",
+          "valores": { "0": "Enviar ACK (quiero más datos)", "1": "Enviar NACK (último dato)" }
+        },
+        {
+          "bit": 4,
+          "nombre": "ACKEN",
+          "desc": "Inicia la secuencia de envío del ACK/NACK con el valor de ACKDT. Se borra solo al terminar",
+          "valores": { "0": "Secuencia de ACK no en curso", "1": "Inicia el envío del ACK" }
+        },
+        {
+          "bit": 3,
+          "nombre": "RCEN",
+          "desc": "Habilita la recepción de un byte como maestro (genera los 8 ciclos de reloj). Se borra solo",
+          "valores": { "0": "Recepción no en curso", "1": "Inicia la recepción de un byte" }
+        },
+        {
+          "bit": 2,
+          "nombre": "PEN",
+          "desc": "Genera la condición de stop. Se borra solo al terminar",
+          "valores": { "0": "Stop no en curso", "1": "Inicia la condición de stop" }
+        },
+        {
+          "bit": 1,
+          "nombre": "RSEN",
+          "desc": "Genera la condición de repeated start. Se borra solo al terminar",
+          "valores": { "0": "Repeated start no en curso", "1": "Inicia el repeated start" }
+        },
+        {
+          "bit": 0,
+          "nombre": "SEN",
+          "desc": "Genera la condición de start. Se borra solo al terminar",
+          "valores": { "0": "Start no en curso", "1": "Inicia la condición de start" }
+        }
+      ]
+    },
+    "I2C1STAT": {
+      "titulo": "I2C1STAT — Estado del módulo I2C1",
+      "nota": "Casi todos los bits los pone y los quita el hardware. IWCOL e I2COV deben borrarse por software; BCL solo se limpia reiniciando el módulo (ON = 0 y de nuevo ON = 1).",
+      "ancho": 16,
+      "campos": [
+        {
+          "bit": 15,
+          "nombre": "ACKSTAT",
+          "desc": "ACK recibido del esclavo tras transmitir un byte (es lo que devuelve I2C1EscribeByte)",
+          "valores": { "0": "ACK: el esclavo confirmó la recepción", "1": "NACK: no hubo confirmación" }
+        },
+        {
+          "bit": 14,
+          "nombre": "TRSTAT",
+          "desc": "Transmisión de maestro en curso (8 bits + ACK)",
+          "valores": { "0": "No hay transmisión en curso", "1": "Transmitiendo" }
+        },
+        {
+          "bit": 10,
+          "nombre": "BCL",
+          "desc": "Colisión de bus detectada durante una operación de maestro (entornos multi-maestro)",
+          "valores": { "0": "Sin colisión", "1": "Colisión detectada (reiniciar el módulo para limpiarlo)" }
+        },
+        {
+          "bit": 7,
+          "nombre": "IWCOL",
+          "desc": "Colisión de escritura: se intentó escribir I2CxTRN con el módulo ocupado (se borra por software)",
+          "valores": { "0": "Sin colisión de escritura", "1": "Escritura de I2CxTRN rechazada" }
+        },
+        {
+          "bit": 6,
+          "nombre": "I2COV",
+          "desc": "Overflow de recepción: llegó un byte con I2CxRCV todavía lleno (se borra por software)",
+          "valores": { "0": "Sin overflow", "1": "Se perdió un byte recibido" }
+        },
+        {
+          "bit": 5,
+          "nombre": "D_A",
+          "desc": "Tipo del último byte recibido trabajando como esclavo",
+          "valores": { "0": "Fue una dirección", "1": "Fue un dato" }
+        },
+        {
+          "bit": 4,
+          "nombre": "P",
+          "desc": "Indica que lo último detectado en el bus fue una condición de stop",
+          "valores": { "0": "El último evento no fue un stop", "1": "Stop detectado: bus libre" }
+        },
+        {
+          "bit": 3,
+          "nombre": "S",
+          "desc": "Indica que lo último detectado en el bus fue un start (o repeated start)",
+          "valores": { "0": "El último evento no fue un start", "1": "Start o repeated start detectado" }
+        },
+        {
+          "bit": 2,
+          "nombre": "R_W",
+          "desc": "Sentido de la transferencia indicado por el bit R/W recibido (modo esclavo)",
+          "valores": { "0": "Escritura: el esclavo recibe", "1": "Lectura: el esclavo transmite" }
+        },
+        {
+          "bit": 1,
+          "nombre": "RBF",
+          "desc": "Buffer de recepción lleno",
+          "valores": { "0": "I2CxRCV vacío", "1": "Recepción completa: I2CxRCV lleno" }
+        },
+        {
+          "bit": 0,
+          "nombre": "TBF",
+          "desc": "Buffer de transmisión lleno",
+          "valores": { "0": "I2CxTRN vacío (transmisión terminada)", "1": "Transmisión en curso: I2CxTRN lleno" }
+        }
+      ]
+    },
+    "I2C1BRG": {
+      "titulo": "I2C1BRG — Generador de baudios del I2C1",
+      "nota": "Fija el semiperiodo del reloj SCL. Prohibido cargar 0 o 1 (comportamiento indeterminado según el fabricante). Con PBCLK = 5 MHz: 23 para 100 kHz y 4 para 400 kHz.",
+      "ancho": 16,
+      "campos": [
+        {
+          "bits": [11, 0],
+          "nombre": "I2CBRG",
+          "desc": "Valor de recarga del contador descendente que mide cada semiperiodo de SCL: I2CxBRG = (1/(2·fSCL) − TPGD)·fPBCLK − 2, con TPGD ≈ 104 ns",
+          "valores": { "4": "400 kHz con PBCLK = 5 MHz", "23": "100 kHz con PBCLK = 5 MHz" }
+        }
+      ]
+    },
+    "SPI1CON": {
+      "titulo": "SPI1CON — Control del módulo SPI1",
+      "nota": "MCLKSEL y ENHBUF solo pueden escribirse con ON = 0. ¡Ojo: CKP coincide con CPOL, pero CKE es el negado de CPHA! El SPI2 tiene un registro idéntico (SPI2CON).",
+      "ancho": 32,
+      "campos": [
+        {
+          "bit": 28,
+          "nombre": "MSSEN",
+          "desc": "Manejo automático de la línea SS en modo maestro",
+          "valores": { "0": "SS se maneja por software (GPIO)", "1": "El módulo activa SS solo en cada transferencia" }
+        },
+        {
+          "bit": 23,
+          "nombre": "MCLKSEL",
+          "desc": "Fuente de reloj del generador de baudios (solo escribible con ON = 0)",
+          "valores": { "0": "PBCLK (5 MHz)", "1": "Reloj principal / de referencia (40 MHz)" }
+        },
+        {
+          "bit": 16,
+          "nombre": "ENHBUF",
+          "desc": "Modo de buffer mejorado (solo escribible con ON = 0)",
+          "valores": { "0": "Buffer simple de un solo dato", "1": "FIFO de 16 bytes en transmisión y recepción" }
+        },
+        {
+          "bit": 15,
+          "nombre": "ON",
+          "desc": "Habilita el módulo SPI",
+          "valores": { "0": "Módulo deshabilitado", "1": "Módulo habilitado" }
+        },
+        {
+          "bit": 12,
+          "nombre": "DISSDO",
+          "desc": "Inhabilita el pin SDO; útil si solo se va a leer del bus",
+          "valores": { "0": "SDO controlado por el módulo", "1": "Pin SDO liberado como E/S normal" }
+        },
+        {
+          "bit": 11,
+          "nombre": "MODE32",
+          "desc": "Transferencias de 32 bits (si vale 1, MODE16 se ignora)",
+          "valores": { "0": "Según MODE16", "1": "Transferencias de 32 bits" }
+        },
+        {
+          "bit": 10,
+          "nombre": "MODE16",
+          "desc": "Tamaño de la transferencia cuando MODE32 = 0",
+          "valores": { "0": "Transferencias de 8 bits", "1": "Transferencias de 16 bits" }
+        },
+        {
+          "bit": 8,
+          "nombre": "CKE",
+          "desc": "Fase del reloj: flanco en el que cambia la salida de datos. Es el NEGADO del CPHA del estándar",
+          "valores": { "0": "El dato cambia de inactivo a activo (CPHA = 1)", "1": "El dato cambia de activo a inactivo (CPHA = 0)" }
+        },
+        {
+          "bit": 7,
+          "nombre": "SSEN",
+          "desc": "Uso del pin SS trabajando como esclavo",
+          "valores": { "0": "Pin SS no usado", "1": "Pin SS usado en modo esclavo" }
+        },
+        {
+          "bit": 6,
+          "nombre": "CKP",
+          "desc": "Polaridad del reloj: coincide con el CPOL del estándar (valor de reposo)",
+          "valores": { "0": "Reposo a nivel bajo, activo a nivel alto (CPOL = 0)", "1": "Reposo a nivel alto, activo a nivel bajo (CPOL = 1)" }
+        },
+        {
+          "bit": 5,
+          "nombre": "MSTEN",
+          "desc": "Habilita el modo maestro (conecta el generador de baudios al pin SCK)",
+          "valores": { "0": "Modo esclavo", "1": "Modo maestro" }
+        },
+        {
+          "bit": 4,
+          "nombre": "DISSDI",
+          "desc": "Inhabilita el pin SDI; habitual con periféricos que solo reciben (displays)",
+          "valores": { "0": "SDI controlado por el módulo", "1": "Pin SDI liberado como E/S normal" }
+        },
+        {
+          "bits": [3, 2],
+          "nombre": "STXISEL",
+          "desc": "Cuándo interrumpe el buffer de transmisión (SPIxTXB)",
+          "valores": {
+            "0": "Al transmitirse el último dato (TXB y SPIxSR vacíos): no recomendable",
+            "1": "Cuando el buffer está completamente vacío: menos interrupciones",
+            "2": "Cuando el buffer está vacío a la mitad o más: estrategia intermedia",
+            "3": "Cuando hay al menos un hueco libre: evita que el buffer se quede vacío"
+          }
+        },
+        {
+          "bits": [1, 0],
+          "nombre": "SRXISEL",
+          "desc": "Cuándo interrumpe el buffer de recepción (SPIxRXB)",
+          "valores": {
+            "0": "Cuando el buffer se queda totalmente vacío: sin sentido práctico",
+            "1": "Cuando hay al menos un dato: máxima seguridad contra pérdidas",
+            "2": "Cuando el buffer está lleno a la mitad o más: estrategia intermedia",
+            "3": "Cuando el buffer está totalmente lleno: menos interrupciones, riesgo de perder datos"
+          }
+        }
+      ]
+    },
+    "SPI1STAT": {
+      "titulo": "SPI1STAT — Estado del módulo SPI1",
+      "nota": "SPIROV debe borrarse por software (SPI1STATbits.SPIROV = 0 o SPI1STATCLR = 1<<6); el resto los maneja el hardware. RXBUFELM y TXBUFELM solo tienen sentido con ENHBUF = 1.",
+      "ancho": 32,
+      "campos": [
+        {
+          "bits": [28, 24],
+          "nombre": "RXBUFELM",
+          "desc": "Número de elementos en el buffer de recepción (solo con ENHBUF = 1); permite vaciarlo en bucle"
+        },
+        {
+          "bits": [20, 16],
+          "nombre": "TXBUFELM",
+          "desc": "Número de elementos en el buffer de transmisión (solo con ENHBUF = 1); permite llenarlo en bucle"
+        },
+        {
+          "bit": 11,
+          "nombre": "SPIBUSY",
+          "desc": "El módulo está ocupado transmitiendo",
+          "valores": { "0": "Módulo en reposo", "1": "Transfiriendo datos" }
+        },
+        {
+          "bit": 6,
+          "nombre": "SPIROV",
+          "desc": "Overflow de recepción: llegó un dato con el buffer lleno y se perdió. Hasta que no se borre (por software) no se reciben más datos",
+          "valores": { "0": "Sin overflow", "1": "Dato perdido: borrar a mano para seguir recibiendo" }
+        },
+        {
+          "bit": 5,
+          "nombre": "SPIRBE",
+          "desc": "Buffer de recepción vacío; en polling se espera a que valga 0 como señal de fin de transferencia",
+          "valores": { "0": "Hay datos recibidos pendientes de leer", "1": "Buffer de recepción vacío" }
+        },
+        {
+          "bit": 3,
+          "nombre": "SPITBE",
+          "desc": "Buffer de transmisión vacío (se pone a 1 cuando el dato pasa a SPIxSR)",
+          "valores": { "0": "Buffer de transmisión con datos", "1": "Buffer de transmisión vacío" }
+        },
+        {
+          "bit": 1,
+          "nombre": "SPITBF",
+          "desc": "Buffer de transmisión lleno; en polling se espera a que valga 0 antes de escribir en SPIxBUF",
+          "valores": { "0": "Hay sitio en el buffer de transmisión", "1": "Buffer de transmisión lleno: esperar" }
+        },
+        {
+          "bit": 0,
+          "nombre": "SPIRBF",
+          "desc": "Buffer de recepción lleno",
+          "valores": { "0": "Buffer de recepción no lleno", "1": "Buffer de recepción lleno" }
+        }
+      ]
+    }
+  },
+  "ejercicios": {
+    "buses-i2c-spi-1": {
+      "titulo": "Detector de línea de gol (I2C + SPI)",
+      "enunciado": "<p>Basado en el examen <strong>Ordinario de 2024</strong>. Un sistema de detección de gol usa <strong>dos sensores de distancia</strong> configurables por I2C con salida analógica (uno horizontal H en un palo y otro vertical V en el larguero) y un <strong>transductor de radio por SPI</strong> que envía «GOAL» o «NO GOAL» al receptor del árbitro. Los sensores se configuran escribiendo su registro <code class=\"reg\">SCON</code>, cuya dirección interna es 0x23.</p>",
+      "contexto": "<ul><li>Sensor H: dirección I2C <strong>0x14</strong> (7 bits); debe medir hasta <strong>8 m</strong>.</li><li>Sensor V: dirección I2C <strong>0x06</strong> (7 bits); debe medir hasta 3 m.</li><li>Registro SCON (0x23): <strong>MAX_DIS</strong> en los bits 7-5 (distancia máxima = valor + 1, en metros), <strong>M_ON</strong> en el bit 3 (1 = medida habilitada) y <strong>SEL_VD</strong> en el bit 1 (1 = alimentación a 3,3 V; el sistema va a 3,3 V).</li><li>El bus I2C funciona a <strong>400 kHz</strong> (PBCLK = 5 MHz). El SPI2 funciona a 1 MHz con <strong>CKE = 1 y CKP = 0</strong>.</li><li>Driver disponible: <code>I2C1GeneraStart/ReStart/Stop</code>, <code>I2C1EscribeByte</code> (devuelve el ACK) e <code>I2C1LeeByte(ack)</code>.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "1) Tras I2C1GeneraStart(), ¿qué byte se pasa a I2C1EscribeByte() para direccionar en escritura al sensor H (dirección 0x14)?",
+          "opciones": [
+            "0x28: la dirección desplazada un bit a la izquierda con R/W = 0",
+            "0x14: la dirección tal cual",
+            "0x29: la dirección desplazada con R/W = 1",
+            "0x23: la dirección del registro SCON"
+          ],
+          "correcta": 0,
+          "explicacion": "La dirección de 7 bits ocupa los bits 7-1 del primer byte y el bit 0 es R/W (0 = escritura). En C: <code>I2C1EscribeByte(0x14 &lt;&lt; 1)</code> → 0x28. La dirección del registro interno (0x23) se envía en el <em>segundo</em> byte."
+        },
+        {
+          "texto": "2) ¿Qué byte de configuración hay que escribir en SCON para el sensor H: distancia máxima 8 m, medida habilitada y alimentación a 3,3 V?",
+          "opciones": ["0xEA", "0x8A", "0xE5", "0x75"],
+          "correcta": 0,
+          "explicacion": "8 m ⇒ MAX_DIS = 7 (valor + 1 = 8). El byte es <code>(7 &lt;&lt; 5) | (1 &lt;&lt; 3) | (1 &lt;&lt; 1)</code> = 0xE0 + 0x08 + 0x02 = <strong>0xEA</strong>. Es la misma construcción con máscaras y desplazamientos que usa la solución oficial del examen."
+        },
+        {
+          "texto": "3) Para inicializar el I2C1 a 400 kHz con PBCLK = 5 MHz, ¿qué combinación es correcta?",
+          "opciones": [
+            "I2C1BRG = 4 con control de slew rate activado (DISSLW = 0)",
+            "I2C1BRG = 23 con DISSLW = 1",
+            "I2C1BRG = 4 con DISSLW = 1",
+            "I2C1BRG = 2, que da exactamente 400 kHz"
+          ],
+          "correcta": 0,
+          "explicacion": "La fórmula da (1/(2·400&nbsp;kHz) − 104&nbsp;ns)·5&nbsp;MHz − 2 = 3,73 → <strong>4</strong>. En modo rápido el control de slew rate se deja <em>activado</em> (DISSLW = 0 ⇒ <code>I2C1CON = 0x8000</code>); el 23 con DISSLW = 1 es la configuración de 100 kHz."
+        },
+        {
+          "texto": "4) El transductor exige CKE = 1 y CKP = 0 en el SPI2. ¿A qué modo SPI estándar corresponde?",
+          "opciones": [
+            "Modo 0 (CPOL = 0, CPHA = 0)",
+            "Modo 1 (CPOL = 0, CPHA = 1)",
+            "Modo 2 (CPOL = 1, CPHA = 0)",
+            "Modo 3 (CPOL = 1, CPHA = 1)"
+          ],
+          "correcta": 0,
+          "explicacion": "CKP coincide con CPOL ⇒ CPOL = 0. Pero CKE es el <strong>negado</strong> de CPHA ⇒ CPHA = 0. Modo = CPOL·2 + CPHA = <strong>0</strong>. Esta inversión de CKE es la trampa clásica del PIC32 en los exámenes."
+        }
+      ]
+    },
+    "buses-i2c-spi-2": {
+      "titulo": "Acelerómetro ADXL345 por I2C",
+      "enunciado": "<p>Basado en el examen <strong>Ordinario de 2023</strong> (detector de caídas para paquetes). Un acelerómetro <strong>ADXL345</strong> se conecta al bus I2C a <strong>400 kHz</strong>. Su dirección de 7 bits es <strong>0x1D</strong>. Hay que leer su identificador, configurarlo y leer la aceleración de los tres ejes.</p>",
+      "contexto": "<ul><li>Registro <strong>DEVID</strong> (0x00): identificador del chip, debe valer 0xE5.</li><li>Registro <strong>POWER_CTL</strong> (0x2D): bits Measure y Sleep para arrancar o dormir la medida.</li><li>La aceleración son <strong>6 bytes consecutivos</strong> (X0, X1, Y0, Y1, Z0, Z1) a partir del registro 0x32, con <strong>autoincremento</strong> de la dirección interna.</li><li>Driver disponible: <code>I2C1GeneraStart/ReStart/Stop</code>, <code>I2C1EscribeByte</code> (devuelve el ACK recibido: 0 OK) e <code>I2C1LeeByte(ack)</code> (lee un byte y envía ese ack).</li></ul>",
+      "preguntas": [
+        {
+          "texto": "1) Para leer DEVID, después de enviar start + 0x3A (0x1D<<1) + 0x00, ¿cuál es el siguiente paso?",
+          "opciones": [
+            "Generar un repeated start y enviar 0x3B (la dirección con R/W = 1)",
+            "Leer directamente con I2C1LeeByte(1)",
+            "Generar un stop y empezar a leer",
+            "Volver a enviar 0x00 para confirmar la dirección del registro"
+          ],
+          "correcta": 0,
+          "explicacion": "La lectura de un registro interno es <em>escritura del puntero de registro</em> + <strong>repeated start</strong> + <em>lectura</em>. El repeated start cambia el sentido sin soltar el bus, y la dirección se reenvía con R/W = 1: <code>(0x1D &lt;&lt; 1) | 1</code> = 0x3B. Sin ese segundo direccionamiento el esclavo no sabe que ahora le toca transmitir."
+        },
+        {
+          "texto": "2) Al leer los 6 bytes de aceleración seguidos, ¿qué valor de ack se pasa a I2C1LeeByte() en cada lectura?",
+          "opciones": [
+            "0 (ACK) en los cinco primeros y 1 (NACK) en el último",
+            "1 (NACK) en todos: el maestro nunca confirma",
+            "0 (ACK) en todos, incluido el último",
+            "Da igual: el ACK lo genera el ADXL345"
+          ],
+          "correcta": 0,
+          "explicacion": "En una lectura el <strong>maestro</strong> es el receptor y por tanto genera los ACK. Con ACK = 0 pide otro byte (y el autoincremento avanza al siguiente registro); con el <strong>NACK final</strong> avisa de que no quiere más datos antes del stop. Así se leen los 6 registros con un único mensaje."
+        },
+        {
+          "texto": "3) I2C1EscribeByte() devuelve un valor distinto de 0. ¿Qué significa y qué debe hacer el driver?",
+          "opciones": [
+            "Se recibió NACK (ACKSTAT = 1): generar la condición de stop y abortar el mensaje",
+            "El byte se envió correctamente: continuar",
+            "Hay que reintentar el envío inmediatamente sin stop",
+            "El bus está en clock stretching: esperar al flag I2C1MIF"
+          ],
+          "correcta": 0,
+          "explicacion": "La función devuelve <code class=\"reg\">ACKSTAT</code> (bit 15 de <code class=\"reg\">I2C1STAT</code>): 0 = ACK, 1 = NACK. Ante un NACK (esclavo inexistente, ocupado o comando incoherente) el patrón canónico es <code>I2C1GeneraStop()</code> para liberar el bus y devolver código de error — exactamente lo que hace la solución del examen."
+        },
+        {
+          "texto": "4) Tras recibir un byte, el esclavo mantiene SCL a nivel bajo un tiempo antes de su ACK porque está ocupado. ¿Qué mecanismo del bus es?",
+          "opciones": [
+            "Alargamiento del reloj (clock stretching): el esclavo frena al maestro",
+            "Arbitraje del bus: hay otro maestro transmitiendo",
+            "Una condición de stop encubierta",
+            "Un overflow de recepción (I2COV)"
+          ],
+          "correcta": 0,
+          "explicacion": "Reteniendo SCL a 0 el esclavo impide que el maestro genere más ciclos de reloj: es el <strong>clock stretching</strong>. El arbitraje es otra cosa: la pelea entre <em>varios maestros</em> por el bus, que gana quien escribe el valor más bajo (las condiciones de start/stop se definen sobre SDA, no reteniendo SCL)."
+        }
+      ]
+    }
+  },
+  "ejerciciosEnTema": ["buses-i2c-spi-1", "buses-i2c-spi-2"],
+  "resumen": [
+    "<strong>I2C:</strong> 2 hilos (<strong>SCL</strong> + <strong>SDA</strong>) en drenador abierto con pull-ups; bus maestro-esclavo multi-maestro, half-duplex, direcciones de 7 bits y ACK tras cada byte.",
+    "<strong>Pull-ups:</strong> R<sub>max</sub> = t<sub>r</sub>/(0,847·C) por tiempo de subida (1000 ns a 100 kHz, 300 ns a 400 kHz); R<sub>min</sub> = V<sub>DD</sub>/I<sub>OL</sub> ≈ 1,1 kΩ a 3,3 V. Valor típico: 4,7 kΩ.",
+    "<strong>Protocolo I2C:</strong> start (SDA baja con SCL alto), dirección + R/W, ACK, datos, stop (SDA sube con SCL alto); <em>repeated start</em> para escribir-y-leer sin soltar el bus; clock stretching y arbitraje gracias al drenador abierto.",
+    "<strong>I2C en el PIC32:</strong> <code class=\"reg\">I2CxBRG</code> = (1/(2·f<sub>SCL</sub>) − T<sub>PGD</sub>)·f<sub>PBCLK</sub> − 2 → 23 (100 kHz) o 4 (400 kHz) con PBCLK = 5 MHz; nunca 0 ni 1. <code class=\"reg\">DISSLW</code> = 1 solo a 100 kHz.",
+    "<strong>Driver I2C:</strong> cada paso se lanza con un bit de <code class=\"reg\">I2C1CON</code> (SEN, RSEN, PEN, RCEN, ACKDT+ACKEN) y se espera <code class=\"reg\">IFS1bits.I2C1MIF</code>; el ACK del esclavo se lee en <code class=\"reg\">ACKSTAT</code> de <code class=\"reg\">I2C1STAT</code>.",
+    "<strong>SPI:</strong> 4 hilos (SCLK, MOSI, MISO y una SS por esclavo, activa a nivel bajo), un solo maestro, full-duplex por registros de desplazamiento en anillo; modos 0-3 según CPOL (reposo del reloj) y CPHA (flancos de muestreo).",
+    "<strong>SPI en el PIC32:</strong> f<sub>SCK</sub> = f<sub>CLKIN</sub>/(2·(SPIxBRG+1)) con PBCLK (5 MHz) o el reloj principal de 40 MHz (<code class=\"reg\">MCLKSEL</code> = 1); máximo 20 MHz. SCK fijo (RB14/RB15), SDO/SDI remapeables. <code class=\"reg\">CKP</code> = CPOL pero <strong><code class=\"reg\">CKE</code> = CPHA negado</strong>.",
+    "<strong>Driver SPI por polling:</strong> esperar <code class=\"reg\">SPITBF</code> = 0 antes de escribir <code class=\"reg\">SPIxBUF</code>, esperar <code class=\"reg\">SPIRBE</code> = 0 como fin de transferencia y <strong>leer siempre</strong> <code class=\"reg\">SPIxBUF</code> para no provocar <code class=\"reg\">SPIROV</code> (que bloquea la recepción hasta borrarse a mano)."
+  ]
+}
