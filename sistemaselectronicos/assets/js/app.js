@@ -86,6 +86,8 @@ MPI.config = {
       'amplificadores operacionales, sensores resistivos, E/S, temporizadores/PWM, máquinas de estados, ' +
       'comunicaciones (UART, I²C, SPI) y conversión A/D sobre Raspberry Pi.</li>' +
       '<li><strong>Transparencias de clase:</strong> Dr. Francisco Martín Martínez — definen el temario vigente.</li>' +
+      '<li><strong>Libreria gpiozero:</strong> https://gpiozero.readthedocs.io/ </li>' +
+      '<li><strong>RPi.GPIO:</strong> https://pypi.org/project/RPi.GPIO/ </li>' +
       '<li><strong>Plataforma:</strong> Raspberry Pi 4 (BCM2711) + Python con <code>gpiozero</code>, ' +
       '<code>spidev</code>/<code>smbus</code>; ADC <code>MCP3008</code> sobre la placa iMAT HAT.</li>' +
       '</ul></section>';
