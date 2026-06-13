@@ -482,6 +482,14 @@
             text-decoration: underline;
         }
 
+        .article-item.is-hidden {
+            display: none;
+        }
+
+        .list-toggle-wrap {
+            margin-top: 10px;
+        }
+
         /* Education List */
         .education-list {
             display: flex;
@@ -727,6 +735,28 @@
                         <p>Optimization techniques for energy systems.</p>
                     </div>
                 </div>
+                <h2 style="margin-top: 25px;">Supervised PhD students</h2>
+                <div class="article-list">
+                    <div class="article-item" style="border-left-color: #e74c3c;">
+                        <div class="year">Supervised · 2024</div>
+                        <div class="title">The impact of demand-side flexibility on generation investment planning and operation of the future electric system</div>
+                        <div class="authors">T. Freire-Barcelo. Madrid, Spain.</div>
+                    </div>
+                    <div class="article-item" style="border-left-color: #f39c12;">
+                        <div class="year">In progress</div>
+                        <div class="title">Prosumers in electricity markets: approaches, tools and viability assessment</div>
+                        <div class="authors">R. Rodriguez Vilches. Universidad Pontificia Comillas, Madrid, Espana.</div>
+                    </div>
+                    <div class="article-item" style="border-left-color: #f39c12;">
+                        <div class="year">In progress</div>
+                        <div class="title">Analysis of heavy transport electrification</div>
+                        <div class="authors">Fernando David Modrego Arceo.</div>
+                    </div>
+                    <div class="article-item" style="border-left-color: #27ae60;">
+                        <div class="year">Starting</div>
+                        <div class="authors">D. Carles Olucha Royo.</div>
+                    </div>
+                </div>
 
                 <h2 style="margin-top: 25px;">Certifications & Accreditations</h2>
                 <div class="article-list">
@@ -752,8 +782,8 @@
                     </div>
                 </div>
 
-                <h2 style="margin-top: 25px;">Journal Articles</h2>
-                <div class="article-list">
+                <h2 style="margin-top: 25px;">LatestJournal Articles</h2>
+                <div class="article-list" id="journal-articles-list">
                     <div class="article-item">
                         <div class="year">2025</div>
                         <div class="title">Demand response cost analysis and its effect on system planning</div>
@@ -845,9 +875,12 @@
                         <div class="authors" style="color: #3498db; font-size: 0.75rem; margin-top: 3px;">Renewable & Sustainable Energy Reviews, Vol. 62, pp. 1133-1153, September 2016 | JCR-JIF: 16.300 Q1 (2024) - SJR: 3.901 Q1 (2024)</div>
                     </div>
                 </div>
+                <div class="list-toggle-wrap">
+                    <button id="journal-toggle-btn" class="btn" type="button" aria-expanded="false">Show all journal articles</button>
+                </div>
 
-                <h2 style="margin-top: 25px;">Research Projects</h2>
-                <div class="article-list">
+                <h2 style="margin-top: 25px;">Latest Research Projects</h2>
+                <div class="article-list" id="research-projects-list">
                     <div class="article-item">
                         <div class="year">2025-2029</div>
                         <div class="title">SOCIAREM: Solar Open Community Instruments for All Residents in Europe and the Mediterranean region</div>
@@ -929,6 +962,9 @@
                         <div class="authors">Gas Natural SDG, S.A.</div>
                     </div>
                 </div>
+                <div class="list-toggle-wrap">
+                    <button id="projects-toggle-btn" class="btn" type="button" aria-expanded="false">Show all research projects</button>
+                </div>
             </section>
 
             <!-- Teaching Section -->
@@ -982,7 +1018,14 @@
                             <i class="fab fa-github"></i> GitHub
                         </a>
                     </div>
-
+                     <div class="tfg-card">
+                        <i class="fas fa-car" style="color: #3498db; font-size: 1.2rem;"></i>
+                        <h4>Leveraging Generative AI for Intelligent EV Charging Software</h4>
+                        <p>Explores the use of RL and generative AI as an alternative to classical optimization in energy demand management</p>
+                        <a href="https://github.com/AlvaroGonzalez05/tfg" target="_blank">
+                            <i class="fab fa-github"></i> GitHub
+                        </a>
+                    </div>
 
                     <div class="tfg-card">
                         <i class="fas fa-gamepad" style="color: #3498db; font-size: 1.2rem;"></i>
@@ -1122,6 +1165,54 @@
                 tab.classList.add('active');
                 document.getElementById(sectionId).classList.add('active');
             });
+        });
+
+        const setupExpandableList = (config) => {
+            const list = document.getElementById(config.listId);
+            const toggleBtn = document.getElementById(config.buttonId);
+            const visibleCount = 5;
+
+            if (!list || !toggleBtn) {
+                return;
+            }
+
+            const items = Array.from(list.querySelectorAll('.article-item'));
+            let expanded = false;
+
+            const updateVisibility = () => {
+                items.forEach((item, index) => {
+                    const shouldHide = !expanded && index >= visibleCount;
+                    item.classList.toggle('is-hidden', shouldHide);
+                });
+
+                toggleBtn.textContent = expanded ? config.collapseText : config.expandText;
+                toggleBtn.setAttribute('aria-expanded', String(expanded));
+            };
+
+            if (items.length <= visibleCount) {
+                toggleBtn.style.display = 'none';
+                return;
+            }
+
+            updateVisibility();
+            toggleBtn.addEventListener('click', () => {
+                expanded = !expanded;
+                updateVisibility();
+            });
+        };
+
+        setupExpandableList({
+            listId: 'journal-articles-list',
+            buttonId: 'journal-toggle-btn',
+            expandText: 'Show all journal articles',
+            collapseText: 'Show fewer journal articles'
+        });
+
+        setupExpandableList({
+            listId: 'research-projects-list',
+            buttonId: 'projects-toggle-btn',
+            expandText: 'Show all research projects',
+            collapseText: 'Show fewer research projects'
         });
     </script>
 </body>
