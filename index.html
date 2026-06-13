@@ -31,13 +31,69 @@
             border-bottom: 1px solid #34495e;
             padding: 40px 0;
             margin-bottom: 20px;
+            position: relative;
+        }
+
+        .energy-icons-bg {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            opacity: 0.12;
+            font-size: 1.8rem;
+            color: #3498db;
+            pointer-events: none;
+            margin-top: 8px;
+            flex-shrink: 0;
+        }
+
+        .energy-icons-left {
+            width: auto;
+        }
+
+        .energy-icons-right {
+            display: none;
+        }
+
+        .energy-icons-bg .icon {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .energy-icons-left .icon:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .energy-icons-left .icon:nth-child(2) {
+            animation-delay: 1.5s;
+        }
+
+        .energy-icons-right .icon:nth-child(1) {
+            animation-delay: 0.75s;
+        }
+
+        .energy-icons-right .icon:nth-child(2) {
+            animation-delay: 2.25s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-12px);
+            }
         }
 
         .header-content {
             display: flex;
             gap: 30px;
             align-items: flex-start;
+            position: relative;
+            z-index: 1;
         }
+
+
 
         .profile-photo {
             width: 140px;
@@ -51,6 +107,17 @@
             color: #95a5a6;
             font-size: 2rem;
             flex-shrink: 0;
+            box-shadow: 0 0 20px rgba(52, 152, 219, 0.3);
+            animation: profileGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes profileGlow {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(52, 152, 219, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(46, 204, 113, 0.4);
+            }
         }
 
         .profile-photo img {
@@ -208,6 +275,23 @@
             border-radius: 6px;
             border: 1px solid #34495e;
             transition: all 0.3s;
+            position: relative;
+        }
+
+        .research-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #2ecc71, transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .research-card:hover::before {
+            opacity: 1;
         }
 
         .research-card:hover {
@@ -221,7 +305,18 @@
             margin-bottom: 8px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
+        }
+
+        .research-card h3 i {
+            font-size: 1.8rem;
+            color: #2ecc71;
+            transition: all 0.3s ease;
+        }
+
+        .research-card:hover h3 i {
+            transform: scale(1.2) rotate(10deg);
+            color: #3498db;
         }
 
         .research-card p {
@@ -525,6 +620,10 @@
             .header-info h1 {
                 font-size: 1.3rem;
             }
+
+            .energy-icons-bg {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -534,6 +633,12 @@
             <div class="header-content">
                 <div class="profile-photo">
                     <img src="images/profile.JPG" alt="Francisco Martín Martínez">
+                </div>
+                <div class="energy-icons-bg energy-icons-left">
+                    <div class="icon"><i class="fas fa-solar-panel"></i></div>
+                    <div class="icon"><i class="fas fa-battery-full"></i></div>
+                    <div class="icon"><i class="fas fa-microchip"></i></div>
+                    <div class="icon"><i class="fas fa-lightbulb"></i></div>
                 </div>
                 <div class="header-info">
                     <h1>Francisco Martín Martínez</h1>
@@ -560,6 +665,9 @@
                         <a href="https://scholar.google.com/citations?user=uyrn9soAAAAJ" target="_blank" title="Google Scholar">
                             <i class="fas fa-graduation-cap"></i> Google Scholar
                         </a>
+                        <a href="https://github.com/fr4nc15co" target="_blank" title="GitHub">
+                            <i class="fab fa-github"></i> GitHub
+                        </a>
                         <a href="https://orcid.org/0000-0003-2968-7144" target="_blank" title="ORCID">
                             <i class="fas fa-id-card"></i> Orcid
                         </a>
@@ -575,13 +683,9 @@
                         <a href="https://www.researchgate.net/profile/Francisco_Martin-Martinez2" target="_blank" title="ResearchGate">
                             <i class="fas fa-network-wired"></i> ResearchGate
                         </a>
-                        <a href="https://github.com/fr4nc15co" target="_blank" title="GitHub">
-                            <i class="fab fa-github"></i> GitHub
-                        </a>
                     </div>
                 </div>
             </div>
-        </div>
     </header>
 
     <nav class="nav-tabs">
