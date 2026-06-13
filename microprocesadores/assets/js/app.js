@@ -9,6 +9,8 @@ MPI.contenidoTemas = MPI.contenidoTemas || {};
 (function () {
   function $(sel, raiz) { return (raiz || document).querySelector(sel); }
 
+  function gaEvent(name, params) { if (typeof gtag === 'function') gtag('event', name, params); }
+
   function construirMenu() {
     var nav = $('#mpi-nav');
     var html = '<a class="mpi-nav-inicio" href="#/">Inicio</a><ol class="mpi-nav-lista">';
@@ -99,8 +101,11 @@ MPI.contenidoTemas = MPI.contenidoTemas || {};
       MPI.vistaExamen(main);
       marcarActivo(null);
     } else if (m) {
-      main.innerHTML = vistaTema(decodeURIComponent(m[1]));
-      marcarActivo(decodeURIComponent(m[1]));
+      var slug = decodeURIComponent(m[1]);
+      var meta = MPI.temas.filter(function (t) { return t.slug === slug; })[0];
+      main.innerHTML = vistaTema(slug);
+      marcarActivo(slug);
+      gaEvent('tema_visto', { slug: slug, titulo: meta ? meta.titulo : slug, site: 'microprocesadores' });
     } else {
       main.innerHTML = vistaInicio();
       marcarActivo(null);

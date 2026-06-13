@@ -9,6 +9,8 @@ window.MPI = window.MPI || {};
   var indice = null;
   var overlay, input, lista;
 
+  function gaEvent(name, params) { if (typeof gtag === 'function') gtag('event', name, params); }
+
   function normaliza(s) {
     return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   }
@@ -52,6 +54,8 @@ window.MPI = window.MPI || {};
   }
 
   function irA(e) {
+    gaEvent('search', { search_term: input.value.trim(), site: 'microprocesadores' });
+    gaEvent('busqueda_resultado', { tipo: e.tipo, slug: e.slug, titulo: e.titulo, site: 'microprocesadores' });
     cerrar();
     location.hash = '#/tema/' + e.slug;
     setTimeout(function () {
@@ -96,6 +100,7 @@ window.MPI = window.MPI || {};
     input.value = '';
     pintarResultados('');
     input.focus();
+    gaEvent('busqueda_abierta', { site: 'microprocesadores' });
   }
   function cerrar() { overlay.style.display = 'none'; }
 

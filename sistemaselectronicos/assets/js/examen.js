@@ -8,6 +8,8 @@
 window.MPI = window.MPI || {};
 
 (function () {
+  function gaEvent(name, params) { if (typeof gtag === 'function') gtag('event', name, params); }
+
   function barajar(v) {
     for (var i = v.length - 1; i > 0; i--) {
       var j = Math.floor(Math.random() * (i + 1));
@@ -34,6 +36,7 @@ window.MPI = window.MPI || {};
     });
     barajar(banco);
     var elegidas = banco.slice(0, Math.min(n, banco.length));
+    gaEvent('examen_inicio', { total_preguntas: elegidas.length, site: 'sistemaselectronicos' });
 
     // 2) barajar también las opciones de cada pregunta (remapeando la correcta)
     var items = elegidas.map(function (it) {
@@ -94,10 +97,11 @@ window.MPI = window.MPI || {};
         'Nota: <strong>' + aciertos + ' / ' + items.length + '</strong> (' +
         String(sobre10).replace('.', ',') + ' sobre 10)' +
         (sinResponder ? ' — ' + sinResponder + ' sin responder' : '');
+      gaEvent('examen_resultado', { aciertos: aciertos, total: items.length, nota: sobre10, site: 'sistemaselectronicos' });
       this.disabled = true;
       el.querySelector('.ex-nota').scrollIntoView({ block: 'center', behavior: 'smooth' });
     });
-    el.querySelector('.ex-otro').addEventListener('click', function () { montarTest(el, n); window.scrollTo(0, 0); });
+    el.querySelector('.ex-otro').addEventListener('click', function () { gaEvent('examen_reintentar', { site: 'sistemaselectronicos' }); montarTest(el, n); window.scrollTo(0, 0); });
   }
 
   MPI.vistaExamen = function (el) {
