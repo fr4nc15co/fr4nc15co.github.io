@@ -530,6 +530,44 @@
             color: #bdc3c7;
         }
 
+        .hobbies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+            margin-top: 10px;
+        }
+
+        .hobby-card {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.16), rgba(46, 204, 113, 0.12));
+            border: 1px dashed rgba(52, 152, 219, 0.45);
+            border-radius: 14px;
+            padding: 14px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .hobby-card:hover {
+            transform: translateY(-3px) rotate(-0.3deg);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .hobby-card i {
+            color: #f1c40f;
+            font-size: 1.35rem;
+            margin-bottom: 6px;
+        }
+
+        .hobby-card h4 {
+            color: #ecf0f1;
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+
+        .hobby-card p {
+            color: #bdc3c7;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
         /* Footer */
         footer {
             background: #0f1419;
@@ -736,31 +774,42 @@
                     </div>
                 </div>
 
+                 <h2 style="margin-top: 25px;">Tools</h2>
+                <div class="article-list">
+                    <div class="article-item" style="border-left-color: #e74c3c;">
+                        <div class="year">Energy Systems Tool</div>
+                        <div class="title"><a href="https://www.iit.comillas.edu/ofertas_tecnologicas/3" target="_blank" rel="noopener noreferrer" style="color: #3498db; text-decoration: none;"><i class="fas fa-bolt"></i> SPLODER</a></div>
+                        <div class="authors">Expansion, operation and reliability models for electric systems</div>
+                    </div>
+                </div>
+
                 <h2 style="margin-top: 25px;">Certifications & Accreditations</h2>
                 <div class="article-list">
                     <div class="article-item" style="border-left-color: #e74c3c;">
-                        <div class="year">Sexenio (2014-2019)</div>
-                        <div class="title">Research Performance Evaluation</div>
+                        <div class="year">ANECA Certification - Research Performance Evaluation</div>
+                        <div class="title">Sexenio (2014-2019)</div>
                         <div class="authors">Field 6.2 - Engineering and Architecture. Communications, Computing and Electronics Engineering</div>
                     </div>
                     <div class="article-item" style="border-left-color: #e74c3c;">
-                        <div class="year">12/05/2022</div>
-                        <div class="title">ANECA Certification - Associate Professor</div>
+                        <div class="year">ANECA Certification - 12/05/2022</div>
+                        <div class="title">Associate Professor</div>
                         <div class="authors">Profesor de Universidad Privada</div>
                     </div>
                     <div class="article-item" style="border-left-color: #e74c3c;">
-                        <div class="year">12/05/2022</div>
-                        <div class="title">ANECA Certification - Contract Professor</div>
+                        <div class="year">ANECA Certification - 12/05/2022</div>
+                        <div class="title">Contract Professor</div>
                         <div class="authors">Profesor Contratado Doctor</div>
                     </div>
                     <div class="article-item" style="border-left-color: #e74c3c;">
-                        <div class="year">10/09/2018</div>
-                        <div class="title">ANECA Certification - Research Assistant</div>
+                        <div class="year">ANECA Certification - 10/09/2018</div>
+                        <div class="title">Research Assistant</div>
                         <div class="authors">Profesor Ayudante Doctor</div>
                     </div>
                 </div>
 
-                <h2 style="margin-top: 25px;">LatestJournal Articles</h2>
+
+
+                <h2 style="margin-top: 25px;">Latest Journal Articles</h2>
                 <div class="article-list" id="journal-articles-list">
                     <div class="article-item">
                         <div class="year">2025</div>
@@ -970,8 +1019,43 @@
 
             <!-- Teaching Section -->
             <section id="teaching">
-                <h2>Teaching</h2>
+                <h2 style="margin-top: 30px;"> Where I am - Dónde me puedes preguntar </h2>
 
+
+                No tengo horas fijas de atención a alumnos, así que lo mejor es <b>enviarme un e-mail/Teams</b> para concertar una cita (presencial o Teams). 
+
+                <div class="map-wrapper">
+                <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d6269.458540340053!2d-3.716417552889334!3d40.424359519247425!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd422868d4768a13%3A0x6bb401f7b653deaa!2sUniversidad%20Pontificia%20de%20Comillas%20de%20Madrid!5e1!3m2!1ses!2ses!4v1781430306323!5m2!1ses!2ses"
+                    allowfullscreen=""
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+                </div>
+
+                <style>
+                .map-wrapper {
+                    position: relative;
+                    padding-bottom: 35%; /* Más pequeño (antes 56.25%) */
+                    height: 0;
+                    overflow: hidden;
+                    border-radius: 14px;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+                    margin: 1.5rem 0;
+                }
+
+                .map-wrapper iframe {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    border: 0;
+                }
+                </style>
+
+
+                <h2>Teaching - ICAI</h2>
                 <div class="teaching-card">
                     <h3><i class="fas fa-microchip"></i> Microprocesadores PIC32MX</h3>
                     <p class="subtitle">Interactive Educational Platform</p>
@@ -998,17 +1082,8 @@
                     </a>
                 </div>
 
-                <div class="teaching-card">
-                    <h3><i class="fas fa-file-pdf"></i> PDF to Markdown</h3>
-                    <p class="subtitle">Document Processing Tool</p>
-                    <p>Tool for converting PDF documents to Markdown format using Docling, useful for document processing and analysis in educational and research contexts.</p>
-                    <a href="https://github.com/fr4nc15co/pdftomd_Docling" class="btn" target="_blank">
-                        <i class="fab fa-github"></i> See on GitHub
-                    </a>
-                </div>
-
                 <h2 style="margin-top: 30px;">Thesis Supervision <span class="badge">20+</span></h2>
-                <p style="color: #bdc3c7; margin-bottom: 15px; font-size: 0.95rem;">Supervision of over 20 Bachelor Thesis projects in embedded systems, IoT and data analysis:</p>
+                <p style="color: #bdc3c7; margin-bottom: 15px; font-size: 0.95rem;">Supervision of Bachelor/Master Thesis projects in embedded systems, IoT and data analysis. List of GitHub repositories shared by students:</p>
 
                 <div class="tfg-grid">
                     <div class="tfg-card">
@@ -1054,6 +1129,15 @@
                             <i class="fab fa-github"></i> GitHub
                         </a>
                     </div>
+                </div>
+                <h2 style="margin-top: 30px;">Other useful resources </span></h2>
+                <div class="teaching-card">
+                    <h3><i class="fas fa-file-pdf"></i> PDF to Markdown</h3>
+                    <p class="subtitle">Document Processing Tool</p>
+                    <p>Tool for converting PDF documents to Markdown format using Docling, useful for document processing and analysis in educational and research contexts.</p>
+                    <a href="https://github.com/fr4nc15co/pdftomd_Docling" class="btn" target="_blank">
+                        <i class="fab fa-github"></i> See on GitHub
+                    </a>
                 </div>
             </section>
 
@@ -1137,6 +1221,26 @@
                             <div class="institution">Stemy Energy, Madrid</div>
                             <div class="authors" style="margin-top: 8px;">Coordinator of the hardware department with 2-4 team members</div>
                         </div>
+                    </div>
+                </div>
+
+                <h2 style="margin-top: 25px;">Hobbies</h2>
+                <p style="color: #95a5a6; margin-bottom: 8px;">A little life beyond models and papers.</p>
+                <div class="hobbies-grid">
+                    <div class="hobby-card">
+                        <i class="fas fa-camera-retro"></i>
+                        <h4>Photography</h4>
+                        <p>Photo walks chasing light, city scenes and landscapes.</p>
+                    </div>
+                    <div class="hobby-card">
+                        <i class="fas fa-film"></i>
+                        <h4>Cine</h4>
+                        <p>Classic and science-fiction movie sessions to switch off.</p>
+                    </div>
+                    <div class="hobby-card">
+                        <i class="fas fa-mountain"></i>
+                        <h4>Mountain Hiking</h4>
+                        <p>Trails and hikes to recharge at higher altitude.</p>
                     </div>
                 </div>
             </section>
