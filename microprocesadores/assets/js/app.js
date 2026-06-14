@@ -11,6 +11,11 @@ MPI.contenidoTemas = MPI.contenidoTemas || {};
 
   function gaEvent(name, params) { if (typeof gtag === 'function') gtag('event', name, params); }
 
+  function gaPageView(data) {
+    if (typeof gtag !== 'function') return;
+    gtag('event', 'page_view', data || {});
+  }
+
   function construirMenu() {
     var nav = $('#mpi-nav');
     var html = '<a class="mpi-nav-inicio" href="#/">Inicio</a><ol class="mpi-nav-lista">';
@@ -97,19 +102,31 @@ MPI.contenidoTemas = MPI.contenidoTemas || {};
     var main = $('#mpi-main');
     var hash = location.hash || '#/';
     var m = hash.match(/^#\/tema\/(.+)$/);
+    var pageTitle = 'Microprocesadores · PIC32MX230F064D';
+    var pagePath = '/microprocesadores/' + (hash === '#/' ? '' : hash.slice(1));
     if (hash === '#/examen' && MPI.vistaExamen) {
       MPI.vistaExamen(main);
       marcarActivo(null);
+      pageTitle = 'Modo examen · Microprocesadores';
     } else if (m) {
       var slug = decodeURIComponent(m[1]);
       var meta = MPI.temas.filter(function (t) { return t.slug === slug; })[0];
       main.innerHTML = vistaTema(slug);
       marcarActivo(slug);
+      pageTitle = (meta ? meta.titulo : slug) + ' · Microprocesadores';
       gaEvent('tema_visto', { slug: slug, titulo: meta ? meta.titulo : slug, site: 'microprocesadores' });
     } else {
       main.innerHTML = vistaInicio();
       marcarActivo(null);
+      pageTitle = 'Inicio · Microprocesadores';
     }
+
+    gaPageView({
+      page_title: pageTitle,
+      page_location: location.href,
+      page_path: pagePath
+    });
+
     if (MPI.resaltarTodo) MPI.resaltarTodo(main);
     montarComponentes(main);
     main.scrollTop = 0;

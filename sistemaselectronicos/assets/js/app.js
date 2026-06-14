@@ -22,6 +22,11 @@ MPI.config = {
 
   function gaEvent(name, params) { if (typeof gtag === 'function') gtag('event', name, params); }
 
+  function gaPageView(data) {
+    if (typeof gtag !== 'function') return;
+    gtag('event', 'page_view', data || {});
+  }
+
   function construirMenu() {
     var nav = $('#mpi-nav');
     var html = '<a class="mpi-nav-inicio" href="#/">Inicio</a><ol class="mpi-nav-lista">';
@@ -117,19 +122,31 @@ MPI.config = {
     var main = $('#mpi-main');
     var hash = location.hash || '#/';
     var m = hash.match(/^#\/tema\/(.+)$/);
+    var pageTitle = 'Sistemas Electrónicos';
+    var pagePath = '/sistemaselectronicos/' + (hash === '#/' ? '' : hash.slice(1));
     if (hash === '#/examen' && MPI.vistaExamen) {
       MPI.vistaExamen(main);
       marcarActivo(null);
+      pageTitle = 'Modo examen · Sistemas Electrónicos';
     } else if (m) {
       var slug = decodeURIComponent(m[1]);
       var meta = MPI.temas.filter(function (t) { return t.slug === slug; })[0];
       main.innerHTML = vistaTema(slug);
       marcarActivo(slug);
+      pageTitle = (meta ? meta.titulo : slug) + ' · Sistemas Electrónicos';
       gaEvent('tema_visto', { slug: slug, titulo: meta ? meta.titulo : slug, site: 'sistemaselectronicos' });
     } else {
       main.innerHTML = vistaInicio();
       marcarActivo(null);
+      pageTitle = 'Inicio · Sistemas Electrónicos';
     }
+
+    gaPageView({
+      page_title: pageTitle,
+      page_location: location.href,
+      page_path: pagePath
+    });
+
     if (MPI.resaltarTodo) MPI.resaltarTodo(main);
     montarComponentes(main);
     main.scrollTop = 0;
