@@ -325,6 +325,52 @@
             line-height: 1.5;
         }
 
+        .research-card.no-effect,
+        .research-card.no-effect::before,
+        .research-card.no-effect h3 i {
+            transition: none;
+        }
+
+        .research-card.no-effect:hover {
+            border-color: #34495e;
+            box-shadow: none;
+        }
+
+        .research-card.no-effect:hover::before {
+            opacity: 0;
+        }
+
+        .research-card.no-effect:hover h3 i {
+            transform: none;
+            color: #2ecc71;
+        }
+
+        .teaching-card,
+        .tfg-card {
+            cursor: pointer;
+        }
+
+        .article-item[data-clickable="1"] {
+            cursor: pointer;
+        }
+
+        .teaching-card:hover,
+        .tfg-card:hover,
+        .article-item[data-clickable="1"]:hover {
+            border-color: #3498db;
+        }
+
+        .article-item[data-clickable="1"]:hover {
+            border-left-color: #3498db !important;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.1);
+        }
+
+        .teaching-card a,
+        .tfg-card a {
+            position: relative;
+            z-index: 1;
+        }
+
         /* Teaching Cards */
         .teaching-card {
             background: #252f3f;
@@ -760,15 +806,15 @@
             <section id="research" class="active">
                 <h2>Research</h2>
                 <div class="research-grid">
-                    <div class="research-card">
+                    <div class="research-card no-effect">
                         <h3><i class="fas fa-leaf"></i> Renewable Energy Systems</h3>
                         <p>Transmission expansion planning and integration of distributed energy resources (DERs) in modern electrical systems.</p>
                     </div>
-                    <div class="research-card">
+                    <div class="research-card no-effect">
                         <h3><i class="fas fa-plug"></i> Demand Flexibility</h3>
                         <p>Aggregator models, demand response and microgrid management for energy optimization.</p>
                     </div>
-                    <div class="research-card">
+                    <div class="research-card no-effect">
                         <h3><i class="fas fa-brain"></i> Optimization</h3>
                         <p>Optimization techniques for energy systems.</p>
                     </div>
@@ -1260,6 +1306,20 @@
         const navTabs = document.querySelectorAll('.nav-tab');
         const sections = document.querySelectorAll('section');
 
+        const makeCardClickable = (selector) => {
+            document.querySelectorAll(selector).forEach(card => {
+                const link = card.querySelector('a[href]');
+                if (!link) return;
+
+                card.dataset.clickable = '1';
+
+                card.addEventListener('click', (event) => {
+                    if (event.target.closest('a, button')) return;
+                    link.click();
+                });
+            });
+        };
+
         navTabs.forEach(tab => {
             tab.addEventListener('click', () => {
                 const sectionId = tab.dataset.section;
@@ -1271,6 +1331,10 @@
                 document.getElementById(sectionId).classList.add('active');
             });
         });
+
+        makeCardClickable('.teaching-card');
+        makeCardClickable('.tfg-card');
+        makeCardClickable('.article-item');
 
         const setupExpandableList = (config) => {
             const list = document.getElementById(config.listId);
