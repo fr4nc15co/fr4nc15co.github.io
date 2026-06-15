@@ -167,6 +167,7 @@ MPI.componentes = MPI.componentes || {};
         '<text x="44" y="44" ' + lbl + '>R1</text>' +
         '<line x1="70" y1="55" x2="120" y2="55" ' + c + '/>' +
         '<line x1="90" y1="55" x2="90" y2="25" ' + c + '/>' +
+        '<line x1="90" y1="25" x2="115" y2="25" ' + c + '/>' +
         '<rect x="115" y="18" width="30" height="14" fill="none" stroke="var(--naranja)" stroke-width="1.5"/>' +
         '<text x="118" y="14" ' + lbl + '>R2</text>' +
         '<line x1="145" y1="25" x2="200" y2="25" ' + c + '/>' +
@@ -196,6 +197,7 @@ MPI.componentes = MPI.componentes || {};
         '<line x1="90" y1="48" x2="90" y2="68" ' + c + '/>' +
         '<line x1="90" y1="55" x2="120" y2="55" ' + c + '/>' +
         '<line x1="90" y1="55" x2="90" y2="28" ' + c + '/>' +
+        '<line x1="90" y1="28" x2="115" y2="28" ' + c + '/>' +
         '<rect x="115" y="21" width="30" height="14" fill="none" stroke="var(--naranja)" stroke-width="1.5"/>' +
         '<text x="118" y="17" ' + lbl + '>Rf</text>' +
         '<line x1="145" y1="28" x2="200" y2="28" ' + c + '/>' +
@@ -211,6 +213,7 @@ MPI.componentes = MPI.componentes || {};
         '<text x="44" y="45" ' + lbl + '>R1</text>' +
         '<line x1="66" y1="55" x2="120" y2="55" ' + c + '/>' +
         '<line x1="88" y1="55" x2="88" y2="26" ' + c + '/>' +
+        '<line x1="88" y1="26" x2="113" y2="26" ' + c + '/>' +
         '<rect x="113" y="19" width="28" height="12" fill="none" stroke="var(--naranja)" stroke-width="1.5"/>' +
         '<text x="116" y="16" ' + lbl + '>R2</text>' +
         '<line x1="141" y1="26" x2="200" y2="26" ' + c + '/>' +
@@ -219,7 +222,13 @@ MPI.componentes = MPI.componentes || {};
         '<text x="8" y="90" ' + lbl + '>v2</text>' +
         '<rect x="40" y="89" width="26" height="12" fill="none" stroke="var(--naranja)" stroke-width="1.5"/>' +
         '<text x="44" y="112" ' + lbl + '>R3=R1</text>' +
-        '<line x1="66" y1="95" x2="120" y2="95" ' + c + '/>';
+        '<line x1="66" y1="95" x2="120" y2="95" ' + c + '/>' +
+        // R4 = R2 desde el nodo v+ a masa (completa el amplificador diferencial)
+        '<line x1="90" y1="95" x2="90" y2="110" ' + c + '/>' +
+        '<rect x="83" y="110" width="14" height="22" fill="none" stroke="var(--naranja)" stroke-width="1.5"/>' +
+        '<text x="100" y="127" ' + lbl + '>R4=R2</text>' +
+        '<line x1="90" y1="132" x2="90" y2="140" ' + c + '/>' +
+        '<line x1="82" y1="140" x2="98" y2="140" stroke="var(--txt-tenue)" stroke-width="1.5"/>';
     } else if (tipo === 'comp') {
       inn =
         '<line x1="8" y1="95" x2="120" y2="95" ' + c + '/>' +

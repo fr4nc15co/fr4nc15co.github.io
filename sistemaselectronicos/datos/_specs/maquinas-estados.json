@@ -1,0 +1,319 @@
+{
+  "slug": "maquinas-estados",
+  "titulo": "Máquinas de estados finitos",
+  "temaNum": 12,
+  "lead": "Una <strong>máquina de estados finitos</strong> (FSM o autómata finito) modela un sistema que solo puede estar en un número limitado de <strong>estados</strong> y cuya evolución depende de las entradas. Es la herramienta sistemática para controlar sistemas electrónicos secuenciales: una vez dibujado el diagrama de estados, su <strong>implementación en Python</strong> sobre la Raspberry Pi es casi mecánica, con un <code>enum</code> para el estado y un bucle de <em>scan</em> que evalúa la transición (δ) y las salidas (λ).",
+  "secciones": [
+    {
+      "titulo": "12.1 Qué es una máquina de estados",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Las <strong>máquinas de estados finitos</strong> (también <em>máquinas de estados</em> o <em>autómatas finitos</em>) permiten modelar sistemas que solo pueden estar en una serie de estados determinados; por ejemplo un semáforo, que únicamente puede estar en verde, amarillo o rojo. El cambio de un estado a otro depende de las <strong>entradas</strong> del sistema, y las <strong>salidas</strong> dependen no solo del valor actual de las entradas, sino también del estado en el que se encuentra el sistema. Nos centraremos en diseñar máquinas de estados para <strong>controlar sistemas electrónicos</strong> y en implementarlas en Python.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>En una máquina de estados intervienen cinco elementos:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>X — entradas:</strong> variables binarias, normalmente pines GPIO de entrada.",
+            "<strong>Y — salidas:</strong> variables binarias, normalmente pines GPIO de salida.",
+            "<strong>Q — variable de estado:</strong> una variable de Python; aquí la guardamos siempre en un <code>enum</code>. Se actualiza periódicamente, una vez por cada iteración del bucle de scan.",
+            "<strong>δ — función de transición:</strong> calcula el estado siguiente <code>Q<sub>t+1</sub></code> a partir del estado actual <code>Q<sub>t</sub></code> y de las entradas.",
+            "<strong>λ — función de salida:</strong> calcula el valor de las salidas. Ambas funciones, δ y λ, son funciones lógicas que implantamos con sentencias <code>if</code>."
+          ]
+        },
+        {
+          "tipo": "nota",
+          "html": "Tanto las entradas X como las salidas Y son variables <strong>binarias</strong> (pines GPIO). El estado Q es una variable de Python que se actualiza en cada iteración del bucle de scan, y δ y λ se traducen directamente a cadenas de <code>if</code>–<code>elif</code>."
+        }
+      ]
+    },
+    {
+      "titulo": "12.2 Moore frente a Mealy",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Según de qué dependan las salidas distinguimos dos tipos de máquinas de estados:</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>Máquina de Moore</strong> (Edward F. Moore). Las salidas dependen <strong>solo del estado</strong>. La función δ calcula el estado siguiente <code>Q<sub>t+1</sub></code> a partir del estado actual <code>Q<sub>t</sub></code> y de las entradas <code>X</code>, mientras que la función λ calcula las salidas únicamente a partir del estado actual:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Funciones de transición y de salida de una máquina de <strong>Moore</strong>:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>Q</mi><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><mi>&#948;</mi><mo>(</mo><msub><mi>Q</mi><mi>t</mi></msub><mo>,</mo><mi>X</mi><mo>)</mo><mphantom><mtext>xxxx</mtext></mphantom><mi>Y</mi><mo>=</mo><mi>&#955;</mi><mo>(</mo><msub><mi>Q</mi><mi>t</mi></msub><mo>)</mo></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>Máquina de Mealy</strong> (George H. Mealy). A diferencia de la de Moore, las salidas dependen del <strong>estado actual y de las entradas</strong>. La función δ es idéntica, pero ahora las entradas influyen también directamente sobre la función de salida λ:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Funciones de transición y de salida de una máquina de <strong>Mealy</strong>:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>Q</mi><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><mi>&#948;</mi><mo>(</mo><msub><mi>Q</mi><mi>t</mi></msub><mo>,</mo><mi>X</mi><mo>)</mo><mphantom><mtext>xxxx</mtext></mphantom><mi>Y</mi><mo>=</mo><mi>&#955;</mi><mo>(</mo><msub><mi>Q</mi><mi>t</mi></msub><mo>,</mo><mi>X</mi><mo>)</mo></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La principal ventaja de las máquinas de Mealy es que, en general, necesitan <strong>menos estados</strong> para realizar la misma funcionalidad. Sin embargo son un poco más difíciles de diseñar, por lo que en la práctica <strong>se prefieren las máquinas de Moore</strong>, que es lo que usaremos en este tema.</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Representación gráfica.</strong> En ambos tipos los estados se dibujan como círculos y las transiciones como flechas etiquetadas con el valor de las entradas que las disparan. La diferencia está en las <strong>salidas</strong>: en una máquina de Moore se escriben <strong>dentro de los círculos</strong> (dependen solo del estado); en una de Mealy se escriben <strong>sobre las flechas</strong> (dependen del estado y de las entradas). Una <code>X</code> en una transición indica que se realiza con independencia del valor de esa entrada."
+        }
+      ]
+    },
+    {
+      "titulo": "12.3 Diseño e implementación en Python",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El proceso de diseño consta de dos partes. Primero se crea el <strong>diagrama de estados</strong> a partir de las especificaciones del sistema: es la parte creativa y la más difícil. Una vez hecho el diagrama, su <strong>implantación en Python</strong> es algo sistemático y relativamente sencillo. La estructura del programa es siempre la misma:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": true,
+          "items": [
+            "Crear los objetos para interactuar con el hardware (<code>InputDevice</code>/<code>Button</code> para las entradas, <code>OutputDevice</code>/<code>LED</code> para las salidas).",
+            "Definir el <code>enum</code> con los estados posibles.",
+            "Crear la variable <code>estado</code> e inicializarla al estado de arranque.",
+            "Entrar en el bucle de scan <code>while True:</code> que, en cada vuelta, evalúa primero la función δ (transición) y después la función λ (salidas)."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Para almacenar el estado se podría usar una simple variable numérica, pero entonces es difícil acordarse de a qué estado corresponde cada valor. Python no tiene un tipo dedicado como el <code>enum</code> de C o Java, pero la librería estándar incluye el módulo <code>enum</code>. Definimos una clase que deriva de <code>Enum</code> con un miembro por estado; cada miembro lleva asociado un valor constante. La función <code>auto()</code> genera esos valores automáticamente (1, 2, 3, …), lo que evita tener que renumerar todo si más adelante añadimos un estado nuevo.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Las dos formas equivalentes de definir el <code>enum</code> de estados: con valores explícitos o con <code>auto()</code>.</p>",
+          "codigo": "from enum import Enum\n\nclass Estados(Enum):       # Valores explicitos\n    REPOSO = 1\n    ESPERA = 2\n    DESCARGA = 3\n\n# --- Equivalente, dejando que enum genere los valores ---\nfrom enum import auto, Enum\n\nclass Estados(Enum):       # auto() -> 1, 2, 3, ...\n    REPOSO = auto()\n    ESPERA = auto()\n    DESCARGA = auto()"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La función δ averigua mediante <code>if</code>–<code>elif</code> en qué estado está el sistema y, en función de las entradas, decide el nuevo valor de la variable de estado. La cadena termina con un <code>else</code> al que en teoría nunca deberíamos llegar (la variable solo puede tomar valores del <code>enum</code>); aun así, conviene protegerse ante un posible <em>bug</em> volviendo al estado inicial. La función λ tiene la misma estructura de <code>if</code>–<code>elif</code> y fija las salidas según el estado actual.</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "Para comparar el estado actual con un miembro del <code>enum</code> se usa el operador de identidad <code>is</code> (p. ej. <code>if estado is Estados.REPOSO:</code>). El bucle de scan se repite de forma <strong>continua</strong>. Si se quiere fijar su cadencia (p. ej. una lectura cada 100 ms) sin malgastar CPU —y poder pararlo— no se mete un <code>sleep</code> dentro del <code>while</code>, sino que se usan los mecanismos de <strong>tareas periódicas</strong> del tema de Temporizadores: un hilo (<code>Thread</code>) para tareas sin fin, o un <code>Timer</code>/<code>sched</code> para tareas cancelables."
+        }
+      ]
+    },
+    {
+      "titulo": "12.4 Ejemplo: cisterna automática (Moore)",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Diseñamos un sistema que <strong>descarga automáticamente la cisterna</strong> de un inodoro. Un sensor de infrarrojos da <code>0</code> cuando hay una persona cerca y <code>1</code> cuando no hay nadie; está conectado a <strong>GPIO16</strong>. Una electroválvula de 12 V, controlada por <strong>GPIO20</strong>, descarga la cisterna cuando ese pin se pone a <code>1</code>.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El comportamiento es: esperar a detectar una persona que se acerca y descargar la cisterna cuando se retira. La máquina (de <strong>Moore</strong>, la salida depende solo del estado) tiene tres estados:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>REPOSO:</strong> estado inicial; se permanece aquí mientras el sensor valga <code>1</code> (no hay nadie). Cuando alguien se acerca, el sensor da <code>0</code> y se pasa a <strong>ESPERA</strong>.",
+            "<strong>ESPERA:</strong> hay una persona en el inodoro. Cuando se retira, el sensor vuelve a <code>1</code> y se pasa a <strong>DESCARGA</strong>.",
+            "<strong>DESCARGA:</strong> se activa la electroválvula (salida a <code>1</code>) y, en la siguiente iteración, se vuelve a <strong>REPOSO</strong> con independencia del valor del sensor (transición <code>X</code>)."
+          ]
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Implementación completa de la cisterna automática. El sensor es un circuito digital, así que basta la clase genérica <code>InputDevice</code> sin resistencia de pull-up (<code>pull_up=None</code>); la electroválvula se modela con <code>OutputDevice</code>. La función λ se simplifica porque la salida solo se activa en el estado <code>DESCARGA</code>.</p>",
+          "codigo": "from enum import Enum\nfrom gpiozero import InputDevice, OutputDevice\n\n# Sensor en el pin 16 y sin R de Pull-Up\nsensor = InputDevice(16, pull_up=None)\ncisterna = OutputDevice(20)        # Cisterna en el pin 20\n\nclass Estados(Enum):               # Definimos los estados\n    REPOSO = 1\n    ESPERA = 2\n    DESCARGA = 3\n\nestado = Estados.REPOSO            # Estado inicial\nwhile True:\n    # Funcion delta (transicion de estados)\n    if estado is Estados.REPOSO:\n        if sensor.value == 0:\n            estado = Estados.ESPERA\n    elif estado is Estados.ESPERA:\n        if sensor.value == 1:\n            estado = Estados.DESCARGA\n    elif estado is Estados.DESCARGA:\n        estado = Estados.REPOSO\n    else:   # No deberiamos llegar nunca aqui, pero por si acaso\n        estado = Estados.REPOSO\n\n    # Funcion lambda (salidas)\n    if estado is Estados.DESCARGA:\n        cisterna.on()\n    else:\n        cisterna.off()"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Pruébala en vivo: haz que llegue una persona y que luego se retire, y observa cómo δ recorre el diagrama de estados y λ activa la electroválvula (GPIO20) solo en <strong>DESCARGA</strong> —y solo al <em>irse</em> la persona, no al llegar—.</p>\n<div class=\"mpi-mount\" data-componente=\"fsm-cisterna\" data-config='{}'></div>"
+        }
+      ]
+    },
+    {
+      "titulo": "12.5 Ejemplo: cerradura electrónica (flancos en los estados)",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Una <strong>cerradura electrónica</strong> con dos pulsadores <code>p1</code> y <code>p0</code> y un relé de salida abre la puerta cuando se introduce la secuencia <strong>p1 → p0 → p0</strong>. La salida permanece activa mientras siga pulsada <code>p0</code>.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El detalle clave: como el procesador es mucho más rápido que el usuario, una pulsación dura muchas iteraciones del bucle de scan. Por eso, para detectar una pulsación completa hacen falta <strong>dos estados</strong> por tecla: uno para detectar la <em>pulsación</em> y otro para la <em>liberación</em>. De lo contrario sería imposible distinguir las dos pulsaciones seguidas de <code>p0</code> que exige la secuencia. La máquina usa seis estados:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>REPOSO:</strong> espera a que se pulse <code>p1</code> (entrada <code>p1=1, p0=0</code>) para ir a <strong>PUL_P1</strong>.",
+            "<strong>PUL_P1:</strong> espera la liberación de <code>p1</code>. Si se libera (<code>00</code>) va a <strong>LIB_P1</strong>; si justo se pulsa <code>p0</code> (<code>01</code>) salta a <strong>PUL_P0</strong>; pulsar las dos a la vez (<code>11</code>) es un error y vuelve a REPOSO.",
+            "<strong>LIB_P1:</strong> espera a que se pulse <code>p0</code> para ir a <strong>PUL_P0</strong>. Si se vuelve a pulsar <code>p1</code> empieza una secuencia nueva (a PUL_P1) y <code>11</code> vuelve a REPOSO.",
+            "<strong>PUL_P0:</strong> espera la liberación de <code>p0</code> para ir a <strong>LIB_P0</strong> (estructura análoga a PUL_P1).",
+            "<strong>LIB_P0:</strong> espera la segunda pulsación de <code>p0</code> para ir a <strong>SEC_OK</strong> (estructura análoga a LIB_P1).",
+            "<strong>SEC_OK:</strong> secuencia correcta; se activa la salida (relé) mientras siga pulsada <code>p0</code>. Al soltar o pulsar ambas se vuelve a REPOSO."
+          ]
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Implementación de la cerradura. Los pulsadores se conectan a GPIO16 (<code>p0</code>) y GPIO17 (<code>p1</code>), ambos con un condensador en paralelo para evitar rebotes, y se modelan con la clase <code>Button</code> (derivada de <code>InputDevice</code>); la salida es un <code>OutputDevice</code> en GPIO20. La función δ codifica las transiciones leyendo simultáneamente <code>p1.value</code> y <code>p0.value</code>; λ activa el relé solo en <code>SEC_OK</code>. El bucle de scan se ejecuta de forma continua; para fijar su cadencia (y poder cancelarlo) se recurre a las tareas periódicas del tema de Temporizadores.</p>",
+          "codigo": "from enum import auto, Enum\nfrom gpiozero import Button, OutputDevice\n\np0 = Button(16)\np1 = Button(17)\ns = OutputDevice(20)\n\nclass Estados(Enum):\n    REPOSO = auto()\n    PUL_P1 = auto()\n    LIB_P1 = auto()\n    PUL_P0 = auto()\n    LIB_P0 = auto()\n    SEC_OK = auto()\n\nestado = Estados.REPOSO            # Estado inicial\nwhile True:\n    # Funcion delta (transicion de estados)\n    if estado is Estados.REPOSO:\n        if p1.value == 1 and p0.value == 0:\n            estado = Estados.PUL_P1\n    elif estado is Estados.PUL_P1:\n        if p1.value == 0 and p0.value == 0:\n            estado = Estados.LIB_P1\n        elif p1.value == 0 and p0.value == 1:\n            estado = Estados.PUL_P0\n        elif p1.value == 1 and p0.value == 1:\n            estado = Estados.REPOSO\n    elif estado is Estados.LIB_P1:\n        if p1.value == 1 and p0.value == 0:\n            estado = Estados.PUL_P1\n        elif p1.value == 0 and p0.value == 1:\n            estado = Estados.PUL_P0\n        elif p1.value == 1 and p0.value == 1:\n            estado = Estados.REPOSO\n    elif estado is Estados.PUL_P0:\n        if p1.value == 1 and p0.value == 0:\n            estado = Estados.PUL_P1\n        elif p1.value == 0 and p0.value == 0:\n            estado = Estados.LIB_P0\n        elif p1.value == 1 and p0.value == 1:\n            estado = Estados.REPOSO\n    elif estado is Estados.LIB_P0:\n        if p1.value == 1 and p0.value == 0:\n            estado = Estados.PUL_P1\n        elif p1.value == 0 and p0.value == 1:\n            estado = Estados.SEC_OK\n        elif p1.value == 1 and p0.value == 1:\n            estado = Estados.REPOSO\n    elif estado is Estados.SEC_OK:\n        if p1.value == 1 and p0.value == 0:\n            estado = Estados.PUL_P1\n        elif p1.value == 0 and p0.value == 0:\n            estado = Estados.REPOSO\n        elif p1.value == 1 and p0.value == 1:\n            estado = Estados.REPOSO\n    else:\n        estado = Estados.REPOSO\n\n    # Funcion lambda (salidas)\n    if estado is Estados.SEC_OK:\n        s.on()\n    else:\n        s.off()"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Practica la secuencia <strong>p1 → p0 → p0</strong> en el simulador: mantén pulsado y suelta cada botón y observa cómo la máquina recorre los estados de pulsación y liberación hasta abrir la cerradura en <strong>SEC_OK</strong> (mantén el último p0 para verla abierta). Cualquier movimiento fuera de la secuencia la devuelve a <strong>REPOSO</strong>.</p>\n<div class=\"mpi-mount\" data-componente=\"fsm-cerradura\" data-config='{}'></div>"
+        }
+      ]
+    },
+    {
+      "titulo": "12.6 Detección de flancos como entrada",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>En el ejemplo de la cerradura el flanco se gestionaba <em>dentro</em> de la propia máquina (con estados de pulsación y liberación). Una alternativa es <strong>detectar el flanco como entrada</strong>, generando una señal que esté activa solo durante una iteración del bucle de scan cuando ocurre un flanco de subida. Así se evita tener que duplicar estados.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>Control de un aparcamiento de cuatro plazas.</strong> Un sensor de entrada y otro de salida (que dan <code>1</code> al pasar un coche, GPIO16 y GPIO17) y dos luces de semáforo, roja y verde (GPIO20 y GPIO21). La máquina tiene cinco estados (<code>VACIO</code>, <code>UNO</code>, <code>DOS</code>, <code>TRES</code>, <code>CUATRO</code>) que cuentan los coches: enciende el verde si caben coches y el rojo cuando hay cuatro. El problema es que las señales de los sensores están activas durante muchas iteraciones de scan, así que si se usaran tal cual la máquina saltaría siempre al estado extremo. La solución es comparar el valor actual con el anterior: la condición <code>act &gt; ant</code> solo es cierta en el ciclo del flanco de subida.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Detección de flancos como entrada en el control del aparcamiento. Antes de evaluar δ se calculan las variables <code>entra</code> y <code>sale</code>, que valen <code>1</code> únicamente en el ciclo de scan en que se produce el flanco de subida del sensor correspondiente; luego se actualiza el valor anterior para la próxima iteración.</p>",
+          "codigo": "from enum import auto, Enum\nfrom gpiozero import InputDevice, OutputDevice\n\nsens_entra = InputDevice(16, pull_up=None)   # sensor sin R de Pull-Up\nsens_sale = InputDevice(17, pull_up=None)    # sensor sin R de Pull-Up\nrojo = OutputDevice(20)            # Semaforo rojo\nverde = OutputDevice(21)           # Semaforo verde\n\nclass Estados(Enum):\n    VACIO = auto()\n    UNO = auto()\n    DOS = auto()\n    TRES = auto()\n    CUATRO = auto()\n\nestado = Estados.VACIO             # Estado inicial\nentra_ant = sens_entra.value       # Valor inicial de las entradas\nsale_ant = sens_sale.value\nwhile True:\n    # En primer lugar detectamos los flancos en ambas entradas\n    entra_act = sens_entra.value   # Valor actual de las entradas\n    sale_act = sens_sale.value\n    if entra_act > entra_ant:      # Acaba de entrar un coche\n        entra = 1\n    else:\n        entra = 0\n    if sale_act > sale_ant:        # Acaba de salir un coche\n        sale = 1\n    else:\n        sale = 0\n    entra_ant = entra_act          # El valor actual sera el anterior\n    sale_ant = sale_act            # en la siguiente iteracion\n\n    # Ahora implementamos la funcion delta\n    if estado is Estados.VACIO:\n        if entra == 1 and sale == 0:\n            estado = Estados.UNO\n    elif estado is Estados.UNO:\n        if entra == 1 and sale == 0:\n            estado = Estados.DOS\n        elif entra == 0 and sale == 1:\n            estado = Estados.VACIO\n    elif estado is Estados.DOS:\n        if entra == 1 and sale == 0:\n            estado = Estados.TRES\n        elif entra == 0 and sale == 1:\n            estado = Estados.UNO\n    elif estado is Estados.TRES:\n        if entra == 1 and sale == 0:\n            estado = Estados.CUATRO\n        elif entra == 0 and sale == 1:\n            estado = Estados.DOS\n    elif estado is Estados.CUATRO:\n        if entra == 0 and sale == 1:\n            estado = Estados.TRES\n    else:\n        estado = Estados.VACIO\n\n    # Funcion lambda\n    if estado == Estados.CUATRO:\n        rojo.on()\n        verde.off()\n    else:\n        rojo.off()\n        verde.on()"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El aparcamiento, en vivo: mete y saca coches y observa cómo cada flanco mueve el contador de estados y conmuta el semáforo (verde en GPIO21 mientras caben coches, rojo en GPIO20 al llegar a cuatro). Al intentar meter el quinto coche, la máquina no cambia.</p>\n<div class=\"mpi-mount\" data-componente=\"fsm-aparcamiento\" data-config='{}'></div>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Dos formas de tratar un pulso de entrada largo.</strong> (1) <em>Flancos en los estados:</em> dos estados por pulsación (pulsar/liberar), como en la cerradura. (2) <em>Flancos como entrada:</em> un detector de flanco que activa una variable durante un solo ciclo de scan, como en el aparcamiento. La segunda opción ahorra estados, pero no permite mantener una salida activa mientras un botón siga pulsado (habría que mantenerla un ciclo, un tiempo fijo, o hasta el siguiente flanco)."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Otro caso clásico es la <strong>puerta de garaje</strong> con mando de un solo botón (un pulso de 3,3 V durante 1 ms en GPIO7), dos relés en GPIO20 (motor on/off) y GPIO21 (sentido: <code>1</code> cierra) y movimientos de 30 s. Cada pulsación, detectada como flanco, hace avanzar el ciclo abrir → parar → cerrar → parar; si el movimiento se interrumpe a mitad, hay que recordar la posición para no volver a temporizar 30 s completos. Se propone como ejercicio al final del tema.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La puerta de garaje, en vivo (tiempo acelerado ×10): pulsa el mando y observa el ciclo abrir → parar → cerrar → parar, con los relés de motor (GPIO20) y de sentido (GPIO21). Fíjate en por qué hacen falta <em>dos</em> estados de parada (uno por sentido).</p>\n<div class=\"mpi-mount\" data-componente=\"fsm-garaje\" data-config='{}'></div>"
+        }
+      ]
+    }
+  ],
+  "registros": {},
+  "ejercicios": {
+    "maquinas-estados-moore-mealy": {
+      "titulo": "Moore o Mealy y traza de la cisterna",
+      "enunciado": "<p>Repasa la diferencia entre una máquina de Moore y una de Mealy y la implementación en Python de la <strong>cisterna automática</strong> (sensor en GPIO16: <code>0</code> = persona presente, <code>1</code> = nadie; electroválvula en GPIO20). La máquina tiene los estados <code>REPOSO</code> → <code>ESPERA</code> → <code>DESCARGA</code> → <code>REPOSO</code>.</p>",
+      "contexto": "<ul><li>Transición: en REPOSO, si <code>sensor=0</code> se pasa a ESPERA; en ESPERA, si <code>sensor=1</code> se pasa a DESCARGA; en DESCARGA se vuelve a REPOSO.</li><li>Salida (λ): la electroválvula se activa <strong>solo</strong> en DESCARGA.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "En la cisterna, la electroválvula se activa únicamente en el estado DESCARGA y no depende del valor instantáneo del sensor. ¿De qué tipo es esta máquina de estados?",
+          "opciones": [
+            "De Mealy, porque la salida depende de las entradas.",
+            "De Moore, porque la salida depende solo del estado actual.",
+            "No es una máquina de estados, es solo un contador.",
+            "Es de Moore y de Mealy a la vez, son lo mismo."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>En una máquina de <strong>Moore</strong>, <code>Y = λ(Q<sub>t</sub>)</code>: la salida depende solo del estado. Aquí la electroválvula se enciende exactamente cuando <code>estado is Estados.DESCARGA</code>, sin mirar <code>sensor.value</code>, así que es de Moore. En una de Mealy sería <code>Y = λ(Q<sub>t</sub>, X)</code> y la salida también dependería de las entradas.</p>"
+        },
+        {
+          "texto": "Partiendo de REPOSO, el sensor entrega esta secuencia de valores, uno por iteración del bucle de scan: 1, 0, 0, 1, 0. ¿En qué estado queda la máquina tras procesar el último valor?",
+          "opciones": [
+            "REPOSO",
+            "ESPERA",
+            "DESCARGA",
+            "Se queda bloqueada entre ESPERA y DESCARGA"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Traza (estado al inicio de cada iteración → entrada): REPOSO con 1 → sigue en REPOSO; REPOSO con 0 → ESPERA; ESPERA con 0 → sigue en ESPERA (necesita 1 para avanzar); ESPERA con 1 → DESCARGA; DESCARGA con 0 → la transición de DESCARGA es incondicional, vuelve a <strong>REPOSO</strong>. Por tanto acaba en REPOSO.</p>"
+        },
+        {
+          "texto": "¿Por qué la cadena de if–elif de la función δ termina con un else que asigna estado = Estados.REPOSO?",
+          "opciones": [
+            "Porque es obligatorio en Python que todo if tenga un else.",
+            "Porque es el caso normal que se ejecuta en cada iteración.",
+            "Como protección: en teoría nunca se alcanza, pero ante un posible bug devuelve la máquina al estado inicial.",
+            "Para activar la electroválvula por defecto."
+          ],
+          "correcta": 2,
+          "explicacion": "<p>La variable <code>estado</code> solo puede tomar valores del <code>enum</code>, así que el <code>else</code> no debería ejecutarse nunca. Se incluye como <strong>red de seguridad</strong>: si por un <em>bug</em> el estado quedara fuera de los valores previstos, se reinicia la máquina al estado inicial (REPOSO) en lugar de quedar en un estado indefinido.</p>"
+        }
+      ]
+    },
+    "maquinas-estados-garaje": {
+      "titulo": "Puerta de garaje con mando de un botón",
+      "enunciado": "<p>Se automatiza una <strong>puerta de garaje</strong> gobernada por un mando de radiofrecuencia con un solo botón, conectado a GPIO7 (entrega un pulso de 3,3 V durante 1 ms al pulsar). Dos relés controlan el motor: GPIO20 enciende (<code>1</code>) o apaga (<code>0</code>) el motor, y GPIO21 fija el sentido (<code>1</code> = cierra). Abrir y cerrar tardan 30 s. El ciclo es: pulsar abre; pulsar de nuevo para o, si ya estaba abierta, cierra; pulsar para mientras cierra o, si ya estaba cerrada, abre.</p>",
+      "contexto": "<ul><li>El pulso del mando dura 1 ms, mucho menos que el periodo de scan, por lo que hay que tratarlo con <strong>detección de flanco</strong>.</li><li>Si el movimiento se interrumpe a mitad y luego se reanuda en sentido contrario, hay que recordar la posición para no temporizar de nuevo los 30 s completos.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "El mando genera un pulso de solo 1 ms y el bucle de scan se ejecuta cada 100 ms. ¿Cómo debe leerse el botón para no perder pulsaciones ni contar una sola pulsación muchas veces?",
+          "opciones": [
+            "Leyendo button.value directamente en cada estado, sin más.",
+            "Detectando el flanco de subida (act=1 y ant=0), que está activo un solo ciclo de scan, idealmente con el callback when_pressed.",
+            "Haciendo el bucle de scan mucho más lento (una vuelta cada 2 s) para no saturar la CPU.",
+            "Conectando el mando a una salida OutputDevice."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Un pulso de 1 ms puede caer entre dos lecturas separadas 100 ms, así que conviene detectar el <strong>flanco</strong>: una variable que valga <code>1</code> solo en el ciclo en que <code>act=1</code> y <code>ant=0</code> (como en el aparcamiento), o usar el <em>call-back</em> <code>when_pressed</code> de <code>Button</code>, que reacciona al flanco con independencia del periodo de scan. Así cada pulsación cuenta exactamente una vez.</p>"
+        },
+        {
+          "texto": "¿Por qué hacen falta estados distintos para 'parada tras abrir' y 'parada tras cerrar' (en lugar de un único estado PARADA)?",
+          "opciones": [
+            "Porque Python no permite reutilizar estados en un enum.",
+            "Porque las salidas del motor son distintas en cada caso.",
+            "Porque al volver a pulsar, la puerta debe moverse en el sentido contrario al último movimiento; el estado debe recordar si venía de abrir o de cerrar.",
+            "Porque el relé de sentido (GPIO21) no puede leerse."
+          ],
+          "correcta": 2,
+          "explicacion": "<p>La especificación dice que tras una parada, la siguiente pulsación reanuda el movimiento en <strong>sentido contrario</strong> al anterior. Una única PARADA no sabría hacia dónde ir; por eso la máquina necesita recordar la procedencia (parada-abriendo vs. parada-cerrando) en estados separados. Además, recordar la posición evita re-temporizar los 30 s completos cuando el movimiento se reanuda desde una posición intermedia.</p>"
+        }
+      ]
+    },
+    "maquinas-estados-examen": {
+      "titulo": "Flancos y tiempos en la máquina de gancho (Examen Ordinario 2026, P2.3 e Intersemestral 2026, P3)",
+      "enunciado": "<p>Adaptado del <strong>Examen Ordinario 2026, Problema 2.3 (máquina de gancho)</strong> y del <strong>Examen Intersemestral 2026, Problema 3</strong>: una FSM con <code>enum</code> controla la máquina. En cada vuelta del bucle de scan detecta los <strong>flancos</strong> de las entradas (el lector de monedas y un pulsador), mide cuánto lleva en el estado actual con <code>time() − t_referencia</code> (donde <code>t_referencia</code> se toma al <em>entrar</em> en el estado) y lanza los pulsos/automatismos temporizados con un <code>threading.Timer</code> (cancelable y no bloqueante).</p>",
+      "contexto": "<ul><li>El lector de monedas y el pulsador entregan una señal que está activa durante muchas iteraciones del scan; comparando el valor actual con el anterior, la condición <code>act &gt; ant</code> (o <code>act &lt; ant</code>) es cierta solo en el ciclo del flanco.</li><li>Para medir el tiempo en un estado se guarda <code>t_referencia = time()</code> al entrar y, en cada vuelta, se compara <code>time() − t_referencia</code> con el plazo deseado.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "El lector de monedas mantiene su señal activa durante muchas iteraciones del bucle de scan. ¿Por qué la máquina detecta el FLANCO de esa entrada (act > ant) y no su nivel?",
+          "opciones": [
+            "Porque el nivel de la entrada no se puede leer con gpiozero.",
+            "Porque si se usara el nivel, la señal estaría activa muchos ciclos y la máquina contaría una sola moneda como muchas; el flanco está activo un único ciclo, así que cada moneda cuenta una vez.",
+            "Porque el flanco consume menos memoria que el nivel.",
+            "Porque las monedas solo generan flancos de bajada, nunca niveles."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>El procesador es mucho más rápido que el evento físico: la señal de la moneda (o del pulsador) permanece activa durante <strong>muchas iteraciones</strong> del scan. Si la transición dependiera del <em>nivel</em>, se dispararía en cada una de esas vueltas y una sola moneda se contaría como muchas. Detectando el <strong>flanco</strong> (comparando el valor actual con el anterior, p. ej. <code>act &gt; ant</code>), la condición es cierta en <strong>un único ciclo</strong>, de modo que cada moneda o pulsación cuenta exactamente una vez. Tras evaluarlo se actualiza <code>ant = act</code>.</p>"
+        },
+        {
+          "texto": "La máquina debe permanecer un tiempo fijo en un estado (por ejemplo activar el gancho durante 2 s) sin bloquear el bucle de scan. ¿Cómo se mide ese tiempo y cómo se lanza el pulso temporizado?",
+          "opciones": [
+            "Con un sleep(2) dentro del estado, que detiene el programa los 2 s.",
+            "Guardando t_referencia = time() al entrar al estado y comprobando cada vuelta si time() − t_referencia >= 2; los automatismos temporizados se lanzan con un threading.Timer cancelable.",
+            "Contando el número de vueltas del bucle, que siempre tarda exactamente lo mismo.",
+            "Con localtime(), comparando tm_sec con un valor fijo."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Para no bloquear el scan no se usa <code>sleep</code>: se guarda una <strong>referencia temporal</strong> al entrar al estado (<code>t_referencia = time()</code>) y en cada vuelta se comprueba si ha transcurrido el plazo con <code>time() − t_referencia &gt;= 2</code>. Los pulsos o automatismos que deben saltar tras un tiempo se lanzan con un <code>threading.Timer</code>, que es <strong>no bloqueante</strong> y se puede <strong>cancelar</strong> con <code>.cancel()</code> si el estado cambia antes. Contar vueltas del bucle no es fiable (cada iteración tarda distinto) y <code>localtime()</code> sirve para la hora del reloj, no para medir intervalos cortos.</p>"
+        }
+      ]
+    }
+  },
+  "ejerciciosEnTema": [
+    "maquinas-estados-moore-mealy",
+    "maquinas-estados-garaje",
+    "maquinas-estados-examen"
+  ],
+  "resumen": [
+    "Una <strong>máquina de estados finitos</strong> modela un sistema con un número limitado de estados <code>Q</code>; las transiciones (función <strong>δ</strong>) dependen del estado y de las entradas <code>X</code>, y las salidas las fija la función <strong>λ</strong>.",
+    "En una máquina de <strong>Moore</strong> las salidas dependen solo del estado (<code>Y = λ(Q<sub>t</sub>)</code>); en una de <strong>Mealy</strong> dependen del estado y de las entradas (<code>Y = λ(Q<sub>t</sub>, X)</code>). Mealy usa menos estados pero es más difícil; en la práctica se prefiere Moore.",
+    "La implementación en Python es sistemática: un <code>enum</code> (con <code>auto()</code>) para el estado, objetos <code>InputDevice</code>/<code>Button</code> y <code>OutputDevice</code>/<code>LED</code>, y un bucle <code>while True:</code> que evalúa δ (con <code>if</code>–<code>elif</code> sobre <code>estado is …</code> y <code>.value</code>) y luego λ (con <code>.on()</code>/<code>.off()</code>). Su ejecución <strong>periódica</strong> (el ritmo del scan) no se consigue con un <code>sleep</code> dentro del <code>while</code>, sino con <code>Thread</code>/<code>Timer</code>/<code>sched</code> del tema de Temporizadores.",
+    "La <strong>cisterna automática</strong> (Moore, 3 estados) ilustra el caso básico; la <strong>cerradura electrónica</strong> (secuencia p1→p0→p0, 6 estados) gestiona los flancos dentro de la propia máquina con estados de pulsación y liberación.",
+    "Para no quedar atrapado por señales largas se detectan <strong>flancos</strong>: dentro de los estados (cerradura) o como entrada comparando valor actual y anterior (<strong>aparcamiento</strong>); la <strong>puerta de garaje</strong> con mando de un botón combina flancos y temporización."
+  ]
+}

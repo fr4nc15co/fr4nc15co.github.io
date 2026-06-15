@@ -45,7 +45,7 @@ MPI.componentes = MPI.componentes || {};
     el.innerHTML =
       '<div class="mpi-sim-cab">El algoritmo SAR, ciclo a ciclo</div>' +
       '<div class="sar-controles">' +
-        '<label>Bits <select class="sar-n"><option value="4" selected>4 (como el ejemplo)</option><option value="10">10 (el del PIC32)</option></select></label>' +
+        '<label>Bits <select class="sar-n"><option value="4" selected>4 (como el ejemplo)</option><option value="10">10 (resolución del MCP3008)</option></select></label>' +
         '<label class="sar-vinlab">V<sub>in</sub> = <strong class="sar-vinval"></strong>' +
           '<input type="range" class="sar-vin" min="0" max="3300" step="10" value="2310"></label>' +
       '</div>' +

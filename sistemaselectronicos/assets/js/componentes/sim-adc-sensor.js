@@ -33,7 +33,7 @@ MPI.componentes = MPI.componentes || {};
   MPI.componentes['sim-adc-sensor'] = function (el, cfg) {
     el.classList.add('mpi-adc-sensor');
     el.innerHTML =
-      '<div class="mpi-sim-cab">El AD en acción: un sensor de luz (Vref = 3,3 V · 10 bits)</div>' +
+      '<div class="mpi-sim-cab">El A/D en acción: sensor de luz con el MCP3008 (Vref = 3,3 V · 10 bits)</div>' +
       '<div class="as-escena">' +
         '<div class="as-fuente">' +
           '<svg viewBox="0 0 90 90" class="as-sol" aria-hidden="true">' +
@@ -55,13 +55,13 @@ MPI.componentes = MPI.componentes || {};
         '</div>' +
         '<div class="as-flecha">→<small>el AD la convierte<br>en un número</small></div>' +
         '<div class="as-digital">' +
-          '<div class="as-chip">AD 10 bits</div>' +
+          '<div class="as-chip">MCP3008</div>' +
           '<div class="as-bits"></div>' +
           '<div class="as-num"></div>' +
         '</div>' +
       '</div>' +
       '<div class="as-detalle nota"></div>' +
-      '<pre class="as-codigo"><code class="lang-c"></code></pre>';
+      '<pre class="as-codigo"><code class="lang-python"></code></pre>';
 
     var slider = el.querySelector('input[type=range]');
 
@@ -96,10 +96,14 @@ MPI.componentes = MPI.componentes || {};
         err.toFixed(2).replace('.', ',') + ' mV (siempre &lt; q/2 ≈ 1,61 mV). ' +
         'Mueve la luz despacio: D solo cambia <em>a saltos</em> de uno en uno — eso es la cuantización.';
 
-      el.querySelector('.as-codigo code').textContent =
-        'uint16_t D = ADC1BUF0;            // = ' + D + '\n' +
-        'float voltios = D * 3.3 / 1024;   // = ' + vrec.toFixed(3).replace('.', ',') + ' V\n' +
-        'float lux = voltios * ESCALA;     // segun el sensor';
+      var cod = el.querySelector('.as-codigo code');
+      cod.textContent =
+        'from gpiozero import MCP3008\n' +
+        'ldr = MCP3008(channel=0)          # fotorresistencia en el canal 0\n' +
+        'D = round(ldr.value * 1023)       # codigo de 10 bits  -> ' + D + '\n' +
+        'voltios = ldr.voltage             # = ' + vrec.toFixed(3).replace('.', ',') + ' V\n' +
+        'lux = voltios * ESCALA            # segun la curva del sensor';
+      cod.removeAttribute('data-resaltado');
       if (MPI.resaltarTodo) MPI.resaltarTodo(el);
     }
 

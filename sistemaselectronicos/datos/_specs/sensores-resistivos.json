@@ -1,11 +1,11 @@
 {
   "slug": "sensores-resistivos",
   "titulo": "Sensores resistivos de grandes variaciones",
-  "temaNum": 6,
-  "lead": "Un sensor pasivo traduce una magnitud física (temperatura, dureza del agua…) en una <strong>resistencia</strong>, pero la Raspberry Pi solo entiende <strong>tensión</strong>. Este tema enseña a diseñar la <strong>cadena de acondicionamiento</strong> que convierte <em>R(x)</em> en una tensión limpia dentro del rango del conversor A/D (0–3,3 V), apoyándose en los amplificadores operacionales del Tema 5.",
+  "temaNum": 10,
+  "lead": "Un sensor pasivo traduce una magnitud física (temperatura, dureza del agua…) en una <strong>resistencia</strong>, pero la Raspberry Pi solo entiende <strong>tensión</strong>. Este tema enseña a diseñar la <strong>cadena de acondicionamiento</strong> que convierte <em>R(x)</em> en una tensión limpia dentro del rango del conversor A/D (0–3,3 V), apoyándose en los amplificadores operacionales del Tema 8.",
   "secciones": [
     {
-      "titulo": "6.1 Sensores: clasificación y sensibilidad",
+      "titulo": "10.1 Sensores: clasificación y sensibilidad",
       "bloques": [
         {
           "tipo": "prosa",
@@ -31,7 +31,7 @@
       ]
     },
     {
-      "titulo": "6.2 Por qué acondicionar",
+      "titulo": "10.2 Por qué acondicionar",
       "bloques": [
         {
           "tipo": "prosa",
@@ -61,11 +61,11 @@
       ]
     },
     {
-      "titulo": "6.3 Cadena de acondicionamiento: las tres etapas",
+      "titulo": "10.3 Cadena de acondicionamiento: las tres etapas",
       "bloques": [
         {
           "tipo": "prosa",
-          "html": "<p>La cadena clásica se construye con amplificadores operacionales (Tema 5) en <strong>tres etapas</strong>: (a) fuente de corriente, (b) ajuste de cero, (c) ajuste de ganancia.</p>"
+          "html": "<p>La cadena clásica se construye con amplificadores operacionales (Tema 8) en <strong>tres etapas</strong>: (a) fuente de corriente, (b) ajuste de cero, (c) ajuste de ganancia.</p>"
         },
         {
           "tipo": "prosa",
@@ -105,7 +105,7 @@
       ]
     },
     {
-      "titulo": "6.4 Comprobar saturaciones",
+      "titulo": "10.4 Comprobar saturaciones",
       "bloques": [
         {
           "tipo": "nota",
@@ -114,7 +114,29 @@
       ]
     },
     {
-      "titulo": "6.5 No linealidades y linealización analógica",
+      "titulo": "10.5 Ejemplo: sensor de dureza del agua",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Sensor resistivo lineal de dureza del agua, medida en grados alemanes (°dH); rango 0–20 °dH. Se desea salida 0 V a 0 °dH con sensibilidad final 0,1 V/°dH. Operacionales alimentados a ±5 V, rail-to-rail. Característica del sensor: <code>R(D) = 1 kΩ + D · 50 Ω/°dH</code>.</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p><strong>Etapa 1 — fuente de corriente.</strong> Se hace pasar <code>I = 5 V / 5 kΩ = 1 mA</code> por el sensor:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>v</mi><mi>a</mi></msub><mo>=</mo><mi>I</mi><mo>&#183;</mo><mi>R</mi><mo>(</mo><mi>D</mi><mo>)</mo><mo>=</mo><mn>1</mn><mtext>&#160;V</mtext><mo>+</mo><mi>D</mi><mo>&#183;</mo><mn>0</mn><mo>,</mo><mn>05</mn><mtext>&#160;V/&#176;dH</mtext></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Rango de <code>v<sub>a</sub></code>: 1 V (0 °dH) a 2 V (20 °dH) → no satura. Sensibilidad <code>S<sub>1</sub> = 0,05 V/°dH</code>.</p><p><strong>Etapa 2 — amplificador inversor de ganancia 2:</strong> <code>v<sub>b</sub> = −2·v<sub>a</sub></code>, que va de −2 V a −4 V (no satura). Sensibilidad <code>S<sub>2</sub> = −0,1 V/°dH</code> (la pedida, pero con signo).</p><p><strong>Etapa 3 — sumador:</strong> elimina el offset de −2 V y cambia el signo. Con <code>E<sub>z</sub> = 2 V</code> y <code>k = 1</code>, la salida es <code>v<sub>o</sub> = 0,1 V/°dH · D</code> (0 V a 2 V): cumple lo pedido y no satura.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Recórrela en vivo: mueve la dureza del agua y observa la tensión a la salida de cada una de las <strong>tres etapas</strong> (fuente de corriente, inversor y sumador) y la recta de salida v<sub>o</sub> = 0,1 V/°dH · D.</p>\n<div class=\"mpi-mount\" data-componente=\"sim-cadena-acond\" data-config=\"{}\"></div>"
+        }
+      ]
+    },
+    {
+      "titulo": "10.6 No linealidades y linealización analógica",
       "bloques": [
         {
           "tipo": "prosa",
@@ -150,7 +172,7 @@
       ]
     },
     {
-      "titulo": "6.6 Sensores activos con salida en tensión",
+      "titulo": "10.7 Sensores activos con salida en tensión",
       "bloques": [
         {
           "tipo": "prosa",
@@ -159,25 +181,7 @@
       ]
     },
     {
-      "titulo": "6.7 Ejemplo: sensor de dureza del agua",
-      "bloques": [
-        {
-          "tipo": "prosa",
-          "html": "<p>Sensor resistivo lineal de dureza del agua, medida en grados alemanes (°dH); rango 0–20 °dH. Se desea salida 0 V a 0 °dH con sensibilidad final 0,1 V/°dH. Operacionales alimentados a ±5 V, rail-to-rail. Característica del sensor: <code>R(D) = 1 kΩ + D · 50 Ω/°dH</code>.</p>"
-        },
-        {
-          "tipo": "formula",
-          "descripcion": "<p><strong>Etapa 1 — fuente de corriente.</strong> Se hace pasar <code>I = 5 V / 5 kΩ = 1 mA</code> por el sensor:</p>",
-          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>v</mi><mi>a</mi></msub><mo>=</mo><mi>I</mi><mo>&#183;</mo><mi>R</mi><mo>(</mo><mi>D</mi><mo>)</mo><mo>=</mo><mn>1</mn><mtext>&#160;V</mtext><mo>+</mo><mi>D</mi><mo>&#183;</mo><mn>0</mn><mo>,</mo><mn>05</mn><mtext>&#160;V/&#176;dH</mtext></mrow></math>"
-        },
-        {
-          "tipo": "prosa",
-          "html": "<p>Rango de <code>v<sub>a</sub></code>: 1 V (0 °dH) a 2 V (20 °dH) → no satura. Sensibilidad <code>S<sub>1</sub> = 0,05 V/°dH</code>.</p><p><strong>Etapa 2 — amplificador inversor de ganancia 2:</strong> <code>v<sub>b</sub> = −2·v<sub>a</sub></code>, que va de −2 V a −4 V (no satura). Sensibilidad <code>S<sub>2</sub> = −0,1 V/°dH</code> (la pedida, pero con signo).</p><p><strong>Etapa 3 — sumador:</strong> elimina el offset de −2 V y cambia el signo. Con <code>E<sub>z</sub> = 2 V</code> y <code>k = 1</code>, la salida es <code>v<sub>o</sub> = 0,1 V/°dH · D</code> (0 V a 2 V): cumple lo pedido y no satura.</p>"
-        }
-      ]
-    },
-    {
-      "titulo": "6.8 Ejemplo: termómetro NTC para GUINNESS",
+      "titulo": "10.8 Ejemplo: termómetro NTC para GUINNESS",
       "bloques": [
         {
           "tipo": "formula",
@@ -282,11 +286,41 @@
           "explicacion": "<p><code>R<sub>f</sub> = |v<sub>o</sub>| / I<sub>pd</sub> = 3,3 V / 50 µA = 66 kΩ</code>, que es además un valor comercial. La tensión por la corriente de oscuridad sería <code>V<sub>osc</sub> = I<sub>osc</sub>·R<sub>f</sub> = 20 nA · 66 kΩ ≈ 1,3 mV</code>, muy por debajo de la resolución del ADC (3,3 V / 1024 ≈ 3,2 mV), de modo que la oscuridad es despreciable y no hace falta ajuste de cero. Para adaptar al rango 0–3,3 V del ADC basta una etapa inversora de ganancia unidad que cambie el signo.</p>"
         }
       ]
+    },
+    "sensores-resistivos-examen": {
+      "titulo": "Masa virtual del TIA del opacímetro (Examen Ordinario 2026, Problema 1)",
+      "enunciado": "<p>Adaptado del <strong>Examen Ordinario 2026</strong>, Problema 1: en el opacímetro de túnel, un fotodiodo es un sensor <em>activo</em> que entrega una <strong>corriente</strong> <code>I<sub>pd</sub></code> proporcional a la luz, no una tensión. Para leerlo con el ADC se monta un <strong>amplificador de transimpedancia (TIA)</strong>: el fotodiodo se conecta entre masa y la entrada inversora de un operacional ideal realimentado por <code>R<sub>f</sub></code>, con la entrada no inversora a masa. Hay que entender por qué <em>toda</em> la corriente del fotodiodo acaba pasando por <code>R<sub>f</sub></code> y dimensionar <code>R<sub>f</sub></code>.</p>\n<img class=\"ej-fig\" src=\"assets/img/examenes/ord2026-p1-tia.png\" alt=\"Amplificador de transimpedancia (TIA) con el fotodiodo del opacímetro (Problema 1)\">",
+      "contexto": "<ul><li>Operacional ideal con realimentación negativa: reglas de oro <code>i<sup>+</sup> = i<sup>−</sup> = 0</code> y <code>v<sup>+</sup> = v<sup>−</sup></code>.</li><li>Como <code>v<sup>+</sup></code> está a masa, la entrada inversora queda a 0 V (<strong>masa virtual</strong>).</li><li>En máxima visibilidad <code>I<sub>pd</sub> &#8776; 50 µA</code>; se desea <code>v<sub>o</sub> = −3,3 V</code> en ese punto.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Por qué la corriente I_pd del fotodiodo circula íntegramente por R_f en vez de entrar en el operacional?",
+          "opciones": [
+            "Porque la entrada inversora del operacional ideal no admite corriente (i⁻ = 0); por la regla de oro y como v⁺ está a masa, ese nudo es una masa virtual y la única salida para I_pd es R_f.",
+            "Porque R_f tiene menor resistencia que la entrada del operacional, así que la corriente prefiere ese camino.",
+            "Porque el fotodiodo y R_f forman un divisor de corriente al 50 %.",
+            "Porque el condensador de muestreo del ADC absorbe la otra mitad de la corriente."
+          ],
+          "correcta": 0,
+          "explicacion": "<p>El operacional ideal no deja entrar corriente por sus entradas (<code>i<sup>−</sup> = 0</code>, resistencia de entrada infinita). Además, por el cortocircuito virtual y al estar <code>v<sup>+</sup></code> a masa, el nudo inversor se mantiene en 0 V: es una <strong>masa virtual</strong>. Por tanto la corriente del fotodiodo no tiene otro camino que la resistencia de realimentación, y debe circular <strong>entera</strong> por <code>R<sub>f</sub></code>. La salida se sitúa entonces en <code>v<sub>o</sub> = −I<sub>pd</sub>·R<sub>f</sub></code>, ya que la caída en <code>R<sub>f</sub></code> aparece entre la masa virtual (0 V) y la salida.</p>"
+        },
+        {
+          "texto": "Si en máxima visibilidad I_pd ≈ 50 µA y se quiere v_o = −3,3 V, ¿qué R_f hay que poner?",
+          "opciones": [
+            "R_f = 66 kΩ",
+            "R_f = 6,6 kΩ",
+            "R_f = 165 Ω",
+            "R_f = 660 kΩ"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>De <code>v<sub>o</sub> = −I<sub>pd</sub>·R<sub>f</sub></code> se despeja <code>R<sub>f</sub> = |v<sub>o</sub>| / I<sub>pd</sub> = 3,3 V / 50 µA = 66 kΩ</code> (valor comercial). Con esa <code>R<sub>f</sub></code>, la máxima visibilidad lleva la salida justo al fondo de escala del rango del ADC tras invertir el signo.</p>"
+        }
+      ]
     }
   },
   "ejerciciosEnTema": [
     "sensores-resistivos-ntc",
-    "sensores-resistivos-tia"
+    "sensores-resistivos-tia",
+    "sensores-resistivos-examen"
   ],
   "resumen": [
     "Un sensor resistivo pasivo da una <strong>resistencia R(x)</strong>; su <strong>sensibilidad</strong> es <code>S = dR/dx</code>. Los de <em>grandes variaciones</em> son los más manejables.",

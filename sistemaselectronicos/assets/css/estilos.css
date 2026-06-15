@@ -815,3 +815,145 @@ math.formula { font-size: 1.3rem; margin: 1rem 0; color: var(--txt); display: bl
   .nt-cuerpo { flex-direction: column; }
   .nt-t { width: 100%; }
 }
+
+
+/* === Componente sim-pwm (sp-*) — PWM como conversor D/A === */
+.mpi-pwm { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1rem 1.2rem; margin: 1.2rem 0; }
+.sp-cuerpo { display: flex; flex-wrap: wrap; gap: 1.4rem; align-items: flex-start; }
+.sp-col { flex: 1 1 240px; min-width: 0; }
+.sp-centro { text-align: center; }
+.sp-slider { display: block; color: var(--txt-2); font-size: .9rem; margin-bottom: .8rem; }
+.sp-slider strong { color: var(--acento); font-family: var(--mono); }
+.sp-slider input { width: 100%; margin-top: .3rem; accent-color: var(--acento); }
+.sp-onda { display: block; width: 100%; height: auto; background: var(--bg); border: 1px solid var(--borde); border-radius: 8px; }
+.sp-luz-fila { display: flex; align-items: center; gap: .6rem; justify-content: center; margin-top: .7rem; color: var(--txt-tenue); font-size: .78rem; }
+.sp-led { padding: .2rem; }
+.sp-led-luz { width: 40px; height: 40px; border-radius: 50%; background: var(--amarillo); box-shadow: 0 0 16px 4px rgba(220,220,170,.55); transition: opacity .12s; }
+.sp-codigo { margin: .7rem 0 0; }
+
+/* === Componentes FSM (fsm-*) — máquinas de estados animadas === */
+.mpi-fsm { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1rem 1.2rem; margin: 1.2rem 0; }
+.fsm-cuerpo { display: flex; flex-wrap: wrap; gap: 1.4rem; }
+.fsm-izq { flex: 1 1 380px; min-width: 0; }
+.fsm-der { flex: 1 1 220px; min-width: 200px; }
+.fsm-svg { width: 100%; }
+.fsm-nodo.fsm-activo ellipse { fill: rgba(78,201,176,.18); stroke: var(--acento); stroke-width: 3; }
+.fsm-nodo.fsm-activo text { fill: var(--acento); font-weight: 700; }
+.fsm-controles { display: flex; gap: .8rem; margin-top: .6rem; flex-wrap: wrap; }
+.fsm-controles button { background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .45rem .9rem; cursor: pointer; font-size: .9rem; }
+.fsm-controles button:hover { border-color: var(--acento); }
+.fsm-controles button small { display: block; font-size: .65rem; color: var(--txt-tenue); margin-top: .1rem; }
+.fsm-controles button.fsm-pulsado { background: var(--acento); color: #06231d; border-color: var(--acento); }
+.fsm-controles button.fsm-pulsado small { color: #06231d; }
+.fsm-puerta-marco { position: relative; height: 130px; border: 2px solid var(--borde); border-radius: 6px 6px 0 0; background: var(--bg); overflow: hidden; }
+.fsm-puerta { position: absolute; top: 0; left: 0; right: 0; height: 100%; background: repeating-linear-gradient(180deg, var(--bg-3) 0 14px, var(--borde-2) 14px 16px); border-bottom: 3px solid var(--acento-2); transition: height .1s linear; }
+.fsm-hueco { position: absolute; bottom: 4px; width: 100%; text-align: center; font-size: 1.6rem; }
+.fsm-salidas { display: flex; gap: .6rem; margin: .7rem 0; flex-wrap: wrap; }
+.fsm-led { font-size: .78rem; font-family: var(--mono); color: var(--txt-tenue); border: 1px solid var(--borde); border-radius: 12px; padding: .15rem .6rem; }
+.fsm-led-on { color: #10201c; background: var(--acento); border-color: var(--acento); font-weight: 700; }
+.fsm-info { font-size: .88rem; }
+.fsm-escena { font-size: 2.6rem; min-height: 3.4rem; display: flex; align-items: center; gap: .3rem; justify-content: center; }
+.fsm-wc { font-size: 3rem; }
+.fsm-agua { width: 2.2rem; text-align: center; }
+.fsm-figura { width: 2.2rem; text-align: center; }
+.fsm-cerr { font-size: 3rem; }
+.fsm-leyenda { color: var(--txt-tenue); font-size: .8rem; margin: .2rem 0 .6rem; text-align: center; }
+.fsm-plazas { display: flex; gap: .5rem; justify-content: center; margin: .4rem 0 .6rem; }
+.fsm-plaza { width: 3rem; height: 3rem; border: 1.5px dashed var(--borde); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; background: var(--bg); }
+.fsm-led-verde.fsm-led-on { background: #4caf50; border-color: #4caf50; }
+.fsm-led-roja.fsm-led-on { background: var(--rojo); border-color: var(--rojo); }
+
+@media (max-width: 560px) {
+  .sp-cuerpo, .fsm-cuerpo { flex-direction: column; }
+}
+
+
+/* === Componente trama-uart (tr-*) === */
+.mpi-trama { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1rem 1.2rem; margin: 1.2rem 0; }
+.tr-controles { display: flex; flex-wrap: wrap; gap: .8rem 1.4rem; margin: .6rem 0 1rem; align-items: center; }
+.tr-controles label { color: var(--txt-2); font-size: .9rem; display: flex; flex-direction: column; gap: .25rem; }
+.tr-controles select { background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .3rem .5rem; font-size: .92rem; }
+.tr-linea { display: flex; flex-wrap: wrap; gap: 3px; margin: .4rem 0 .8rem; }
+.tr-bit { min-width: 2.4rem; text-align: center; padding: .45rem .2rem; border-radius: 5px; font-family: var(--mono); font-size: .82rem; border: 1px solid var(--borde); }
+.tr-reposo  { color: var(--txt-tenue); border-style: dashed; }
+.tr-start   { background: #4a3a2a; border-color: var(--naranja); color: var(--naranja); }
+.tr-dato    { background: #1f3a35; border-color: var(--acento); color: var(--acento); }
+.tr-paridad { background: #3a2a3a; border-color: var(--morado); color: var(--morado); }
+.tr-stop    { background: #2f4a39; border-color: var(--verde); color: #8fc28f; }
+.tr-info p { margin: .35rem 0; font-size: .93rem; color: var(--txt-2); }
+.tr-py { margin-top: .5rem !important; }
+
+/* === Componente sim-i2c-trama (it-*) === */
+.mpi-i2c-trama { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1rem 1.2rem; margin: 1.2rem 0; }
+.it-controles { display: flex; flex-wrap: wrap; gap: .7rem 1.2rem; align-items: center; margin-bottom: .7rem; }
+.it-controles label { color: var(--txt-2); font-size: .88rem; display: flex; flex-direction: column; gap: .2rem; }
+.it-controles input, .it-controles select { background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .3rem .5rem; font-size: .9rem; width: 9rem; }
+.it-leyenda { display: flex; gap: 1.2rem; font-size: .8rem; color: var(--txt-2); margin-bottom: .5rem; }
+.it-sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: .3rem; }
+.it-sw.it-m { background: var(--acento-2); }
+.it-sw.it-s { background: var(--acento); }
+.it-tira { display: flex; flex-wrap: wrap; gap: 2px; margin: .5rem 0; }
+.it-celda { display: flex; flex-direction: column; align-items: center; min-width: 1.7rem; padding: .35rem .2rem; border-radius: 4px; font-family: var(--mono); border: 1px solid transparent; opacity: .55; transition: opacity .12s; }
+.it-celda b { font-size: .85rem; }
+.it-celda small { font-size: .58rem; opacity: .8; }
+.it-celda.it-m { background: rgba(86,156,214,.16); color: var(--acento-2); }
+.it-celda.it-s { background: rgba(78,201,176,.16); color: var(--acento); }
+.it-celda.it-ctrl b { font-weight: 700; }
+.it-celda.it-activo, .it-celda.it-hecho { opacity: 1; }
+.it-celda.it-activo { box-shadow: 0 0 0 2px var(--amarillo); }
+.it-celda.it-destac { outline: 1px dashed currentColor; }
+.it-msg { margin: .6rem 0; min-height: 2.6rem; }
+.it-botones { display: flex; gap: .6rem; flex-wrap: wrap; }
+.it-botones button { background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .4rem .8rem; cursor: pointer; font-size: .88rem; }
+.it-botones button:hover:not(:disabled) { border-color: var(--acento); }
+.it-botones button:disabled { opacity: .4; cursor: default; }
+
+/* === Componente sim-spi (spi-*) === */
+.mpi-spi { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1rem 1.2rem; margin: 1.2rem 0; }
+.spi-controles { display: flex; flex-wrap: wrap; gap: .7rem 1.2rem; align-items: center; margin-bottom: .6rem; }
+.spi-controles label { color: var(--txt-2); font-size: .88rem; display: flex; flex-direction: column; gap: .2rem; }
+.spi-controles select, .spi-controles input { background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .3rem .5rem; font-size: .9rem; }
+.spi-svg { display: block; width: 100%; height: auto; background: var(--bg); border: 1px solid var(--borde); border-radius: 8px; margin: .3rem 0; }
+.spi-info p { margin: .4rem 0; font-size: .92rem; color: var(--txt-2); }
+
+/* === Componente fig-circuito (fc-*) — dibujos estáticos === */
+.mpi-fig-circuito { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: .9rem 1rem; margin: 1.1rem 0; text-align: center; }
+.fc-svg { width: 100%; max-width: 420px; height: auto; }
+.fc-cap { margin: .3rem 0 0; font-size: .86rem; color: var(--txt-2); text-align: center; }
+
+/* === Componente sim-serie-paralelo (spr-*) === */
+.mpi-spr { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1rem 1.2rem; margin: 1.2rem 0; }
+.spr-svg { display: block; width: 100%; max-width: 560px; height: auto; margin: .2rem auto .4rem; background: var(--bg); border: 1px solid var(--borde); border-radius: 8px; }
+.spr-r { transition: stroke .15s, fill .15s; }
+.spr-r.spr-par { stroke: var(--amarillo); stroke-width: 2.6; fill: rgba(220,220,170,.16); }
+.spr-r.spr-ser { stroke: var(--acento); stroke-width: 2.6; fill: rgba(78,201,176,.16); }
+.spr-msg { margin: .5rem 0; min-height: 3rem; }
+.spr-botones { display: flex; gap: .6rem; flex-wrap: wrap; }
+.spr-botones button { background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .4rem .8rem; cursor: pointer; font-size: .88rem; }
+.spr-botones button:hover:not(:disabled) { border-color: var(--acento); }
+.spr-botones button:disabled { opacity: .4; cursor: default; }
+
+/* === Componente sim-cadena-acond (cad-*) === */
+.mpi-cadena { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1rem 1.2rem; margin: 1.2rem 0; }
+.cad-slider { display: block; color: var(--txt-2); font-size: .9rem; margin-bottom: 1rem; }
+.cad-slider strong { color: var(--acento); font-family: var(--mono); }
+.cad-slider input { width: 100%; margin-top: .3rem; accent-color: var(--acento); }
+.cad-pipe { display: flex; flex-wrap: wrap; align-items: stretch; gap: .4rem; margin-bottom: 1rem; }
+.cad-card { flex: 1 1 130px; background: var(--bg-3); border: 1px solid var(--borde); border-radius: 8px; padding: .5rem .6rem; min-width: 0; }
+.cad-card-out { border-color: var(--acento-2); }
+.cad-card-t { font-size: .72rem; color: var(--txt-tenue); text-transform: uppercase; letter-spacing: .03em; margin-bottom: .25rem; }
+.cad-eq { font-family: var(--mono); font-size: .74rem; color: var(--txt-2); }
+.cad-val { font-family: var(--mono); font-size: .95rem; color: var(--acento); font-weight: 700; margin: .25rem 0 .3rem; }
+.cad-flecha { align-self: center; color: var(--txt-tenue); font-size: 1.2rem; }
+.cad-bar { position: relative; height: 8px; background: var(--bg); border: 1px solid var(--borde); border-radius: 4px; }
+.cad-cero { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--txt-tenue); }
+.cad-mk { position: absolute; top: 50%; width: 9px; height: 9px; border-radius: 50%; background: var(--acento); transform: translate(-50%, -50%); }
+.cad-mk.cad-sat { background: var(--rojo); box-shadow: 0 0 6px 2px rgba(244,135,113,.6); }
+.cad-graf { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+.cad-svg { flex: 1 1 280px; max-width: 360px; height: auto; background: var(--bg); border: 1px solid var(--borde); border-radius: 8px; }
+.cad-leyenda { display: flex; flex-direction: column; gap: .35rem; font-size: .82rem; color: var(--txt-2); }
+.cad-leyenda i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: .4rem; border-radius: 2px; }
+.cad-msg { margin-top: .8rem; }
+
+/* === Figuras de examen incrustadas en ejercicios === */
+.ej-fig { display: block; max-width: 360px; width: 100%; height: auto; margin: .8rem auto; background: #fff; padding: .6rem; border-radius: 8px; border: 1px solid var(--borde); }

@@ -2,138 +2,99 @@
   "slug": "introduccion",
   "titulo": "Introducción a los sistemas electrónicos",
   "temaNum": 1,
-  "lead": "Un <strong>sistema electrónico</strong> existe para ayudarnos a extraer y procesar la <em>información</em> que viaja en las <em>señales</em>. En este tema vemos qué es una señal, en qué se diferencian las <strong>analógicas</strong> de las <strong>digitales</strong>, cómo se convierte una en otra (muestreo y cuantización), cómo se representa un <strong>bit</strong> con tensiones reales en una <strong>Raspberry Pi 4</strong>, y qué estructura tiene un sistema electrónico, incluyendo los conceptos de <strong>sistema empotrado</strong> y <strong>sistema en tiempo real</strong>.",
+  "lead": "Dentro de tu microondas, de tu coche y de tu pulsera de actividad hay un pequeño ordenador que no ves. Esta asignatura va de <strong>eso</strong>: de poner inteligencia en las cosas para que <em>midan</em> el mundo, <em>decidan</em> y <em>actúen</em> sobre él. En este primer tema cogemos altura &mdash; qué vas a aprender a construir, de qué están hechas las <strong>señales</strong> que nos rodean y por qué casi todo acaba convertido en <strong>ceros y unos</strong>&mdash; antes de bajar al detalle en los temas siguientes.",
   "secciones": [
     {
-      "titulo": "1.1 Conocimiento, información y señales",
+      "titulo": "Para empezar: ¿qué vas a poder construir?",
       "bloques": [
         {
           "tipo": "prosa",
-          "html": "<p>Según la RAE, la <strong>información</strong> es la <em>«comunicación o adquisición de conocimientos que permiten ampliar o precisar los que se poseen sobre una materia determinada»</em>. Para ampliar el conocimiento sobre algo es necesario que <strong>fluya la información</strong>, y esa información fluye mediante <strong>señales</strong>.</p>"
-        },
-        {
-          "tipo": "prosa",
-          "html": "<p>Una <strong>señal</strong> es, de nuevo según la RAE, la <em>«variación de una corriente eléctrica u otra magnitud que se utiliza para transmitir información»</em>. Por ejemplo, en una clase el profesor transmite conocimiento mediante variaciones de presión sonora (la voz); esa presión es la señal, y de ella la audiencia extrae la información.</p>"
+          "html": "<p>Imagina un termostato que enciende la calefacción cuando hace frío, una alarma que detecta movimiento, una estación que mide la temperatura y la sube a internet, o un robot que esquiva obstáculos. Por distintos que parezcan, todos siguen la <strong>misma receta</strong>: <strong>medir</strong> algo del entorno, <strong>decidir</strong> qué hacer con un programa y <strong>actuar</strong>. Al acabar la asignatura sabrás montar y programar sistemas así.</p>"
         },
         {
           "tipo": "nota",
-          "html": "Los <strong>sistemas electrónicos</strong> sirven precisamente para ayudarnos a <strong>extraer la información de las señales</strong>, e incluso para procesarla por sí mismos. Así nacen los sistemas autónomos, como un control de temperatura o un piloto automático."
-        }
-      ]
-    },
-    {
-      "titulo": "1.2 Señales analógicas y digitales",
-      "bloques": [
-        {
-          "tipo": "prosa",
-          "html": "<p>Una señal es la variación de una magnitud física (temperatura, presión sonora, tensión…). La mayoría de las señales son <strong>continuas tanto en el tiempo como en su magnitud</strong>: se denominan <strong>analógicas</strong>, porque sus variaciones son <em>análogas</em> a las del fenómeno físico que las produce.</p>"
+          "html": "La pieza que da inteligencia a todo esto es el <strong>microcontrolador</strong>: un ordenador completo casi del tamaño de una uña, tan barato que cabe en cualquier aparato. En las prácticas usarás una <strong>Raspberry Pi 4</strong> con la placa <strong>iMAT HAT</strong>, programándola en <strong>Python</strong>."
         },
         {
           "tipo": "prosa",
-          "html": "<p>En otras situaciones la señal solo puede tomar un conjunto discreto de valores. El estado de un interruptor, por ejemplo, solo puede ser <em>abierto</em> o <em>cerrado</em>, y se modela con dos valores (p. ej. <code>0</code> = abierto, <code>1</code> = cerrado). Otras señales son discretas por naturaleza, como el número de alumnos de un aula. A estas señales se les llama <strong>digitales</strong>, porque pueden representarse mediante una serie de <em>dígitos</em>.</p>"
-        },
-        {
-          "tipo": "nota",
-          "html": "La asignación de valores es <strong>arbitraria</strong>: nada impide representar el interruptor cerrado como <code>0</code> y el abierto como <code>1</code>. Lo importante es <strong>dejar clara la elección</strong> para que no haya malentendidos."
-        }
-      ]
-    },
-    {
-      "titulo": "1.3 Sistemas analógicos y digitales. Muestreo y cuantización",
-      "bloques": [
-        {
-          "tipo": "prosa",
-          "html": "<p>Según el tipo de señal con la que trabajan, los sistemas electrónicos se clasifican en <strong>analógicos</strong> o <strong>digitales</strong>. En un <strong>sistema analógico</strong> el circuito procesa una copia <em>análoga</em> de la señal medida. Ejemplo típico: un amplificador de audio para megafonía, donde un micrófono convierte la presión sonora en una tensión de pocos milivoltios y el amplificador la lleva hasta las decenas de voltios que necesita el altavoz. Dentro del amplificador siempre hay una copia análoga de la entrada, solo que de mayor amplitud, de ahí el nombre.</p>"
-        },
-        {
-          "tipo": "prosa",
-          "html": "<p><strong>Ventajas de los sistemas analógicos:</strong></p>"
+          "html": "<p>Un microcontrolador te deja:</p>"
         },
         {
           "tipo": "lista",
           "ordenada": false,
           "items": [
-            "Las señales internas son copias «exactas» de la entrada.",
-            "Los circuitos necesitan pocos transistores.",
-            "Pueden manejar señales de potencia y de muy alta frecuencia."
+            "<strong>Leer el mundo físico</strong>: temperatura, luz, sonido, movimiento, la pulsación de un botón&hellip;",
+            "<strong>Decidir</strong> con tu propio código: <em>«si la temperatura baja de 20&nbsp;°C, enciende la calefacción»</em>.",
+            "<strong>Actuar</strong>: encender luces, mover motores, escribir en una pantalla, enviar datos por la red.",
+            "<strong>Hablar con otros chips</strong>: sensores, memorias y pantallas a través de buses como UART, I²C o SPI."
           ]
-        },
-        {
-          "tipo": "prosa",
-          "html": "<p><strong>Inconvenientes:</strong></p>"
-        },
-        {
-          "tipo": "lista",
-          "ordenada": false,
-          "items": [
-            "Son sensibles al <strong>ruido electromagnético</strong>: la señal se «ensucia» conforme avanza por el circuito.",
-            "El comportamiento de los componentes varía con la temperatura, la edad, etc., así que la salida cambia de un circuito a otro o con la temperatura.",
-            "Solo permiten procesos sencillos: amplificación (multiplicar por una constante) y filtrado (amplificación dependiente de la frecuencia)."
-          ]
-        },
-        {
-          "tipo": "prosa",
-          "html": "<p>Para evitar estos inconvenientes, una señal analógica se puede convertir en una <strong>señal digital</strong>, que no es más que una <em>secuencia de números</em>. Los números no los altera el ruido ni el envejecimiento, se almacenan de forma fiable en memoria y permiten procesos avanzados (comprimir audio, reconocer voz, etc.). Esta conversión consta de dos etapas: <strong>muestreo</strong> y <strong>cuantización</strong>, y la realiza un <strong>conversor analógico-digital (ADC)</strong>; el proceso inverso lo hace un <strong>conversor digital-analógico (DAC)</strong>.</p>"
-        },
-        {
-          "tipo": "prosa",
-          "html": "<p>El <strong>muestreo</strong> consiste en medir el valor de la señal a intervalos regulares de tiempo (periodo de muestreo <code>T<sub>s</sub></code>) y quedarse solo con esas muestras. La frecuencia de muestreo es <code>f<sub>s</sub> = 1 / T<sub>s</sub></code>.</p>"
-        },
-        {
-          "tipo": "formula",
-          "descripcion": "<p>El <strong>teorema de muestreo de Nyquist-Shannon</strong> establece que, para poder reconstruir exactamente la señal original a partir de sus muestras, la frecuencia de muestreo debe ser al menos el doble de la frecuencia máxima presente en la señal:</p>",
-          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>f</mi><mi>s</mi></msub><mo>&#8805;</mo><mn>2</mn><mo>&#8290;</mo><msub><mi>f</mi><mrow><mi>m</mi><mi>&#225;</mi><mi>x</mi></mrow></msub></mrow></math>"
-        },
-        {
-          "tipo": "prosa",
-          "html": "<p>Cada muestra se mide idealmente con precisión infinita. Como un circuito real no la tiene, se realiza la <strong>cuantización</strong>: cada muestra se redondea al valor más próximo de un conjunto <em>finito</em> de niveles. Ese redondeo introduce un <strong>error de cuantización</strong> que impide reconstruir la señal exactamente; si los niveles están muy juntos (mucha resolución) el error es despreciable.</p>"
-        },
-        {
-          "tipo": "formula",
-          "descripcion": "<p>Con un conversor de <code>N</code> bits, el número de niveles de cuantización disponibles es:</p>",
-          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mi>L</mi><mo>=</mo><msup><mn>2</mn><mi>N</mi></msup></mrow></math>"
-        },
-        {
-          "tipo": "formula",
-          "descripcion": "<p>Si la señal abarca un fondo de escala <code>V<sub>FE</sub></code> (rango de tensión), la <strong>resolución</strong> (tamaño de cada escalón de cuantización) es:</p>",
-          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mi>q</mi><mo>=</mo><mfrac><msub><mi>V</mi><mrow><mi>F</mi><mi>E</mi></mrow></msub><msup><mn>2</mn><mi>N</mi></msup></mfrac></mrow></math>"
         },
         {
           "tipo": "nota",
-          "html": "En los CD de audio la señal se cuantiza con <strong>16 bits</strong>, es decir <code>2<sup>16</sup> = 65 536</code> niveles (resolución 1/65 536). Se ha comprobado que el error de cuantización resultante no es apreciable por el oído humano."
-        },
-        {
-          "tipo": "prosa",
-          "html": "<p>Para fijar las dos etapas de la conversión analógico-digital, juega con la frecuencia de la señal, la frecuencia de muestreo y el número de bits: observa cómo el muestreo deja de funcionar cuando se incumple Nyquist-Shannon (<code>f<sub>s</sub> &#8805; 2·f</code>) y cómo la cuantización con <code>2<sup>N</sup></code> niveles redondea cada muestra al escalón más próximo.</p>\n<div class=\"mpi-mount\" data-componente=\"muestreo-cuantizacion\" data-config='{}'></div>"
+          "html": "Este tema es el <em>mapa</em> de la asignatura: el vocabulario y la idea global. No hace falta memorizar nada todavía &mdash; cada concepto se desarrolla a fondo más adelante."
         }
       ]
     },
     {
-      "titulo": "1.4 Bits y niveles lógicos",
+      "titulo": "1.1 Información y señales: por qué existe la electrónica",
       "bloques": [
         {
           "tipo": "prosa",
-          "html": "<p>¿Cómo se «mete» un número en un circuito de forma que el ruido no lo cambie? La respuesta de los sistemas digitales: en lugar de permitir cualquier tensión dentro del rango de alimentación, la señal solo puede tomar <strong>dos valores</strong>, una tensión baja (valor <code>0</code>) y una tensión alta (valor <code>1</code>). Pero no se define una única tensión para cada uno, sino <strong>rangos</strong> de tensión.</p>"
+          "html": "<p>Para aprender algo necesitas que te llegue <strong>información</strong>, y la información siempre viaja montada en una <strong>señal</strong>: algo físico que varía. Cuando un profesor habla, su voz es una variación de presión en el aire; tu oído capta esa señal y tu cerebro extrae la información.</p>"
         },
         {
           "tipo": "prosa",
-          "html": "<p>Una <strong>salida</strong> digital debe entregar una tensión entre <code>0</code> y <code>V<sub>OL</sub></code> para un <code>0</code> lógico, y entre <code>V<sub>OH</sub></code> y <code>V<sub>CC</sub></code> para un <code>1</code> lógico. Una <strong>entrada</strong> digital interpreta como <code>0</code> cualquier tensión entre <code>0</code> y <code>V<sub>IL</sub></code>, y como <code>1</code> cualquier tensión entre <code>V<sub>IH</sub></code> y <code>V<sub>CC</sub></code>. La diferencia entre la salida y la entrada (<code>V<sub>OL</sub></code> frente a <code>V<sub>IL</sub></code>, y <code>V<sub>OH</sub></code> frente a <code>V<sub>IH</sub></code>) constituye el <strong>margen de ruido</strong>, que permite al circuito funcionar incluso con perturbaciones.</p>"
-        },
-        {
-          "tipo": "prosa",
-          "html": "<p>Estos valores dependen de la tecnología de fabricación. Para el chip <strong>BCM2711</strong> de la Raspberry Pi 4 (su SoC), los niveles de las E/S de propósito general (GPIO) son:</p><table class=\"tabla-datos\"><thead><tr><th>Parámetro</th><th>Símbolo</th><th>Valor</th></tr></thead><tbody><tr><td>Tensión de alimentación de E/S</td><td>V<sub>CC</sub></td><td>3,3 V</td></tr><tr><td>Máxima tensión vista como «0» en entrada</td><td>V<sub>IL</sub></td><td>0,8 V</td></tr><tr><td>Mínima tensión vista como «1» en entrada</td><td>V<sub>IH</sub></td><td>2,0 V</td></tr><tr><td>Corriente de entrada (fuga)</td><td>I<sub>in</sub></td><td>&#8776; 10 &#181;A</td></tr></tbody></table>"
+          "html": "<p>Una <strong>señal</strong> es, formalmente, la variación de una magnitud física (presión, tensión, temperatura&hellip;) que sirve para transmitir información. El reto está en <em>sacar</em> la información que lleva dentro.</p>"
         },
         {
           "tipo": "nota",
-          "html": "Entre <code>V<sub>IL</sub></code> y <code>V<sub>IH</sub></code> el comportamiento <strong>no está definido</strong>. Existe una tensión umbral <code>V<sub>th</sub></code> en la que el circuito pasa de ver un <code>0</code> a ver un <code>1</code>, pero varía con el dispositivo, la temperatura, la tensión de alimentación y la edad. El fabricante solo garantiza que <code>V<sub>IL</sub> &lt; V<sub>th</sub> &lt; V<sub>IH</sub></code>."
+          "html": "Para eso existen los <strong>sistemas electrónicos</strong>: para ayudarnos a <strong>extraer la información de las señales</strong>, e incluso procesarla solos, sin que estemos delante. Así nace un sistema autónomo, como un control de temperatura o un piloto automático."
+        }
+      ]
+    },
+    {
+      "titulo": "1.2 Señales analógicas y digitales (y por qué ganan los ceros y unos)",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Las señales del mundo real suelen ser <strong>analógicas</strong>: varían de forma continua y pueden tomar <em>infinitos</em> valores, como la temperatura de una habitación. Se llaman así porque su variación es <em>análoga</em> a la del fenómeno físico que las produce.</p>"
         },
         {
           "tipo": "prosa",
-          "html": "<p>Un dígito que solo puede valer <code>0</code> o <code>1</code> es un <strong>bit</strong> (de <em>Binary digIT</em>). Con un bit se representa el resultado de una expresión lógica (cierto/falso). Según el <strong>álgebra de Boole</strong>, cualquier expresión lógica puede construirse con solo tres operaciones básicas, <strong>AND</strong>, <strong>OR</strong> y <strong>NOT</strong>, que se implementan con puertas lógicas.</p>"
+          "html": "<p>Otras señales solo pueden tomar unos pocos valores concretos: un interruptor está <em>abierto</em> o <em>cerrado</em>, nada en medio. Son <strong>digitales</strong>, porque se representan con <em>dígitos</em> (por ejemplo, <code>0</code> y <code>1</code>).</p>"
         },
         {
           "tipo": "prosa",
-          "html": "<p>Para representar otra información se <strong>agrupan bits</strong>. Con 2 bits hay cuatro combinaciones (<code>00, 01, 10, 11</code>); en general, con <code>n</code> bits se obtienen tantas combinaciones como:</p>"
+          "html": "<p>¿Por qué los ordenadores prefieren lo digital? Porque un número es <strong>robusto</strong>. Una señal analógica se va <em>ensuciando</em> con el ruido eléctrico según viaja por el circuito, y los componentes cambian con la temperatura o la edad. Un número, en cambio, no lo altera el ruido: se guarda y se copia sin perder nada, y permite procesos avanzados (comprimir música, reconocer tu voz&hellip;).</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "Para pasar de analógico a digital, un <strong>conversor analógico-digital (ADC)</strong> mide la señal muchas veces por segundo y redondea cada medida a un número; el camino inverso lo hace un <strong>DAC</strong>. Cómo funciona ese proceso (muestreo y cuantización) lo verás a fondo en el <strong>tema de conversión A/D</strong>."
+        }
+      ]
+    },
+    {
+      "titulo": "1.4 El bit: el ladrillo de todo lo digital",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Un dígito que solo puede valer <code>0</code> o <code>1</code> es un <strong>bit</strong> (de <em>binary digit</em>). Es el ladrillo con el que se construye <em>todo</em> lo digital.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>¿Cómo se mete un bit en un circuito sin que el ruido lo estropee? En lugar de una tensión cualquiera, se usan <strong>dos rangos</strong>: una tensión baja vale <code>0</code> y una tensión alta vale <code>1</code>. Entre ambos hay un margen de seguridad, así que un poco de ruido no cambia el valor. En la Raspberry Pi 4, «alto» son unos <strong>3,3&nbsp;V</strong> y «bajo», <strong>0&nbsp;V</strong>.</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "Los rangos exactos de tensión de cada nivel, y cómo conectar un botón o un LED a un pin, los verás en <strong>Teoría de circuitos</strong> y en el tema de <strong>entradas y salidas digitales</strong>."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Con bits y solo tres operaciones lógicas básicas &mdash;<strong>AND</strong>, <strong>OR</strong> y <strong>NOT</strong>&mdash; se puede construir cualquier cálculo: es el <strong>álgebra de Boole</strong>, la base de todo circuito digital.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Un solo bit distingue dos cosas (sí/no). Para representar más, se <strong>agrupan bits</strong>: con <code>n</code> bits hay tantas combinaciones distintas como:</p>"
         },
         {
           "tipo": "formula",
@@ -142,76 +103,41 @@
         },
         {
           "tipo": "prosa",
-          "html": "<p>Una agrupación de bits es una <strong>palabra</strong>; la más famosa es el <strong>byte</strong>, de 8 bits, que permite representar <code>2<sup>8</sup> = 256</code> valores (suficientes para las letras del alfabeto). En informática las palabras se restringen a múltiplos de 8 bits (8, 16, 32, 64).</p>"
-        },
-        {
-          "tipo": "prosa",
-          "html": "<p>El visualizador siguiente muestra cómo una entrada de la Raspberry Pi 4 interpreta una tensión según los umbrales V<sub>IL</sub> y V<sub>IH</sub>: mueve el deslizador para ver cuándo se lee un «0», un «1» o se cae en la zona prohibida.</p>\n<div class=\"mpi-mount\" data-componente=\"niveles-logicos\" data-config='{}'></div>"
+          "html": "<p>La agrupación más famosa es el <strong>byte</strong>: 8 bits, <code>2<sup>8</sup> = 256</code> valores, suficientes para todas las letras del alfabeto. Por eso la memoria se mide en bytes.</p>"
         }
       ]
     },
     {
-      "titulo": "Cómo se representa un bit: circuito de entrada con pull-up",
+      "titulo": "1.5 La anatomía de un sistema electrónico",
       "bloques": [
         {
           "tipo": "prosa",
-          "html": "<p>Un circuito típico para introducir un bit en un sistema digital alimentado a 3,3 V usa un <strong>pulsador</strong> <code>S1</code> y una <strong>resistencia de pull-up</strong> <code>R1</code> conectada a <code>V<sub>CC</sub></code>. Cuando se acciona <code>S1</code>, la entrada se pone a <code>0 V</code> (un <code>0</code> lógico). Cuando <code>S1</code> está en reposo, la corriente de entrada <code>I<sub>in</sub></code> circula por <code>R1</code> y la entrada queda a una tensión próxima a <code>V<sub>CC</sub></code> (un <code>1</code> lógico).</p>"
-        },
-        {
-          "tipo": "prosa",
-          "html": "<p>Con el pulsador en reposo, la caída en <code>R1</code> es <code>I<sub>in</sub>·R1</code>, de modo que la tensión que ve la entrada es <code>V<sub>in</sub> = V<sub>CC</sub> &minus; I<sub>in</sub>·R1</code>. Para que se respete el <code>1</code> lógico debe cumplirse <code>V<sub>in</sub> &#8805; V<sub>IH</sub></code>, lo que acota el valor de <code>R1</code>:</p>"
-        },
-        {
-          "tipo": "formula",
-          "descripcion": "<p>Resistencia máxima de pull-up para garantizar el «1» lógico en la entrada:</p>",
-          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>R</mi><mrow><mi>m</mi><mi>&#225;</mi><mi>x</mi></mrow></msub><mo>=</mo><mfrac><mrow><msub><mi>V</mi><mrow><mi>C</mi><mi>C</mi></mrow></msub><mo>&#8722;</mo><msub><mi>V</mi><mrow><mi>I</mi><mi>H</mi></mrow></msub></mrow><msub><mi>I</mi><mrow><mi>i</mi><mi>n</mi></mrow></msub></mfrac></mrow></math>"
-        },
-        {
-          "tipo": "formula",
-          "descripcion": "<p>Sustituyendo los valores del BCM2711 (<code>V<sub>CC</sub> = 3,3 V</code>, <code>V<sub>IH</sub> = 2 V</code>, <code>I<sub>in</sub> = 10 &#181;A</code>):</p>",
-          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>R</mi><mrow><mi>m</mi><mi>&#225;</mi><mi>x</mi></mrow></msub><mo>=</mo><mfrac><mrow><mn>3</mn><mo>,</mo><mn>3</mn><mtext>&#160;V</mtext><mo>&#8722;</mo><mn>2</mn><mtext>&#160;V</mtext></mrow><mrow><mn>10</mn><mo>&#8290;</mo><mi>&#181;</mi><mi>A</mi></mrow></mfrac><mo>=</mo><mn>130</mn><mo>&#8290;</mo><mtext>k&#937;</mtext></mrow></math>"
-        },
-        {
-          "tipo": "nota",
-          "html": "Cuanto menor sea <code>R1</code>, más holgado es el margen del <code>1</code> lógico, pero más corriente se desperdicia al pulsar. Una <code>R1</code> demasiado pequeña (p. ej. 1 &#937;) disiparía una potencia absurda al accionar el pulsador; una <code>R1</code> demasiado grande dejaría la entrada por debajo de <code>V<sub>IH</sub></code>. Valores habituales rondan los <strong>10 k&#937;</strong>, muy por debajo del límite de 130 k&#937;."
-        }
-      ]
-    },
-    {
-      "titulo": "1.5 Estructura de un sistema electrónico",
-      "bloques": [
-        {
-          "tipo": "prosa",
-          "html": "<p>En general, un sistema electrónico consta de tres partes:</p>"
+          "html": "<p>Casi cualquier sistema electrónico, por complicado que parezca, se monta con <strong>tres piezas</strong>:</p>"
         },
         {
           "tipo": "lista",
           "ordenada": false,
           "items": [
-            "<strong>Sensores</strong> para tomar información del entorno (sonido, temperatura, iluminación, velocidad…).",
-            "<strong>Circuitos de procesamiento</strong>, desde un simple amplificador hasta un microprocesador.",
-            "<strong>Actuadores</strong> para interactuar con el entorno (altavoces, motores, pantallas…)."
+            "<strong>Sensores</strong> &mdash; los <em>sentidos</em>: captan algo del entorno (sonido, temperatura, luz, velocidad&hellip;).",
+            "<strong>Procesamiento</strong> &mdash; el <em>cerebro</em>: desde un simple amplificador hasta un microcontrolador que ejecuta tu programa.",
+            "<strong>Actuadores</strong> &mdash; los <em>músculos</em>: cambian el entorno (altavoces, motores, pantallas, luces&hellip;)."
           ]
         },
         {
           "tipo": "prosa",
-          "html": "<p>Cuando la señal del sensor es analógica y el procesamiento es digital, la cadena completa es: <strong>sensor &rarr; acondicionamiento &rarr; ADC &rarr; procesado (sistema empotrado) &rarr; DAC / actuador</strong>. El acondicionamiento adapta la señal del sensor (amplificación, filtrado) al rango de entrada del ADC.</p>"
+          "html": "<p>Cuando el sensor da una señal analógica y el cerebro es digital, la cadena completa es: <strong>sensor &rarr; acondicionamiento &rarr; ADC &rarr; microcontrolador &rarr; actuador</strong>. El <em>acondicionamiento</em> adapta la señal del sensor (la amplifica o la filtra) para que el ADC pueda medirla bien.</p>"
         },
         {
           "tipo": "prosa",
-          "html": "<p>Hay dos maneras de interconectar estas partes:</p>"
+          "html": "<p>Según cómo se conecten, hay dos formas de trabajar:</p>"
         },
         {
           "tipo": "lista",
           "ordenada": false,
           "items": [
-            "<strong>Lazo abierto:</strong> el sistema extrae información del entorno sin actuar sobre él. Ejemplos: un sistema de megafonía (micrófono &rarr; amplificador &rarr; altavoz) o un termómetro digital (sensor &rarr; ADC &rarr; microprocesador &rarr; pantalla LCD).",
-            "<strong>Lazo cerrado:</strong> el sistema actúa sobre una <em>planta</em> para controlar su funcionamiento, realimentando la medida. Ejemplos: un termostato que conecta o desconecta la calefacción según una consigna, o un control de velocidad de crucero que actúa sobre el motor para mantener la velocidad constante."
+            "<strong>Lazo abierto:</strong> el sistema observa pero no influye en lo que mide. Ejemplo: un termómetro que muestra la temperatura en una pantalla.",
+            "<strong>Lazo cerrado:</strong> el sistema actúa para <em>controlar</em> lo que mide y comprueba el resultado para corregirse. Ejemplo: un termostato que enciende y apaga la calefacción para mantener la temperatura, o el control de crucero de un coche."
           ]
-        },
-        {
-          "tipo": "nota",
-          "html": "En la práctica, un sistema empotrado controla el lazo mediante un <strong>bucle de scan no bloqueante</strong>: cada iteración lee los sensores, ejecuta el algoritmo de control y actualiza los actuadores, sin quedarse «atascado» esperando (sin <em>delays</em> bloqueantes), para poder atender todas las tareas dentro de su plazo."
         }
       ]
     },
@@ -220,97 +146,76 @@
       "bloques": [
         {
           "tipo": "prosa",
-          "html": "<p>Cuando el elemento de procesamiento de un sistema electrónico es un <strong>microprocesador</strong> o un <strong>microcontrolador</strong> (un microprocesador de menores prestaciones que ya incluye todos los periféricos necesarios en un solo chip), se denomina <strong>sistema empotrado</strong> (en inglés, <em>embedded system</em>). Se llama así porque el procesador está incrustado dentro del aparato y el usuario final ni siquiera sabe que está ahí, como en un termómetro digital o un control de crucero.</p>"
+          "html": "<p>Cuando el cerebro de un sistema es un <strong>microcontrolador</strong> (o un microprocesador), hablamos de un <strong>sistema empotrado</strong> (<em>embedded system</em>). Se llama así porque el ordenador va <em>incrustado</em> dentro del aparato y el usuario ni se entera de que está ahí: nadie piensa que su lavadora lleva un ordenador, pero lo lleva.</p>"
         },
         {
           "tipo": "nota",
-          "html": "Un <strong>periférico</strong> es el circuito que permite al microprocesador interactuar con el entorno: temporizadores, conversores ADC, interfaces USB, etc. La Raspberry Pi 4 es un ordenador de placa única (<em>Single Board Computer</em>, SBC) y será la plataforma de las prácticas."
+          "html": "Un <strong>microcontrolador</strong> es un microprocesador modesto que ya trae dentro, en un solo chip, casi todo lo que necesita (memoria, temporizadores, ADC, puertos&hellip;). Esos circuitos auxiliares se llaman <strong>periféricos</strong>. La Raspberry Pi 4 de las prácticas es un ordenador de placa única (<em>Single Board Computer</em>) con todos esos periféricos a tu disposición."
         },
         {
           "tipo": "prosa",
-          "html": "<p>En un sistema en lazo cerrado que controla una planta, el procesador dispone de un <strong>tiempo limitado</strong> para medir, calcular y actuar. Si tarda más de lo debido, la planta puede quedar fuera de control. Por eso estos sistemas han de ser <strong>sistemas en tiempo real</strong>:</p>"
+          "html": "<p>Muchos sistemas empotrados tienen, además, una exigencia extra: deben responder <strong>a tiempo</strong>. Si un airbag se dispara correctamente pero medio segundo tarde, no sirve de nada. Son los <strong>sistemas en tiempo real</strong>:</p>"
         },
         {
           "tipo": "nota",
-          "html": "<strong>Definición.</strong> Un sistema informático en tiempo real es aquel en el que la <em>corrección del resultado depende tanto de su validez lógica como del instante en que se produce</em>."
+          "html": "<strong>Definición.</strong> Un sistema en tiempo real es aquel en el que el resultado no solo tiene que ser <em>correcto</em>, sino también llegar <em>en el momento adecuado</em>."
         },
         {
           "tipo": "prosa",
-          "html": "<p>No basta con que el cálculo sea correcto: ha de producirse <strong>a tiempo</strong>. En sistemas críticos puede incluso ser preferible un método aproximado y rápido a uno preciso pero lento. Para garantizar el plazo en el peor caso se necesita <strong>determinismo</strong>: el tiempo de ejecución ha de estar acotado. Un sistema en tiempo real no tiene por qué ser <em>rápido</em> en términos absolutos; su velocidad solo ha de ser acorde a la planta (p. ej., el control de un horno, con constante de tiempo de muchos segundos, puede ejecutarse cada segundo con un humilde micro de 8 bits).</p>"
+          "html": "<p>Ojo: «tiempo real» <strong>no</strong> significa «rápido», sino <strong>predecible</strong> &mdash; que el plazo está garantizado. Controlar un horno, que tarda segundos en calentarse, le sobra con responder una vez por segundo: basta un humilde micro de 8 bits. Lo que no puede hacer nunca es <em>llegar tarde</em>.</p>"
         }
       ]
     }
   ],
   "registros": {},
   "ejercicios": {
-    "introduccion-1": {
-      "titulo": "Circuito de entrada con pull-up (BCM2711)",
-      "enunciado": "<p>En el circuito de entrada de la figura 1.7, un pulsador <code>S1</code> y una resistencia de pull-up <code>R1</code> conectada a <code>V<sub>CC</sub></code> generan el valor digital de entrada de la Raspberry Pi 4. Cuando <code>S1</code> está en reposo, la corriente de entrada circula por <code>R1</code> y la tensión de entrada debe quedar dentro del rango del <code>1</code> lógico.</p>",
-      "contexto": "<ul><li>Datos del chip BCM2711: <code>V<sub>CC</sub> = 3,3 V</code>, <code>V<sub>IH</sub> = 2 V</code>, <code>I<sub>in</sub> = I<sub>IH</sub> &#8776; 10 &#181;A</code>.</li><li>Condición del «1» lógico en reposo: <code>V<sub>CC</sub> &minus; I<sub>in</sub>·R1 &#8805; V<sub>IH</sub></code>.</li></ul>",
+    "introduccion-conceptos": {
+      "titulo": "Comprueba que lo has pillado",
+      "enunciado": "<p>Tres preguntas rápidas sobre las ideas clave del tema. Sin fórmulas: solo conceptos.</p>",
+      "contexto": "<ul><li>Analógico = continuo; digital = valores discretos (números), inmunes al ruido.</li><li>Lazo abierto = observa; lazo cerrado = actúa y se corrige.</li><li>Sistema empotrado = micro incrustado; tiempo real = responde dentro de un plazo garantizado.</li></ul>",
       "preguntas": [
         {
-          "texto": "¿Cuál es el valor máximo de la resistencia de pull-up R1 para que la entrada siga viendo un «1» lógico cuando el pulsador está en reposo?",
+          "texto": "¿Por qué los sistemas digitales aguantan el ruido mejor que los analógicos?",
           "opciones": [
-            "13 kΩ",
-            "130 kΩ",
-            "1,3 MΩ",
-            "53 kΩ"
+            "Porque usan menos componentes.",
+            "Porque trabajan con números: solo hay que distinguir entre dos rangos de tensión bien separados, y el ruido no salta ese margen.",
+            "Porque funcionan a mayor frecuencia."
           ],
           "correcta": 1,
-          "explicacion": "<p>Despejando de la condición <code>V<sub>CC</sub> &minus; I<sub>in</sub>·R1 &#8805; V<sub>IH</sub></code> se obtiene <code>R<sub>máx</sub> = (V<sub>CC</sub> &minus; V<sub>IH</sub>) / I<sub>in</sub> = (3,3 &minus; 2) V / 10 &#181;A = 1,3 V / 10 &#181;A = <strong>130 kΩ</strong></code>. Con una resistencia mayor, la caída <code>I<sub>in</sub>·R1</code> dejaría la entrada por debajo de <code>V<sub>IH</sub></code> y el «1» no estaría garantizado.</p>"
+          "explicacion": "<p>En analógico, el ruido se suma a la señal y la ensucia poco a poco. En digital basta con decidir si la tensión está en el rango «bajo» (<code>0</code>) o «alto» (<code>1</code>); mientras el ruido no salte el margen entre ambos, el número leído es exacto.</p>"
         },
         {
-          "texto": "Si se eliminara R1 (entrada flotante con el pulsador en reposo), ¿qué ocurre?",
+          "texto": "Un termostato enciende y apaga la calefacción para mantener la temperatura que le pides. ¿Qué tipo de sistema es?",
           "opciones": [
-            "La entrada queda fija en 3,3 V, así que sigue funcionando bien.",
-            "La entrada queda flotante (sin referencia) y su tensión es indeterminada: puede leerse 0 o 1 de forma errática.",
-            "La entrada queda fija a 0 V y siempre se lee un 0."
+            "Lazo abierto: solo observa la temperatura.",
+            "Lazo cerrado: actúa sobre la temperatura y se corrige según la mide.",
+            "No es un sistema electrónico."
           ],
           "correcta": 1,
-          "explicacion": "<p>Sin pull-up, con el pulsador abierto la entrada no está conectada a ninguna tensión definida: queda <strong>flotante</strong>. Recoge ruido y su tensión puede caer en la zona indefinida entre <code>V<sub>IL</sub></code> y <code>V<sub>IH</sub></code>, leyéndose <code>0</code> o <code>1</code> de forma impredecible. La pull-up es la que fija el «1» en reposo.</p>"
-        }
-      ]
-    },
-    "introduccion-2": {
-      "titulo": "Muestreo y teorema de Nyquist-Shannon",
-      "enunciado": "<p>Para digitalizar una señal analógica con un ADC hay que elegir la frecuencia de muestreo y el número de bits de cuantización.</p>",
-      "contexto": "<ul><li>Teorema de Nyquist-Shannon: <code>f<sub>s</sub> &#8805; 2·f<sub>máx</sub></code>.</li><li>Niveles de cuantización con N bits: <code>L = 2<sup>N</sup></code>.</li></ul>",
-      "preguntas": [
-        {
-          "texto": "Una señal de audio contiene componentes de hasta 20 kHz. ¿Cuál es la mínima frecuencia de muestreo que permite reconstruirla exactamente?",
-          "opciones": [
-            "10 kHz",
-            "20 kHz",
-            "40 kHz",
-            "20 Hz"
-          ],
-          "correcta": 2,
-          "explicacion": "<p>Por el teorema de Nyquist-Shannon, <code>f<sub>s</sub> &#8805; 2·f<sub>máx</sub> = 2 · 20 kHz = <strong>40 kHz</strong></code>. Por eso el CD de audio muestrea a 44,1 kHz, ligeramente por encima del mínimo.</p>"
+          "explicacion": "<p>Actúa sobre lo que mide (calienta) y usa la medida para decidir si seguir o parar: eso es realimentación, es decir, <strong>lazo cerrado</strong>. Un termómetro que solo muestra la temperatura sería lazo abierto.</p>"
         },
         {
-          "texto": "¿Cuántos niveles de cuantización distintos ofrece un ADC de 10 bits, como el del MCP3008 usado en las prácticas?",
+          "texto": "«Sistema en tiempo real» significa, sobre todo, que el sistema…",
           "opciones": [
-            "100 niveles",
-            "1000 niveles",
-            "1024 niveles",
-            "20 niveles"
+            "es muy rápido, cuanto más mejor.",
+            "responde siempre dentro de un plazo garantizado, aunque ese plazo sea de segundos.",
+            "está siempre conectado a internet."
           ],
-          "correcta": 2,
-          "explicacion": "<p>El número de niveles es <code>L = 2<sup>N</sup> = 2<sup>10</sup> = <strong>1024</strong></code>. Más bits implican escalones de cuantización más finos y, por tanto, menor error de cuantización.</p>"
+          "correcta": 1,
+          "explicacion": "<p>Tiempo real = <em>predecible</em>, no necesariamente veloz. Lo importante es garantizar el plazo: el control de un horno puede ir «despacio» (una vez por segundo) y aun así ser de tiempo real, mientras no llegue tarde.</p>"
         }
       ]
     }
   },
   "ejerciciosEnTema": [
-    "introduccion-1",
-    "introduccion-2"
+    "introduccion-conceptos"
   ],
   "resumen": [
-    "La <strong>información</strong> fluye mediante <strong>señales</strong>; los sistemas electrónicos sirven para extraer y procesar esa información.",
-    "Las señales <strong>analógicas</strong> son continuas en tiempo y magnitud; las <strong>digitales</strong> toman valores discretos. Los sistemas digitales son inmunes al ruido y al envejecimiento.",
-    "La conversión A/D consta de <strong>muestreo</strong> (Nyquist-Shannon: <code>f<sub>s</sub> &#8805; 2·f<sub>máx</sub></code>) y <strong>cuantización</strong> (<code>2<sup>N</sup></code> niveles con N bits). La realiza el <strong>ADC</strong>; el inverso, el <strong>DAC</strong>.",
-    "Un <strong>bit</strong> se representa con rangos de tensión. En la Raspberry Pi 4 (BCM2711): <code>V<sub>CC</sub> = 3,3 V</code>, <code>V<sub>IL</sub> = 0,8 V</code>, <code>V<sub>IH</sub> = 2 V</code>. Con <code>n</code> bits hay <code>2<sup>n</sup></code> combinaciones; 1 byte = 8 bits = 256 valores.",
-    "En un circuito de entrada con pull-up, la resistencia máxima que respeta el «1» lógico es <code>R<sub>máx</sub> = (V<sub>CC</sub> &minus; V<sub>IH</sub>) / I<sub>in</sub> = 130 kΩ</code>.",
-    "Estructura: <strong>sensor &rarr; acondicionamiento &rarr; ADC &rarr; procesado &rarr; DAC/actuador</strong>, en lazo abierto o cerrado. Si el procesador es un micro, es un <strong>sistema empotrado</strong>; si la corrección depende también del instante, un <strong>sistema en tiempo real</strong> (que exige determinismo)."
+    "Un <strong>sistema electrónico</strong> sirve para <strong>medir</strong> el mundo, <strong>decidir</strong> y <strong>actuar</strong>; en la asignatura aprenderás a construirlos con una <strong>Raspberry Pi 4</strong> en Python.",
+    "La <strong>información</strong> viaja en <strong>señales</strong> (variaciones de una magnitud física), y los sistemas electrónicos sirven para extraerla.",
+    "Las señales <strong>analógicas</strong> son continuas; las <strong>digitales</strong> toman valores discretos. Lo digital gana porque un número es inmune al ruido y al envejecimiento.",
+    "El <strong>bit</strong> (<code>0</code> o <code>1</code>) es el ladrillo de lo digital; se representa con dos rangos de tensión. Con <code>n</code> bits hay <code>2<sup>n</sup></code> combinaciones, y 1 byte = 8 bits = 256 valores.",
+    "Todo sistema sigue la cadena <strong>sensor &rarr; acondicionamiento &rarr; ADC &rarr; procesado &rarr; actuador</strong>, en <strong>lazo abierto</strong> (observa) o <strong>lazo cerrado</strong> (controla).",
+    "Si el cerebro es un micro, es un <strong>sistema empotrado</strong>; si además debe responder a tiempo (de forma <em>predecible</em>, no necesariamente rápida), es un <strong>sistema en tiempo real</strong>."
   ]
 }

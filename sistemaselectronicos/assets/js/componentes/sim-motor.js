@@ -1,9 +1,13 @@
 /*
- * Componente "sim-motor": simulador del motor del ejemplo 10.7.
- * La misma interacción que el programa: cada pulsación de RB5 sube el factor
- * de servicio un 10 % (y tras el 100 % vuelve a 0). Se ve el OC1RS calculado
- * exactamente como en el ejemplo (división entera de 249·duty/100), el pulso
- * dentro del periodo de 50 µs y un motor que gira más o menos rápido.
+ * Componente "sim-motor": regulación por PWM de una carga (motor/LED) en la Pi 4.
+ * Misma idea que el ejemplo de las transparencias con PWMLED: cada pulsación sube
+ * el factor de servicio un 10 % (y tras el 100 % vuelve a 0). Se ve el .value que
+ * se escribiría (duty/100), el tiempo a nivel alto dentro del periodo y una carga
+ * que gira/luce más o menos según el ciclo de trabajo.
+ *   mi_led = PWMLED(20, frequency=200)   # PWM por software, 200 Hz → T = 5 ms
+ *   mi_led.value = valor/100             # valor de 0 a 100 en pasos de 10
+ * (Para un motor de verdad se usa un driver y se elige f ≥ 20 kHz, fuera del
+ * rango audible; aquí mantenemos los 200 Hz del ejemplo del LED.)
  *
  * Uso: <div class="mpi-mount" data-componente="sim-motor" data-config='{}'></div>
  */
@@ -11,25 +15,28 @@ window.MPI = window.MPI || {};
 MPI.componentes = MPI.componentes || {};
 
 (function () {
-  var PERIODO = 249;   // PR2 para 20 kHz con PBCLK = 5 MHz
+  function num(x, dec) { return x.toFixed(dec).replace('.', ','); }
+
+  var FREC = 200;                 // Hz, como el ejemplo PWMLED(20, frequency=200)
+  var PERIODO_MS = 1000 / FREC;   // 5 ms
 
   MPI.componentes['sim-motor'] = function (el, cfg) {
     var duty = 0;      // factor de servicio en %
 
     el.classList.add('mpi-motor');
     el.innerHTML =
-      '<div class="mpi-sim-cab">Simulador del motor (OC1 en RC7 · PWM de 20 kHz · PR2 = 249)</div>' +
+      '<div class="mpi-sim-cab">Regulación por PWM (PWMLED · GPIO20 · 200 Hz · T = 5 ms)</div>' +
       '<div class="sm-cuerpo">' +
         '<div class="sm-col">' +
-          '<button type="button" class="sm-pulsador">🔘 Pulsación de RB5<small>+10 % de factor de servicio</small></button>' +
+          '<button type="button" class="sm-pulsador">🔘 Subir factor de servicio<small>+10 % (tras el 100 % vuelve a 0)</small></button>' +
           '<table class="cb-tabla">' +
             '<tr><td>Factor de servicio</td><td class="sm-duty"></td></tr>' +
-            '<tr><td>OC1RS = 249·duty/100 (trunca)</td><td class="sm-ocrs"></td></tr>' +
-            '<tr><td>Tiempo a nivel alto</td><td class="sm-ton"></td></tr>' +
+            '<tr><td>mi_led.value = duty/100</td><td class="sm-value"></td></tr>' +
+            '<tr><td>Tiempo a nivel alto (value·T)</td><td class="sm-ton"></td></tr>' +
           '</table>' +
         '</div>' +
         '<div class="sm-col sm-centro">' +
-          '<svg class="sm-motorsvg" viewBox="0 0 120 120" aria-label="Motor girando">' +
+          '<svg class="sm-motorsvg" viewBox="0 0 120 120" aria-label="Carga regulada por PWM">' +
             '<circle cx="60" cy="60" r="52" fill="var(--bg-3)" stroke="var(--borde)" stroke-width="3"/>' +
             '<g class="sm-rotor">' +
               '<path d="M60 60 L60 14 A46 46 0 0 1 88 24 Z" fill="var(--acento)" opacity=".85"/>' +
@@ -41,18 +48,18 @@ MPI.componentes = MPI.componentes || {};
           '<div class="sm-estado"></div>' +
         '</div>' +
       '</div>' +
-      '<div class="sv-onda"><div class="sv-pulso"></div><span class="sv-onda-t">periodo: 50 µs (20 kHz)</span></div>' +
-      '<pre class="sm-codigo"><code class="lang-c"></code></pre>';
+      '<div class="sv-onda"><div class="sv-pulso"></div><span class="sv-onda-t">periodo: 5 ms (200 Hz)</span></div>' +
+      '<pre class="sm-codigo"><code class="lang-python"></code></pre>';
 
     var rotor = el.querySelector('.sm-rotor');
 
     function pintar() {
-      var ocrs = Math.floor(PERIODO * duty / 100);    // división entera, como en C
-      var ton = ocrs * 0.2;                            // µs (cuentas de 200 ns)
+      var value = duty / 100;                 // .value en [0, 1]
+      var ton = value * PERIODO_MS;           // ms a nivel alto
 
       el.querySelector('.sm-duty').textContent = duty + ' %';
-      el.querySelector('.sm-ocrs').textContent = ocrs;
-      el.querySelector('.sm-ton').textContent = ton.toFixed(1).replace('.', ',') + ' µs';
+      el.querySelector('.sm-value').textContent = num(value, 2);
+      el.querySelector('.sm-ton').textContent = num(ton, 2) + ' ms';
       el.querySelector('.sv-pulso').style.width = duty + '%';
 
       if (duty === 0) {
@@ -61,20 +68,19 @@ MPI.componentes = MPI.componentes || {};
         rotor.style.animation = 'sm-gira ' + (4 / (duty / 10)) + 's linear infinite';
       }
       el.querySelector('.sm-estado').innerHTML = duty === 0
-        ? 'Motor <strong>parado</strong> — y sin apagar nada: basta <code>OC1RS = 0</code>'
-        : 'Motor girando al <strong>' + duty + ' %</strong> de su velocidad';
+        ? 'Carga <strong>parada</strong> — basta <code>mi_led.value = 0</code>'
+        : 'Girando/luciendo al <strong>' + duty + ' %</strong>';
 
       el.querySelector('.sm-codigo code').textContent =
-        'factor_servicio = ' + duty + ';\n' +
-        'OC1RS = PERIODO * factor_servicio / 100;   // = ' + ocrs +
-        (duty > 0 ? '  (24,9 -> 24 a 10 %: trunca)' : '  (motor parado)') + '\n' +
-        '// OC1R no se toca: el modulo lo recarga solo al final de cada periodo';
+        'mi_led.value = ' + num(value, 2) + '       # duty ' + duty + ' %, ' +
+        't_on = ' + num(ton, 2) + ' ms' + (duty === 0 ? '  (carga parada)' : '');
+      el.querySelector('.sm-codigo code').removeAttribute('data-resaltado');
       if (MPI.resaltarTodo) MPI.resaltarTodo(el);
     }
 
     el.querySelector('.sm-pulsador').addEventListener('click', function () {
       duty += 10;
-      if (duty > 100) duty = 0;   // como el programa: tras el 100 % se vuelve a 0
+      if (duty > 100) duty = 0;   // como el ejemplo: tras el 100 % se vuelve a 0
       pintar();
     });
     pintar();

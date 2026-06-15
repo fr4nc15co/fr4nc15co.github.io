@@ -1,0 +1,320 @@
+{
+  "slug": "teoria-circuitos-componentes",
+  "titulo": "Teoría de circuitos (Componentes)",
+  "temaNum": 3,
+  "lead": "Los <strong>componentes de entrada y salida</strong> del laboratorio, vistos como circuitos: cómo se montan los <strong>pulsadores</strong> (pull-up/pull-down y antirrebote), los <strong>LEDs</strong> (con su resistencia limitadora), el <strong>transistor</strong> bipolar como interruptor y el <strong>relé</strong> electromecánico para cargas de potencia. Continúa la teoría de circuitos del Tema 2 y es el puente hacia <em>«Entradas y salidas digitales»</em>.",
+  "secciones": [
+    {
+      "titulo": "3.1 Pulsadores: ¿pull-up o pull-down?",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Un pin de entrada «al aire» no tiene un valor lógico definido. Por eso un pulsador se monta siempre con una <strong>resistencia de polarización</strong> que fija el nivel de reposo, y el botón lleva el pin al nivel contrario al apretarlo:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Pull-up:</strong> la resistencia conecta el pin a <em>V<sub>CC</sub></em>. En reposo se lee <strong>1</strong>; al pulsar, el botón lo lleva a masa y se lee <strong>0</strong> (pulsador «activo a nivel bajo»).",
+            "<strong>Pull-down:</strong> la resistencia conecta el pin a masa. En reposo se lee <strong>0</strong>; al pulsar, el botón lo lleva a <em>V<sub>CC</sub></em> y se lee <strong>1</strong> (pulsador «activo a nivel alto»)."
+          ]
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>¿Cuál elegir? Por seguridad ante fallo:</strong> para RESET y órdenes de <strong>paro</strong> se usa <strong>pull-up</strong> &#8594; si se pierde la conexión del pulsador, el microcontrolador lee 0 (como si estuviera pulsado) y <em>detiene</em> el sistema (estado más seguro). Para órdenes de <strong>marcha</strong> se usa <strong>pull-down</strong> &#8594; si falla la conexión, no se puede arrancar un sistema defectuoso (no es posible generar un 1 lógico por accidente)."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>En la <strong>iMAT HAT</strong> los cuatro pulsadores (GPIO7, GPIO16, GPIO17, GPIO19) están en <strong>pull-up</strong> &#8594; activos a nivel bajo. La resistencia de pull-up es la <strong>interna</strong> de la Raspberry Pi, que se activa por código (<code>pull_up_down=GPIO.PUD_UP</code> en RPi.GPIO, o <code>pull_up=True</code> en gpiozero). Pruébalo: mantén el botón apretado y mira qué nivel se lee según el montaje (y cómo lo abstrae gpiozero).</p>\n<div class=\"mpi-mount\" data-componente=\"sim-gpio\" data-config='{\"modo\":\"pulsador\"}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<div class=\"mpi-mount\" data-componente=\"fig-circuito\" data-config='{\"fig\":\"pullup\"}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<div class=\"mpi-mount\" data-componente=\"fig-circuito\" data-config='{\"fig\":\"pulldown\"}'></div>"
+        }
+      ]
+    },
+    {
+      "titulo": "3.2 Pulsadores: rebotes y antirrebote",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Los contactos mecánicos de un pulsador no cierran limpiamente: durante unos milisegundos <strong>rebotan</strong>, generando varios flancos 0&#8594;1&#8594;0 muy rápidos. Si el programa cuenta flancos (por ejemplo, un contador), un solo apretón puede contar como varios.</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Antirrebote por hardware:</strong> un <strong>condensador</strong> en paralelo con el pulsador forma un filtro RC que «suaviza» la señal y elimina los rebotes (la tensión ya no puede saltar de golpe).",
+            "<strong>Antirrebote por software:</strong> tras detectar el flanco, se ignora la entrada durante unos milisegundos (o se espera a que la lectura sea estable)."
+          ]
+        },
+        {
+          "tipo": "nota",
+          "html": "El condensador del antirrebote es el mismo concepto del transitorio RC que se estudia en <em>«Teoría de circuitos (C y L)»</em>: la constante <em>&#964;</em>=<em>RC</em> se elige más larga que la duración de los rebotes (unos ms) pero mucho más corta que el tiempo entre pulsaciones reales."
+        }
+      ]
+    },
+    {
+      "titulo": "3.3 LED y diodos",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Un <strong>diodo</strong> es un componente que deja pasar la corriente en un solo sentido: conduce en <strong>directa</strong> (del ánodo al cátodo) y bloquea en <strong>inversa</strong>. Al conducir, mantiene entre sus bornes una caída de tensión casi constante, la <strong>tensión umbral</strong> <em>V<sub>&#947;</sub></em> (&#8776;0,7&#160;V en un diodo de silicio).</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El <strong>LED</strong> (diodo emisor de luz) es un diodo que luce al conducir. Su tensión umbral es mayor y depende del color (&#8776;1,8&#160;V en rojo, hasta &#8776;3&#160;V en azul/blanco). Como su curva es muy abrupta, <strong>nunca</strong> se conecta directamente a una fuente: hace falta una <strong>resistencia limitadora</strong> en serie que fije la corriente.</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Resistencia limitadora para una corriente <em>I<sub>LED</sub></em> deseada:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mi>R</mi><mo>=</mo><mfrac><mrow><msub><mi>V</mi><mi>CC</mi></msub><mo>&#8722;</mo><msub><mi>V</mi><mi>LED</mi></msub></mrow><msub><mi>I</mi><mi>LED</mi></msub></mfrac></mrow></math>"
+        },
+        {
+          "tipo": "nota",
+          "html": "Ejemplo: un LED rojo (<em>V<sub>LED</sub></em>&#8776;2&#160;V) a 10&#160;mA desde un pin de 3,3&#160;V necesita <em>R</em>=(3,3&minus;2)/0,01=<strong>130&#160;&#937;</strong>."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<div class=\"mpi-mount\" data-componente=\"fig-circuito\" data-config='{\"fig\":\"led-serie\"}'></div>"
+        }
+      ]
+    },
+    {
+      "titulo": "3.4 El LED en la salida: ¿pull-up o pull-down?",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Igual que en los pulsadores, un LED conectado a un pin de salida puede montarse de dos formas según por dónde reciba la corriente:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Activo a nivel alto (pull-down):</strong> el <strong>ánodo</strong> va al pin y el cátodo a masa (con la resistencia). El pin <em>entrega</em> (source) la corriente; el LED luce cuando el pin está a <strong>1</strong>.",
+            "<strong>Activo a nivel bajo (pull-up):</strong> el cátodo va al pin y el <strong>ánodo</strong> a <em>V<sub>CC</sub></em> (con la resistencia). El pin <em>absorbe</em> (sink) la corriente; el LED luce cuando el pin está a <strong>0</strong>."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>En la <strong>iMAT HAT</strong> los ocho LEDs (GPIO20 a GPIO27) están montados en <strong>pull-down</strong> &#8594; <strong>activos a nivel alto</strong>: lucen al poner el pin a 1. Pruébalo: conmuta el pin y cambia el montaje para ver cuándo se enciende.</p>\n<div class=\"mpi-mount\" data-componente=\"sim-gpio\" data-config='{\"modo\":\"led\"}'></div>"
+        }
+      ]
+    },
+    {
+      "titulo": "3.5 El transistor bipolar NPN",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Un pin de la Raspberry Pi solo entrega unos pocos miliamperios, insuficientes para una bombilla o un motor. El <strong>transistor bipolar NPN</strong> resuelve esto: controla la corriente que entra por el <strong>colector</strong> mediante una corriente mucho menor que entra por la <strong>base</strong>; ambas salen por el <strong>emisor</strong>. La relación entre ellas es la ganancia <em>h<sub>FE</sub></em> (también llamada <em>&#946;</em>).</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>En la <strong>zona lineal</strong>, el transistor actúa como amplificador de corriente:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>i</mi><mi>C</mi></msub><mo>=</mo><mi>&#946;</mi><mo>&#8901;</mo><msub><mi>i</mi><mi>B</mi></msub></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Para usarlo como <strong>interruptor</strong> (encender/apagar una carga) nos interesa la <strong>saturación</strong>: si inyectamos por la base más corriente de la que la relación lineal pediría, el transistor se satura y se comporta como un interruptor cerrado (ON), con una caída <em>V<sub>CE(sat)</sub></em> muy pequeña.</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Condición de saturación (interruptor ON):</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>i</mi><mi>B</mi></msub><mo>&gt;</mo><mfrac><msub><mi>i</mi><mi>C</mi></msub><mi>&#946;</mi></mfrac></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<div class=\"mpi-mount\" data-componente=\"fig-circuito\" data-config='{\"fig\":\"transistor\"}'></div>"
+        }
+      ]
+    },
+    {
+      "titulo": "3.6 Diseño con el transistor PN2222A (ejemplo)",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Queremos alimentar una <strong>bombilla de 2&#160;W a 12&#160;V</strong> con el transistor <strong>PN2222A</strong>, accionándolo desde un pin de la Raspberry Pi (3,3&#160;V). Del datasheet del PN2222A: <em>V<sub>BE</sub></em>&#8776;0,7&#160;V, <em>I<sub>C,máx</sub></em>=500&#160;mA y, a esa corriente, <em>h<sub>FE</sub></em> (&#946;) mínimo &#8776;100.</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": true,
+          "items": [
+            "<strong>Corriente de colector</strong> (la de la bombilla): <em>I<sub>C</sub></em>=<em>P</em>/<em>V</em>=2&#160;W/12&#160;V=<strong>166,7&#160;mA</strong> (menor que los 500&#160;mA máximos &#10003;).",
+            "<strong>Corriente de base mínima</strong> para saturar: <em>I<sub>B,mín</sub></em>=<em>I<sub>C</sub></em>/<em>&#946;</em>=166,7&#160;mA/100=<strong>1,67&#160;mA</strong>.",
+            "<strong>Factor de seguridad</strong> <em>k</em>=2 para asegurar la saturación: <em>I<sub>B</sub></em>=2&#8901;1,67&#160;mA=<strong>3,33&#160;mA</strong> (sigue por debajo del límite del pin, &#8776;7&#160;mA &#10003;).",
+            "<strong>Resistencia de base:</strong> <em>R<sub>B</sub></em>=(<em>V<sub>pin</sub></em>&#8722;<em>V<sub>BE</sub></em>)/<em>I<sub>B</sub></em>=(3,3&#8722;0,7)/3,33&#160;mA&#8776;<strong>780&#160;&#937;</strong> &#8594; normalizada cercana <strong>820&#160;&#937;</strong>."
+          ]
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Resumen del cálculo de la resistencia de base:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>R</mi><mi>B</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>V</mi><mi>pin</mi></msub><mo>&#8722;</mo><msub><mi>V</mi><mi>BE</mi></msub></mrow><mrow><mi>k</mi><mo>&#8901;</mo><msub><mi>I</mi><mrow><mi>B</mi><mo>,</mo><mi>mín</mi></mrow></msub></mrow></mfrac><mo>=</mo><mfrac><mrow><mn>3</mn><mo>,</mo><mn>3</mn><mo>&#8722;</mo><mn>0</mn><mo>,</mo><mn>7</mn></mrow><mrow><mn>2</mn><mo>&#8901;</mo><mn>1</mn><mo>,</mo><mn>67</mn><mtext>&#160;mA</mtext></mrow></mfrac><mo>&#8776;</mo><mn>780</mn><mtext>&#160;&#937;</mtext></mrow></math>"
+        },
+        {
+          "tipo": "nota",
+          "html": "Al normalizar: si usas un factor de seguridad <em>k</em>=1 (justo), elige la resistencia normalizada <strong>inferior</strong> para que la corriente de base sea algo mayor y nunca menor que la necesaria. Con <em>k</em>=2 sobra margen y la normalizada más cercana vale."
+        }
+      ]
+    },
+    {
+      "titulo": "3.7 El relé electromecánico",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Cuando hay que conmutar cargas de <strong>mucha mayor potencia</strong> (por ejemplo 220&#160;V en alterna) se usa un <strong>relé electromecánico</strong>: una bobina que, al recibir corriente, mueve unos contactos a modo de interruptor. La gran ventaja es el <strong>aislamiento galvánico</strong>: el circuito de control (baja tensión) y el de potencia (220&#160;V) no comparten conexión eléctrica.</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Sin tensión en la bobina:</strong> los contactos están en su posición de reposo (normalmente cerrado / normalmente abierto).",
+            "<strong>Con tensión en la bobina:</strong> los contactos conmutan a la otra posición.",
+            "<strong>Contras:</strong> son lentos y tienen vida útil limitada (número de conmutaciones).",
+            "<strong>Imprescindible:</strong> un <strong>diodo de protección</strong> (en antiparalelo con la bobina) para que la corriente de la bobina se descargue al apagar y no genere una sobretensión que destruya el transistor (una bobina genera <em>v</em>=<em>L</em>&#8901;d<em>i</em>/d<em>t</em> al cortar bruscamente su corriente)."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<div class=\"mpi-mount\" data-componente=\"fig-circuito\" data-config='{\"fig\":\"rele\"}'></div>"
+        }
+      ]
+    },
+    {
+      "titulo": "3.8 Diseño de un relé (ejemplo: 3 bombillas 220 V)",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Queremos encender <strong>3 bombillas de 4,5&#160;W a 220&#160;V</strong>. Elegimos el relé <strong>Kemet EC2-3</strong>, que aguanta <strong>0,6&#160;A y 250&#160;V</strong> en su salida y se activa con <strong>3,3&#160;V</strong>; su bobina tiene una resistencia <em>R</em>=64,3&#160;&#937;. Lo accionamos con un PN2222A.</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": true,
+          "items": [
+            "<strong>Corriente de la carga</strong> (lado 220&#160;V): <em>I</em>=<em>P</em>/<em>V</em>=(3&#8901;4,5&#160;W)/220&#160;V=13,5/220&#8776;<strong>61&#160;mA</strong> (muy por debajo de los 0,6&#160;A del relé &#10003;).",
+            "<strong>Corriente de la bobina</strong> (lo que ve el transistor): <em>I<sub>C</sub></em>=<em>V</em>/<em>R</em>=3,3&#160;V/64,3&#160;&#937;&#8776;<strong>51&#160;mA</strong>.",
+            "<strong>Diseño del transistor:</strong> con <em>&#946;</em>&#8776;100, <em>I<sub>B,mín</sub></em>=51/100&#8776;0,51&#160;mA; con <em>k</em>=2, <em>I<sub>B</sub></em>&#8776;1&#160;mA y <em>R<sub>B</sub></em>=(3,3&#8722;0,7)/1&#160;mA&#8776;<strong>2,6&#160;k&#937;</strong> (normalizada 2,2&#160;k&#937;).",
+            "<strong>Diodo de protección:</strong> en antiparalelo con la bobina; con aguantar la corriente de la bobina (&#8776;50&#160;mA) y 3,3&#160;V es suficiente."
+          ]
+        },
+        {
+          "tipo": "nota",
+          "html": "Fíjate en la cadena de etapas: el pin de 3,3&#160;mA controla el transistor, el transistor controla la bobina del relé (&#8776;51&#160;mA), y los contactos del relé controlan los 220&#160;V de las bombillas. Cada etapa amplifica la potencia que la anterior no podía manejar."
+        }
+      ]
+    }
+  ],
+  "registros": {},
+  "ejercicios": {
+    "tc-led": {
+      "titulo": "Resistencia limitadora de un LED",
+      "enunciado": "<p>Quieres encender un <strong>LED rojo</strong> (tensión umbral <em>V<sub>LED</sub></em>&#8776;2&#160;V, corriente nominal 10&#160;mA) desde un pin de la Raspberry Pi de 3,3&#160;V, en montaje <strong>activo a nivel alto</strong> (el pin entrega la corriente).</p>",
+      "contexto": "<ul><li>El LED mantiene casi fija su tensión umbral <em>V<sub>LED</sub></em> mientras conduce.</li><li>La resistencia en serie absorbe la diferencia y fija la corriente: <em>R</em>=(<em>V<sub>CC</sub></em>&#8722;<em>V<sub>LED</sub></em>)/<em>I<sub>LED</sub></em>.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Por qué hace falta una resistencia en serie con el LED?",
+          "opciones": [
+            "Para limitar la corriente: la curva del LED es muy abrupta y sin resistencia la corriente se dispara y lo destruye",
+            "Para aumentar el brillo del LED",
+            "Para que el LED encienda más rápido",
+            "No hace falta, se puede conectar directamente al pin"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>El LED apenas cambia su tensión al variar la corriente, así que es la resistencia la que fija cuánta corriente circula. Sin ella, la corriente sería excesiva y quemaría el LED (o el pin).</p>"
+        },
+        {
+          "texto": "¿Cuánto vale la resistencia limitadora?",
+          "opciones": [
+            "130 &#937;",
+            "330 &#937;",
+            "1,3 k&#937;",
+            "53 &#937;"
+          ],
+          "correcta": 0,
+          "explicacion": "<p><em>R</em> = (<em>V<sub>CC</sub></em>&#8722;<em>V<sub>LED</sub></em>)/<em>I<sub>LED</sub></em> = (3,3&#160;V&#8722;2&#160;V)/10&#160;mA = 1,3&#160;V/0,01&#160;A = <strong>130&#160;&#937;</strong>.</p>"
+        }
+      ]
+    },
+    "tc-transistor": {
+      "titulo": "Diseño de la base de un transistor (PN2222A)",
+      "enunciado": "<p>Vas a encender una <strong>bombilla de 2&#160;W a 12&#160;V</strong> con un transistor <strong>PN2222A</strong> usado como interruptor, accionado desde un pin de 3,3&#160;V. Datos del transistor: <em>V<sub>BE</sub></em>&#8776;0,7&#160;V y <em>&#946;</em>&#8776;100 a esa corriente. Usa un factor de seguridad <em>k</em>=2.</p>",
+      "contexto": "<ul><li><strong>Colector:</strong> <em>I<sub>C</sub></em>=<em>P</em>/<em>V</em>.</li><li><strong>Base mínima:</strong> <em>I<sub>B,mín</sub></em>=<em>I<sub>C</sub></em>/<em>&#946;</em>; con seguridad, <em>I<sub>B</sub></em>=<em>k</em>&#8901;<em>I<sub>B,mín</sub></em>.</li><li><strong>Resistencia de base:</strong> <em>R<sub>B</sub></em>=(<em>V<sub>pin</sub></em>&#8722;<em>V<sub>BE</sub></em>)/<em>I<sub>B</sub></em>.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Cuál es la corriente de colector I_C que debe conducir el transistor?",
+          "opciones": [
+            "166,7 mA",
+            "24 mA",
+            "500 mA",
+            "1,67 mA"
+          ],
+          "correcta": 0,
+          "explicacion": "<p><em>I<sub>C</sub></em> = <em>P</em>/<em>V</em> = 2&#160;W / 12&#160;V = <strong>166,7&#160;mA</strong>. Es menor que la <em>I<sub>C,máx</sub></em>=500&#160;mA del PN2222A, así que vale.</p>"
+        },
+        {
+          "texto": "Con β=100 y k=2, ¿qué corriente de base I_B usamos?",
+          "opciones": [
+            "3,33 mA",
+            "1,67 mA",
+            "16,7 mA",
+            "0,83 mA"
+          ],
+          "correcta": 0,
+          "explicacion": "<p><em>I<sub>B,mín</sub></em> = <em>I<sub>C</sub></em>/<em>&#946;</em> = 166,7&#160;mA/100 = 1,67&#160;mA. Con el factor de seguridad <em>k</em>=2: <em>I<sub>B</sub></em> = 2&#8901;1,67&#160;mA = <strong>3,33&#160;mA</strong> (por debajo del límite del pin).</p>"
+        },
+        {
+          "texto": "¿Cuál es la resistencia de base R_B aproximada?",
+          "opciones": [
+            "&#8776; 780 &#937;",
+            "&#8776; 3,6 k&#937;",
+            "&#8776; 130 &#937;",
+            "&#8776; 78 &#937;"
+          ],
+          "correcta": 0,
+          "explicacion": "<p><em>R<sub>B</sub></em> = (<em>V<sub>pin</sub></em>&#8722;<em>V<sub>BE</sub></em>)/<em>I<sub>B</sub></em> = (3,3&#160;V&#8722;0,7&#160;V)/3,33&#160;mA = 2,6&#160;V/0,00333&#160;A &#8776; <strong>780&#160;&#937;</strong> (normalizada cercana, 820&#160;&#937;).</p>"
+        }
+      ]
+    },
+    "tc-componentes-examen": {
+      "titulo": "Examen Intersemestral 2026 (marzo) &mdash; Problema 3.1: baliza V16 con 2N2222",
+      "enunciado": "<p>Adaptado del <strong>Examen Intersemestral 2026</strong> (marzo), Problema 3.1 (baliza V16): se acciona un <strong>motor de 15&#160;W a 30&#160;V</strong> con un transistor <strong>2N2222</strong> usado como interruptor, controlado desde <strong>GPIO18</strong> (3,3&#160;V, l&#237;mite de corriente <strong>7&#160;mA</strong>). Datos del transistor: <em>h<sub>FE</sub></em> entre 100 y 300, <em>V<sub>BE</sub></em>=0,75&#160;V.</p>",
+      "contexto": "<ul><li><strong>Colector:</strong> <em>I<sub>C</sub></em>=<em>P</em>/<em>V</em>.</li><li><strong>Base m&#237;nima para saturar:</strong> con el caso peor (<em>h<sub>FE</sub></em> m&#237;nimo), <em>I<sub>B,m&#237;n</sub></em>=<em>I<sub>C</sub></em>/<em>h<sub>FE,m&#237;n</sub></em>.</li><li>El pin solo puede dar <strong>7&#160;mA</strong>: un factor de seguridad &#215;2 sobre <em>I<sub>B,m&#237;n</sub></em> superar&#237;a ese l&#237;mite.</li><li><strong>Resistencia de base:</strong> <em>R<sub>B</sub></em>=(<em>V<sub>pin</sub></em>&#8722;<em>V<sub>BE</sub></em>)/<em>I<sub>B</sub></em>.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Qué corriente de colector I_C y qué corriente de base mínima I_B,mín resultan?",
+          "opciones": [
+            "I_C = 0,5 A e I_B,mín = 5 mA",
+            "I_C = 0,5 A e I_B,mín = 1,67 mA",
+            "I_C = 2 A e I_B,mín = 20 mA",
+            "I_C = 0,5 A e I_B,mín = 0,5 mA"
+          ],
+          "correcta": 0,
+          "explicacion": "<p><em>I<sub>C</sub></em>=<em>P</em>/<em>V</em>=15&#160;W/30&#160;V=<strong>0,5&#160;A</strong>. Con el caso peor (<em>h<sub>FE,m&#237;n</sub></em>=100): <em>I<sub>B,m&#237;n</sub></em>=<em>I<sub>C</sub></em>/<em>h<sub>FE,m&#237;n</sub></em>=0,5&#160;A/100=<strong>5&#160;mA</strong>.</p>"
+        },
+        {
+          "texto": "¿Por qué no se puede aplicar el factor de seguridad ×2 habitual, y qué R_B resulta?",
+          "opciones": [
+            "Porque 2·5 mA = 10 mA superaría el límite de 7 mA del GPIO; se usa I_B = 5 mA (eligiendo la R_B comercial inferior), R_B ≈ 510 Ω",
+            "Porque 2·5 mA = 10 mA < 7 mA y por eso sí cabe; R_B ≈ 255 Ω",
+            "Porque el transistor no llegaría a saturar; R_B ≈ 1 kΩ",
+            "Porque V_BE es demasiado alta; R_B ≈ 5,1 kΩ"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Un factor &#215;2 dar&#237;a <em>I<sub>B</sub></em>=2&#8901;5&#160;mA=<strong>10&#160;mA</strong>, por encima de los <strong>7&#160;mA</strong> que admite GPIO18: <strong>no cabe factor de seguridad</strong>. Se trabaja con <em>I<sub>B</sub></em>=5&#160;mA y se elige la resistencia comercial <strong>inferior</strong> m&#225;s pr&#243;xima (m&#225;s corriente, nunca menos): <em>R<sub>B</sub></em>=(<em>V<sub>pin</sub></em>&#8722;<em>V<sub>BE</sub></em>)/<em>I<sub>B</sub></em>=(3,3&#8722;0,75)/5&#160;mA=2,55&#160;V/0,005&#160;A=510&#160;&#937; &#8776; <strong>510&#160;&#937;</strong>.</p>"
+        }
+      ]
+    }
+  },
+  "ejerciciosEnTema": [
+    "tc-led",
+    "tc-transistor",
+    "tc-componentes-examen"
+  ],
+  "resumen": [
+    "<strong>Entradas:</strong> pulsadores en <strong>pull-up</strong> (reposo 1, activo a nivel bajo; iMAT HAT) o <strong>pull-down</strong> (reposo 0); el nivel eléctrico (<code>GPIO.input</code>) no es lo mismo que <code>boton.value</code> de gpiozero (1 si pulsado); el condensador antirrebote filtra los rebotes.",
+    "<strong>Salidas:</strong> el <strong>LED</strong> necesita resistencia limitadora <em>R</em>=(<em>V<sub>CC</sub></em>&#8722;<em>V<sub>LED</sub></em>)/<em>I</em> (en la iMAT HAT son activos a nivel alto); para más potencia, el <strong>transistor</strong> NPN como interruptor (<em>i<sub>B</sub></em>&gt;<em>i<sub>C</sub></em>/&#946;) y el <strong>relé</strong> (con diodo de protección) para 220&#160;V con aislamiento galvánico."
+  ]
+}

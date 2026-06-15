@@ -1,11 +1,11 @@
 {
   "slug": "amplificadores-operacionales",
   "titulo": "Amplificadores operacionales",
-  "temaNum": 5,
+  "temaNum": 8,
   "lead": "El <strong>amplificador operacional</strong> (AO) es uno de los componentes analógicos más versátiles: amplifica la <em>diferencia</em> de sus dos entradas y, según el circuito que lo rodee, realiza operaciones (sumar, restar, comparar, adaptar impedancias). Su modelo ideal es muy sencillo y los circuitos reales (uA741, MCP6002) se le parecen mucho.",
   "secciones": [
     {
-      "titulo": "5.1 Símbolo y alimentación",
+      "titulo": "8.1 Símbolo y alimentación",
       "bloques": [
         {
           "tipo": "prosa",
@@ -32,7 +32,7 @@
       ]
     },
     {
-      "titulo": "5.2 El AO en lazo abierto (real)",
+      "titulo": "8.2 El AO en lazo abierto (real)",
       "bloques": [
         {
           "tipo": "prosa",
@@ -55,11 +55,15 @@
         {
           "tipo": "nota",
           "html": "Como <strong>20 µV es despreciable</strong>, en la práctica en cuanto la entrada supera 0 V la salida salta a su raíl superior, y en cuanto baja de 0 V salta al inferior. El AO en lazo abierto se comporta como un <strong>comparador</strong>: compara la entrada con una referencia fija (aquí 0 V) y conmuta la salida según la supere o no."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<div class=\"mpi-mount\" data-componente=\"fig-circuito\" data-config='{\"fig\":\"aotransfer\"}'></div>"
         }
       ]
     },
     {
-      "titulo": "5.2.1 Comparador con alimentación unipolar",
+      "titulo": "8.2.1 Comparador con alimentación unipolar",
       "bloques": [
         {
           "tipo": "prosa",
@@ -77,7 +81,7 @@
       ]
     },
     {
-      "titulo": "5.3 El operacional ideal",
+      "titulo": "8.3 El operacional ideal",
       "bloques": [
         {
           "tipo": "prosa",
@@ -97,11 +101,15 @@
         {
           "tipo": "prosa",
           "html": "<p>Comparación de dos AO reales frecuentes:</p><table class=\"tabla-datos\"><thead><tr><th>Parámetro</th><th>uA741</th><th>MCP6002 (laboratorio)</th></tr></thead><tbody><tr><td>Ganancia <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>A</mi></math></td><td>200&#8201;000 V/V</td><td>400&#8201;000 V/V</td></tr><tr><td>Resistencia de entrada <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>R</mi><mi>i</mi></msub></math></td><td>2 M&#937;</td><td>10&#215;10<sup>13</sup> &#937;</td></tr><tr><td>Resistencia de salida <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>R</mi><mi>o</mi></msub></math></td><td>75 &#937;</td><td>decenas de &#937; (no facilitada)</td></tr><tr><td>Tipo de salida</td><td>satura &#8776;1 V dentro del raíl</td><td><em>rail to rail</em> (&#8776;25 mV del raíl)</td></tr><tr><td>Corriente de salida máx.</td><td>&#177;25 mA</td><td>&#177;15 mA (a 3,3 V)</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<div class=\"mpi-mount\" data-componente=\"fig-circuito\" data-config='{\"fig\":\"aoideal\"}'></div>"
         }
       ]
     },
     {
-      "titulo": "5.4 El AO en lazo cerrado: realimentación",
+      "titulo": "8.4 El AO en lazo cerrado: realimentación",
       "bloques": [
         {
           "tipo": "prosa",
@@ -132,7 +140,7 @@
       ]
     },
     {
-      "titulo": "5.4.1 Reglas de oro (realimentación negativa)",
+      "titulo": "8.4.1 Reglas de oro (realimentación negativa)",
       "bloques": [
         {
           "tipo": "prosa",
@@ -151,7 +159,7 @@
       ]
     },
     {
-      "titulo": "5.4.2 Configuración no inversora y buffer",
+      "titulo": "8.4.2 Configuración no inversora y buffer",
       "bloques": [
         {
           "tipo": "prosa",
@@ -182,7 +190,7 @@
       ]
     },
     {
-      "titulo": "5.4.3 Configuración inversora",
+      "titulo": "8.4.3 Configuración inversora",
       "bloques": [
         {
           "tipo": "prosa",
@@ -200,7 +208,7 @@
       ]
     },
     {
-      "titulo": "5.4.4 Sumador inversor y amplificador diferencial",
+      "titulo": "8.4.4 Sumador inversor y amplificador diferencial",
       "bloques": [
         {
           "tipo": "prosa",
@@ -232,7 +240,7 @@
       ]
     },
     {
-      "titulo": "5.5 Saturación en tensión",
+      "titulo": "8.5 Saturación en tensión",
       "bloques": [
         {
           "tipo": "prosa",
@@ -259,7 +267,7 @@
       ]
     },
     {
-      "titulo": "5.5.1 Saturación en corriente",
+      "titulo": "8.5.1 Saturación en corriente",
       "bloques": [
         {
           "tipo": "prosa",
@@ -342,11 +350,41 @@
           "explicacion": "<p>Para el inversor <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msub><mi>A</mi><mi>v</mi></msub><mo>=</mo><mo>&#8722;</mo><mfrac><mrow><mn>18</mn><mtext>&#160;k</mtext><mi>&#937;</mi></mrow><mrow><mn>2</mn><mtext>&#160;k</mtext><mi>&#937;</mi></mrow></mfrac><mo>=</mo><mo>&#8722;</mo><mn>9</mn><mtext>&#160;V/V</mtext></mrow></math>. La ganancia es <strong>negativa</strong> (la salida se invierte) y <strong>sin el +1</strong>: el inversor solo es <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mo>&#8722;</mo><mi>R</mi><mn>2</mn><mo>/</mo><mi>R</mi><mn>1</mn></mrow></math>.</p>"
         }
       ]
+    },
+    "ao-examen": {
+      "titulo": "Alarma antirrobo con FSR (Examen Intersemestral 2026, Problema 2)",
+      "enunciado": "<p>Adaptado del <strong>Examen Intersemestral 2026</strong>, Problema 2: se quiere una alarma que avise cuando se <em>retira</em> un móvil colocado sobre un sensor de fuerza <strong>FSR (Force Sensing Resistor)</strong>. Se usa un <strong>MCP6002 en lazo abierto</strong> (comparador), alimentado con <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msub><mi>V</mi><mi>cc</mi></msub><mo>=</mo><mn>5</mn><mtext>&#160;V</mtext></mrow></math> y <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msub><mi>V</mi><mi>ee</mi></msub><mo>=</mo><mn>0</mn><mtext>&#160;V</mtext></mrow></math>. La señal del FSR forma parte de un divisor cuya tensión <em>cae</em> al subir la resistencia del FSR.</p>\n<img class=\"ej-fig\" src=\"assets/img/examenes/inter2026-p2-fsr.png\" alt=\"Acondicionamiento del FSR sugerido por el fabricante (Problema 2): 5 V, el FSR y una resistencia de 30 kΩ\">",
+      "contexto": "<ul><li>FSR sobre el móvil: <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi>R</mi><mo>&#8776;</mo><mn>12</mn><mtext>&#160;k</mtext><mi>&#937;</mi></mrow></math>; sin móvil: <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi>R</mi><mo>&#8776;</mo><mn>1</mn><mtext>&#160;M</mtext><mi>&#937;</mi></mrow></math> (la resistencia <em>sube</em> al quitar el móvil).</li><li>La tensión del FSR <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>v</mi><mi>FSR</mi></msub></math> es <strong>alta con el móvil</strong> (R pequeña) y <strong>baja sin él</strong> (R grande).</li><li>Referencia fija de 2,5 V obtenida con un divisor de dos resistencias iguales entre 5 V y masa, valor intermedio entre ambos casos.</li><li>En lazo abierto <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msub><mi>v</mi><mi>o</mi></msub><mo>=</mo><mi>A</mi><mfenced><mrow><msup><mi>v</mi><mo>+</mo></msup><mo>&#8722;</mo><msup><mi>v</mi><mo>&#8722;</mo></msup></mrow></mfenced></mrow></math> con <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>A</mi></math> enorme, por lo que la salida solo puede quedar en 0 V o en 5 V.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿A qué entrada del MCP6002 debe ir la señal del FSR (y dónde la referencia de 2,5 V) para que la salida sature a 5 V justo cuando se retira el móvil?",
+          "opciones": [
+            "FSR en la entrada no inversora (v+) y la referencia de 2,5 V en la inversora (v−).",
+            "FSR en la entrada inversora (v−) y la referencia de 2,5 V en la no inversora (v+).",
+            "Ambas señales en la misma entrada, sumadas con un divisor.",
+            "Es indiferente: el comparador da 5 V en ambos casos."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>El FSR va a la entrada <strong>inversora</strong> y la referencia de 2,5 V a la <strong>no inversora</strong>, de modo que <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msub><mi>v</mi><mi>o</mi></msub><mo>=</mo><mi>A</mi><mfenced><mrow><mn>2,5</mn><mo>&#8722;</mo><msub><mi>v</mi><mi>FSR</mi></msub></mrow></mfenced></mrow></math>. <strong>Al retirar el móvil</strong> la resistencia sube, <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>v</mi><mi>FSR</mi></msub></math> baja por debajo de 2,5 V, la diferencia se vuelve positiva y la salida satura a <strong>5 V</strong> (alarma ON). Si el FSR estuviera en la no inversora el comportamiento sería el opuesto y la alarma sonaría con el móvil encima.</p>"
+        },
+        {
+          "texto": "Con esa conexión y el móvil colocado sobre el FSR (R ≈ 12 kΩ), ¿qué tensión hay en la salida del comparador?",
+          "opciones": [
+            "5 V (alarma sonando).",
+            "0 V (alarma en silencio).",
+            "2,5 V (estado intermedio estable).",
+            "Una tensión proporcional a la fuerza del móvil."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Con el móvil encima la R del FSR es baja y <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>v</mi><mi>FSR</mi></msub></math> queda <em>por encima</em> de 2,5 V; entonces <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msup><mi>v</mi><mo>+</mo></msup><mo>&#8722;</mo><msup><mi>v</mi><mo>&#8722;</mo></msup><mo>&lt;</mo><mn>0</mn></mrow></math> y la salida satura a <strong>0 V</strong> (alarma en silencio). Un comparador en lazo abierto no tiene salidas intermedias: solo conmuta entre los dos raíles 0 V y 5 V.</p>"
+        }
+      ]
     }
   },
   "ejerciciosEnTema": [
     "ao-alarma-fsr",
-    "ao-ganancias"
+    "ao-ganancias",
+    "ao-examen"
   ],
   "resumen": [
     "El AO amplifica la diferencia de sus entradas: <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msub><mi>v</mi><mi>o</mi></msub><mo>=</mo><mi>A</mi><mfenced><mrow><msup><mi>v</mi><mo>+</mo></msup><mo>&#8722;</mo><msup><mi>v</mi><mo>&#8722;</mo></msup></mrow></mfenced></mrow></math>; se alimenta con fuente simétrica (<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msub><mi>V</mi><mi>cc</mi></msub><mo>=</mo><mo>&#8722;</mo><msub><mi>V</mi><mi>ee</mi></msub></mrow></math>) o unipolar (<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msub><mi>V</mi><mi>ee</mi></msub><mo>=</mo><mn>0</mn></mrow></math>).",

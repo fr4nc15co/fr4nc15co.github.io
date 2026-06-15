@@ -1,0 +1,400 @@
+{
+  "slug": "temporizadores-pwm",
+  "titulo": "Temporizadores y PWM",
+  "temaNum": 6,
+  "lead": "La gestión del tiempo es esencial en cualquier sistema empotrado: para medir intervalos, generar retardos y planificar tareas periódicas. Este tema cubre la librería <code>time</code> de Python, la <strong>modulación por ancho de pulso (PWM)</strong> y sus aplicaciones (conversor D/A de bajo coste, regulación de luces y motores, control de servos), cómo generarla con <strong>GPIO Zero</strong> y por <strong>hardware</strong>, y cómo lanzar tareas periódicas con <code>threading</code> y <code>sched</code>.",
+  "secciones": [
+    {
+      "titulo": "6.1 El tiempo en el ordenador y la hora Unix",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Todo procesador dispone de <strong>temporizadores</strong>: contadores de N bits que se incrementan a una frecuencia constante. El sistema operativo los usa para mostrar la hora, ejecutar el planificador de tareas, generar retardos y medir cuánto tarda en ejecutarse un programa. Internamente el núcleo de Linux lleva la cuenta del tiempo encendido en <strong>nanosegundos</strong> con una variable de 64 bits.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>De cara a la fecha y la hora, los sistemas Unix representan el tiempo como el <strong>número de segundos transcurridos desde las 0:00 del 1 de enero de 1970</strong> (el <em>epoch</em>). Es la <strong>hora Unix</strong>. Almacenada antes en 32 bits con signo, desbordaba el 19 de enero de 2038; los sistemas modernos la guardan en 64 bits.</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "La hora Unix permite calcular diferencias de tiempos de forma trivial (una simple resta), algo mucho más engorroso con el formato convencional <code>hh:mm:ss</code>."
+        }
+      ]
+    },
+    {
+      "titulo": "6.2 La librería time de Python",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>La librería <code>time</code> reúne las funciones para manejar el tiempo en Python. Las que usaremos en este tema:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<code>sleep(segundos)</code>: suspende la ejecución del <em>script</em> el número de segundos indicado (un <em>float</em>, p. ej. <code>1.5</code>). En realidad le dice al SO que «duerma» la tarea; al despertarla puede tardar algo más si hay cosas más prioritarias, por lo que <strong>el retardo real es mayor o igual al solicitado</strong>.",
+            "<code>time()</code>: devuelve la hora Unix como un <em>float</em>. Útil para medir intervalos restando dos lecturas. <code>time_ns()</code> hace lo mismo pero devuelve un entero en nanosegundos.",
+            "<code>perf_counter()</code> y <code>perf_counter_ns()</code>: devuelven un contador de <strong>mayor resolución</strong> (no referido al <em>epoch</em>). Se usan para medir diferencias de tiempos muy pequeñas, donde <code>time()</code> tiene poca resolución."
+          ]
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Parpadeo de un LED a 1 Hz encendido solo 0,1 s, usando <code>sleep</code>:</p>",
+          "codigo": "from gpiozero import LED\nfrom time import sleep\n\nled_verde = LED(20)\nwhile True:\n    led_verde.on()\n    sleep(0.1)\n    led_verde.off()\n    sleep(0.9)"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Medir el tiempo entre dos pulsaciones con <code>time()</code> (con <code>perf_counter()</code> sería idéntico, cambiando la importación, y daría más resolución):</p>",
+          "codigo": "from gpiozero import Button\nfrom time import time\n\npuls = Button(7)\nprint(\"Pulse lo mas rapido que pueda el pulsador\")\npuls.wait_for_press()\nt_primera_puls = time()\npuls.wait_for_release()\npuls.wait_for_press()\nt_segunda_puls = time()\nprint(\"puntuacion: \" + str(t_segunda_puls - t_primera_puls))"
+        }
+      ]
+    },
+    {
+      "titulo": "6.3 Formatos de representación del tiempo: localtime",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>La hora Unix es eficiente pero poco amigable, así que <code>time</code> ofrece conversores a formatos legibles:</p><ul><li><code>ctime(t)</code> convierte la hora Unix en una cadena (<em>marca de tiempo</em> o <em>timestamp</em>), p. ej. <code>'Fri Jul 21 19:20:11 2023'</code>.</li><li><code>localtime(t)</code> devuelve la hora <strong>local</strong> y <code>gmtime(t)</code> la hora <strong>UTC</strong>, ambas como una <em>namedtuple</em> <code>struct_time</code>.</li></ul><p>Si se llaman <strong>sin argumento</strong>, todas devuelven la fecha y hora actual.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La namedtuple <code>struct_time</code> da acceso por nombre a cada campo:</p><table class=\"tabla-datos\"><thead><tr><th>Índice</th><th>Atributo</th><th>Valores</th></tr></thead><tbody><tr><td>0</td><td>tm_year</td><td>p. ej. 2023</td></tr><tr><td>1</td><td>tm_mon</td><td>[1, 12]</td></tr><tr><td>2</td><td>tm_mday</td><td>[1, 31]</td></tr><tr><td>3</td><td>tm_hour</td><td>[0, 23]</td></tr><tr><td>4</td><td>tm_min</td><td>[0, 59]</td></tr><tr><td>5</td><td>tm_sec</td><td>[0, 61]</td></tr><tr><td>6</td><td>tm_wday</td><td>[0, 6], 0 es lunes</td></tr><tr><td>7</td><td>tm_yday</td><td>[1, 366]</td></tr><tr><td>8</td><td>tm_isdst</td><td>0 (invierno), 1 (verano), -1 (desconocido)</td></tr></tbody></table><p>El rango de <code>tm_sec</code> llega a 61 para tener en cuenta los segundos intercalares.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p><strong>Ejemplo:</strong> encender y apagar las luces de un escaparate cumpliendo la normativa (apagar a las 22:00 y, en invierno, encender a las 18:30). El relé se controla con GPIO20:</p>",
+          "codigo": "from gpiozero import LED\nfrom time import localtime\n\nluz = LED(20)\nwhile True:\n    hora = localtime()\n    if hora.tm_hour == 18 and hora.tm_min == 30:\n        luz.on()\n    if hora.tm_hour == 22 and hora.tm_min == 0:\n        luz.off()"
+        },
+        {
+          "tipo": "nota",
+          "html": "Este programa lee la hora continuamente en un bucle cerrado, lo que <strong>consume mucha CPU</strong>. En un sistema real conviene dormir la tarea entre lecturas (con <code>sleep</code>) o despertarla solo cerca de la hora de conmutación."
+        }
+      ]
+    },
+    {
+      "titulo": "6.4 PWM: definición y aplicaciones",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Una señal <strong>modulada en ancho de pulso (PWM, <em>Pulse Width Modulation</em>)</strong> es una señal cuadrada periódica de periodo <code>T</code> en la que el <strong>tiempo en alto</strong> <code>t<sub>a</sub></code> es variable. Al cociente entre el tiempo en alto y el periodo se le llama <strong>factor de servicio</strong> o <em>duty cycle</em> (DC):</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Factor de servicio (suele expresarse en tanto por ciento):</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mi>DC</mi><mo>=</mo><mfrac><msub><mi>t</mi><mi>a</mi></msub><mi>T</mi></mfrac></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Aunque parezca poco útil, la PWM tiene aplicaciones muy interesantes: <strong>conversor D/A</strong> de bajo coste, <strong>regulación de luces</strong>, <strong>control de velocidad de motores</strong> y <strong>control de servos</strong>. Las vemos a continuación.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>(a) Conversor digital/analógico de bajo coste.</strong> Casi ningún microcontrolador incluye conversor D/A. Se puede generar una señal analógica filtrando una PWM para quedarse solo con su <strong>componente continua</strong>, que coincide con la tensión media de la señal:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Valor medio (componente continua) de la señal PWM, con <code>V<sub>pico</sub></code> el valor de pico (normalmente la tensión de alimentación):</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>V</mi><mtext>media</mtext></msub><mo>=</mo><msub><mi>V</mi><mtext>pico</mtext></msub><mo>&#183;</mo><mfrac><msub><mi>t</mi><mi>a</mi></msub><mi>T</mi></mfrac><mo>=</mo><mi>DC</mi><mo>&#183;</mo><msub><mi>V</mi><mtext>cc</mtext></msub></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Para extraer esa componente continua se usa un <strong>filtro RC de primer orden</strong> con frecuencia de corte al menos una década por debajo de la frecuencia del PWM (p. ej. PWM a 10 kHz → corte a 1 kHz). Como el filtro atenúa 3 dB en su frecuencia de corte, la señal analógica deseada debe estar otra década por debajo (≈100 Hz) para no distorsionarla. Las prestaciones de este «D/A» son modestas, pero puede sacar de un apuro.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Visualiza cómo el factor de servicio fija la tensión media y cómo el filtro RC recupera esa componente continua:</p>\n<div class=\"mpi-mount\" data-componente=\"sim-pwm\" data-config=\"{}\"></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>(b) Control de iluminación.</strong> Nuestro ojo es un filtro paso-bajo con frecuencia de corte de unas pocas decenas de hercios (no apreciamos parpadeos por encima de ~60 Hz). Alimentando un LED o lámpara con una PWM por encima de esa frecuencia, regulamos su intensidad luminosa con solo variar el factor de servicio.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>(c) Control de velocidad de motores.</strong> En un motor de continua el bobinado del rotor y su inercia mecánica actúan como filtro paso-bajo; con una PWM de unos kilohercios la velocidad es proporcional al factor de servicio. Tanto en motores como en lámparas se suelen elegir frecuencias <strong>superiores a 20 kHz</strong> para situarlas fuera del rango audible: por debajo, los condensadores cerámicos (efecto piezoeléctrico) y los hilos de las bobinas vibran y se oye un pitido molesto.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>(d) Servos de modelismo.</strong> Se controlan con una PWM de <strong>periodo T = 20 ms (50 Hz)</strong> en la que el tiempo en alto fija la posición: <code>1 ms → −90°</code>, <code>1,5 ms → 0°</code> (reposo) y <code>2 ms → +90°</code>. Un pulso más ancho gira a un lado y uno más estrecho al otro; el ángulo exacto por cada ancho de pulso depende del fabricante (por eso conviene calibrar).</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "Los servos de posición del laboratorio esperan pulsos de <strong>0,5 ms (0°) a 2,5 ms (180°)</strong> sobre el periodo habitual de 20 ms. Cuando un servo no responda como esperas, lo primero es revisar el rango de anchos de pulso que necesita."
+        }
+      ]
+    },
+    {
+      "titulo": "6.5 Generación de PWM con GPIO Zero",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>GPIO Zero ofrece varias clases para generar PWM. <strong>Por defecto lo hace por software</strong> (a través de <code>RPi.GPIO</code>), por lo que las señales no son muy precisas, pero para muchas aplicaciones es suficiente.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>Control de un LED con PWM — clase <code>PWMLED</code>.</strong> Al crear el objeto se puede fijar la frecuencia (por defecto 100 Hz). Dispone de <code>on()</code>/<code>off()</code> y, sobre todo, del atributo <code>value</code>, un <em>float</em> entre <strong>0 (0 %) y 1 (100 %)</strong> que fija el factor de servicio. (La clase genérica <code>PWMOutputDevice(pin, frequency=f)</code> funciona igual y se usa para motores o salidas PWM no asociadas a un LED.)</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Sube y baja progresivamente la luminosidad de un LED en GPIO20 (PWM de 200 Hz), cambiando el DC un 10 % cada 0,5 s:</p>",
+          "codigo": "from gpiozero import PWMLED\nfrom time import sleep\n\nmi_led = PWMLED(20, frequency=200)\nmi_led.value = 0\nvalor = 0\ninc = 10\nwhile True:\n    sleep(0.5)\n    if valor == 100:\n        inc = -10\n    elif valor == 0:\n        inc = 10\n    valor += inc\n    mi_led.value = valor / 100"
+        },
+        {
+          "tipo": "nota",
+          "html": "Se lleva la cuenta del factor de servicio con un <strong>entero en tanto por ciento</strong> (variable <code>valor</code>) y se divide al final entre 100. Si se acumulara directamente sobre un <em>float</em>, los errores de redondeo harían que <code>value</code> superase 1 y GPIO Zero daría error."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Regula la velocidad de un motor (o la luminosidad de un LED) moviendo el factor de servicio y observa la tensión media resultante:</p>\n<div class=\"mpi-mount\" data-componente=\"sim-motor\" data-config=\"{}\"></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>Control de un servo — clase <code>Servo</code>.</strong> Genera automáticamente las señales del apartado anterior. Opcionalmente se le pasan <code>min_pulse_width</code> y <code>max_pulse_width</code> (en segundos) para ajustar los anchos de las posiciones extremas. Métodos: <code>min()</code> (0°), <code>mid()</code> (90°), <code>max()</code> (180°) y <code>detach()</code> (deja de generar la señal y libera el servo). El atributo <code>value</code> toma valores entre <strong>−1 (0°) y 1 (180°)</strong>.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Mueve el servo de 0° a 180° en pasos de 20° cada segundo. Como <code>value</code> va de −1 a 1, hay que convertir el ángulo:</p>",
+          "codigo": "from gpiozero import Servo\nfrom time import sleep\n\nservo = Servo(14)\nservo.min()\nangulo = 0\nwhile True:\n    servo.value = -1 + angulo / 180 * 2\n    sleep(1)\n    angulo += 20\n    if angulo > 180:\n        angulo = 0"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>Clase <code>AngularServo</code>.</strong> Extiende <code>Servo</code> para especificar la posición directamente en <strong>grados</strong> mediante el atributo <code>angle</code>, restringido entre <code>min_angle</code> y <code>max_angle</code>. Para calibrar se crea primero un <code>Servo</code>, se lleva a <code>min()</code> y <code>max()</code> midiendo los ángulos reales, y esos valores se pasan al constructor.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Mismo recorrido pero con ángulos, sobre un servo calibrado de 0° a 120°:</p>",
+          "codigo": "from gpiozero import AngularServo\nfrom time import sleep\n\nservo = AngularServo(14, min_angle=0, max_angle=120)\nservo.min()\nangulo = 0\nwhile True:\n    servo.angle = angulo\n    sleep(1)\n    angulo += 20\n    if angulo > 120:\n        angulo = 0"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Posiciona un servo con <code>AngularServo</code> y observa el ancho de pulso que genera para cada ángulo:</p>\n<div class=\"mpi-mount\" data-componente=\"sim-servo\" data-config=\"{}\"></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>PiGPIO pin factory (solución al <em>jitter</em>).</strong> GPIO Zero usa por defecto <code>RPi.GPIO</code>, que genera el PWM por software: el movimiento del servo resulta inestable (tembloroso, <em>jitter</em>). Otra <code>pin_factory</code>, <strong>PiGPIO</strong>, genera el PWM apoyándose en temporizadores hardware: es mucho más estable (aunque consume bastante CPU). Funciona mediante un <em>daemon</em> que hay que arrancar como root antes de ejecutar el programa: <code>sudo pigpiod</code>.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>El mismo servo, pero usando PiGPIO para eliminar el <em>jitter</em>. La única novedad es importar y crear la factoría y pasarla al constructor:</p>",
+          "codigo": "from gpiozero.pins.pigpio import PiGPIOFactory\nfrom gpiozero import AngularServo\nfrom time import sleep\n\nfactory = PiGPIOFactory()\nservo = AngularServo(14, min_angle=0, max_angle=120,\n                     pin_factory=factory)\nservo.min()\nangulo = 0\nwhile True:\n    servo.angle = angulo\n    sleep(1)\n    angulo += 20\n    if angulo > 120:\n        angulo = 0"
+        }
+      ]
+    },
+    {
+      "titulo": "6.6 Generación de PWM por hardware",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El software (<code>RPi.GPIO</code>) da señales inestables y PiGPIO consume mucha CPU. El chip <strong>BCM2711</strong> de la Raspberry Pi 4 incluye un <strong>generador de PWM por hardware de dos canales</strong>, que produce señales totalmente precisas casi sin consumir CPU. El canal 0 se conecta a GPIO12 o GPIO18 y el canal 1 a GPIO13 o GPIO19. En la iMAT HAT, GPIO18 y GPIO13 van al control de los motores 1 y 2.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Viene inhabilitado por defecto. Para habilitarlo se añade al final (o al principio) de <code>/boot/config.txt</code> la línea siguiente y se reinicia; queda el canal 0 en GPIO18 y el canal 1 en GPIO13:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Línea de <code>/boot/config.txt</code> (el parámetro <code>func</code> selecciona el periférico de cada pin: en GPIO18 el PWM es la función 2, en GPIO13 la función 4):</p>",
+          "codigo": "dtoverlay=pwm-2chan,pin=18,func=2,pin2=13,func2=4"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Para acceder al periférico desde Python se usa el módulo <strong><code>rpi-hardware-pwm</code></strong> (<code>sudo pip3 install rpi-hardware-pwm</code>, o dentro de un <em>venv</em> en el laboratorio). Se crea un objeto <code>HardwarePWM</code> por canal indicando el canal (0 o 1) y la frecuencia en Hz. Métodos:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<code>start(dc)</code>: arranca el PWM con factor de servicio <code>dc</code>, un <em>float</em> entre <strong>0 y 100</strong>.",
+            "<code>stop()</code>: detiene la generación de PWM.",
+            "<code>change_duty_cycle(dc)</code>: cambia el factor de servicio.",
+            "<code>change_frequency(frec)</code>: cambia la frecuencia (en Hz)."
+          ]
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Arrancar el canal 0 a 1 kHz con 50 %, luego pasar a 10 kHz y 75 %, y finalmente parar:</p>",
+          "codigo": "from rpi_hardware_pwm import HardwarePWM\n\npwm_can_0 = HardwarePWM(pwm_channel=0, hz=1000)\npwm_can_0.start(50)\npwm_can_0.change_duty_cycle(75)\npwm_can_0.change_frequency(10000)\npwm_can_0.stop()"
+        },
+        {
+          "tipo": "nota",
+          "html": "El PWM por hardware es la opción adecuada para los motores DC, que necesitan frecuencias ≥ 20 kHz que el PWM por software no puede generar con precisión. En el laboratorio, la librería <code>rpi-hardware-pwm</code> introduce un pequeño error sistemático que se corrige multiplicando la frecuencia deseada por ≈ 0,933."
+        }
+      ]
+    },
+    {
+      "titulo": "6.7 Tareas periódicas",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>En sistemas empotrados es frecuente dividir el programa en varias <strong>tareas que se ejecutan periódicamente</strong> (p. ej. una rápida para controlar los motores y otra más lenta para la trayectoria). Tenemos tres enfoques con la librería estándar de Python: <strong>threading.Thread</strong> (un hilo por tarea), <strong>threading.Timer</strong> (callbacks que se reprograman) y <strong>sched</strong> (un único hilo con un planificador).</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>(a) Threading.Thread.</strong> La clase <code>Thread</code> ejecuta una función en un hilo aparte. Como el hilo termina cuando la función retorna, para hacerla periódica se mete un <strong>bucle sin fin</strong> con un retardo que fija el periodo de muestreo. Para que el periodo no dependa del tiempo de ejecución del cuerpo del bucle, se mide el instante de inicio y se le resta al retardo.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Tres tareas parametrizadas (periodo y nº de LED), cada una en su hilo <code>daemon</code> (terminan al acabar el programa principal). El <code>main</code> espera la pulsación de GPIO19 para salir:</p>",
+          "codigo": "from threading import Thread\nfrom time import time, sleep\nfrom gpiozero import LED, Button\n\ndef tarea(periodo, n_led):\n    led = LED(n_led)\n    while True:\n        t_start = time()\n        led.on()\n        sleep(0.1)\n        led.off()\n        sleep(periodo - (time() - t_start))\n\nhilo_1 = Thread(target=tarea, args=(0.5, 20), daemon=True)\nhilo_2 = Thread(target=tarea, args=(1, 21), daemon=True)\nhilo_3 = Thread(target=tarea, args=(2, 22), daemon=True)\nhilo_1.start()\nhilo_2.start()\nhilo_3.start()\n\npuls = Button(19)\nwhile True:\n    if puls.is_pressed:\n        break"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>(b) Threading.Timer.</strong> Un <code>Timer</code> ejecuta una función una sola vez, transcurrido un intervalo. Para hacerlo periódico, la propia tarea <strong>vuelve a programar otro <code>Timer</code></strong> al final (o al principio) de su ejecución. Se crea con <code>Timer(interval, function, args)</code>, se lanza con <code>start()</code> y se puede abortar antes de saltar con <code>cancel()</code>.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Sube la luminosidad de un LED un 5 % cada 0,5 s reprogramándose con un <code>Timer</code>:</p>",
+          "codigo": "import threading\nfrom gpiozero import PWMLED\n\ndef tarea(led, dc):\n    led.value = dc\n    dc += 0.05\n    if dc >= 1:\n        dc = 0\n    threading.Timer(interval=0.5, function=tarea, args=(led, dc)).start()\n\nled = PWMLED(20)\nthreading.Timer(interval=0.5, function=tarea, args=(led, 0)).start()"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>(c) sched.</strong> En lugar de un hilo por tarea, <code>sched</code> usa <strong>un único hilo con un planificador</strong> que decide qué ejecutar. Se crea con <code>scheduler(time, sleep)</code> (las funciones para medir el tiempo y para pausar). Las tareas se insertan con <code>enter(delay, priority, action, argument)</code> (a menor número, mayor prioridad). El truco para que sean periódicas: <strong>nada más entrar, la tarea se autoplanifica</strong> para dentro de un periodo; así su tiempo de ejecución no afecta al periodo.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Las mismas tres tareas con <code>sched</code>. La tarea se reprograma al entrar y luego hace su trabajo; <code>run(blocking=False)</code> en el bucle de scan permite atender también el pulsador:</p>",
+          "codigo": "from sched import scheduler\nfrom time import time, sleep\nfrom gpiozero import LED, Button\n\ndef tarea(planif, periodo, prioridad, led):\n    # Antes de nada planificamos la siguiente ejecucion\n    planif.enter(periodo, prioridad, tarea,\n                 (planif, periodo, prioridad, led))\n    # Y ahora ejecutamos la tarea\n    led.on()\n    sleep(0.1)\n    led.off()\n\nled_1 = LED(20)\nled_2 = LED(21)\nled_3 = LED(22)\nmi_planif = scheduler(time, sleep)\nmi_planif.enter(0.5, 1, tarea, (mi_planif, 0.5, 1, led_1))\nmi_planif.enter(1, 2, tarea, (mi_planif, 1, 2, led_2))\nmi_planif.enter(2, 3, tarea, (mi_planif, 2, 3, led_3))\n\npuls = Button(19)\nwhile True:\n    mi_planif.run(blocking=False)\n    if puls.is_pressed:\n        break"
+        },
+        {
+          "tipo": "nota",
+          "html": "Con <code>run()</code> sin argumentos el planificador no retorna y ejecuta las tareas «sin distracciones». Con <code>run(blocking=False)</code> no se bloquea, pero <strong>hay que llamarlo continuamente</strong>: si el bucle de scan tarda mucho, los periodos de muestreo dejarán de cumplirse. Una alternativa es meter el bucle de scan en otro hilo y dejar el principal en un <code>run()</code> bloqueante."
+        }
+      ]
+    },
+    {
+      "titulo": "6.8 ¿Cuándo usar cada cosa? (guía rápida)",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Para cerrar el tema, una guía para decidir qué herramienta de tiempo conviene en cada caso, según lo que necesite el sistema.</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>El <code>sleep</code> al final del <code>while True:</code> del <code>main</code>.</strong> Por defecto, un bucle principal que no hace nada más debería cerrarse con un <code>sleep</code> pequeño (por ejemplo <code>sleep(0.1)</code>, o incluso <code>sleep(0.0000001)</code>) para no tener la CPU trabajando al 100&#160;%. El problema es que <strong>durante ese <code>sleep</code> el sistema no hace absolutamente nada</strong>: si en el <code>main</code> estás leyendo <strong>pulsadores</strong>, una pulsación que ocurra mientras &laquo;duerme&raquo; se pierde. Por eso un <code>sleep</code> dentro del <code>while</code> es <strong>incompatible</strong> con atender pulsadores en el bucle principal, y en cuanto hay varias cosas que atender a la vez se sacan del <code>while</code> a hilos o temporizadores."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<table class=\"tabla-datos\"><thead><tr><th>¿Qué necesitas?</th><th>Qué usar</th><th>Detalle / cuidado</th></tr></thead><tbody><tr><td><strong>Tareas infinitas e independientes</strong> (varias cosas a la vez, sin fin)</td><td><code>Thread</code> con su propio <code>sleep</code>, o <code>Timer</code>/<code>sched</code> recursivos</td><td>Un <code>Thread</code> <strong>no muere ni se cancela</strong>; los <code>Timer</code>/<code>sched</code> recursivos sí se pueden parar</td></tr><tr><td>Ejecutar algo <strong>una sola vez tras X&#160;s</strong>, o <strong>repetir cada X&#160;s</strong></td><td><code>Timer</code> (una vez) o <code>Timer</code>/<code>sched</code> recursivo (periódico)</td><td>Se pueden <strong>cancelar</strong> con <code>.cancel()</code></td></tr><tr><td><strong>Medir cuánto tarda</strong> algo (un intervalo)</td><td><code>time() &#8722; referencia</code> (o <code>perf_counter()</code> para más resolución)</td><td>La referencia se toma <strong>en el instante desde el que quieres medir</strong>, no en la línea anterior sin más</td></tr><tr><td>Saber la <strong>hora real</strong> (fecha y hora)</td><td><code>localtime()</code> y los campos de su estructura</td><td><code>tm_hour</code>, <code>tm_min</code>, <code>tm_mday</code>&#8230;</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>En una frase:</strong> si la tarea <strong>no tiene fin</strong> → <code>Thread</code> (o <code>Timer</code>/<code>sched</code> recursivos); si debe <strong>poder cancelarse</strong> o salta <strong>cada cierto tiempo</strong> → <code>Timer</code>/<code>sched</code>; si solo quieres <strong>medir un intervalo</strong> → <code>time()</code> menos una referencia; y si necesitas la <strong>hora del reloj</strong> → <code>localtime()</code>."
+        }
+      ]
+    }
+  ],
+  "registros": {},
+  "ejercicios": {
+    "temporizadores-pwm-servo": {
+      "titulo": "Ancho de pulso de un servo",
+      "enunciado": "<p>Se controla un servomotor estándar con una señal PWM de <strong>periodo T = 20 ms (50 Hz)</strong>, en la que <code>1 ms</code> corresponde a la posición de −90° y <code>2 ms</code> a la de +90° (y, por tanto, <code>1,5 ms</code> a la posición de reposo de 0°). Se quiere situar el servo en su posición de reposo y razonar qué clase de GPIO Zero conviene usar.</p>",
+      "contexto": "<ul><li>El periodo de la señal es siempre 20 ms; lo que codifica la posición es el <strong>tiempo en alto</strong> (ancho de pulso).</li><li>En la clase <code>Servo</code> el atributo <code>value</code> va de −1 (0°) a 1 (180°).</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Qué ancho de pulso (tiempo en alto) coloca el servo en la posición de reposo (0°)?",
+          "opciones": [
+            "1 ms",
+            "1,5 ms",
+            "2 ms",
+            "20 ms"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>La posición de reposo (0°) está justo en el centro del recorrido: entre 1 ms (−90°) y 2 ms (+90°). El ancho de pulso de reposo es <code>(1 + 2)/2 = 1,5 ms</code>. El periodo de 20 ms no cambia: lo que codifica la posición es el tiempo en alto.</p>"
+        },
+        {
+          "texto": "Con un ancho de pulso de 1,5 ms y periodo 20 ms, ¿cuál es el factor de servicio (DC) de la señal?",
+          "opciones": [
+            "1,5 %",
+            "7,5 %",
+            "13,3 %",
+            "75 %"
+          ],
+          "correcta": 1,
+          "explicacion": "<p><code>DC = t<sub>a</sub>/T = 1,5 ms / 20 ms = 0,075 = 7,5 %</code>. Es un factor de servicio pequeño porque el pulso útil es muy estrecho frente al periodo de 20 ms.</p>"
+        },
+        {
+          "texto": "Al probar el servo con la configuración por defecto de GPIO Zero (RPi.GPIO), su movimiento es inestable y tembloroso. ¿Cuál es la causa y la solución habitual?",
+          "opciones": [
+            "El periodo es incorrecto; hay que subirlo a 50 ms.",
+            "Es jitter por el PWM generado por software; se usa la pin factory PiGPIO (sudo pigpiod) o el PWM por hardware.",
+            "El value debe ir de 0 a 1 en vez de −1 a 1.",
+            "Hay que bajar la frecuencia del PWM por debajo de 20 Hz."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Por defecto GPIO Zero genera el PWM por software (RPi.GPIO), cuyos temporizadores imprecisos producen <em>jitter</em>. La solución es usar la <code>pin_factory</code> <strong>PiGPIO</strong> (arrancando antes <code>sudo pigpiod</code>), que se apoya en temporizadores hardware, o directamente el PWM por hardware del BCM2711.</p>"
+        }
+      ]
+    },
+    "temporizadores-pwm-da": {
+      "titulo": "PWM como conversor D/A y elección de frecuencia",
+      "enunciado": "<p>Para ahorrar costes se genera una señal analógica mediante una PWM filtrada. La PWM tiene un valor de pico <code>V<sub>pico</sub> = 3,3 V</code> y se filtra con un filtro RC de primer orden para quedarnos con su componente continua <code>V<sub>media</sub> = V<sub>pico</sub>·DC</code>.</p>",
+      "contexto": "<ul><li>Componente continua de la PWM: <code>V<sub>media</sub> = V<sub>pico</sub> · t<sub>a</sub>/T</code>.</li><li>El filtro RC debe tener su frecuencia de corte al menos una década por debajo de la frecuencia del PWM.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "Se quiere una tensión analógica de 1,65 V a la salida del filtro. ¿Qué factor de servicio hay que programar?",
+          "opciones": [
+            "25 %",
+            "50 %",
+            "75 %",
+            "100 %"
+          ],
+          "correcta": 1,
+          "explicacion": "<p><code>DC = V<sub>media</sub>/V<sub>pico</sub> = 1,65 V / 3,3 V = 0,5 = 50 %</code>. Como la tensión media es proporcional al factor de servicio, la mitad de la alimentación corresponde a un DC del 50 %.</p>"
+        },
+        {
+          "texto": "Si la PWM se genera a 10 kHz, ¿qué frecuencia de corte aproximada debe tener el filtro RC de primer orden para no dejar pasar demasiado rizado?",
+          "opciones": [
+            "≈ 100 kHz (una década por encima del PWM)",
+            "≈ 10 kHz (igual que el PWM)",
+            "≈ 1 kHz (una década por debajo del PWM)",
+            "≈ 20 kHz (por encima del rango audible)"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>El filtro debe atenuar la frecuencia del PWM, así que su frecuencia de corte se sitúa al menos una <strong>década por debajo</strong>: 10 kHz / 10 = <strong>1 kHz</strong>. Para que la señal analógica deseada tampoco se distorsione, esta debería estar otra década por debajo (≈ 100 Hz), pues el filtro ya atenúa 3 dB en su frecuencia de corte.</p>"
+        }
+      ]
+    },
+    "temporizadores-pwm-examen": {
+      "titulo": "Baliza y motor por PWM sin sleep bloqueante (Examen Intersemestral 2026, P3.2 y Ordinario 2026, P2.1)",
+      "enunciado": "<p>Adaptado del <strong>Examen Intersemestral 2026, Problema 3.2</strong> (baliza con el LED de GPIO20) y del <strong>Examen Ordinario 2026, Problema 2.1</strong> (control de un motor por PWM): la baliza debe parpadear <strong>300 ms encendida y 200 ms apagada</strong> (periodo de 500 ms) y, a la vez, el motor se regula con una salida PWM. El enunciado exige que la lógica de control <strong>no se quede bloqueada</strong> en ningún momento (penaliza usar <code>sleep</code> en el bucle de control).</p>",
+      "contexto": "<ul><li>En <code>PWMLED(pin, frequency=f)</code>, la frecuencia fija el periodo (<code>T = 1/f</code>) y <code>value</code> (de 0 a 1) fija el factor de servicio: el tiempo en alto es <code>value · T</code>.</li><li>Para regular un motor por PWM se usa <code>PWMOutputDevice(pin, frequency=f)</code> con <code>motor.value = dc/100</code> (dc en %).</li><li>Para temporizar sin bloquear se usan <code>time()</code>, <code>sched</code> o <code>threading.Timer</code>, no <code>sleep</code>.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "Se quiere que el LED de la baliza (GPIO20) parpadee solo, sin tocarlo en el bucle, 300 ms encendido y 200 ms apagado (periodo 500 ms). ¿Qué configuración de PWMLED lo consigue?",
+          "opciones": [
+            "PWMLED(20, frequency=2) con value=0.6",
+            "PWMLED(20, frequency=500) con value=0.3",
+            "PWMLED(20, frequency=300) con value=0.2",
+            "PWMLED(20, frequency=0.6) con value=2"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>El periodo debe ser de 500 ms = 0,5 s, lo que corresponde a una frecuencia <code>f = 1/T = 1/0,5 = 2 Hz</code> → <code>frequency=2</code>. El tiempo encendido son 300 ms de los 500 ms del periodo, es decir un factor de servicio <code>DC = 300/500 = 0,6</code> → <code>value=0.6</code>. Con <code>PWMLED(20, frequency=2)</code> y <code>value=0.6</code> el LED parpadea por sí solo (la PWM lo gestiona por hardware/software) sin que la lógica de control tenga que encenderlo y apagarlo con <code>sleep</code>.</p>"
+        },
+        {
+          "texto": "El enunciado del examen advierte de que NO se debe usar sleep que bloquee la lógica de control. ¿Por qué se penaliza usar time.sleep() en el bucle de control de la baliza y el motor?",
+          "opciones": [
+            "Porque sleep no existe en la Raspberry Pi 4.",
+            "Porque mientras dura el sleep el programa queda detenido y no puede atender el resto de tareas (leer entradas, actualizar el motor); se temporiza con time(), sched o threading.Timer no bloqueantes.",
+            "Porque sleep solo funciona con la librería RPi.GPIO, no con gpiozero.",
+            "Porque sleep consume toda la CPU al 100 % durante la espera."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Un <code>sleep</code> <strong>bloquea</strong> el hilo: durante esos milisegundos el programa no hace absolutamente nada más, así que no puede leer pulsadores ni actualizar otras salidas (el motor) a tiempo. Por eso se gestionan los tiempos sin bloquear: midiendo intervalos con <code>time() − referencia</code>, o lanzando acciones periódicas con <code>sched</code> o <code>threading.Timer</code> (no bloqueantes y cancelables). El motor, por su parte, se regula con <code>PWMOutputDevice(pin, frequency=…)</code> y <code>motor.value = dc/100</code>, sin retardos bloqueantes.</p>"
+        }
+      ]
+    }
+  },
+  "ejerciciosEnTema": [
+    "temporizadores-pwm-servo",
+    "temporizadores-pwm-da",
+    "temporizadores-pwm-examen"
+  ],
+  "resumen": [
+    "La librería <code>time</code> da retardos con <code>sleep</code> (el retardo real es ≥ al pedido), marcas de tiempo Unix con <code>time()</code>/<code>time_ns()</code>, medidas de alta resolución con <code>perf_counter()</code> y formatos legibles con <code>ctime</code>, <code>localtime</code> y <code>gmtime</code> (<code>struct_time</code>).",
+    "Una señal <strong>PWM</strong> tiene periodo <code>T</code> y tiempo en alto <code>t<sub>a</sub></code>; el <strong>factor de servicio</strong> es <code>DC = t<sub>a</sub>/T</code>. Filtrada, su valor medio es <code>V<sub>media</sub> = DC·V<sub>cc</sub></code> (conversor D/A de bajo coste).",
+    "Aplicaciones: regular luces (PWM &gt; ~60 Hz), velocidad de motores (≥ 20 kHz para no oír pitidos) y posicionar <strong>servos</strong> (T = 20 ms; 1 ms→−90°, 1,5 ms→0°, 2 ms→+90°).",
+    "Con GPIO Zero: <code>PWMLED(pin, frequency=f).value ∈ [0,1]</code> para LED/motor, <code>Servo(pin).value ∈ [−1,1]</code> y <code>AngularServo(pin, min_angle, max_angle).angle</code> para servos.",
+    "El PWM por software (RPi.GPIO) produce <em>jitter</em>; se corrige con la <strong>pin factory PiGPIO</strong> (<code>sudo pigpiod</code>) o con el <strong>PWM por hardware</strong> del BCM2711 (<code>HardwarePWM(canal, hz)</code> con <code>start(dc)</code>/<code>change_duty_cycle()</code>, <code>dc ∈ [0,100]</code>).",
+    "Tareas periódicas: <code>threading.Thread</code> (un hilo con bucle y retardo corregido), <code>threading.Timer</code> (callback que se reprograma) y <code>sched.scheduler(time, sleep)</code> con <code>enter()</code>/<code>run()</code> (la tarea se autoplanifica al entrar).",
+    "<strong>Qué herramienta de tiempo elegir:</strong> tareas infinitas independientes → <code>Thread</code> (no se cancela) o <code>Timer</code>/<code>sched</code> recursivos; tareas a los/cada X&#160;s y cancelables → <code>Timer</code>/<code>sched</code>; medir intervalos → <code>time()</code>&#8722;referencia; hora real → <code>localtime()</code>. Y un <code>while True:</code> que solo vigila debería llevar un <code>sleep</code> corto… salvo si lee pulsadores (los perdería mientras duerme)."
+  ]
+}

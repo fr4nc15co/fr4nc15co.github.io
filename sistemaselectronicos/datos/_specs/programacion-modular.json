@@ -1,0 +1,306 @@
+{
+  "slug": "programacion-modular",
+  "titulo": "Programación modular en Python",
+  "temaNum": 11,
+  "lead": "Cuando un programa crece, mantenerlo todo en un único archivo se vuelve inmanejable. Este tema aplica el viejo <em>divide et impera</em> a Python: partir el problema en <strong>módulos</strong> independientes y reutilizables, importarlos con <code>import</code> / <code>from … import</code>, protegerlos con <code>if __name__ == \"__main__\":</code> y encapsular sus datos con <em>getters</em> y <em>setters</em>. Todo se ilustra construyendo, paso a paso, el software de un <strong>termostato digital</strong> sobre la Raspberry Pi y la iMAT HAT.",
+  "secciones": [
+    {
+      "titulo": "11.1 Por qué modularizar: divide y vencerás",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>La <strong>programación modular</strong> consiste en resolver un problema complejo dividiéndolo en varios subproblemas más pequeños. Cada subproblema, más fácil y manejable, se resuelve de forma individual, y la solución al problema completo surge del conjunto de esas soluciones parciales. Es el viejo principio de los romanos: <em>divide et impera</em> (divide y vencerás).</p><p>A cada una de esas partes se le llama <strong>módulo</strong>. Cuando un módulo encapsula el manejo de un dispositivo físico (un sensor, un motor…) se le suele llamar <strong>driver</strong>: lleva a cabo una tarea específica de forma independiente del programa principal.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Dividir un programa en módulos pequeños tiene numerosas ventajas:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Reduce la complejidad:</strong> permite centrarse cada vez en una tarea concreta, lo que facilita el trabajo.",
+            "<strong>Más fácil de depurar y mantener:</strong> un módulo de tamaño razonable se prueba y corrige mejor que un único programa de miles de líneas.",
+            "<strong>Facilita el trabajo en equipo:</strong> distintas personas pueden implementar módulos distintos en paralelo.",
+            "<strong>Reutilizable:</strong> si un módulo es suficientemente general, sirve para otros proyectos. Incluso puede estar escrito en otro lenguaje (un <em>driver</em> en C usado desde Python con <code>ctypes</code>).",
+            "<strong>Más calidad:</strong> si cada módulo se prueba conforme se escribe, las pruebas finales dejan de ser un quebradero de cabeza."
+          ]
+        },
+        {
+          "tipo": "nota",
+          "html": "El uso de módulos es <strong>aún más crítico al interactuar con el hardware</strong>. El <em>driver</em> crea una <strong>capa de abstracción</strong> que oculta los detalles de bajo nivel: otros programadores pueden usar el dispositivo sin conocer su funcionamiento interno, y si en el futuro se cambia el hardware (un sensor por otro mejor o más barato) basta con cambiar el <em>driver</em>, manteniéndose intacto el resto del programa."
+        }
+      ]
+    },
+    {
+      "titulo": "11.2 Diseño top-down, implementación bottom-up",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Para abordar un proyecto complejo, una de las metodologías más usadas es el <strong>diseño top-down</strong> (de arriba abajo): la tarea grande se divide en tareas más simples y, si alguna sigue siendo demasiado compleja, se vuelve a dividir. El resultado es un <strong>diagrama de bloques</strong> con los módulos del sistema.</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": true,
+          "items": [
+            "<strong>Diseño (top-down):</strong> se dibuja el diagrama de bloques con los módulos. Cada bloque debe ser lo más independiente posible y tener una <strong>interfaz bien definida</strong> a través de la cual interactúa con los demás.",
+            "<strong>Implementación (bottom-up):</strong> los módulos se implementan de uno en uno, de forma independiente, verificando cada uno antes de integrarlo. Si al implementar uno se ve que es demasiado complejo, se vuelve a la fase de diseño y se redivide. Conforme se terminan, se integran en el sistema final.",
+            "<strong>Verificación:</strong> con el sistema integrado se comprueba que cumple las especificaciones de partida."
+          ]
+        },
+        {
+          "tipo": "nota",
+          "html": "En general, todo <em>driver</em> bien diseñado tiene: una <strong>función de inicialización</strong> (el constructor), <strong>funciones getter/setter</strong> para interaccionar con otros módulos sin exponer sus datos internos, y, si tiene tareas que se repiten (como un control), una <strong>función para el bucle de scan</strong>."
+        }
+      ]
+    },
+    {
+      "titulo": "11.3 Módulos, import y el guard __main__",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>En Python, un <strong>módulo</strong> es simplemente un archivo <code>.py</code>. Para usar el código de un módulo desde otro archivo se <strong>importa</strong>. Hay varias formas, y la diferencia está en el <strong>espacio de nombres</strong> (<em>namespace</em>) con el que quedan los nombres importados:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<code>import modulo</code> — carga el módulo entero; se accede a su contenido cualificado: <code>modulo.NTC(...)</code>. Mantiene los nombres separados en su propio espacio de nombres y evita colisiones.",
+            "<code>from modulo import NTC</code> — trae solo el nombre <code>NTC</code> al espacio de nombres actual, así se usa directamente <code>NTC(...)</code> sin prefijo.",
+            "<code>import modulo as m</code> / <code>from modulo import NTC as Sensor</code> — usa un <strong>alias</strong> con <code>as</code>, útil para abreviar o evitar que dos nombres choquen."
+          ]
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>En el termostato, el programa principal trae las clases de cada módulo con <code>from … import …</code>. Los nombres <code>DriverNTC</code> y <code>Consigna</code> son los archivos <code>DriverNTC.py</code> y <code>Consigna.py</code>:</p>",
+          "codigo": "from gpiozero import LED\nfrom DriverNTC import NTC      # NTC viene del archivo DriverNTC.py\nfrom Consigna import Consigna  # Consigna viene del archivo Consigna.py"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Al importar un módulo, Python <strong>ejecuta todo su código de arriba abajo</strong>. Eso es un problema si el módulo incluye un <code>main()</code> de prueba: no queremos que se lance al importarlo, solo cuando ejecutamos ese archivo directamente. La solución es el <em>guard</em> <code>if __name__ == \"__main__\":</code></p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "Python pone en la variable especial <code>__name__</code> el valor <code>\"__main__\"</code> cuando el archivo se <strong>ejecuta directamente</strong>, y el <strong>nombre del módulo</strong> cuando se <strong>importa</strong> desde otro archivo. Por eso el bloque bajo <code>if __name__ == \"__main__\":</code> solo corre al ejecutar el archivo como programa, no al importarlo. Así un mismo archivo puede ser, a la vez, módulo reutilizable y programa de prueba autónomo."
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Patrón habitual: el <code>main()</code> de prueba se lanza bajo el <em>guard</em> y se envuelve en un <code>try/except</code> para terminar limpiamente al pulsar Ctrl+C (que en Python eleva <code>KeyboardInterrupt</code>):</p>",
+          "codigo": "if __name__ == '__main__':\n    try:\n        main()\n    except KeyboardInterrupt:\n        print(\"Fin del programa.\\n\")"
+        }
+      ]
+    },
+    {
+      "titulo": "11.4 Ejemplo de diseño: termostato digital",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Para ver el proceso completo diseñamos el software de un <strong>termostato digital</strong> para la calefacción. Especificaciones:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "Un sensor <strong>NTC</strong> acondicionado para dar 0 V a 0 °C y 3,3 V a 50 °C.",
+            "La <strong>consigna</strong> se ajusta con dos pulsadores (subir / bajar); cada pulsación la cambia 0,5 °C. En el arranque vale 19 °C.",
+            "Control <strong>todo/nada</strong> con histéresis de 0,5 °C: la calefacción se enciende cuando la temperatura baja de (consigna − histéresis) y no se apaga hasta que supera (consigna + histéresis). Se usa el LED de GPIO20 de la iMAT HAT para simular el relé.",
+            "Cada segundo se muestran por consola la temperatura medida y la consigna."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Aplicando el diseño top-down, lo sensato es repartir el problema en <strong>tres partes</strong>: un <strong>driver para el sensor</strong> (lee el A/D y devuelve grados), un <strong>módulo para la consigna</strong> (lee los pulsadores y mantiene su valor) y el <strong>programa principal</strong> (importa los dos anteriores y aplica el control). Así el sistema queda en tres archivos: <code>DriverNTC.py</code>, <code>Consigna.py</code> y el <code>main</code>.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "11.5 Driver del sensor: el módulo NTC",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Como Python es orientado a objetos, lo más elegante para construir un módulo es crear una <strong>clase</strong>. La clase <code>NTC</code> encapsula el manejo del sensor: el constructor recibe el canal del conversor A/D y el rango de temperatura (configurable, para reutilizar el driver con cualquier sensor lineal), y el método <code>leer_temperatura()</code> devuelve los grados.</p><p>Los atributos empiezan por guion bajo (<code>_t_inf</code>, <code>_t_sup</code>, <code>_adc</code>) porque son <strong>privados</strong>: Python no tiene <code>private</code> como C++, pero existe la <strong>convención</strong> de no acceder desde fuera de la clase a los nombres que empiezan por <code>_</code>.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Archivo <code>DriverNTC.py</code>. El objeto <code>MCP3008</code> de GPIO Zero devuelve un valor entre 0 y 1 (correspondiente a 0 V y 3,3 V); suponiendo el sensor lineal, se interpola al rango de temperatura:</p>",
+          "codigo": "from gpiozero import MCP3008\n\n\nclass NTC:\n    \"\"\"Driver para obtener la medida de temperatura con una NTC\"\"\"\n\n    def __init__(self, canal_adc, t_inf, t_sup):\n        \"\"\"Inicializa la clase NTC\n\n        Args:\n            canal_adc (int): Canal del ADC al que se ha conectado la NTC\n            t_inf (float): Temperatura inferior del rango de medida (ºC)\n            t_sup (float): Temperatura superior del rango de medida (ºC)\n        \"\"\"\n        self._t_inf = t_inf\n        self._t_sup = t_sup\n        self._adc = MCP3008(canal_adc)  # Crea el objeto para leer el ADC\n\n    def leer_temperatura(self):\n        \"\"\"Devuelve la temperatura medida por la NTC\n\n        Returns:\n            float: Temperatura medida en grados centígrados\n        \"\"\"\n        valor_adc = self._adc.value\n        # Convertimos el valor devuelto por el conversor (de 0 a 1)\n        # a temperatura suponiendo un sensor lineal\n        return self._t_inf + valor_adc * (self._t_sup - self._t_inf)"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Una recomendación de la programación modular es <strong>probar cada módulo conforme se crea</strong>. Por eso el driver incluye un <code>main()</code> de prueba bajo el <em>guard</em> <code>__main__</code>: crea una <code>NTC</code> en el canal 7 (donde la iMAT HAT tiene un potenciómetro) con rango 10–50 °C y muestra la temperatura cada segundo. Moviendo el potenciómetro se comprueba que la lectura varía en todo el rango.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Continuación de <code>DriverNTC.py</code>: el <code>main()</code> de prueba del driver, que crea una NTC y muestra la temperatura en un bucle:</p>",
+          "codigo": "def main():\n    \"\"\"Programa de prueba del driver\n\n    Crea un objeto NTC conectado al canal 7 del ADC con un rango de\n    medida entre 10 y 50 grados y muestra por pantalla la temperatura.\n    Como en el canal 7 está conectado un potenciómetro en la iMAT HAT,\n    podemos probar fácilmente el driver.\n    \"\"\"\n    ntc = NTC(7, 10, 50)     # Instancia una NTC con un rango de 10 a 50\n    while True:\n        temperatura = ntc.leer_temperatura()\n        print(f\"Temperatura = {temperatura} ºC\\n\")\n\n\nif __name__ == '__main__':\n    try:\n        main()\n    except KeyboardInterrupt:\n        print(\"Fin del programa.\\n\")"
+        }
+      ]
+    },
+    {
+      "titulo": "11.6 Módulo de la consigna y encapsulamiento (getters/setters)",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El segundo módulo, la clase <code>Consigna</code>, agrupa toda la gestión de la temperatura de referencia. El constructor recibe los pines de los dos pulsadores, crea sus objetos <code>Button</code> y conecta cada método al evento <code>when_pressed</code>: GPIO Zero llama automáticamente a <code>subir_consigna()</code> o <code>bajar_consigna()</code> cuando se pulsa. El valor arranca en 19 °C.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Archivo <code>Consigna.py</code> (inicio): constructor y los dos manejadores de pulsador. Los atributos <code>_consigna</code>, <code>_puls_sub</code> y <code>_puls_baj</code> son privados:</p>",
+          "codigo": "from gpiozero import Button\n\n\nclass Consigna:\n    \"\"\"Módulo para gestionar la consigna de un termostato\n    mediante dos pulsadores\n    \"\"\"\n\n    def __init__(self, pin_puls_sub, pin_puls_baj):\n        \"\"\"Inicializa la clase Consigna\n\n        Args:\n            pin_puls_sub (int): Pin del pulsador para subir la consigna\n            pin_puls_baj (int): Pin del pulsador para bajar la consigna\n        \"\"\"\n        self._consigna = 19  # El valor inicial es de 19 ºC\n        self._puls_sub = Button(pin_puls_sub)\n        self._puls_baj = Button(pin_puls_baj)\n        self._puls_sub.when_pressed = self.subir_consigna\n        self._puls_baj.when_pressed = self.bajar_consigna\n\n    def subir_consigna(self):\n        \"\"\"Incrementa la consigna en medio grado\"\"\"\n        self._consigna += 0.5\n\n    def bajar_consigna(self):\n        \"\"\"Decrementa la consigna en medio grado\"\"\"\n        self._consigna -= 0.5"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Como <code>_consigna</code> es privado pero desde fuera del módulo necesitamos <strong>leer</strong> su valor (y, en algún caso, <strong>escribirlo</strong> con control), se accede a él mediante <strong>getters</strong> y <strong>setters</strong>. Esto es el <strong>encapsulamiento de datos</strong>: nadie toca <code>_consigna</code> directamente, sino a través de métodos que pueden validar.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Forma clásica: un <em>getter</em> que devuelve el valor y un <em>setter</em> que solo escribe si el valor está dentro de un rango razonable (15–25 °C). Se invocan como métodos: <code>consigna.leer_consigna()</code> y <code>consigna.escribir_consigna(20)</code>:</p>",
+          "codigo": "    def leer_consigna(self):        # getter\n        return self._consigna\n\n    def escribir_consigna(self, valor):   # setter\n        if valor >= 15 and valor <= 25:\n            self._consigna = valor\n        else:\n            print(\"Error: consigna fuera de rango.\\n\")"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Python ofrece una forma más elegante con el <strong>decorador <code>@property</code></strong>: el <em>getter</em> se marca con <code>@property</code> y el <em>setter</em> con <code>@nombre.setter</code> (usando el mismo nombre). Así, desde fuera el atributo se lee y escribe <strong>como si fuera un atributo normal</strong> (<code>consigna.consigna</code> y <code>consigna.consigna = 20</code>), pero por debajo se llama a los métodos, que pueden validar.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Mismos getter y setter, ahora con <code>@property</code>. El nombre del método (<code>consigna</code>) pasa a comportarse como un atributo de la clase:</p>",
+          "codigo": "    @property                # mismo nombre que la variable\n    def consigna(self):\n        return self._consigna\n\n    @consigna.setter         # mismo nombre que la variable + .setter\n    def consigna(self, valor):\n        if valor >= 15 and valor <= 25:\n            self._consigna = valor\n        else:\n            print(\"Error: consigna fuera de rango.\\n\")"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p><code>main()</code> de prueba de <code>Consigna.py</code>: prueba el <em>setter</em> (<code>consigna.consigna = 20</code>) y el <em>getter</em> (al imprimir <code>consigna.consigna</code>) usando la sintaxis de <code>@property</code>:</p>",
+          "codigo": "def main():\n    consigna = Consigna(16, 17)  # Pulsador 16 para subir, 17 para bajar\n    consigna.consigna = 20       # Prueba del setter\n    while True:\n        print(f\"Consigna = {consigna.consigna} ºC\")  # Prueba del getter\n\n\nif __name__ == '__main__':\n    try:\n        main()\n    except KeyboardInterrupt:\n        print(\"Fin del programa.\\n\")"
+        }
+      ]
+    },
+    {
+      "titulo": "11.7 Programa principal: integración",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Con los dos módulos listos y probados, el programa principal solo tiene que <strong>importarlos</strong> y orquestar el control. Crea los objetos <code>ntc</code>, <code>consigna</code> y <code>led</code>, y entra en el <strong>bucle de scan</strong>: lee la temperatura y la consigna mediante sus <em>getters</em>, aplica el control todo/nada con histéresis de 0,5 °C sobre el LED de GPIO20 (que simula el relé) e imprime el estado cada segundo.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Programa principal. Observa los tres <code>import</code>: <code>LED</code> de gpiozero y las clases de los módulos propios (<code>DriverNTC</code>, <code>Consigna</code>). Al importarlos, el <em>guard</em> <code>__main__</code> impide que se lancen sus <code>main()</code> de prueba:</p>",
+          "codigo": "from gpiozero import LED\nfrom DriverNTC import NTC\nfrom Consigna import Consigna\n\n\ndef main():\n    ntc = NTC(7, 0, 50)          # NTC en canal 7 con un rango de 0 a 50\n    consigna = Consigna(16, 17)  # Pulsador 16 para subir, 17 para bajar\n    led = LED(20)\n    while True:\n        temp = ntc.leer_temperatura()\n        t_consigna = consigna.consigna  # getter (o consigna.leer_consigna())\n        if temp < (t_consigna - 0.5):\n            led.on()    # Enciende la calefacción (relé)\n        elif temp > (t_consigna + 0.5):\n            led.off()   # Apaga la calefacción (relé)\n        print(f\"Consigna = {t_consigna} ºC. Temperatura = {temp}\")\n\n\nif __name__ == '__main__':\n    try:\n        main()\n    except KeyboardInterrupt:\n        print(\"Fin del programa.\\n\")"
+        },
+        {
+          "tipo": "nota",
+          "html": "El sistema controlado (la temperatura de una habitación) es muy lento, así que basta con <strong>muestrear cada cierto tiempo</strong> (del orden de 1 s). Esa cadencia periódica no se consigue con un <code>sleep</code> dentro del <code>while</code>, sino con los mecanismos del tema de Temporizadores: un hilo (<code>Thread</code>) si la tarea no tiene fin, o un <code>Timer</code>/<code>sched</code> si debe poder cancelarse."
+        }
+      ]
+    },
+    {
+      "titulo": "11.8 Conclusiones",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>La mejor manera de abordar un programa complejo es <strong>descomponerlo en módulos</strong> lo más independientes posible del resto. La clave es que la <strong>interfaz</strong> entre el módulo y el resto del programa sea clara y concisa, y que <strong>no dependa de la implementación interna</strong> del módulo: así, si hay que cambiar el módulo en el futuro, no hay que tocar el resto del programa.</p><p>Esa interfaz debe consistir en <strong>funciones o métodos</strong> (getters/setters), no en acceso directo a los datos internos. Es el principio de <strong>encapsulamiento de datos</strong>: todo el acceso a los datos internos de un módulo se hace a través de getters y setters.</p>"
+        }
+      ]
+    }
+  ],
+  "ejercicios": {
+    "programacion-modular-import": {
+      "titulo": "Importación de módulos y namespaces",
+      "enunciado": "<p>En el termostato digital tenemos tres archivos: <code>DriverNTC.py</code> (con la clase <code>NTC</code>), <code>Consigna.py</code> (con la clase <code>Consigna</code>) y el programa principal. Cada módulo termina con un bloque de prueba bajo <code>if __name__ == \"__main__\":</code> que llama a su propio <code>main()</code>.</p>",
+      "contexto": "<ul><li>El principal empieza con <code>from DriverNTC import NTC</code> y <code>from Consigna import Consigna</code>.</li><li>Recuerda que importar un módulo ejecuta su código de arriba abajo.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "Tras escribir 'from DriverNTC import NTC', ¿cómo se instancia el sensor en el programa principal?",
+          "opciones": [
+            "DriverNTC.NTC(7, 0, 50)",
+            "NTC(7, 0, 50)",
+            "import NTC(7, 0, 50)",
+            "DriverNTC(7, 0, 50)"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Con <code>from DriverNTC import NTC</code> el nombre <code>NTC</code> entra en el espacio de nombres actual, así que se usa directamente: <code>NTC(7, 0, 50)</code>, sin prefijo. Solo si hubiéramos escrito <code>import DriverNTC</code> habría que cualificarlo como <code>DriverNTC.NTC(7, 0, 50)</code>.</p>"
+        },
+        {
+          "texto": "Al ejecutar el programa principal, ¿se lanzan los main() de prueba que hay dentro de DriverNTC.py y Consigna.py?",
+          "opciones": [
+            "Sí: importar un módulo ejecuta su main() automáticamente.",
+            "No: están bajo 'if __name__ == \"__main__\":', que solo se cumple si ese archivo se ejecuta directamente, no al importarlo.",
+            "Sí, pero solo el de DriverNTC porque se importa primero.",
+            "No, porque los main() de prueba no se pueden importar nunca."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Al importar, Python pone en <code>__name__</code> el nombre del módulo (<code>\"DriverNTC\"</code>, <code>\"Consigna\"</code>), no <code>\"__main__\"</code>. Por eso la condición <code>if __name__ == \"__main__\":</code> es falsa y sus <code>main()</code> de prueba NO se ejecutan. Solo corren si se lanza ese archivo directamente. Esto permite que un mismo archivo sea módulo reutilizable y programa de prueba a la vez.</p>"
+        }
+      ]
+    },
+    "programacion-modular-encapsulamiento": {
+      "titulo": "Encapsulamiento: privados, getters y @property",
+      "enunciado": "<p>La clase <code>Consigna</code> guarda el valor de la consigna en el atributo <code>_consigna</code> y lo expone con un getter/setter implementados mediante el decorador <code>@property</code>, validando que el valor esté entre 15 y 25 °C.</p>",
+      "contexto": "<ul><li>El getter está marcado con <code>@property</code> y el setter con <code>@consigna.setter</code>.</li><li>Python no tiene atributos <code>private</code> reales como C++.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Por qué el atributo se llama '_consigna' con guion bajo inicial?",
+          "opciones": [
+            "Porque el guion bajo lo hace inaccesible (private) por reglas del lenguaje.",
+            "Por una convención entre programadores: indica que es privado y no debe usarse desde fuera de la clase, aunque Python no lo impide.",
+            "Porque los atributos numéricos en Python deben empezar por guion bajo.",
+            "Porque así se ejecuta automáticamente al crear el objeto."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Python no tiene <code>private</code> como C++. Existe la <strong>convención</strong> de que un nombre que empieza por <code>_</code> es privado y nadie debería tocarlo desde fuera de la clase. El acceso se hace a través de getters y setters, que pueden validar el valor (aquí, mantener la consigna entre 15 y 25 °C).</p>"
+        },
+        {
+          "texto": "Con el getter y setter definidos vía @property, ¿cómo se cambia la consigna a 20 °C desde fuera del módulo?",
+          "opciones": [
+            "consigna._consigna = 20",
+            "consigna.escribir_consigna(20)",
+            "consigna.consigna = 20",
+            "consigna.setter(20)"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>Con <code>@property</code> y <code>@consigna.setter</code>, el atributo se usa como si fuera normal: <code>consigna.consigna = 20</code>. Por debajo se llama al método setter, que comprueba que 20 está en [15, 25] y solo entonces actualiza <code>_consigna</code>. La opción <code>escribir_consigna(20)</code> sería válida con la forma clásica (sin decorador), y acceder a <code>_consigna</code> directamente rompería el encapsulamiento.</p>"
+        }
+      ]
+    },
+    "programacion-modular-examen": {
+      "titulo": "Máquina de gancho repartida en módulos (Examen Ordinario 2026, Problema 2)",
+      "enunciado": "<p>Adaptado del <strong>Examen Ordinario 2026, Problema 2 (máquina de gancho)</strong>: el sistema se organiza en módulos. El archivo <code>motores.py</code> contiene la clase <code>Motores</code> (que internamente crea objetos <code>PWMOutputDevice</code> para gobernar los motores), <code>joystick.py</code> contiene la clase <code>Joystick</code> (que lee el mando con un <code>MCP3008</code>) y <code>main.py</code> integra todo con <code>from motores import Motores</code> y <code>from joystick import Joystick</code>. Cada módulo incluye su propio <code>main()</code> de prueba bajo <code>if __name__ == \"__main__\":</code>.</p>",
+      "contexto": "<ul><li>Un módulo que encapsula un dispositivo físico (los motores, el joystick) es un <strong>driver</strong>: crea una capa de abstracción sobre el hardware.</li><li>El <em>guard</em> <code>if __name__ == \"__main__\":</code> permite que un archivo sea, a la vez, módulo reutilizable y programa de prueba autónomo.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Cuál es la principal ventaja de separar el control de los motores y la lectura del joystick en módulos (clases Motores y Joystick) en lugar de escribir todo en main.py?",
+          "opciones": [
+            "Que el programa se ejecuta más rápido en la Raspberry Pi.",
+            "Que cada driver crea una capa de abstracción reutilizable y se puede probar de forma independiente (con su propio main bajo if __name__=='__main__'); si cambia el hardware solo se toca ese módulo.",
+            "Que Python obliga a usar un archivo por clase.",
+            "Que así se evita tener que importar gpiozero."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Separar en módulos/clases (<strong>divide y vencerás</strong>) reduce la complejidad y, sobre todo al tratar con hardware, crea una <strong>capa de abstracción</strong> (un <em>driver</em>): <code>main.py</code> usa <code>Motores</code> y <code>Joystick</code> sin conocer sus detalles internos (los <code>PWMOutputDevice</code> o el <code>MCP3008</code>). Cada módulo se <strong>prueba por separado</strong> con su propio <code>main()</code> bajo <code>if __name__ == \"__main__\":</code>, es <strong>reutilizable</strong> en otros proyectos y, si en el futuro cambia el hardware, solo hay que modificar ese módulo, no el resto del programa. La rapidez de ejecución no mejora y Python no obliga a un archivo por clase.</p>"
+        },
+        {
+          "texto": "En main.py se escribe 'from motores import Motores'. Si en motores.py hay un main() de prueba bajo 'if __name__ == \"__main__\":', ¿se ejecuta ese main() al lanzar main.py?",
+          "opciones": [
+            "Sí, porque al importar el módulo se ejecuta todo su código, incluido el main().",
+            "No: al importar motores.py su __name__ vale \"motores\" (no \"__main__\"), así que el bloque del guard no se ejecuta; solo correría si se lanzara motores.py directamente.",
+            "Sí, pero solo la primera vez que se importa.",
+            "No, porque from … import no ejecuta nada del módulo importado."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Al importar <code>motores.py</code>, Python pone en <code>__name__</code> el nombre del módulo (<code>\"motores\"</code>), no <code>\"__main__\"</code>, por lo que la condición <code>if __name__ == \"__main__\":</code> es falsa y el <code>main()</code> de prueba <strong>no se ejecuta</strong>. Sí se ejecuta el resto del código del módulo (la definición de la clase <code>Motores</code>), pero el programa de prueba solo corre si se lanza <code>motores.py</code> directamente. Así el mismo archivo sirve de driver reutilizable y de banco de pruebas autónomo.</p>"
+        }
+      ]
+    }
+  },
+  "ejerciciosEnTema": [
+    "programacion-modular-import",
+    "programacion-modular-encapsulamiento",
+    "programacion-modular-examen"
+  ],
+  "resumen": [
+    "<strong>Modularizar</strong> es dividir un problema complejo en módulos pequeños e independientes (<em>divide y vencerás</em>): reduce complejidad, mejora mantenibilidad y depuración, permite el trabajo en equipo y la reutilización.",
+    "Al tratar con hardware, el módulo que lo encapsula se llama <strong>driver</strong> y crea una <strong>capa de abstracción</strong>: si cambia el hardware, solo cambia el driver.",
+    "Metodología: <strong>diseño top-down</strong> (dividir en bloques con interfaz clara) e <strong>implementación bottom-up</strong> (implementar y probar módulo a módulo, luego integrar).",
+    "Un módulo es un archivo <code>.py</code>: se usa con <code>import modulo</code> (acceso cualificado <code>modulo.X</code>), <code>from modulo import X</code> (acceso directo <code>X</code>) o con alias <code>as</code>.",
+    "El <em>guard</em> <code>if __name__ == \"__main__\":</code> hace que el <code>main()</code> de prueba solo se ejecute al lanzar el archivo directamente, no al importarlo (porque <code>__name__</code> vale <code>\"__main__\"</code> solo en ese caso).",
+    "<strong>Encapsulamiento:</strong> los atributos privados (convención del <code>_</code> inicial) se acceden mediante <strong>getters/setters</strong>, de forma clásica o con el decorador <code>@property</code>, que permite usarlos como atributos normales validando el valor."
+  ]
+}

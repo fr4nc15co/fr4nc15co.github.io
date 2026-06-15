@@ -1,0 +1,260 @@
+{
+  "slug": "i2c-spi",
+  "titulo": "I²C y SPI",
+  "temaNum": 14,
+  "lead": "Para conectar periféricos (displays, memorias, conversores, sensores…) a la Raspberry Pi sin cablear un bus paralelo de 8 bits a cada chip se usan <strong>buses serie síncronos</strong>. Este tema estudia los dos más extendidos: <strong>I²C</strong> (Philips/NXP, 1982), que con solo dos hilos conecta hasta más de cien dispositivos, y <strong>SPI</strong> (Motorola), que a cambio de más líneas consigue mayores velocidades. Ambos son maestro-esclavo y se programan en la Pi desde Python con <code>smbus</code> y <code>spidev</code>.",
+  "secciones": [
+    {
+      "titulo": "14.1 Buses serie síncronos: I²C frente a SPI",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>En los años 80 se desarrollaron dos buses serie para simplificar la conexión de periféricos a microprocesadores, evitando el cableado de un bus de datos paralelo a cada chip. Pronto se convirtieron en estándares de facto:</p><ul><li><strong>I²C</strong> (<em>Inter-Integrated Circuit</em>, abreviado IIC o I²C), de Philips (hoy NXP), 1982. Solo necesita <strong>dos líneas</strong>.</li><li><strong>SPI</strong> (<em>Serial Peripheral Interface</em>), de Motorola (luego Freescale, hoy NXP). Permite <strong>mayores velocidades</strong> a costa de usar más cables.</li></ul><p>Ambos están pensados para interconectar chips dentro de una misma placa de circuito impreso o como mucho dentro de un mismo equipo; por eso los estándares no definen ni conectores ni niveles de tensión, solo el tipo de señales y el formato de los mensajes.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Conviene fijar primero la <strong>terminología</strong> común a ambos buses:</p><ul><li><strong>Maestro:</strong> el dispositivo que inicia la transmisión, genera el reloj y la termina. Típicamente un microcontrolador (la Raspberry Pi).</li><li><strong>Esclavo:</strong> el dispositivo direccionado por el maestro. Puede haber varios conectados, pero solo uno está activo en cada transmisión. Típicamente un periférico.</li><li><strong>Transmisor / Receptor:</strong> quien envía / recibe datos en cada momento; a veces es el maestro y a veces el esclavo.</li></ul>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Resumen de diferencias entre los dos buses:</p><table class=\"tabla-datos\"><thead><tr><th></th><th>I²C</th><th>SPI</th></tr></thead><tbody><tr><td>Líneas</td><td>2 (SDA, SCL)</td><td>4 (SCLK, MOSI, MISO, SS)</td></tr><tr><td>Maestros</td><td>Varios (multi-master, con arbitraje)</td><td>Uno solo</td></tr><tr><td>Direccionamiento</td><td>Dirección de 7 bits en el bus</td><td>Línea SS por esclavo</td></tr><tr><td>Sentido</td><td>Half-duplex (SDA bidireccional)</td><td>Full-duplex (MOSI y MISO a la vez)</td></tr><tr><td>Salidas</td><td>Drenador abierto + pull-ups</td><td>Push-pull</td></tr><tr><td>Velocidad</td><td>100 / 400 kb/s (típico)</td><td>Mayor (MHz)</td></tr></tbody></table>"
+        }
+      ]
+    },
+    {
+      "titulo": "14.2 I²C: el hardware (dos líneas, drenador abierto)",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El bus I²C consta de <strong>solo dos líneas</strong>:</p><ul><li><strong>SCL</strong> (<em>Serial CLock</em>): la línea de reloj.</li><li><strong>SDA</strong> (<em>Serial DAta</em>): la línea de datos.</li></ul><p>Sus características principales son:</p><ul><li>Es un bus <strong>maestro-esclavo</strong> con posibilidad de <strong>varios maestros</strong> (<em>multi-master</em>): incluye un protocolo de arbitraje de acceso al bus.</li><li>Es <strong>bidireccional</strong>: los datos pueden ir del maestro al esclavo o viceversa (SDA y SCL son ambas bidireccionales).</li><li>Los datos se transmiten en <strong>paquetes de 8 bits</strong>.</li><li>Cada esclavo tiene una <strong>dirección única de 7 bits</strong> asignada por el fabricante: se pueden direccionar hasta 128 esclavos (el número real es 112 por las direcciones reservadas).</li><li>Velocidades: <strong>100 kb/s</strong> (<em>Standard Mode</em>, original) y <strong>400 kb/s</strong> (<em>Fast Mode</em>), ambas soportadas por la Raspberry Pi.</li></ul>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Tanto SCL como SDA se implementan en los chips como <strong>salidas en drenador abierto</strong> (<em>open drain</em>): cuando un chip quiere poner la línea a <strong>cero</strong> activa su transistor, y cuando quiere ponerla a <strong>uno</strong> simplemente lo desactiva, dejando la línea «flotando». La línea sube a uno gracias a las <strong>resistencias de pull-up</strong> que el bus necesita.</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "La gran ventaja del drenador abierto es que <strong>no hay contención del bus</strong>: como los dispositivos solo pueden poner las líneas a cero (nunca forzarlas a uno), nunca se produce el cortocircuito que sí ocurriría con salidas push-pull si dos dispositivos pelearan por la línea. El valor típico de la resistencia de pull-up es <strong>4,7 kΩ</strong>; su valor exacto depende de la capacidad del bus y de la velocidad (limita el tiempo de subida de la señal)."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>Repetidores.</strong> Si el bus tiene mucha capacidad y no es posible elegir una resistencia de pull-up que cumpla los tiempos de subida del modo rápido, o si se mezclan chips de <strong>5 V con otros de 3,3 V</strong> (o dispositivos de 400 kb/s con dispositivos de 100 kb/s), se usa un <strong>repetidor</strong> (p. ej. el PCA9515) que parte el bus en dos secciones independientes.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "14.3 I²C: el protocolo (START/STOP, ACK, direccionamiento)",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>La transmisión es <strong>síncrona</strong>. La regla básica del protocolo es: la línea de datos <strong>SDA solo puede cambiar mientras SCL está a nivel bajo</strong>, y los receptores muestrean SDA <strong>cuando SCL está en alto</strong>.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>En reposo, todos los drivers están desactivados y SDA y SCL están a nivel alto gracias a los pull-ups. El principio y el final de la transmisión se delimitan con dos condiciones que <em>violan</em> la regla anterior (cambian SDA con SCL en alto):</p><ul><li><strong>START (S):</strong> flanco de <strong>bajada</strong> en SDA mientras SCL está en alto.</li><li><strong>STOP (P):</strong> flanco de <strong>subida</strong> en SDA mientras SCL está en alto.</li></ul><p>La trama va siempre delimitada por S y P, los datos viajan byte a byte empezando por el bit más significativo, y se puede enviar cualquier número de bytes entre el START y el STOP.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>El bit ACK.</strong> Después de cada byte transmitido, el receptor responde con un bit de reconocimiento: un <strong>0 = ACK</strong> (todo bien, puede enviarse otro byte) o, si deja la línea a <strong>1 = NACK</strong>, indica un problema (no hay esclavo en esa dirección, está ocupado, no entiende el dato, no caben más datos, o —en una lectura— el maestro indica que ya no quiere más bytes). Como para hacer ACK hay que <strong>bajar SDA a 0</strong>, si no hay nadie en esa dirección la línea se queda a 1 (NACK) por el pull-up.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>Direccionamiento.</strong> El <strong>primer byte</strong> de la trama lleva la dirección del esclavo (7 bits) seguida del bit de <strong>lectura/escritura (R/W)</strong>: <code>0</code> = escribir en el dispositivo, <code>1</code> = leer de él. Es decir, el byte que viaja por el bus es <code>(dirección &lt;&lt; 1) | R/W</code>.</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Para el acelerómetro <strong>ADXL345</strong>, cuya dirección I²C es <code>0x53</code> (binario <code>1010011</code>), el byte de direccionamiento se forma desplazando la dirección un bit a la izquierda y añadiendo R/W:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mtext>byte</mtext><mo>=</mo><mo>(</mo><mn>0x53</mn><mo>&#171;</mo><mn>1</mn><mo>)</mo><mo>|</mo><mtext>R/W</mtext><mo>=</mo><mfenced open=\"{\" close=\"\"><mrow><mtable columnalign=\"left\"><mtr><mtd><mn>0xA6</mn><mtext>&#160;(escritura,&#160;R/W&#160;=&#160;0)</mtext></mtd></mtr><mtr><mtd><mn>0xA7</mn><mtext>&#160;(lectura,&#160;R/W&#160;=&#160;1)</mtext></mtd></mtr></mtable></mrow></mfenced></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Hay, pues, dos tipos de mensaje. En la <strong>escritura</strong> el maestro envía: <code>S · dir+Wr · A · reg · A · dato · A · … · P</code>. En la <strong>lectura</strong> hace falta primero una escritura (para indicar de qué registro se quiere leer) y luego una lectura, encadenadas con un <strong>START repetido (RS)</strong> para que ningún otro maestro se «cuele» en medio:</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Tramas típicas (blanco = maestro, gris = esclavo):</p><table class=\"tabla-datos\"><thead><tr><th>Operación</th><th>Trama en el bus</th></tr></thead><tbody><tr><td>Escritura</td><td><code>S · Slave+Wr · A · Reg · A · Data · A · P</code></td></tr><tr><td>Lectura</td><td><code>S · Slave+Wr · A · Reg · A · RS · Slave+Rd · A · Data · NA · P</code></td></tr></tbody></table><p>En la lectura, tras enviar la dirección del registro se genera un START repetido y se reenvía la dirección con <strong>R/W = 1</strong>; a partir de ahí es el esclavo quien transmite. Cuando el maestro no quiere más bytes responde con un <strong>NACK</strong> y cierra con STOP.</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Auto-incremento del registro.</strong> En casi todos los chips I²C, si tras escribir (o leer) un registro se siguen enviando (o leyendo) bytes, estos van a los <strong>registros consecutivos</strong> sin tener que reenviar la dirección de registro. Por eso, para leer los seis registros de aceleración del ADXL345 (0x32 a 0x37) basta con posicionarse en <code>0x32</code> y leer 6 bytes seguidos: el chip devuelve 0x32, 0x33, …, 0x37 de corrido."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Explora el byte de direccionamiento y la estructura de la trama I²C (START, dirección, R/W, ACK/NACK, datos, STOP) en el simulador siguiente:</p>\n<div class=\"mpi-mount\" data-componente=\"sim-i2c-trama\" data-config=\"{}\"></div>"
+        }
+      ]
+    },
+    {
+      "titulo": "14.4 I²C en la Raspberry Pi y en Python (smbus)",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Antes de usar el bus hay que <strong>habilitarlo</strong> con <code>raspi-config</code> → <em>Interface Options</em> → <em>I2C</em>. A partir de ahí el bus está disponible en el dispositivo <code>/dev/i2c-1</code>. En la Raspberry Pi 4 las líneas del bus están en <strong>GPIO2 (SDA)</strong> y <strong>GPIO3 (SCL)</strong>.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Una vez conectado un dispositivo, conviene comprobarlo con la utilidad <code>i2cdetect</code>, que barre todas las direcciones del bus indicado y muestra cuáles responden. Si conectamos el ADXL345 al bus 1 veremos su dirección <code>0x53</code> en la rejilla:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Barrido del bus I²C-1 (se ve un único dispositivo en la dirección 0x53):</p>",
+          "codigo": "$ i2cdetect 1\n     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\n00:                         -- -- -- -- -- -- -- --\n10: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --\n20: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --\n30: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --\n40: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --\n50: -- -- -- 53 -- -- -- -- -- -- -- -- -- -- -- --\n60: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --\n70: -- -- -- -- -- -- -- --"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>En Python se usa la librería <code>smbus</code> (instalada por defecto), que ofrece la clase <code>SMBus</code>. Al crearla se indica el canal (1 para <code>/dev/i2c-1</code>). Métodos principales:</p><ul><li><code>read_byte_data(dir, reg)</code>: lee el byte del registro <code>reg</code> del dispositivo <code>dir</code>.</li><li><code>read_i2c_block_data(dir, reg, n)</code>: lee una lista de <code>n</code> bytes a partir del registro <code>reg</code>.</li><li><code>write_byte_data(dir, reg, dato)</code>: escribe <code>dato</code> en el registro <code>reg</code>.</li><li><code>write_i2c_block_data(dir, reg, lista)</code>: escribe la lista de bytes a partir del registro <code>reg</code>.</li><li><code>close()</code>: libera el bus.</li></ul>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p><strong>Ejemplo: lectura del acelerómetro ADXL345.</strong> Se lee primero el identificador del chip (debe ser <code>0xE5</code>), se saca al chip del modo de bajo consumo poniendo a 1 el bit 3 (<em>Measure</em>) del registro <code>POWER_CTL</code>, y se leen los 6 bytes de aceleración (registros 0x32–0x37, dato de 10 bits con signo, rango ±2g):</p>",
+          "codigo": "from smbus import SMBus\nfrom numpy import int16\n\ni2c = SMBus(1)            # Usamos el canal 1, que es el que esta en GPIO\n\nDIR_ADXL345   = 0x53\nREG_DEV_ID    = 0x00\nREG_POWER_CTL = 0x2D\nREG_DATA      = 0x32\n\ndev_id = i2c.read_byte_data(DIR_ADXL345, REG_DEV_ID)\nprint(f\"dev_id = {hex(dev_id)}\")   # Se espera 0xE5\n\n# En el arranque el chip esta en modo de bajo consumo. Para que se\n# ponga a medir hay que activar el bit 3 (Measure) del registro POWER_CTL\ni2c.write_byte_data(DIR_ADXL345, REG_POWER_CTL, 0x08)\n\n# Leer datos 0x32-0x37: 10 bits con signo (-512..511), rango +-2g\nvec_data = i2c.read_i2c_block_data(DIR_ADXL345, REG_DATA, 6)\nacc_x = int16(vec_data[1] << 8 | vec_data[0]) / 512 * 2\nacc_y = int16(vec_data[3] << 8 | vec_data[2]) / 512 * 2\nacc_z = int16(vec_data[5] << 8 | vec_data[4]) / 512 * 2\n\nprint(f\"acc_x = {acc_x}\")\nprint(f\"acc_y = {acc_y}\")\nprint(f\"acc_z = {acc_z}\")\n\ni2c.close()   # Close the bus"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Cada eje viene en <strong>dos bytes</strong> (parte baja y parte alta) que se unen con <code>alto &lt;&lt; 8 | bajo</code>. Como el resultado sería un entero de 32 bits siempre positivo, se convierte a entero con signo de 16 bits con <code>int16</code> de NumPy; queda un valor entre −512 y 511 (10 bits) que, dividido por 512 y multiplicado por 2, da la aceleración en <strong>g</strong>.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "14.5 SPI: líneas, transferencia full-duplex y protocolo",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El bus SPI es también un bus serie síncrono maestro-esclavo, pero —al contrario que el I²C— <strong>solo admite un maestro</strong>. Usa <strong>cuatro líneas</strong>:</p><ul><li><strong>SCLK</strong> (<em>Serial CLocK</em>): el reloj, que genera el maestro respetando la frecuencia máxima del esclavo.</li><li><strong>MOSI</strong> (<em>Master Out Slave In</em>): el maestro envía datos al esclavo.</li><li><strong>MISO</strong> (<em>Master In Slave Out</em>): el esclavo envía datos al maestro.</li><li><strong>SS</strong> (<em>Slave Select</em>): selecciona al esclavo. Es <strong>activa a nivel bajo</strong> y se necesita <strong>una por cada esclavo</strong>.</li></ul><p>SCLK, MOSI y MISO pueden compartirse entre esclavos; lo individual es la SS. Todas las señales son <strong>push-pull</strong>, lo que da mayor inmunidad al ruido, menor consumo y mayores velocidades.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El hardware se reduce a un par de <strong>registros de desplazamiento conectados en anillo</strong> (normalmente de 8 bits). Para una transferencia: el maestro pone un dato en su registro, el esclavo pone otro y se generan <strong>N ciclos de reloj</strong> (N = número de bits). Al terminar, el dato del maestro está en el esclavo y el del esclavo en el maestro. Esto es comunicación <strong>full-duplex</strong>: al haber dos líneas (MOSI y MISO) se puede enviar y recibir a la vez, a diferencia del I²C, que es <strong>half-duplex</strong> (una sola línea de datos bidireccional, SDA).</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El protocolo es tan sencillo que casi no existe: (1) el maestro <strong>baja SS</strong> para avisar al esclavo de que empieza la transmisión; (2) genera el reloj para ir desplazando los datos; (3) al acabar, <strong>sube SS</strong> para deseleccionar al esclavo.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "14.6 SPI: los cuatro modos (CPOL/CPHA)",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El bus permite elegir la <strong>polaridad</strong> (CPOL, <em>Clock POLarity</em>) y la <strong>fase</strong> (CPHA, <em>Clock PHAse</em>) del reloj, lo que da lugar a <strong>cuatro modos</strong>:</p><ul><li><strong>CPOL = 0:</strong> el reloj está en reposo a 0 y activo a 1.</li><li><strong>CPOL = 1:</strong> el reloj está en reposo a 1 y activo a 0.</li><li><strong>CPHA = 0:</strong> el dato se muestrea en los flancos <strong>impares</strong> del reloj (y cambia en los pares).</li><li><strong>CPHA = 1:</strong> el dato se muestrea en los flancos <strong>pares</strong> del reloj (y cambia en los impares).</li></ul>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El modo se nombra con un número del 0 al 3, formado al concatenar en binario CPOL y CPHA:</p><table class=\"tabla-datos\"><thead><tr><th>Modo</th><th>CPOL</th><th>CPHA</th><th>Reposo del reloj</th></tr></thead><tbody><tr><td>0</td><td>0</td><td>0</td><td>nivel bajo</td></tr><tr><td>1</td><td>0</td><td>1</td><td>nivel bajo</td></tr><tr><td>2</td><td>1</td><td>0</td><td>nivel alto</td></tr><tr><td>3</td><td>1</td><td>1</td><td>nivel alto</td></tr></tbody></table><p>El maestro y el esclavo deben usar el <strong>mismo modo</strong>; el MCP3008, por ejemplo, trabaja en <strong>modo 0</strong>.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Observa cómo cambian el cronograma de SCLK, MOSI/MISO y el instante de muestreo al variar CPOL y CPHA en el siguiente simulador:</p>\n<div class=\"mpi-mount\" data-componente=\"sim-spi\" data-config=\"{}\"></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>Conexión de varios esclavos.</strong> Hay dos esquemas:</p><ul><li><strong>Paralela:</strong> SCLK, MOSI y MISO se comparten y cada esclavo tiene su propia <strong>SS</strong>. Necesita una línea de selección por esclavo (que puede no estar disponible). Si faltan patillas se puede usar un decodificador externo (p. ej. el 74HC154, de 4 a 16), pero entonces las señales de selección hay que gobernarlas por software.</li><li><strong>Daisy-chain (cascada):</strong> la salida MISO de un esclavo se conecta a la entrada del siguiente, formando un gran registro de desplazamiento. El maestro envía de corrido el contenido de todos los registros. Es típico de los controladores de LEDs como el TLC5947.</li></ul>"
+        }
+      ]
+    },
+    {
+      "titulo": "14.7 SPI en la Raspberry Pi y en Python (spidev)",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>La Raspberry Pi dispone de <strong>dos interfaces SPI, el 0 y el 1</strong>. En la iMAT HAT el <strong>SPI 0 está cableado directamente al conversor A/D (MCP3008)</strong> —con el potenciómetro en el canal Ch7—, así que para conectar dispositivos externos solo queda el <strong>SPI 1</strong>.</p><p>El SPI 0 se habilita con <code>raspi-config</code> (o poniendo <code>dtparam=spi=on</code> en <code>/boot/config.txt</code>). El SPI 1 hay que habilitarlo a mano añadiendo a <code>/boot/config.txt</code> la línea <code>dtoverlay=spi1-3cs</code> (que crea tres selecciones: CE0/GPIO18, CE1/GPIO17, CE2/GPIO16) y reiniciar. Después deben existir <code>/dev/spidev1.0</code>, <code>/dev/spidev1.1</code> y <code>/dev/spidev1.2</code>.</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Consideraciones de la iMAT HAT.</strong> En la iMAT HAT, <strong>CE0 (GPIO18) no está disponible</strong> porque ese pin se usa también como salida del generador PWM (el que se active en segundo lugar fallará). Además, <strong>CE1 (GPIO17) y CE2 (GPIO16)</strong> están compartidas con los pulsadores y tienen un condensador a tierra antirrebotes, lo que <strong>limita la velocidad a 100 kHz</strong> (el mismo condensador afecta a GPIO19/MISO). Si se necesita más velocidad hay que desoldar el condensador. Los pines del SPI 1 en la iMAT HAT son: <strong>GPIO21 (SCK), GPIO20 (MOSI), GPIO19 (MISO)</strong> y <strong>CE1 = GPIO17</strong>."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>En Python se usa la librería <code>spidev</code>, con una sola clase. Se crea el objeto, se abre el canal con <code>open(bus, device)</code> (bus 1 = SPI 1; device = número de chip enable, p. ej. 1 para CE1) y se configuran modo y velocidad. Métodos principales:</p><ul><li><code>writebytes(lista)</code>: envía una lista de bytes por el bus.</li><li><code>readbytes(n)</code>: lee <code>n</code> bytes y los devuelve como lista.</li><li><code>xfer(lista)</code>: envía una lista de bytes y devuelve la lista recibida (full-duplex).</li><li><code>close()</code>: libera el bus.</li></ul>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Inicialización y configuración típicas del bus SPI desde Python (SPI 1, dispositivo en CE1, modo 0, 100 kHz):</p>",
+          "codigo": "import spidev\n\nspi = spidev.SpiDev()\nbus = 1       # Para usar el SPI 1\ndevice = 1    # Dispositivo conectado a CE1\nspi.open(bus, device)\n\nspi.mode = 0                # Modo 0 (CPOL = 0, CPHA = 0)\nspi.max_speed_hz = 100000   # 100 kHz\n\n# Leer n bytes -> lista\nl_bytes = spi.readbytes(n_bytes)\n# Enviar una lista de bytes\nspi.writebytes([0x76])\n# Transferencia full-duplex: envia y devuelve lo recibido\nrx = spi.xfer([0x00, 0x00])\n\nspi.close()   # Liberar el bus al terminar"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p><strong>Ejemplo: display de 7 segmentos COM-11441 de SparkFun.</strong> Se conecta al SPI 1 con CE1 (GPIO17 → SS, GPIO21 → SCK, GPIO20 → MOSI/SDI, GPIO19 → MISO/SDO). Basta con enviarle los dígitos a mostrar; acepta también hexadecimal, ASCII (con <code>ord()</code> o <code>b\"…\"</code>) y códigos de control como <code>0x76</code> (borrar) o <code>0x79</code> (situar el cursor):</p>",
+          "codigo": "import time\nimport spidev\n\nspi = spidev.SpiDev()\nbus = 1       # Para usar el SPI 1\ndevice = 1    # Enable del display conectado a CE1\nspi.open(bus, device)\n\n# Configuramos la velocidad y el modo del bus\nspi.max_speed_hz = 100000\nspi.mode = 0\n\n# Borramos el display\nspi.writebytes([0x76])\n\nspi.writebytes([1, 2, 3, 4])     # Muestra '1234'\ntime.sleep(2)\n\nspi.writebytes([1, 2, 3, 4, 5])  # El 5 sobrescribe el primero -> '5234'\ntime.sleep(2)\n\nspi.writebytes([0x79, 0])        # Situamos el cursor en la primera posicion\nspi.writebytes([1, 0xC, 0xA, 1]) # Acepta hexadecimal -> '1CA1'\ntime.sleep(2)\n\nspi.writebytes([ord('h'), ord('o'), ord('l'), ord('a')])  # ASCII -> 'hola'\ntime.sleep(2)\n\nspi.writebytes(b\"HOLA\")          # Tambien una cadena de bytes\ntime.sleep(2)\n\nspi.writebytes([0x76])           # Borramos el display\nspi.close()                      # Liberamos el bus antes de salir"
+        },
+        {
+          "tipo": "nota",
+          "html": "El <strong>MCP3008</strong>, conversor A/D que la iMAT HAT conecta por SPI 0 (en modo 0), se estudia en detalle en el tema de <strong>Conversión analógico-digital</strong>; allí se ve cómo formar el comando y reconstruir el valor de 10 bits con <code>spi.xfer(...)</code>."
+        }
+      ]
+    }
+  ],
+  "ejercicios": {
+    "i2c-spi-byte-direccion": {
+      "titulo": "El byte de direccionamiento en I²C",
+      "enunciado": "<p>Queremos comunicarnos por I²C con un acelerómetro <strong>ADXL345</strong> cuya dirección de 7 bits es <code>0x53</code>. Recuerda que el primer byte que viaja por el bus se forma como <code>(dirección &lt;&lt; 1) | R/W</code>, donde el bit R/W vale 0 para escritura y 1 para lectura.</p>",
+      "contexto": "<ul><li><code>0x53</code> en binario es <code>1010011</code> (7 bits).</li><li>El receptor responde con un bit <strong>ACK = 0</strong> tras cada byte; deja la línea a <strong>1 (NACK)</strong> si nadie responde.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Qué byte se envía por el bus para iniciar una ESCRITURA en el ADXL345 (dirección 0x53)?",
+          "opciones": [
+            "0x53",
+            "0xA6",
+            "0xA7",
+            "0x2A"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Se desplaza la dirección un bit a la izquierda y se añade R/W = 0: <code>(0x53 &lt;&lt; 1) | 0 = 0xA6 | 0 = 0xA6</code>. En binario <code>1010011 0 = 10100110 = 0xA6</code>. La lectura sería <code>0xA7</code> (mismo byte con R/W = 1).</p>"
+        },
+        {
+          "texto": "Tras enviar ese primer byte, el ADXL345 baja la línea SDA a 0 en el noveno pulso de reloj. ¿Qué significa?",
+          "opciones": [
+            "Un NACK: el dispositivo no existe o está ocupado.",
+            "Un ACK: el esclavo ha reconocido su dirección y la recepción del byte.",
+            "El comienzo de la condición de STOP.",
+            "Que el bus está en reposo."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Tras cada byte el receptor reconoce con un bit. Bajar SDA a 0 es un <strong>ACK</strong> (todo bien). Si nadie respondiera, el pull-up dejaría la línea a 1, que se interpreta como <strong>NACK</strong>. El STOP, en cambio, es un flanco de subida de SDA con SCL en alto.</p>"
+        }
+      ]
+    },
+    "i2c-spi-comparacion": {
+      "titulo": "I²C frente a SPI",
+      "enunciado": "<p>Se quiere conectar varios periféricos a una Raspberry Pi y hay que decidir el bus. Repasa las diferencias entre I²C y SPI vistas en el tema (número de líneas, sentido de la comunicación, número de maestros, modos de SPI).</p>",
+      "contexto": "<ul><li>I²C: 2 líneas (SDA, SCL), drenador abierto con pull-ups, half-duplex, multi-master.</li><li>SPI: 4 líneas (SCLK, MOSI, MISO, SS), push-pull, full-duplex, un único maestro.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Cuál de estas afirmaciones es CORRECTA al comparar ambos buses?",
+          "opciones": [
+            "El I²C es full-duplex porque tiene dos líneas, y el SPI es half-duplex.",
+            "El SPI es full-duplex (MOSI y MISO simultáneas) y el I²C es half-duplex (una sola línea de datos, SDA).",
+            "Ambos buses admiten varios maestros con arbitraje.",
+            "El SPI direcciona a cada esclavo con un número de 7 bits, igual que el I²C."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>El SPI tiene dos líneas de datos (MOSI y MISO), así que es <strong>full-duplex</strong>; el I²C solo tiene SDA, así que es <strong>half-duplex</strong>. Solo el I²C admite varios maestros (con arbitraje); el SPI tiene un único maestro. Y el SPI selecciona a cada esclavo con su línea <strong>SS</strong>, no con una dirección de 7 bits (eso es del I²C).</p>"
+        },
+        {
+          "texto": "En el bus SPI, el modo 2 corresponde a CPOL = 1 y CPHA = 0. ¿Qué describe correctamente ese modo?",
+          "opciones": [
+            "El reloj está en reposo a nivel bajo y el dato se muestrea en los flancos pares.",
+            "El reloj está en reposo a nivel alto y el dato se muestrea en los flancos impares.",
+            "El reloj está en reposo a nivel alto y el dato se muestrea en los flancos pares.",
+            "El reloj está en reposo a nivel bajo y el dato se muestrea en los flancos impares."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>El número de modo es la concatenación binaria CPOL·CPHA: modo 2 = <code>10</code> → <strong>CPOL = 1</strong> (reloj en reposo a nivel alto) y <strong>CPHA = 0</strong> (el dato se muestrea en los flancos impares del reloj y cambia en los pares).</p>"
+        }
+      ]
+    }
+  },
+  "ejerciciosEnTema": [
+    "i2c-spi-byte-direccion",
+    "i2c-spi-comparacion"
+  ],
+  "resumen": [
+    "El <strong>I²C</strong> (Philips/NXP) usa solo <strong>dos líneas</strong> (SDA datos, SCL reloj) en <strong>drenador abierto con pull-ups</strong>; es maestro-esclavo <strong>multi-master</strong>, half-duplex, con direcciones de <strong>7 bits</strong> y velocidades de 100 / 400 kb/s.",
+    "El protocolo I²C delimita la trama con <strong>START/STOP</strong> (SDA cambia con SCL en alto), reconoce cada byte con <strong>ACK = 0 / NACK = 1</strong>, y el primer byte es <code>(dir &lt;&lt; 1) | R/W</code>; los registros se <strong>auto-incrementan</strong> en lecturas/escrituras de bloque.",
+    "En la Pi 4 el I²C está en <strong>GPIO2 (SDA) y GPIO3 (SCL)</strong>, bus <code>/dev/i2c-1</code>; se comprueba con <code>i2cdetect 1</code> y se programa con <code>smbus.SMBus(1)</code> (<code>read_byte_data</code>, <code>read_i2c_block_data</code>, <code>write_byte_data</code>, <code>write_i2c_block_data</code>). Ejemplo: <strong>ADXL345</strong> en 0x53.",
+    "El <strong>SPI</strong> (Motorola) usa <strong>cuatro líneas</strong> (SCLK, MOSI, MISO, SS activa a bajo), un <strong>único maestro</strong>, salidas push-pull y comunicación <strong>full-duplex</strong>; cada esclavo necesita su SS (o se conectan en daisy-chain).",
+    "SPI tiene <strong>cuatro modos</strong> según CPOL (reposo del reloj) y CPHA (flanco de muestreo): modo 0..3. El MCP3008 trabaja en modo 0.",
+    "En la iMAT HAT el SPI 0 está cableado al ADC (MCP3008) y solo queda el <strong>SPI 1</strong> (GPIO21 SCK, GPIO20 MOSI, GPIO19 MISO, CE1 = GPIO17), limitado a 100 kHz; se programa con <code>spidev</code> (<code>open</code>, <code>mode</code>, <code>max_speed_hz</code>, <code>writebytes</code>, <code>readbytes</code>, <code>xfer</code>, <code>close</code>)."
+  ]
+}
