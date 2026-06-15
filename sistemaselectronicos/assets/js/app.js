@@ -76,13 +76,8 @@ MPI.config = {
     });
     html += '</div>';
 
-    html += '<section class="mpi-inicio-seccion"><h2>Cómo usar esta web</h2>' +
-      '<p>Cada tema combina <strong>teoría</strong> (con fórmulas en MathML nativo), ' +
-      '<strong>simuladores y visualizadores interactivos</strong> y <strong>ejercicios autocorregidos</strong>. ' +
-      'Toda la programación es <strong>Python sobre Raspberry Pi 4</strong> ' +
-      '(librería <code>gpiozero</code>). Funciona sin conexión.</p></section>';
-
     html += '<section class="mpi-inicio-seccion"><h2>Antes de ir a clase</h2>' +
+      '<p>10 minutos de podcast — lo principal de cada tema en Spotify:</p>' +
       '<iframe style="border-radius:12px" src="https://open.spotify.com/embed/show/6s0F8jXYRTIjrWTdMzUJNy?utm_source=generator" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>' +
       '</section>';
 

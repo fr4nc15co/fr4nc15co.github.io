@@ -147,6 +147,10 @@
           "html": "<div class=\"mpi-mount\" data-componente=\"fig-circuito\" data-config='{\"fig\":\"filtro-paso-alto\"}'></div>"
         },
         {
+          "tipo": "prosa",
+          "html": "<p>La utilidad estrella del filtro RC en este curso es <strong>suavizar una señal PWM</strong>. Este simulador pasa una <strong>señal PWM</strong> &mdash;centrada en un <strong>offset <em>V<sub>dc</sub></em></strong> con amplitud <em>V<sub>in</sub></em> pico-pico (p.&#160;ej. offset&#160;0 y 2&#160;V de amplitud va de &#8722;1 a +1&#160;V)&mdash; por el filtro y dibuja la <strong>salida en el tiempo</strong>. Con el <strong>paso bajo</strong> la salida tiende al <strong>valor medio</strong> de la PWM (su <strong>continua, <em>f</em>=0, pasa íntegra</strong>), así se obtiene una tensión analógica a partir de la PWM (un <strong>DAC</strong>). Con el <strong>paso alto</strong> ocurre lo contrario: la <strong>continua se pierde</strong> (la media cae a 0) y solo pasan los flancos. Cambia <em>V<sub>dc</sub></em>, <em>V<sub>in</sub></em>, <em>D</em>, <em>f<sub>pwm</sub></em> y <em>f<sub>c</sub></em> para verlo.</p>\n<div class=\"mpi-mount\" data-componente=\"filtro-pwm\" data-config='{}'></div>"
+        },
+        {
           "tipo": "nota",
           "html": "Ejemplo: un paso bajo con <em>f<sub>c</sub></em>&#8776;50&#160;Hz deja pasar las señales lentas y atenúa el ruido más rápido. Es la misma idea del condensador antirrebote de los pulsadores (ver <em>«Teoría de circuitos (Básicos)»</em>)."
         },

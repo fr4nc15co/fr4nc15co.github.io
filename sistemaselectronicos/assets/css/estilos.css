@@ -696,6 +696,30 @@ math.formula { font-size: 1.3rem; margin: 1rem 0; color: var(--txt); display: bl
 .rc-nota { margin-top: .8rem; }
 .rc-codigo { margin: .8rem 0 0; }
 
+/* === Componente filtro-pwm: un filtro RC sobre una señal PWM === */
+.mpi-filtro-pwm { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1rem 1.2rem; margin: 1.2rem 0; }
+.fp-cuerpo { display: flex; flex-wrap: wrap; gap: 1.4rem; align-items: flex-start; }
+.fp-grafica { flex: 1 1 360px; min-width: 0; }
+.fp-svg { width: 100%; height: auto; display: block; background: var(--bg); border: 1px solid var(--borde); border-radius: 8px; }
+.fp-panel { flex: 1 1 240px; min-width: 220px; display: flex; flex-direction: column; gap: .7rem; }
+.fp-ctrl { display: flex; flex-direction: column; gap: .3rem; }
+.fp-lab { color: var(--txt-2); font-size: .9rem; display: flex; flex-direction: column; gap: .2rem; }
+.fp-lab strong { color: var(--acento); font-family: var(--mono); }
+.fp-ctrl input[type=range] { width: 100%; accent-color: var(--acento); }
+.fp-seg { display: flex; gap: .5rem; }
+.fp-tipo { flex: 1 1 0; background: var(--bg-3); color: var(--txt-2); border: 1px solid var(--borde); border-radius: 6px; padding: .45rem .4rem; cursor: pointer; font-size: .88rem; }
+.fp-tipo:hover { border-color: var(--acento-2); }
+.fp-tipo-on { background: var(--acento); color: #06231d; border-color: var(--acento); font-weight: 700; }
+.fp-tarjetas { display: flex; gap: .8rem; flex-wrap: wrap; }
+.fp-tar { flex: 1 1 96px; background: var(--bg); border: 1px solid var(--borde); border-radius: 8px; padding: .5rem .7rem; display: flex; flex-direction: column; gap: .15rem; }
+.fp-tar-tit { font-size: .72rem; color: var(--txt-tenue); text-transform: uppercase; letter-spacing: .03em; }
+.fp-tar strong { font-family: var(--mono); font-size: 1.02rem; color: var(--azul-cl); }
+.fp-tar-med strong { color: var(--amarillo); }
+.fp-formula { display: flex; flex-direction: column; gap: .2rem; margin-top: 1rem; font-family: var(--mono); font-size: .92rem; }
+.fp-fmla { color: var(--txt-2); }
+.fp-fmla-num { color: var(--acento); }
+.fp-nota { margin-top: .8rem; }
+
 /* === Componente sim-opamp: configurador de amplificador operacional === */
 .mpi-sim-opamp { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem 1.2rem; margin: 1.2rem 0; }
 .oa-cuerpo { display: flex; flex-wrap: wrap; gap: 1.4rem; align-items: flex-start; }

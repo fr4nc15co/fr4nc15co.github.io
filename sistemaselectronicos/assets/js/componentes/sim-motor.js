@@ -1,11 +1,11 @@
 /*
  * Componente "sim-motor": regulación por PWM de una carga (motor/LED) en la Pi 4.
- * Misma idea que el ejemplo de las transparencias con PWMLED: cada pulsación sube
+ * Misma idea que el ejemplo de las transparencias con PWMoutputdevice: cada pulsación sube
  * el factor de servicio un 10 % (y tras el 100 % vuelve a 0). Se ve el .value que
  * se escribiría (duty/100), el tiempo a nivel alto dentro del periodo y una carga
  * que gira/luce más o menos según el ciclo de trabajo.
- *   mi_led = PWMLED(20, frequency=200)   # PWM por software, 200 Hz → T = 5 ms
- *   mi_led.value = valor/100             # valor de 0 a 100 en pasos de 10
+ *   mi_motor = PWMoutputdevice(20, frequency=200)   # PWM por software, 200 Hz → T = 5 ms
+ *   mi_motor.value = valor/100             # valor de 0 a 100 en pasos de 10
  * (Para un motor de verdad se usa un driver y se elige f ≥ 20 kHz, fuera del
  * rango audible; aquí mantenemos los 200 Hz del ejemplo del LED.)
  *
@@ -25,13 +25,13 @@ MPI.componentes = MPI.componentes || {};
 
     el.classList.add('mpi-motor');
     el.innerHTML =
-      '<div class="mpi-sim-cab">Regulación por PWM (PWMLED · GPIO20 · 200 Hz · T = 5 ms)</div>' +
+      '<div class="mpi-sim-cab">Regulación por PWM (PWMoutputdevice · GPIO20 · 200 Hz · T = 5 ms)</div>' +
       '<div class="sm-cuerpo">' +
         '<div class="sm-col">' +
           '<button type="button" class="sm-pulsador">🔘 Subir factor de servicio<small>+10 % (tras el 100 % vuelve a 0)</small></button>' +
           '<table class="cb-tabla">' +
             '<tr><td>Factor de servicio</td><td class="sm-duty"></td></tr>' +
-            '<tr><td>mi_led.value = duty/100</td><td class="sm-value"></td></tr>' +
+            '<tr><td>mi_motor.value = duty/100</td><td class="sm-value"></td></tr>' +
             '<tr><td>Tiempo a nivel alto (value·T)</td><td class="sm-ton"></td></tr>' +
           '</table>' +
         '</div>' +
@@ -68,11 +68,11 @@ MPI.componentes = MPI.componentes || {};
         rotor.style.animation = 'sm-gira ' + (4 / (duty / 10)) + 's linear infinite';
       }
       el.querySelector('.sm-estado').innerHTML = duty === 0
-        ? 'Carga <strong>parada</strong> — basta <code>mi_led.value = 0</code>'
+        ? 'Carga <strong>parada</strong> — basta <code>mi_motor.value = 0</code>'
         : 'Girando/luciendo al <strong>' + duty + ' %</strong>';
 
       el.querySelector('.sm-codigo code').textContent =
-        'mi_led.value = ' + num(value, 2) + '       # duty ' + duty + ' %, ' +
+        'mi_motor.value = ' + num(value, 2) + '       # duty ' + duty + ' %, ' +
         't_on = ' + num(ton, 2) + ' ms' + (duty === 0 ? '  (carga parada)' : '');
       el.querySelector('.sm-codigo code').removeAttribute('data-resaltado');
       if (MPI.resaltarTodo) MPI.resaltarTodo(el);
