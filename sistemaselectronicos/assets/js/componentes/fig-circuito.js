@@ -47,6 +47,20 @@ MPI.componentes = MPI.componentes || {};
       '<text x="' + (x + 20) + '" y="' + ((y1 + y2) / 2 + 3) + '" font-size="9.5" fill="var(--txt-tenue)" text-anchor="start">pulsador</text>';
   }
 
+  // --- esquemas de las configuraciones de AO (mismos dibujos que el simulador
+  //     sim-opamp, aquí en versión estática para acompañar al texto del tema) ---
+  var AOC = 'stroke="var(--azul-cl)" stroke-width="1.5" fill="none"';
+  var AOL = 'font-size="9" fill="var(--txt-tenue)"';
+  function aoEsquema(inn, label) {
+    return '<svg viewBox="0 0 240 150" class="fc-svg" aria-label="' + label + '">' +
+      '<polygon points="120,40 120,110 190,75" fill="var(--bg-3)" stroke="var(--borde)" stroke-width="1.5"/>' +
+      '<text x="128" y="68" font-size="11" fill="var(--txt-2)">−</text>' +
+      '<text x="128" y="92" font-size="11" fill="var(--txt-2)">+</text>' +
+      '<line x1="190" y1="75" x2="222" y2="75" stroke="var(--acento)" stroke-width="1.5"/>' +
+      '<text x="214" y="68" font-size="10" fill="var(--acento)">Vₒ</text>' +
+      inn + '</svg>';
+  }
+
   var FIGS = {
     // --- Ley de Ohm: una rama con su corriente y su caída de tensión ---
     ohm: {
@@ -331,6 +345,111 @@ MPI.componentes = MPI.componentes || {};
         '<polyline points="40,140 118,140 126,32 200,32" fill="none" stroke="var(--acento)" stroke-width="2.2"/>' +
         T(214, 30, '+V_cc', { anchor: 'end', size: 9, fill: 'var(--acento)' }) + T(72, 154, '−V_ee', { size: 9, fill: 'var(--naranja)' }) +
         '</svg>'
+    },
+    // --- Configuración no inversora ---
+    aonoinv: {
+      cap: '<strong>No inversor:</strong> la señal entra por v<sub>+</sub>; la realimentación va por <em>R2</em> de la salida a v<sub>−</sub> y <em>R1</em> de v<sub>−</sub> a masa. Ganancia <em>A<sub>v</sub></em> = 1 + R2/R1 (siempre ≥ 1) y resistencia de entrada infinita.',
+      svg: aoEsquema(
+        '<line x1="60" y1="95" x2="120" y2="95" ' + AOC + '/>' +
+        '<text x="58" y="90" ' + AOL + '>V_in (v+)</text>' +
+        '<line x1="120" y1="55" x2="30" y2="55" ' + AOC + '/>' +
+        '<line x1="30" y1="55" x2="30" y2="120" ' + AOC + '/>' +
+        '<rect x="23" y="80" width="14" height="28" fill="none" stroke="var(--naranja)" stroke-width="1.5"/>' +
+        '<text x="42" y="98" ' + AOL + '>R1</text>' +
+        '<line x1="30" y1="120" x2="30" y2="132" ' + AOC + '/>' +
+        '<line x1="22" y1="132" x2="38" y2="132" stroke="var(--txt-tenue)" stroke-width="1.5"/>' +
+        '<line x1="80" y1="55" x2="80" y2="27" ' + AOC + '/>' +
+        '<line x1="80" y1="27" x2="95" y2="27" ' + AOC + '/>' +
+        '<rect x="95" y="20" width="30" height="14" fill="none" stroke="var(--naranja)" stroke-width="1.5"/>' +
+        '<text x="98" y="16" ' + AOL + '>R2</text>' +
+        '<line x1="125" y1="27" x2="200" y2="27" ' + AOC + '/>' +
+        '<line x1="200" y1="27" x2="200" y2="75" ' + AOC + '/>',
+        'Amplificador no inversor')
+    },
+    // --- Buffer (seguidor de tensión) ---
+    aobuffer: {
+      cap: '<strong>Buffer (seguidor):</strong> caso particular del no inversor con <em>R2</em> = 0 y <em>R1</em> = ∞; la salida se realimenta directamente a v<sub>−</sub>. <em>A<sub>v</sub></em> = 1; sirve para <strong>adaptar impedancias</strong> (entrada ∞, salida 0).',
+      svg: aoEsquema(
+        '<line x1="8" y1="95" x2="120" y2="95" ' + AOC + '/>' +
+        '<text x="8" y="90" ' + AOL + '>V_in (v+)</text>' +
+        '<line x1="120" y1="55" x2="100" y2="55" ' + AOC + '/>' +
+        '<line x1="100" y1="55" x2="100" y2="20" ' + AOC + '/>' +
+        '<line x1="100" y1="20" x2="200" y2="20" ' + AOC + '/>' +
+        '<line x1="200" y1="20" x2="200" y2="75" ' + AOC + '/>' +
+        '<text x="150" y="15" text-anchor="middle" ' + AOL + '>realimentación directa</text>',
+        'Buffer seguidor de tensión')
+    },
+    // --- Configuración inversora ---
+    aoinv: {
+      cap: '<strong>Inversor:</strong> la señal entra por v<sub>−</sub> a través de <em>R1</em>, con v<sub>+</sub> a masa (v<sub>−</sub> queda a 0&nbsp;V, «tierra virtual»). Ganancia <em>A<sub>v</sub></em> = −R2/R1 (invierte el signo); resistencia de entrada finita = <em>R1</em>.',
+      svg: aoEsquema(
+        '<line x1="8" y1="55" x2="40" y2="55" ' + AOC + '/>' +
+        '<text x="8" y="50" ' + AOL + '>V_in</text>' +
+        '<rect x="40" y="48" width="30" height="14" fill="none" stroke="var(--naranja)" stroke-width="1.5"/>' +
+        '<text x="44" y="44" ' + AOL + '>R1</text>' +
+        '<line x1="70" y1="55" x2="120" y2="55" ' + AOC + '/>' +
+        '<line x1="90" y1="55" x2="90" y2="25" ' + AOC + '/>' +
+        '<line x1="90" y1="25" x2="115" y2="25" ' + AOC + '/>' +
+        '<rect x="115" y="18" width="30" height="14" fill="none" stroke="var(--naranja)" stroke-width="1.5"/>' +
+        '<text x="118" y="14" ' + AOL + '>R2</text>' +
+        '<line x1="145" y1="25" x2="200" y2="25" ' + AOC + '/>' +
+        '<line x1="200" y1="25" x2="200" y2="75" ' + AOC + '/>' +
+        '<line x1="120" y1="95" x2="100" y2="95" ' + AOC + '/>' +
+        '<line x1="100" y1="95" x2="100" y2="118" ' + AOC + '/>' +
+        '<line x1="92" y1="118" x2="108" y2="118" stroke="var(--txt-tenue)" stroke-width="1.5"/>',
+        'Amplificador inversor')
+    },
+    // --- Sumador inversor ---
+    aosumador: {
+      cap: '<strong>Sumador inversor:</strong> cada entrada aporta su corriente por su propia resistencia a la <strong>tierra virtual</strong>; todas se suman en <em>R<sub>f</sub></em>. Con todas las R iguales, V<sub>o</sub> = −(v<sub>1</sub> + v<sub>2</sub>).',
+      svg: aoEsquema(
+        '<line x1="8" y1="48" x2="38" y2="48" ' + AOC + '/>' +
+        '<text x="8" y="43" ' + AOL + '>v1</text>' +
+        '<rect x="38" y="41" width="24" height="12" fill="none" stroke="var(--naranja)" stroke-width="1.5"/>' +
+        '<line x1="62" y1="48" x2="90" y2="48" ' + AOC + '/>' +
+        '<line x1="8" y1="68" x2="38" y2="68" ' + AOC + '/>' +
+        '<text x="8" y="63" ' + AOL + '>v2</text>' +
+        '<rect x="38" y="61" width="24" height="12" fill="none" stroke="var(--naranja)" stroke-width="1.5"/>' +
+        '<line x1="62" y1="68" x2="90" y2="68" ' + AOC + '/>' +
+        '<line x1="90" y1="48" x2="90" y2="68" ' + AOC + '/>' +
+        '<line x1="90" y1="55" x2="120" y2="55" ' + AOC + '/>' +
+        '<line x1="90" y1="55" x2="90" y2="28" ' + AOC + '/>' +
+        '<line x1="90" y1="28" x2="115" y2="28" ' + AOC + '/>' +
+        '<rect x="115" y="21" width="30" height="14" fill="none" stroke="var(--naranja)" stroke-width="1.5"/>' +
+        '<text x="118" y="17" ' + AOL + '>Rf</text>' +
+        '<line x1="145" y1="28" x2="200" y2="28" ' + AOC + '/>' +
+        '<line x1="200" y1="28" x2="200" y2="75" ' + AOC + '/>' +
+        '<line x1="120" y1="95" x2="104" y2="95" ' + AOC + '/>' +
+        '<line x1="104" y1="95" x2="104" y2="115" ' + AOC + '/>' +
+        '<line x1="96" y1="115" x2="112" y2="115" stroke="var(--txt-tenue)" stroke-width="1.5"/>',
+        'Sumador inversor')
+    },
+    // --- Amplificador diferencial ---
+    aodif: {
+      cap: '<strong>Diferencial:</strong> amplifica la <em>resta</em> de las entradas. Eligiendo <em>R3</em> = <em>R1</em> y <em>R4</em> = <em>R2</em>, la salida es V<sub>o</sub> = (R2/R1)·(v<sub>2</sub> − v<sub>1</sub>).',
+      svg: aoEsquema(
+        '<line x1="8" y1="55" x2="40" y2="55" ' + AOC + '/>' +
+        '<text x="8" y="50" ' + AOL + '>v1</text>' +
+        '<rect x="40" y="48" width="26" height="12" fill="none" stroke="var(--naranja)" stroke-width="1.5"/>' +
+        '<text x="44" y="45" ' + AOL + '>R1</text>' +
+        '<line x1="66" y1="55" x2="120" y2="55" ' + AOC + '/>' +
+        '<line x1="88" y1="55" x2="88" y2="26" ' + AOC + '/>' +
+        '<line x1="88" y1="26" x2="113" y2="26" ' + AOC + '/>' +
+        '<rect x="113" y="19" width="28" height="12" fill="none" stroke="var(--naranja)" stroke-width="1.5"/>' +
+        '<text x="116" y="16" ' + AOL + '>R2</text>' +
+        '<line x1="141" y1="26" x2="200" y2="26" ' + AOC + '/>' +
+        '<line x1="200" y1="26" x2="200" y2="75" ' + AOC + '/>' +
+        '<line x1="8" y1="95" x2="40" y2="95" ' + AOC + '/>' +
+        '<text x="8" y="90" ' + AOL + '>v2</text>' +
+        '<rect x="40" y="89" width="26" height="12" fill="none" stroke="var(--naranja)" stroke-width="1.5"/>' +
+        '<text x="44" y="112" ' + AOL + '>R3=R1</text>' +
+        '<line x1="66" y1="95" x2="120" y2="95" ' + AOC + '/>' +
+        '<line x1="90" y1="95" x2="90" y2="110" ' + AOC + '/>' +
+        '<rect x="83" y="110" width="14" height="22" fill="none" stroke="var(--naranja)" stroke-width="1.5"/>' +
+        '<text x="100" y="127" ' + AOL + '>R4=R2</text>' +
+        '<line x1="90" y1="132" x2="90" y2="140" ' + AOC + '/>' +
+        '<line x1="82" y1="140" x2="98" y2="140" stroke="var(--txt-tenue)" stroke-width="1.5"/>',
+        'Amplificador diferencial')
     }
   };
 

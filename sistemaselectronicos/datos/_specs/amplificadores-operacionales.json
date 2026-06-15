@@ -176,12 +176,20 @@
         },
         {
           "tipo": "prosa",
+          "html": "<div class=\"mpi-mount\" data-componente=\"fig-circuito\" data-config='{\"fig\":\"aonoinv\"}'></div>"
+        },
+        {
+          "tipo": "prosa",
           "html": "<p><strong>Buffer (seguidor de tensión).</strong> Caso particular con <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi>R</mi><mn>2</mn><mo>=</mo><mn>0</mn></mrow></math> (cortocircuito) y <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi>R</mi><mn>1</mn><mo>=</mo><mi>&#8734;</mi></mrow></math> (abierto): la salida copia la entrada.</p>"
         },
         {
           "tipo": "formula",
           "descripcion": "<p>Ganancia del <strong>buffer</strong>:</p>",
           "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>v</mi><mi>o</mi></msub><mo>=</mo><msub><mi>v</mi><mi>i</mi></msub><mo>&#8658;</mo><msub><mi>A</mi><mi>v</mi></msub><mo>=</mo><mn>1</mn></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<div class=\"mpi-mount\" data-componente=\"fig-circuito\" data-config='{\"fig\":\"aobuffer\"}'></div>"
         },
         {
           "tipo": "nota",
@@ -200,6 +208,10 @@
           "tipo": "formula",
           "descripcion": "<p>Salida y ganancia del amplificador <strong>inversor</strong> (ganancia negativa: invierte el signo):</p>",
           "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>v</mi><mi>o</mi></msub><mo>=</mo><mo>&#8722;</mo><mfrac><mrow><mi>R</mi><mn>2</mn></mrow><mrow><mi>R</mi><mn>1</mn></mrow></mfrac><msub><mi>v</mi><mi>i</mi></msub><mo>&#8658;</mo><msub><mi>A</mi><mi>v</mi></msub><mo>=</mo><mo>&#8722;</mo><mfrac><mrow><mi>R</mi><mn>2</mn></mrow><mrow><mi>R</mi><mn>1</mn></mrow></mfrac></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<div class=\"mpi-mount\" data-componente=\"fig-circuito\" data-config='{\"fig\":\"aoinv\"}'></div>"
         },
         {
           "tipo": "prosa",
@@ -226,6 +238,10 @@
         },
         {
           "tipo": "prosa",
+          "html": "<div class=\"mpi-mount\" data-componente=\"fig-circuito\" data-config='{\"fig\":\"aosumador\"}'></div>"
+        },
+        {
+          "tipo": "prosa",
           "html": "<p>Se pueden sumar tantas señales como se quiera, cada una con su resistencia. El signo negativo se elimina, si molesta, añadiendo un inversor más.</p>"
         },
         {
@@ -236,6 +252,10 @@
           "tipo": "formula",
           "descripcion": "<p>Salida del <strong>amplificador diferencial</strong>:</p>",
           "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>v</mi><mi>o</mi></msub><mo>=</mo><mfrac><mrow><mi>R</mi><mn>2</mn></mrow><mrow><mi>R</mi><mn>1</mn></mrow></mfrac><mfenced><mrow><msub><mi>v</mi><mn>2</mn></msub><mo>&#8722;</mo><msub><mi>v</mi><mn>1</mn></msub></mrow></mfenced></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<div class=\"mpi-mount\" data-componente=\"fig-circuito\" data-config='{\"fig\":\"aodif\"}'></div>"
         }
       ]
     },
