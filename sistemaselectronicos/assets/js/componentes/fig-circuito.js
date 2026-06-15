@@ -245,6 +245,34 @@ MPI.componentes = MPI.componentes || {};
         '<polyline points="40,124 95,104 145,78 195,50 244,28" fill="none" stroke="var(--acento-2)" stroke-width="2"/>' + T(232, 42, 'Z_L', { size: 10, fill: 'var(--acento-2)' }) +
         '</svg>'
     },
+    // --- Filtro RC paso bajo: R en serie, C a masa, salida en C ---
+    'filtro-paso-bajo': {
+      cap: 'Filtro <strong>RC paso bajo</strong>: la <em>R</em> va en serie y el condensador <strong>a masa</strong>; la salida se toma en <em>C</em>. En <strong>baja frecuencia</strong> <em>C</em> es circuito abierto y <em>v<sub>out</sub></em>&#8776;<em>v<sub>in</sub></em> (pasa); en <strong>alta</strong>, <em>C</em> es cortocircuito y <em>v<sub>out</sub></em>&#8594;0 (se atenúa).',
+      svg: '<svg viewBox="0 0 320 150" class="fc-svg" aria-label="Filtro RC paso bajo">' +
+        dot(40, 40) + W(40, 40, 80, 40) + res(80, 31, 58, 18, 'R') + W(138, 40, 280, 40) +
+        dot(200, 40) + W(200, 40, 200, 64) +
+        '<line x1="186" y1="64" x2="214" y2="64" stroke="var(--acento)" stroke-width="2.5"/>' +
+        '<line x1="186" y1="72" x2="214" y2="72" stroke="var(--acento)" stroke-width="2.5"/>' +
+        W(200, 72, 200, 118) + T(222, 73, 'C', { anchor: 'start', fill: 'var(--acento)' }) +
+        dot(280, 40) + W(40, 118, 280, 118) + dot(40, 118) + dot(280, 118) + gnd(160, 118) +
+        T(34, 44, 'v<tspan baseline-shift="sub" font-size="8">in</tspan>', { anchor: 'end', fill: 'var(--amarillo)', style: 1 }) +
+        T(286, 44, 'v<tspan baseline-shift="sub" font-size="8">out</tspan>', { anchor: 'start', fill: 'var(--acento-2)', style: 1 }) +
+        '</svg>'
+    },
+    // --- Filtro RC paso alto: C en serie, R a masa, salida en R ---
+    'filtro-paso-alto': {
+      cap: 'Filtro <strong>RC paso alto</strong>: el condensador va en serie y la <em>R</em> <strong>a masa</strong>; la salida se toma en <em>R</em>. En <strong>baja frecuencia</strong> <em>C</em> bloquea y <em>v<sub>out</sub></em>&#8594;0; en <strong>alta</strong>, <em>C</em> es un cable y <em>v<sub>out</sub></em>&#8776;<em>v<sub>in</sub></em> (pasa).',
+      svg: '<svg viewBox="0 0 320 150" class="fc-svg" aria-label="Filtro RC paso alto">' +
+        dot(40, 40) + W(40, 40, 86, 40) +
+        '<line x1="86" y1="30" x2="86" y2="50" stroke="var(--acento)" stroke-width="2.5"/>' +
+        '<line x1="96" y1="30" x2="96" y2="50" stroke="var(--acento)" stroke-width="2.5"/>' +
+        T(91, 24, 'C', { fill: 'var(--acento)' }) + W(96, 40, 280, 40) +
+        dot(186, 40) + W(186, 40, 186, 56) + resV(186, 56, 46, 'R') + W(186, 102, 186, 118) +
+        dot(280, 40) + W(40, 118, 280, 118) + dot(40, 118) + dot(280, 118) + gnd(110, 118) +
+        T(34, 44, 'v<tspan baseline-shift="sub" font-size="8">in</tspan>', { anchor: 'end', fill: 'var(--amarillo)', style: 1 }) +
+        T(286, 44, 'v<tspan baseline-shift="sub" font-size="8">out</tspan>', { anchor: 'start', fill: 'var(--acento-2)', style: 1 }) +
+        '</svg>'
+    },
 
     // ===== Teoremas (Tema 7) =====
     thevenin: {

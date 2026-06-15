@@ -127,7 +127,11 @@
       "bloques": [
         {
           "tipo": "prosa",
-          "html": "<p>Aprovechando ese comportamiento, una resistencia y un condensador forman un <strong>filtro RC paso bajo</strong>: deja pasar las frecuencias bajas y atenúa las altas. La frontera es la <strong>frecuencia de corte</strong> <em>f<sub>c</sub></em>, que se da cuando <em>&#969;</em>=1/<em>RC</em>.</p>"
+          "html": "<p>Aprovechando ese comportamiento, una resistencia y un condensador forman un <strong>filtro RC paso bajo</strong>: la <em>R</em> va en serie y el condensador <strong>a masa</strong>, y la salida se toma <strong>en el condensador</strong>. Deja pasar las frecuencias bajas y atenúa las altas. La frontera es la <strong>frecuencia de corte</strong> <em>f<sub>c</sub></em>, que se da cuando <em>&#969;</em>=1/<em>RC</em>.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<div class=\"mpi-mount\" data-componente=\"fig-circuito\" data-config='{\"fig\":\"filtro-paso-bajo\"}'></div>"
         },
         {
           "tipo": "formula",
@@ -135,8 +139,20 @@
           "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>f</mi><mi>c</mi></msub><mo>=</mo><mfrac><mn>1</mn><mrow><mn>2</mn><mi>&#960;</mi><mi>R</mi><mi>C</mi></mrow></mfrac></mrow></math>"
         },
         {
+          "tipo": "prosa",
+          "html": "<p>Si <strong>intercambiamos</strong> los dos componentes &mdash;el condensador en serie y la <em>R</em> a masa, tomando la salida <strong>en la resistencia</strong>&mdash; obtenemos un <strong>filtro RC paso alto</strong>: ahora pasan las frecuencias altas y se atenúan las bajas. La frecuencia de corte es la misma, <em>f<sub>c</sub></em>=1/(2&#960;<em>RC</em>); lo único que cambia es qué lado del eje de frecuencias deja pasar.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<div class=\"mpi-mount\" data-componente=\"fig-circuito\" data-config='{\"fig\":\"filtro-paso-alto\"}'></div>"
+        },
+        {
           "tipo": "nota",
           "html": "Ejemplo: un paso bajo con <em>f<sub>c</sub></em>&#8776;50&#160;Hz deja pasar las señales lentas y atenúa el ruido más rápido. Es la misma idea del condensador antirrebote de los pulsadores (ver <em>«Teoría de circuitos (Básicos)»</em>)."
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Para pensar (queda en el aire):</strong> repite estos dos montajes pero <strong>sustituyendo el condensador por una bobina</strong>. Recuerda que la bobina se comporta justo <strong>al revés</strong> que el condensador con la frecuencia (en continua es un cable, a alta frecuencia un circuito abierto). Razona qué ocurre en cada extremo y <strong>concluye qué tipo de filtro</strong> sale en cada caso: (a) con la <em>L</em> a masa y la salida en <em>L</em>; (b) con la <em>L</em> en serie y la salida en <em>R</em>. ¿Cuál queda paso bajo y cuál paso alto?"
         }
       ]
     }
@@ -222,6 +238,6 @@
     "No cambian de golpe: el transitorio tiene constante <em>&#964;</em>=<em>RC</em> (o <em>L</em>/<em>R</em>) y se da por terminado a los <strong>5<em>&#964;</em></strong> (&#8776;99&#160;%).",
     "La <strong>impedancia</strong> <em>Z</em> es la oposición a la corriente que <strong>depende de la frecuencia</strong>: <em>Z<sub>R</sub></em>=<em>R</em>, <em>Z<sub>C</sub></em>=1/(<em>jC&#969;</em>), <em>Z<sub>L</sub></em>=<em>jL&#969;</em>.",
     "En <strong>continua</strong> (f=0): condensador = abierto, bobina = cortocircuito. En <strong>alta frecuencia</strong>: condensador = cortocircuito, bobina = abierto.",
-    "Un <strong>filtro RC paso bajo</strong> (<em>f<sub>c</sub></em>=1/(2&#960;<em>RC</em>)) deja pasar las frecuencias bajas y atenúa las altas."
+    "Un <strong>filtro RC paso bajo</strong> (R en serie, salida en C) deja pasar las frecuencias bajas; <strong>intercambiando R y C</strong> (salida en R) sale un <strong>paso alto</strong>. En ambos <em>f<sub>c</sub></em>=1/(2&#960;<em>RC</em>)."
   ]
 }

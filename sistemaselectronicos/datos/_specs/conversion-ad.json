@@ -137,33 +137,16 @@
       "bloques": [
         {
           "tipo": "prosa",
-          "html": "<p>Hay dos formas de leer el conversor desde Python. En ambas suponemos la iMAT HAT, con el MCP3008 en el <strong>SPI 0</strong> y el <em>chip enable</em> en <strong>CE0</strong>.</p>"
+          "html": "<p>El conversor se lee desde Python de forma muy sencilla con la librería <strong>GPIO Zero</strong>. Suponemos la iMAT HAT, con el MCP3008 en el <strong>SPI 0</strong> y el <em>chip enable</em> en <strong>CE0</strong>.</p>"
         },
         {
           "tipo": "prosa",
-          "html": "<p><strong>(a) Con GPIO Zero (sencillo).</strong> La librería ofrece una clase <code>MCP3008</code> que esconde el protocolo SPI: solo hay que indicar el canal. Devuelve <code>value</code> (tanto por uno, 0&#8211;1) o <code>voltage</code> (voltios, 0&#8211;3,3 V):</p>"
+          "html": "<p>La librería ofrece una clase <code>MCP3008</code> que esconde el protocolo SPI: solo hay que indicar el canal. Devuelve <code>value</code> (tanto por uno, 0&#8211;1) o <code>voltage</code> (voltios, 0&#8211;3,3 V):</p>"
         },
         {
           "tipo": "codigo",
           "descripcion": "<p>Lectura del canal 7 con GPIO Zero. <code>value</code> vale 0 con 0 V de entrada y 1 con 3,3 V; <code>voltage</code> da directamente la tensión:</p>",
           "codigo": "from gpiozero import MCP3008\n\nadc = MCP3008(channel=7)\n\nmedida = adc.value      # valor entre 0 y 1 (tanto por uno)\nvoltios = adc.voltage   # tensión entre 0 y 3,3 V\n\nprint(medida)\nprint(voltios)"
-        },
-        {
-          "tipo": "prosa",
-          "html": "<p><strong>(b) Con spidev (bajo nivel).</strong> Hablamos directamente con el bus SPI, igual que con el display del tema anterior. Enviamos los tres bytes con <code>xfer</code>, que devuelve la lista de bytes recibidos, y recomponemos el valor de 10 bits (0&#8211;1023):</p>"
-        },
-        {
-          "tipo": "codigo",
-          "descripcion": "<p>Lectura del canal 7 en modo unipolar con spidev. Como no hay condensadores en las líneas del SPI, el bus puede ir a plena velocidad (aquí 2 MHz):</p>",
-          "codigo": "import spidev\n\nspi = spidev.SpiDev()\nbus = 0      # Para usar el SPI 0\ndevice = 0   # Enable del MCP3008 a CE0\nspi.open(bus, device)\n\n# configuramos velocidad y modo\nspi.max_speed_hz = 2000000\nspi.mode = 0\n\n# Start, UNI-CH7, byte vacio\nmsg = [0x01, 0xf0, 0x00]\nres = spi.xfer(msg)\n\n# res[1] -> B9..B8 (mascara 0x3), res[2] -> B7..B0\nvalor = (res[1] & 0x3) << 8 | res[2]\nprint(valor)\nspi.close()"
-        },
-        {
-          "tipo": "nota",
-          "html": "La diferencia clave: GPIO Zero devuelve un valor <strong>entre 0 y 1</strong> (o en voltios), mientras que spidev devuelve el valor crudo de 10 bits <strong>entre 0 y 1023</strong>. La línea <code>(res[1] &amp; 0x3) &lt;&lt; 8 | res[2]</code> toma los dos bits altos del penúltimo byte recibido (los bits 8 y 9), los desplaza a su sitio y les añade con un OR los ocho bits bajos del último byte."
-        },
-        {
-          "tipo": "nota",
-          "html": "El reloj del SPI es también el del registro de aproximaciones sucesivas. Si la frecuencia es muy baja (por debajo de unos 10 kHz) el condensador del S/H se descarga y la conversión falla; a 3,3 V el límite superior es 2,34 MHz para no superar los 130 ksps. Por eso el datasheet acota el reloj al rango [10 kHz, 2,34 MHz]."
         }
       ]
     },
@@ -222,7 +205,7 @@
             "≈ 1023"
           ],
           "correcta": 0,
-          "explicacion": "<p>GPIO Zero normaliza la lectura: <code>value</code> va de 0 (0 V) a 1 (3,3 V), así que a 1,65 V devuelve <code>1,65/3,3 = 0,5</code>. Para obtener el valor crudo 0&#8211;1023 habría que usar spidev con <code>(res[1] &amp; 0x3) &lt;&lt; 8 | res[2]</code>, o multiplicar <code>value</code> por 1023.</p>"
+          "explicacion": "<p>GPIO Zero normaliza la lectura: <code>value</code> va de 0 (0 V) a 1 (3,3 V), así que a 1,65 V devuelve <code>1,65/3,3 = 0,5</code>. Para obtener el valor crudo 0&#8211;1023 bastaría con multiplicar <code>value</code> por 1023.</p>"
         }
       ]
     },
@@ -280,7 +263,7 @@
             "posicion = adc.value * 3.3"
           ],
           "correcta": 0,
-          "explicacion": "<p><code>MCP3008.value</code> de GPIO Zero ya devuelve la lectura <strong>normalizada entre 0 y 1</strong> (0 V &#8594; 0; 3,3 V &#8594; 1). Para expresarla como porcentaje basta multiplicar por 100: <code>posicion = adc.value * 100</code>. Multiplicar por 1023 daría el código crudo de 10 bits (el que se obtiene con spidev), y multiplicar por 3,3 daría la tensión en voltios (equivalente a <code>adc.voltage</code>).</p>"
+          "explicacion": "<p><code>MCP3008.value</code> de GPIO Zero ya devuelve la lectura <strong>normalizada entre 0 y 1</strong> (0 V &#8594; 0; 3,3 V &#8594; 1). Para expresarla como porcentaje basta multiplicar por 100: <code>posicion = adc.value * 100</code>. Multiplicar por 1023 daría el código crudo de 10 bits, y multiplicar por 3,3 daría la tensión en voltios (equivalente a <code>adc.voltage</code>).</p>"
         }
       ]
     }
@@ -295,7 +278,7 @@
     "Resolución <code>q = V<sub>ref</sub>/2<sup>N</sup></code>; valor digital <code>D = round(V<sub>in</sub>/q)</code>; tensión reconstruida <code>V<sub>rec</sub> = D·q</code>. Con V<sub>ref</sub> = 3,3 V y N = 10: <code>q &#8776; 3,22 mV</code> (0 V &#8594; 0, 3,3 V &#8594; 1023).",
     "Tipos de ADC: <strong>flash</strong> (rápido, consume), <strong>sigma-delta</strong> (preciso, lento) y <strong>SAR</strong> (el más usado). El SAR hace una <strong>búsqueda binaria</strong> con comparador + DAC + registro, un bit por ciclo del MSB al LSB (N ciclos).",
     "El <strong>MCP3008</strong> es un SAR de 10 bits y 8 canales (4 diferenciales) por <strong>SPI modo 0</strong>, ~130 ksps a 3,3 V. Se lee enviando <code>[0x01, 0xF0, 0x00]</code> para el canal 7 unipolar.",
-    "Desde Python: <strong>GPIO Zero</strong> (<code>MCP3008(channel=7)</code>, <code>.value</code> 0&#8211;1 o <code>.voltage</code> 0&#8211;3,3 V) o <strong>spidev</strong> (<code>spi.xfer([0x01,0xf0,0x00])</code> y <code>(res[1] &amp; 0x3)&lt;&lt;8 | res[2]</code>, valor 0&#8211;1023).",
+    "Desde Python con <strong>GPIO Zero</strong>: <code>MCP3008(channel=7)</code> y se lee <code>.value</code> (0&#8211;1, tanto por uno) o <code>.voltage</code> (0&#8211;3,3 V).",
     "El ADC cierra la cadena del tema de <strong>sensores resistivos</strong>: mide la tensión acondicionada (0&#8211;3,3 V) y la entrega al programa, que aún puede corregir no linealidades con una tabla de interpolación."
   ]
 }

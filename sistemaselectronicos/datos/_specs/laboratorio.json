@@ -38,61 +38,30 @@
       ]
     },
     {
-      "titulo": "15.3 Avisos de montaje y soldadura",
+      "titulo": "15.3 Avisos de alimentación y seguridad eléctrica",
       "bloques": [
         {
           "tipo": "nota",
-          "html": "<strong>Suelda con cuidado.</strong> Muchos componentes son SMD y muy pequeños. Una soldadura defectuosa arrastra problemas a todas las prácticas siguientes. Vigila especialmente la <strong>orientación</strong> de los chips (el MCP3008 tiene 16 pines y el conector P1 tiene 40): desoldar para corregir un error es muy laborioso."
-        },
-        {
-          "tipo": "nota",
-          "html": "<strong>Comprueba que no hay cortocircuitos antes de alimentar.</strong> Con el polímetro, verifica que no hay continuidad indebida entre <strong>3,3 V, 5 V y tierra</strong> (usa los puntos de prueba TP) y que el estaño no une pines contiguos. En caso de duda, consulta al profesor."
-        },
-        {
-          "tipo": "nota",
-          "html": "<strong>Prueba los pulsadores antes de conectarlos.</strong> Mide cada pulsador con el polímetro o el osciloscopio antes de enchufar la placa a la Raspberry: si un pulsador provoca un cortocircuito, la tarjeta se reinicia."
-        },
-        {
-          "tipo": "nota",
-          "html": "<strong>Apaga la Raspberry correctamente.</strong> Espera a que se apague el LED <strong>ACT</strong> antes de desconectar la alimentación; así no corrompes la tarjeta SD."
+          "html": "<strong>Seguridad eléctrica — léelo antes de alimentar.</strong><ul><li><strong>Lógica de 3,3 V: nunca metas 5 V en un GPIO.</strong> Las entradas de la Raspberry trabajan a 3,3 V; una tensión mayor puede destruir el pin. Al medir un diodo o un nivel, recuerda que el tope es 3,3 V.</li><li><strong>Un pin entrega poca corriente.</strong> Un GPIO da solo unos pocos miliamperios — insuficiente para un motor o una bombilla. Para cargas de potencia se usa un <strong>transistor</strong> (o un <strong>relé</strong>, con su diodo de protección) alimentado desde una fuente externa; ver <em>«Teoría de circuitos (Componentes)»</em>.</li><li><strong>Masa común con la fuente externa.</strong> Cuando uses la fuente de 12 V (p. ej. para la bombilla), asegúrate de que la <strong>tierra de la fuente y la de la Raspberry están unidas antes de encenderla</strong>. Sin masa común las medidas no tienen sentido y puedes dañar el montaje.</li></ul>"
         }
       ]
     },
     {
-      "titulo": "15.4 Avisos de alimentación y seguridad eléctrica",
+      "titulo": "15.4 Avisos por periférico",
       "bloques": [
         {
-          "tipo": "nota",
-          "html": "<strong>Lógica de 3,3 V: nunca metas 5 V en un GPIO.</strong> Las entradas de la Raspberry trabajan a 3,3 V; una tensión mayor puede destruir el pin. Al medir un diodo o un nivel, recuerda que el tope es 3,3 V."
+          "tipo": "prosa",
+          "html": "<p>Cosas que conviene recordar de cada periférico de la HAT:</p>"
         },
         {
-          "tipo": "nota",
-          "html": "<strong>Un pin entrega poca corriente.</strong> Un GPIO da solo unos pocos miliamperios — insuficiente para un motor o una bombilla. Para cargas de potencia se usa un <strong>transistor</strong> (o un <strong>relé</strong>, con su diodo de protección) alimentado desde una fuente externa; ver <em>«Teoría de circuitos (Componentes)»</em>."
-        },
-        {
-          "tipo": "nota",
-          "html": "<strong>Masa común con la fuente externa.</strong> Cuando uses la fuente de 12 V (p. ej. para la bombilla), asegúrate de que la <strong>tierra de la fuente y la de la Raspberry están unidas antes de encenderla</strong>. Sin masa común las medidas no tienen sentido y puedes dañar el montaje."
-        }
-      ]
-    },
-    {
-      "titulo": "15.5 Avisos por periférico",
-      "bloques": [
-        {
-          "tipo": "nota",
-          "html": "<strong>LED:</strong> tienen polaridad (solo lucen si el ánodo está hacia el pin que entrega la corriente) y van <strong>siempre con su resistencia limitadora</strong> (270 Ω en la HAT). En la HAT son activos a nivel alto (lucen con 1)."
-        },
-        {
-          "tipo": "nota",
-          "html": "<strong>Conversor A/D (MCP3008):</strong> habilita el SPI con <code>raspi-config</code> y léelo con <code>gpiozero.MCP3008(channel=…)</code>. Conecta tus sensores a los canales <strong>CH0–CH6</strong> del bloque <em>ANALOG IN</em>: el <strong>CH7 está ocupado por el potenciómetro</strong> de la placa. El MCP3008 va por el <strong>SPI0</strong>, que se apropia de <strong>GPIO7</strong> (su CE1): mientras uses el A/D no podrás usar el pulsador de GPIO7."
-        },
-        {
-          "tipo": "nota",
-          "html": "<strong>PWM y servos:</strong> para regular intensidad de luz basta una frecuencia de unas pocas decenas de Hz (el ojo no aprecia parpadeos por encima de ~60 Hz); para <strong>motores</strong> se eligen frecuencias &gt; 20 kHz (fuera del rango audible). Si el servo tiembla, usa la <em>pin factory</em> de pigpio (recuerda <code>sudo pigpiod</code>)."
-        },
-        {
-          "tipo": "nota",
-          "html": "<strong>Motor con el L293D:</strong> el control de motores usa el integrado <strong>L293D</strong> (puente en H) en el zócalo <strong>U2</strong>; comprueba que está bien insertado antes de alimentar."
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>LED:</strong> tienen polaridad (solo lucen si el ánodo está hacia el pin que entrega la corriente) y van <strong>siempre con su resistencia limitadora</strong> (270 Ω en la HAT). En la HAT son activos a nivel alto (lucen con 1).",
+            "<strong>Conversor A/D (MCP3008):</strong> habilita el SPI con <code>raspi-config</code> y léelo con <code>gpiozero.MCP3008(channel=…)</code>. Conecta tus sensores a los canales <strong>CH0–CH6</strong> del bloque <em>ANALOG IN</em>: el <strong>CH7 está ocupado por el potenciómetro</strong> de la placa. El MCP3008 va por el <strong>SPI0</strong>, que se apropia de <strong>GPIO7</strong> (su CE1): mientras uses el A/D no podrás usar el pulsador de GPIO7.",
+            "<strong>PWM y servos:</strong> para regular intensidad de luz basta una frecuencia de unas pocas decenas de Hz (el ojo no aprecia parpadeos por encima de ~60 Hz); para <strong>motores</strong> se eligen frecuencias &gt; 20 kHz (fuera del rango audible). Si el servo tiembla, usa la <em>pin factory</em> de pigpio (recuerda <code>sudo pigpiod</code>).",
+            "<strong>Motor con el L293D:</strong> el control de motores usa el integrado <strong>L293D</strong> (puente en H) en el zócalo <strong>U2</strong>; comprueba que está bien insertado antes de alimentar."
+          ]
         }
       ]
     }
@@ -101,6 +70,6 @@
   "resumen": [
     "<strong>Pines:</strong> 8 LED en GPIO20–27 (activos a nivel alto, 270 Ω); 4 pulsadores en GPIO7/16/17/19 (pull-up, activos a nivel bajo); MCP3008 (por SPI0, su CE1 ocupa <strong>GPIO7</strong> → conflicto con ese pulsador) con CH0–CH6 libres y <strong>CH7 = potenciómetro</strong>; I²C en GPIO2/3; SPI1 en GPIO21/20/19 (CE1=17, CE2=16); UART en /dev/serial0 (GPIO14/15); PWM HW en GPIO18 y GPIO13.",
     "<strong>Activación:</strong> I²C/SPI/UART con <code>raspi-config</code>; PWM HW con <code>dtoverlay=pwm-2chan</code> en <code>/boot/config.txt</code>; <code>sudo pigpiod</code> para pigpio; trabaja en un <code>venv</code>.",
-    "<strong>Seguridad:</strong> nada de 5 V en un GPIO; comprueba cortocircuitos con el polímetro antes de alimentar; apaga esperando al LED ACT; masa común con la fuente de 12 V; los pines no mueven cargas de potencia (usa transistor o relé)."
+    "<strong>Seguridad:</strong> nada de 5 V en un GPIO; masa común con la fuente de 12 V; los pines no mueven cargas de potencia (usa transistor o relé)."
   ]
 }
