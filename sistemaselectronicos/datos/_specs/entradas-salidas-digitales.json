@@ -159,20 +159,69 @@
       "bloques": [
         {
           "tipo": "prosa",
-          "html": "<p>La estructura de un programa de E/S digital es un <strong>bucle de scan</strong> infinito que nunca debe bloquearse: en cada vuelta lee las entradas, decide y actualiza las salidas. La forma de tratar una entrada cambia según se gestione por nivel o por flanco:</p>"
+          "html": "<p>La estructura de un programa de E/S digital es un <strong>bucle de scan</strong> infinito que nunca debe bloquearse: en cada vuelta lee las entradas, decide y actualiza las salidas. Una misma entrada puede mirarse de dos maneras, y confundirlas es uno de los errores más repetidos del curso:</p>"
         },
         {
           "tipo": "lista",
           "ordenada": false,
           "items": [
-            "<strong>Por nivel:</strong> la salida depende del <em>valor actual</em> de la entrada. Es una acción continua: la salida conserva el valor mientras la entrada se mantenga (p. ej. el LED encendido <em>mientras</em> se pulsa).",
-            "<strong>Por flanco:</strong> la salida se modifica <em>cada vez que cambia</em> la entrada. Se detecta guardando el valor de la entrada en la iteración anterior (<code>pulsador_ant</code>) y comparándolo con el actual. En un pulsador pull-up hay un flanco de bajada al pulsar y otro de subida al soltar; normalmente interesa actuar solo en el primero (p. ej. para contar pulsaciones)."
+            "<strong>Por nivel = estado.</strong> Responde a «¿está pulsado <em>ahora</em>?». La salida depende del <em>valor actual</em> de la entrada, así que la acción se repite <em>mientras</em> dura el estado: como el bucle de scan da miles de vueltas por segundo, se ejecuta miles de veces por pulsación (p. ej. el LED encendido <em>mientras</em> se mantiene pulsado). Ejemplo cotidiano: el <strong>timbre de casa</strong>, que suena mientras mantienes el dedo apoyado.",
+            "<strong>Por flanco = evento.</strong> Responde a «¿<em>acaba</em> de pulsarse?»: es el instante del <em>cambio</em> (de 0 a 1, flanco de subida; de 1 a 0, flanco de bajada). La acción se ejecuta <em>una sola vez</em> por cambio, guardando la lectura de la vuelta anterior (<code>anterior</code>) y comparándola con la actual. En un pulsador pull-up hay un flanco de bajada al pulsar y otro de subida al soltar; normalmente interesa solo el primero (p. ej. para contar pulsaciones). Ejemplo cotidiano: el <strong>torno del metro</strong>, que cuenta un paso por accionamiento dure lo que dure el empujón."
           ]
         },
         {
-          "tipo": "codigo",
-          "descripcion": "<p>Detección de flanco de bajada por comparación con el valor anterior (RPi.GPIO). Sobre un pulsador pull-up, <code>GPIO.input</code> devuelve el nivel eléctrico del pin: 1 en reposo y 0 al pulsar, de modo que <code>actual &lt; anterior</code> (de 1 a 0) es el instante en que se pulsa:</p>",
-          "codigo": "import RPi.GPIO as GPIO\n\ndef main() -> None:\n    GPIO.setmode(GPIO.BCM)\n    GPIO.setup(7, GPIO.IN, GPIO.PUD_UP)\n    anterior = GPIO.input(7)        # nivel del pin en la iteracion previa\n\n    while True:                     # bucle de scan\n        actual = GPIO.input(7)\n        if actual < anterior:       # flanco de bajada: instante de la pulsacion\n            print(\"Pulsado\")        # se ejecuta una sola vez por pulsacion\n        anterior = actual\n\nif __name__ == \"__main__\":\n    try:\n        main()\n    except KeyboardInterrupt:\n        pass\n    finally:\n        GPIO.cleanup()"
+          "tipo": "prosa",
+          "html": "<figure class=\"figura\"><svg viewBox=\"0 0 700 250\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"-apple-system,Segoe UI,Roboto,sans-serif\" role=\"img\" aria-label=\"Una señal digital: niveles alto y bajo, y flancos de subida y de bajada\"><text x=\"46\" y=\"99\" text-anchor=\"end\" font-size=\"13\" font-family=\"monospace\" fill=\"var(--txt-2,#9da5b4)\">1</text><text x=\"46\" y=\"179\" text-anchor=\"end\" font-size=\"13\" font-family=\"monospace\" fill=\"var(--txt-2,#9da5b4)\">0</text><rect x=\"180\" y=\"95\" width=\"200\" height=\"80\" fill=\"var(--acento,#4ec9b0)\" opacity=\"0.07\"/><rect x=\"520\" y=\"95\" width=\"120\" height=\"80\" fill=\"var(--acento,#4ec9b0)\" opacity=\"0.07\"/><path d=\"M60 175 H180 V95 H380 V175 H520 V95 H640\" stroke=\"var(--acento,#4ec9b0)\" stroke-width=\"3\" fill=\"none\"/><line x1=\"180\" y1=\"85\" x2=\"180\" y2=\"185\" stroke=\"var(--amarillo,#dcdcaa)\" stroke-width=\"1.5\" stroke-dasharray=\"4 4\"/><line x1=\"380\" y1=\"85\" x2=\"380\" y2=\"185\" stroke=\"var(--naranja,#ce9178)\" stroke-width=\"1.5\" stroke-dasharray=\"4 4\"/><line x1=\"520\" y1=\"85\" x2=\"520\" y2=\"185\" stroke=\"var(--amarillo,#dcdcaa)\" stroke-width=\"1.5\" stroke-dasharray=\"4 4\"/><path d=\"M174 132 L180 116 L186 132\" fill=\"none\" stroke=\"var(--amarillo,#dcdcaa)\" stroke-width=\"2\"/><path d=\"M374 138 L380 154 L386 138\" fill=\"none\" stroke=\"var(--naranja,#ce9178)\" stroke-width=\"2\"/><text x=\"180\" y=\"64\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--amarillo,#dcdcaa)\">flanco de subida (0→1)</text><text x=\"380\" y=\"216\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--naranja,#ce9178)\">flanco de bajada (1→0)</text><text x=\"280\" y=\"84\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--txt-2,#9da5b4)\">nivel alto</text><text x=\"120\" y=\"196\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--txt-2,#9da5b4)\">nivel bajo</text><text x=\"450\" y=\"196\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--txt-2,#9da5b4)\">nivel bajo</text></svg><figcaption>Nivel = estado (las zonas de la señal); flanco = evento (los instantes del cambio). El detector de flanco compara la lectura actual con la anterior.</figcaption></figure>"
+        },
+        {
+          "tipo": "codigo-tabs",
+          "intro": "<p>Lectura <strong>por nivel</strong>: la acción depende solo del valor leído en esa vuelta, así que el cuerpo del <code>if</code> se ejecuta en <em>todas</em> las iteraciones mientras se mantenga pulsado. Compara las dos librerías:</p>",
+          "variantes": [
+            {
+              "etiqueta": "RPi.GPIO",
+              "descripcion": "<p>Con <strong>RPi.GPIO</strong> se lee el <em>nivel eléctrico</em> del pin: <code>GPIO.input(7)</code> devuelve 1 en reposo y 0 al pulsar (pull-up), por lo que el pulsador está accionado cuando vale <code>GPIO.LOW</code>.</p>",
+              "codigo": "import RPi.GPIO as GPIO\n\ndef main() -> None:\n    GPIO.setmode(GPIO.BCM)\n    GPIO.setup(7, GPIO.IN, GPIO.PUD_UP)\n\n    while True:                          # bucle de scan\n        if GPIO.input(7) == GPIO.LOW:    # GPIO7 pulsado (activo a nivel bajo)\n            print(\"Pulsado\")            # se ejecuta en CADA vuelta mientras se pulse\n        # suele acompañarse de un else (o else if) con la accion contraria\n\nif __name__ == \"__main__\":\n    try:\n        main()\n    except KeyboardInterrupt:\n        pass\n    finally:\n        GPIO.cleanup()"
+            },
+            {
+              "etiqueta": "gpiozero",
+              "descripcion": "<p>Con <strong>gpiozero</strong>, <code>Button</code> abstrae el montaje: <code>pulsador.is_pressed</code> es <code>True</code> <em>mientras</em> esté pulsado, sin importar que sea activo a nivel bajo. El código queda más corto y libera los pines solo.</p>",
+              "codigo": "from gpiozero import Button\n\ndef main() -> None:\n    pulsador = Button(7)        # pull-up interno, activo a nivel bajo\n\n    while True:                 # bucle de scan\n        if pulsador.is_pressed:     # True mientras se mantenga pulsado\n            print(\"Pulsado\")        # se ejecuta en CADA vuelta\n        # suele acompañarse de un else con la accion contraria\n\nif __name__ == \"__main__\":\n    try:\n        main()\n    except KeyboardInterrupt:\n        pass\n    # gpiozero libera los pines en los destructores"
+            }
+          ]
+        },
+        {
+          "tipo": "codigo-tabs",
+          "intro": "<p>Lectura <strong>por flanco de bajada</strong>: se guarda la lectura de la vuelta anterior y se compara con la actual, de modo que el cuerpo del <code>if</code> se ejecuta una sola vez por pulsación. <strong>Atención al sentido de la comparación</strong>, que cambia entre librerías:</p>",
+          "variantes": [
+            {
+              "etiqueta": "RPi.GPIO",
+              "descripcion": "<p>Con <strong>RPi.GPIO</strong>, <code>GPIO.input</code> da el nivel eléctrico (1 en reposo, 0 al pulsar), así que la pulsación es <code>actual &lt; anterior</code> (de 1 a 0, flanco de bajada).</p>",
+              "codigo": "import RPi.GPIO as GPIO\n\ndef main() -> None:\n    GPIO.setmode(GPIO.BCM)\n    GPIO.setup(7, GPIO.IN, GPIO.PUD_UP)\n    anterior = GPIO.input(7)        # nivel del pin en la iteracion previa\n\n    while True:                     # bucle de scan\n        actual = GPIO.input(7)\n        if actual < anterior:       # flanco de bajada: instante de la pulsacion\n            print(\"Pulsado\")        # se ejecuta una sola vez por pulsacion\n        anterior = actual\n\nif __name__ == \"__main__\":\n    try:\n        main()\n    except KeyboardInterrupt:\n        pass\n    finally:\n        GPIO.cleanup()"
+            },
+            {
+              "etiqueta": "gpiozero",
+              "descripcion": "<p>Con <strong>gpiozero</strong>, <code>pulsador.value</code> vale <strong>1 al pulsar</strong> (lógica invertida respecto al pin), por lo que el instante de la pulsación es <code>actual &gt; anterior</code> (de 0 a 1), justo al revés que con <code>GPIO.input</code>. Es el error de signo más típico al mezclar las dos librerías.</p>",
+              "codigo": "from gpiozero import Button\n\ndef main() -> None:\n    pulsador = Button(7)\n    anterior = pulsador.value        # valor en la iteracion previa (0/1)\n\n    while True:                      # bucle de scan\n        actual = pulsador.value\n        if actual > anterior:        # 0 -> 1: instante de la pulsacion\n            print(\"Pulsado\")         # se ejecuta una sola vez por pulsacion\n        anterior = actual\n\nif __name__ == \"__main__\":\n    try:\n        main()\n    except KeyboardInterrupt:\n        pass"
+            }
+          ]
+        },
+        {
+          "tipo": "nota",
+          "html": "El detector de flanco debe inicializarse con una <strong>lectura real del puerto antes del bucle</strong> (como en los dos ejemplos: <code>anterior = GPIO.input(7)</code> con RPi.GPIO y <code>anterior = pulsador.value</code> con gpiozero), para que <code>anterior</code> arranque en el <strong>nivel de reposo</strong> del pulsador. Ese reposo es <code>1</code> con <code>GPIO.input</code> (nivel eléctrico de un pull-up) pero <code>0</code> con <code>Button.value</code> (lógica invertida). Así no se detecta un flanco fantasma en la primera iteración."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Al combinar el detector de flanco con una salida (p. ej. un LED) aparecen errores muy típicos:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<code>if actual &lt; anterior: led.on()</code> seguido de <code>else: led.off()</code> — el LED solo queda encendido durante <em>una</em> vuelta del bucle (microsegundos): a efectos prácticos no llega a verse encendido.",
+            "<code>if actual &lt; anterior: led.on()</code> <strong>sin</strong> <code>else</code> — el LED se enciende con la primera pulsación… y ya nadie lo apaga.",
+            "Para <strong>alternar</strong> (encender/apagar con cada pulsación) se llama a <code>led.toggle()</code> <strong>dentro</strong> del <code>if</code> del flanco y <strong>sin else</strong>: un <code>else</code> que vuelva a escribir la salida machacaría el valor en el resto de iteraciones.",
+            "<code>actual &lt; anterior</code> detecta el flanco de bajada (1→0) y <code>actual &gt; anterior</code> el de subida; tratarlos por separado permite hacer cosas distintas al pulsar y al soltar."
+          ]
         },
         {
           "tipo": "nota",

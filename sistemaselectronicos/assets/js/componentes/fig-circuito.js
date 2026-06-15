@@ -137,22 +137,32 @@ MPI.componentes = MPI.componentes || {};
         T(150, 107, '↻', { fill: 'var(--txt-tenue)', size: 18 }) +
         '</svg>'
     },
-    // --- Tensión de un punto como suma de caídas desde la referencia ---
+    // --- Tensión de un punto como suma de tensiones parciales (caídas) desde la referencia ---
     caidas: {
-      cap: 'La tensión de <em>B</em> es la <strong>suma de las caídas</strong> desde la referencia (0&nbsp;V): se va acumulando nodo a nodo.',
-      svg: '<svg viewBox="0 0 420 150" class="fc-svg" aria-label="Tensión como suma de caídas">' + flecha('fa-cai') +
-        '<line x1="60" y1="40" x2="360" y2="40" stroke="var(--acento-2)" stroke-width="1.4" marker-end="url(#fa-cai)"/>' +
-        T(210, 32, 'recorrido (sumando caídas)', { fill: 'var(--acento-2)', size: 10, style: 1 }) +
+      cap: 'Para conocer la tensión de un punto, <strong>asumimos primero un sentido para la corriente</strong> &mdash;normalmente hacia el punto que creamos a <em>menor</em> potencial (aquí, los 0&nbsp;V)&mdash; y vamos sumando las <strong>tensiones parciales</strong> (las caídas) desde la referencia. Cada flecha de tensión va del &minus; al + (al revés que la corriente), así que <em>V<sub>B</sub></em> = <em>V</em>₁ + <em>V</em>₂.',
+      svg: '<svg viewBox="0 0 420 152" class="fc-svg" aria-label="Tensión como suma de tensiones parciales">' +
+        '<defs>' +
+        '<marker id="cai-rec" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="var(--acento-2)"/></marker>' +
+        '<marker id="cai-v" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="var(--acento)"/></marker>' +
+        '<marker id="cai-i" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="var(--azul-cl)"/></marker>' +
+        '</defs>' +
+        // recorrido: acumulamos las tensiones parciales de la referencia hacia B
+        '<line x1="60" y1="26" x2="360" y2="26" stroke="var(--acento-2)" stroke-width="1.4" marker-end="url(#cai-rec)"/>' +
+        T(210, 18, 'recorrido: vamos sumando las tensiones parciales', { fill: 'var(--acento-2)', size: 10, style: 1 }) +
+        // tensiones parciales: cada flecha va del − al + (mayor potencial)
+        T(100, 48, 'V₁', { fill: 'var(--acento)', style: 1 }) + T(220, 48, 'V₂', { fill: 'var(--acento)', style: 1 }) +
+        '<line x1="74" y1="58" x2="126" y2="58" stroke="var(--acento)" stroke-width="1.6" marker-end="url(#cai-v)"/>' +
+        '<line x1="194" y1="58" x2="246" y2="58" stroke="var(--acento)" stroke-width="1.6" marker-end="url(#cai-v)"/>' +
+        // circuito
         W(40, 80, 70, 80) + res(70, 71, 60, 18, 'R₁') + W(130, 80, 190, 80) + res(190, 71, 60, 18, 'R₂') + W(250, 80, 300, 80) +
-        // masa
-        dot(40, 80) + W(34, 96, 46, 96) + W(37, 101, 43, 101) + T(40, 120, '0 V', { fill: 'var(--txt-tenue)', size: 10 }) +
-        // nodos intermedios
-        dot(160, 80) + T(160, 118, 'V₁', { fill: 'var(--txt-2)' }) +
-        '<line x1="160" y1="80" x2="160" y2="108" stroke="var(--borde)" stroke-width="1" stroke-dasharray="3 3"/>' +
-        dot(300, 80) + T(300, 70, 'B', { style: 1 }) + T(300, 120, 'V_B = V₁ + V₂', { fill: 'var(--acento)' }) +
-        '<line x1="300" y1="80" x2="300" y2="108" stroke="var(--borde)" stroke-width="1" stroke-dasharray="3 3"/>' +
-        // etiquetas de caída por resistencia
-        T(100, 64, 'V₁', { fill: 'var(--acento)', style: 1 }) + T(220, 64, 'V₂', { fill: 'var(--acento)', style: 1 }) +
+        // referencia (masa, 0 V)
+        dot(40, 80) + gnd(40, 80) + T(40, 112, '0 V', { fill: 'var(--txt-tenue)', size: 10 }) +
+        // nodos intermedios y tensión de B
+        dot(160, 80) + '<line x1="160" y1="80" x2="160" y2="124" stroke="var(--borde)" stroke-width="1" stroke-dasharray="3 3"/>' + T(160, 136, 'V₁', { fill: 'var(--txt-2)' }) +
+        dot(300, 80) + T(300, 66, 'B', { style: 1 }) + '<line x1="300" y1="80" x2="300" y2="124" stroke="var(--borde)" stroke-width="1" stroke-dasharray="3 3"/>' + T(300, 136, 'V<tspan baseline-shift="sub" font-size="8">B</tspan> = V₁ + V₂', { fill: 'var(--acento)' }) +
+        // corriente supuesta: hacia el punto de menor potencial (0 V)
+        '<line x1="288" y1="102" x2="78" y2="102" stroke="var(--azul-cl)" stroke-width="1.6" marker-end="url(#cai-i)"/>' +
+        T(184, 98, 'I (supuesta, hacia el menor potencial)', { fill: 'var(--azul-cl)', size: 9, style: 1 }) +
         '</svg>'
     },
 

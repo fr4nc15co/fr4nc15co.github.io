@@ -981,3 +981,19 @@ math.formula { font-size: 1.3rem; margin: 1rem 0; color: var(--txt); display: bl
 
 /* === Figuras de examen incrustadas en ejercicios === */
 .ej-fig { display: block; max-width: 360px; width: 100%; height: auto; margin: .8rem auto; background: #fff; padding: .6rem; border-radius: 8px; border: 1px solid var(--borde); }
+
+/* === Bloques de código con pestañas (p. ej. RPi.GPIO / gpiozero) === */
+.codigo-tabs { margin: 1rem 0; }
+.codigo-tabs .ct-bar { display: flex; flex-wrap: wrap; gap: .35rem; margin: 0 0 .2rem; }
+.codigo-tabs .ct-tab {
+  font-family: var(--mono); font-size: .78rem; color: var(--txt-2);
+  background: var(--bg-2); border: 1px solid var(--borde); border-radius: 6px;
+  padding: .35rem .85rem; cursor: pointer;
+  transition: color .12s, background .12s, border-color .12s;
+}
+.codigo-tabs .ct-tab:hover { color: var(--txt); border-color: var(--txt-tenue); }
+.codigo-tabs .ct-tab.ct-activa { color: #06231d; background: var(--acento); border-color: var(--acento); font-weight: 600; }
+.codigo-tabs .ct-tab:focus-visible { outline: 2px solid var(--acento-2); outline-offset: 2px; }
+.codigo-tabs .ct-panel { display: none; }
+.codigo-tabs .ct-panel.ct-activa { display: block; }
+.codigo-tabs .ct-panel > :first-child { margin-top: .5rem; }
