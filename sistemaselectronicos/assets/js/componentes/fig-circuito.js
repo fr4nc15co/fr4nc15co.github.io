@@ -1,7 +1,7 @@
 /*
  * Componente "fig-circuito": dibujos esquemáticos (SVG) de los conceptos básicos
  * de teoría de circuitos. Estáticos, sin interacción. Se elige la figura con
- * data-config: {"fig":"ohm"|"serie"|"paralelo"|"kcl"|"kvl"|"caidas"}.
+ * data-config: {"fig":"ohm"|"serie"|"paralelo"|"kcl"|"kvl"|"caidas"|"divisor-v"|"divisor-l"}.
  *
  * Uso: <div class="mpi-mount" data-componente="fig-circuito" data-config='{"fig":"ohm"}'></div>
  */
@@ -45,6 +45,23 @@ MPI.componentes = MPI.componentes || {};
       '<circle cx="' + x + '" cy="' + y2 + '" r="2.6" fill="var(--txt-2)"/>' +
       '<line x1="' + x + '" y1="' + y1 + '" x2="' + (x + 15) + '" y2="' + (y1 + (y2 - y1) * 0.5) + '" stroke="var(--txt-2)" stroke-width="1.6"/>' +
       '<text x="' + (x + 20) + '" y="' + ((y1 + y2) / 2 + 3) + '" font-size="9.5" fill="var(--txt-tenue)" text-anchor="start">pulsador</text>';
+  }
+
+  // --- formatos numéricos para los simuladores interactivos de Kirchhoff ---
+  function fmtmA(mA) {
+    var v = Math.round(mA * 10) / 10;
+    return (v % 1 === 0 ? String(v) : v.toFixed(1)).replace('.', ',') + ' mA';
+  }
+  function fmtVolt(v) {
+    var r = Math.round(v * 10) / 10;
+    return (r % 1 === 0 ? String(r) : r.toFixed(1)).replace('.', ',') + ' V';
+  }
+  function fmtRohm(ohm) {
+    if (ohm >= 1000) {
+      var k = Math.round(ohm / 100) / 10;
+      return (k % 1 === 0 ? String(k) : k.toFixed(1)).replace('.', ',') + ' kΩ';
+    }
+    return String(ohm) + ' Ω';
   }
 
   // --- esquemas de las configuraciones de AO (mismos dibujos que el simulador
@@ -101,41 +118,170 @@ MPI.componentes = MPI.componentes || {};
         T(160, 162, 'R_eq = R₁·R₂ / (R₁ + R₂)', { fill: 'var(--txt-2)' }) +
         '</svg>'
     },
-    // --- 1.ª ley de Kirchhoff (corrientes en un nodo) ---
+    // --- 1.ª ley de Kirchhoff (corrientes en un nodo) — INTERACTIVA ---
     kcl: {
-      cap: '<strong>1.ª ley (corrientes):</strong> lo que entra en un nodo sale por las demás ramas. <em>I</em>₁ = <em>I</em>₂ + <em>I</em>₃.',
-      svg: '<svg viewBox="0 0 280 170" class="fc-svg" aria-label="Ley de corrientes de Kirchhoff">' + flecha('fa-kcl') +
-        // entra I1
-        '<line x1="30" y1="85" x2="125" y2="85" stroke="var(--acento)" stroke-width="1.8" marker-end="url(#fa-kcl)"/>' +
-        T(70, 76, 'I₁', { fill: 'var(--acento)', style: 1 }) +
-        // salen I2 (arriba) e I3 (abajo)
-        '<line x1="140" y1="80" x2="235" y2="35" stroke="var(--acento-2)" stroke-width="1.8" marker-end="url(#fa-kcl)"/>' +
-        T(215, 30, 'I₂', { fill: 'var(--acento-2)', style: 1 }) +
-        '<line x1="140" y1="90" x2="235" y2="135" stroke="var(--acento-2)" stroke-width="1.8" marker-end="url(#fa-kcl)"/>' +
-        T(215, 152, 'I₃', { fill: 'var(--acento-2)', style: 1 }) +
-        '<circle cx="135" cy="85" r="6" fill="var(--azul-cl)"/>' + T(135, 110, 'nodo', { fill: 'var(--txt-tenue)', size: 10 }) +
-        '</svg>'
+      cap: '<strong>1.ª ley (corrientes):</strong> lo que entra en un nodo sale por las demás ramas. I₁ = I₂ + I₃.',
+      init: function (el) {
+        var i2 = 1.5, i3 = 1.0;
+        el.classList.add('mpi-kirchhoff');
+        el.innerHTML =
+          '<div class="mpi-sim-cab">Ley de corrientes de Kirchhoff (LKC) — 1.ª ley</div>' +
+          '<div class="kk-cuerpo">' +
+            '<div class="kk-esquema">' +
+              '<svg viewBox="0 0 340 200" class="fc-svg" aria-label="LKC interactiva">' +
+                '<defs>' +
+                  '<marker id="kk-a1" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto">' +
+                    '<path d="M0 0 L9 4.5 L0 9 Z" fill="var(--acento)"/></marker>' +
+                  '<marker id="kk-a2" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto">' +
+                    '<path d="M0 0 L9 4.5 L0 9 Z" fill="var(--acento-2)"/></marker>' +
+                '</defs>' +
+                '<line class="kk-ln1" x1="20" y1="100" x2="148" y2="100" stroke="var(--acento)" stroke-width="2.5" marker-end="url(#kk-a1)"/>' +
+                '<text x="84" y="88" font-size="12" fill="var(--acento)" text-anchor="middle" font-style="italic">I₁</text>' +
+                '<text class="kk-vi1" x="84" y="116" font-size="10" fill="var(--acento)" text-anchor="middle"></text>' +
+                '<circle cx="160" cy="100" r="8" fill="var(--azul-cl)"/>' +
+                '<text x="160" y="124" font-size="10" fill="var(--txt-tenue)" text-anchor="middle">nodo</text>' +
+                '<line class="kk-ln2" x1="168" y1="93" x2="313" y2="32" stroke="var(--acento-2)" stroke-width="2" marker-end="url(#kk-a2)"/>' +
+                '<text x="266" y="28" font-size="12" fill="var(--acento-2)" text-anchor="start" font-style="italic">I₂</text>' +
+                '<text class="kk-vi2" x="266" y="44" font-size="10" fill="var(--acento-2)" text-anchor="start"></text>' +
+                '<line class="kk-ln3" x1="168" y1="107" x2="313" y2="168" stroke="var(--acento-2)" stroke-width="2" marker-end="url(#kk-a2)"/>' +
+                '<text x="266" y="160" font-size="12" fill="var(--acento-2)" text-anchor="start" font-style="italic">I₃</text>' +
+                '<text class="kk-vi3" x="266" y="178" font-size="10" fill="var(--acento-2)" text-anchor="start"></text>' +
+              '</svg>' +
+            '</div>' +
+            '<div class="kk-panel">' +
+              '<p class="kk-hint">Ajusta I₂ e I₃; la LKC calcula I₁&nbsp;=&nbsp;I₂&nbsp;+&nbsp;I₃:</p>' +
+              '<div class="kk-ctrl">' +
+                '<label class="kk-lab">I<sub>2</sub> = <strong class="kk-i2-lab"></strong></label>' +
+                '<input type="range" class="kk-sl2" min="0" max="5" step="0.1" value="1.5">' +
+              '</div>' +
+              '<div class="kk-ctrl">' +
+                '<label class="kk-lab">I<sub>3</sub> = <strong class="kk-i3-lab"></strong></label>' +
+                '<input type="range" class="kk-sl3" min="0" max="5" step="0.1" value="1">' +
+              '</div>' +
+              '<div class="kk-resultado">' +
+                '<span class="kk-res-tit">I<sub>1</sub> = I<sub>2</sub> + I<sub>3</sub></span>' +
+                '<strong class="kk-i1-out"></strong>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="kk-balance"></div>' +
+          '<p class="fc-cap"><strong>1.ª ley (corrientes):</strong> lo que entra en un nodo sale por las demás ramas. Ajusta I₂ e I₃ y comprueba que I₁ se recalcula al instante.</p>';
+
+        function swKcl(v) { return (1.5 + 3 * Math.min(v, 5) / 5).toFixed(2); }
+
+        function pintarKcl() {
+          var i1 = i2 + i3;
+          el.querySelector('.kk-ln1').setAttribute('stroke-width', swKcl(i1));
+          el.querySelector('.kk-ln2').setAttribute('stroke-width', swKcl(i2));
+          el.querySelector('.kk-ln3').setAttribute('stroke-width', swKcl(i3));
+          el.querySelector('.kk-vi1').textContent = fmtmA(i1);
+          el.querySelector('.kk-vi2').textContent = fmtmA(i2);
+          el.querySelector('.kk-vi3').textContent = fmtmA(i3);
+          el.querySelector('.kk-i2-lab').textContent = fmtmA(i2);
+          el.querySelector('.kk-i3-lab').textContent = fmtmA(i3);
+          el.querySelector('.kk-i1-out').textContent = fmtmA(i1);
+          el.querySelector('.kk-balance').innerHTML =
+            '<span class="kk-eq">Σ I en el nodo = 0 →</span>' +
+            '<span class="kk-eqnum">I<sub>1</sub> = I<sub>2</sub> + I<sub>3</sub>' +
+            ' = ' + fmtmA(i2) + ' + ' + fmtmA(i3) +
+            ' = <strong>' + fmtmA(i1) + '</strong></span>';
+        }
+
+        el.querySelector('.kk-sl2').addEventListener('input', function () { i2 = parseFloat(this.value); pintarKcl(); });
+        el.querySelector('.kk-sl3').addEventListener('input', function () { i3 = parseFloat(this.value); pintarKcl(); });
+        pintarKcl();
+      }
     },
-    // --- 2.ª ley de Kirchhoff (tensiones en una malla) ---
+    // --- 2.ª ley de Kirchhoff (tensiones en una malla) — INTERACTIVA ---
     kvl: {
-      cap: '<strong>2.ª ley (tensiones):</strong> al recorrer una malla, las caídas suman lo que da la fuente. <em>V</em><tspan>S</tspan> = <em>V</em>₁ + <em>V</em>₂.',
-      svg: '<svg viewBox="0 0 300 195" class="fc-svg" aria-label="Ley de tensiones de Kirchhoff">' +
-        // malla rectangular (con huecos donde van la fuente, R1 y R2)
-        W(60, 45, 120, 45) + W(180, 45, 240, 45) + W(240, 45, 240, 72) + W(240, 132, 240, 160) +
-        W(240, 160, 60, 160) + W(60, 160, 60, 88) + W(60, 112, 60, 45) +
-        // fuente Vs en el lado izquierdo (batería)
-        '<line x1="46" y1="88" x2="74" y2="88" stroke="var(--txt)" stroke-width="3"/>' +
-        '<line x1="52" y1="112" x2="68" y2="112" stroke="var(--txt)" stroke-width="1.6"/>' +
-        T(26, 96, 'V', { fill: 'var(--amarillo)', style: 1, anchor: 'start' }) + T(36, 100, 'S', { fill: 'var(--amarillo)', size: 8, anchor: 'start' }) +
-        T(48, 80, '+', { fill: 'var(--txt-2)', size: 12 }) + T(48, 128, '−', { fill: 'var(--txt-2)', size: 12 }) +
-        // R1 arriba (horizontal)
-        res(120, 36, 60, 18, 'R₁') + T(150, 28, 'V₁', { fill: 'var(--acento)', style: 1 }) +
-        // R2 derecha (vertical)
-        '<rect x="231" y="72" width="18" height="60" rx="2.5" fill="var(--bg-3)" stroke="var(--acento)" stroke-width="1.6"/>' +
-        T(262, 106, 'R₂', { fill: 'var(--acento)', anchor: 'start' }) + T(262, 122, 'V₂', { fill: 'var(--acento)', style: 1, anchor: 'start' }) +
-        // sentido de recorrido de la malla
-        T(150, 107, '↻', { fill: 'var(--txt-tenue)', size: 18 }) +
-        '</svg>'
+      cap: '<strong>2.ª ley (tensiones):</strong> al recorrer una malla, las caídas suman lo que da la fuente. VS = V₁ + V₂.',
+      init: function (el) {
+        var vs = 9, r1 = 3000, r2 = 1500;
+        el.classList.add('mpi-kirchhoff');
+        el.innerHTML =
+          '<div class="mpi-sim-cab">Ley de tensiones de Kirchhoff (LKV) — 2.ª ley</div>' +
+          '<div class="kk-cuerpo">' +
+            '<div class="kk-esquema">' +
+              '<svg viewBox="0 0 340 215" class="fc-svg" aria-label="LKV interactiva">' +
+                // Fuente Vs en el lado izquierdo (x=70)
+                W(70, 65, 70, 106) +
+                '<line x1="56" y1="106" x2="84" y2="106" stroke="var(--txt)" stroke-width="3"/>' +
+                '<line x1="62" y1="118" x2="78" y2="118" stroke="var(--txt)" stroke-width="1.6"/>' +
+                W(70, 118, 70, 182) +
+                T(44, 104, '+', { fill: 'var(--txt-2)', size: 12, anchor: 'end' }) +
+                T(44, 122, '−', { fill: 'var(--txt-2)', size: 12, anchor: 'end' }) +
+                '<text x="14" y="110" font-size="12" fill="var(--amarillo)" text-anchor="start" font-style="italic">V<tspan dy="3" font-size="8">S</tspan></text>' +
+                '<text class="kk-vvs" x="14" y="126" font-size="10" fill="var(--amarillo)" text-anchor="start"></text>' +
+                // R1 arriba (y=65)
+                W(70, 65, 110, 65) +
+                res(110, 55, 90, 20, 'R₁') +
+                W(200, 65, 265, 65) +
+                '<text x="155" y="44" font-size="12" fill="var(--acento)" text-anchor="middle" font-style="italic">V₁</text>' +
+                '<text class="kk-vv1" x="155" y="32" font-size="10" fill="var(--acento)" text-anchor="middle"></text>' +
+                // R2 derecha (x=265)
+                W(265, 65, 265, 97) +
+                '<rect x="258" y="97" width="14" height="50" rx="2.5" fill="var(--bg-3)" stroke="var(--acento-2)" stroke-width="1.6"/>' +
+                '<text x="265" y="126" font-size="11" fill="var(--acento-2)" text-anchor="middle">R₂</text>' +
+                W(265, 147, 265, 182) +
+                '<text x="288" y="113" font-size="12" fill="var(--acento-2)" text-anchor="start" font-style="italic">V₂</text>' +
+                '<text class="kk-vv2" x="288" y="129" font-size="10" fill="var(--acento-2)" text-anchor="start"></text>' +
+                // Cable inferior y nodos
+                W(265, 182, 70, 182) +
+                dot(70, 65) + dot(265, 65) + dot(265, 182) + dot(70, 182) +
+                // Sentido de la malla y corriente
+                T(167, 130, '↻', { fill: 'var(--txt-tenue)', size: 18 }) +
+                '<text class="kk-vi" x="167" y="150" font-size="10" fill="var(--azul-cl)" text-anchor="middle"></text>' +
+              '</svg>' +
+            '</div>' +
+            '<div class="kk-panel">' +
+              '<p class="kk-hint">Ajusta V<sub>S</sub>, R₁ y R₂; la LKV garantiza V<sub>S</sub>&nbsp;=&nbsp;V₁&nbsp;+&nbsp;V₂:</p>' +
+              '<div class="kk-ctrl">' +
+                '<label class="kk-lab">V<sub>S</sub> = <strong class="kk-vs-lab"></strong></label>' +
+                '<input type="range" class="kk-sl-vs" min="1" max="12" step="0.5" value="9">' +
+              '</div>' +
+              '<div class="kk-ctrl">' +
+                '<label class="kk-lab"><span class="kk-c1">R₁</span> = <strong class="kk-r1-lab"></strong></label>' +
+                '<input type="range" class="kk-sl-r1" min="100" max="10000" step="100" value="3000">' +
+              '</div>' +
+              '<div class="kk-ctrl">' +
+                '<label class="kk-lab"><span class="kk-c2">R₂</span> = <strong class="kk-r2-lab"></strong></label>' +
+                '<input type="range" class="kk-sl-r2" min="100" max="10000" step="100" value="1500">' +
+              '</div>' +
+              '<div class="kk-resultados-kvl">' +
+                '<div class="kk-res kk-res-v1"><span class="kk-res-tit">V₁</span><strong class="kk-v1-out"></strong></div>' +
+                '<div class="kk-res kk-res-v2"><span class="kk-res-tit">V₂</span><strong class="kk-v2-out"></strong></div>' +
+                '<div class="kk-res kk-res-i"><span class="kk-res-tit">I malla</span><strong class="kk-i-out"></strong></div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="kk-balance"></div>' +
+          '<p class="fc-cap"><strong>2.ª ley (tensiones):</strong> al recorrer la malla, las caídas en R₁ y R₂ suman exactamente lo que da la fuente. Ajusta los valores y comprueba que V<sub>S</sub>&nbsp;=&nbsp;V₁&nbsp;+&nbsp;V₂ siempre se cumple.</p>';
+
+        function pintarKvl() {
+          var i = vs / (r1 + r2);
+          var v1 = i * r1, v2 = i * r2;
+          el.querySelector('.kk-vvs').textContent = fmtVolt(vs);
+          el.querySelector('.kk-vv1').textContent = fmtVolt(v1);
+          el.querySelector('.kk-vv2').textContent = fmtVolt(v2);
+          el.querySelector('.kk-vi').textContent = 'I = ' + fmtmA(i * 1000);
+          el.querySelector('.kk-vs-lab').textContent = fmtVolt(vs);
+          el.querySelector('.kk-r1-lab').textContent = fmtRohm(r1);
+          el.querySelector('.kk-r2-lab').textContent = fmtRohm(r2);
+          el.querySelector('.kk-v1-out').textContent = fmtVolt(v1);
+          el.querySelector('.kk-v2-out').textContent = fmtVolt(v2);
+          el.querySelector('.kk-i-out').textContent = fmtmA(i * 1000);
+          el.querySelector('.kk-balance').innerHTML =
+            '<span class="kk-eq">Σ V en malla = 0 →</span>' +
+            '<span class="kk-eqnum">V<sub>S</sub> = V₁ + V₂' +
+            ' = ' + fmtVolt(v1) + ' + ' + fmtVolt(v2) +
+            ' = <strong>' + fmtVolt(vs) + '</strong></span>';
+        }
+
+        el.querySelector('.kk-sl-vs').addEventListener('input', function () { vs = parseFloat(this.value); pintarKvl(); });
+        el.querySelector('.kk-sl-r1').addEventListener('input', function () { r1 = parseInt(this.value, 10); pintarKvl(); });
+        el.querySelector('.kk-sl-r2').addEventListener('input', function () { r2 = parseInt(this.value, 10); pintarKvl(); });
+        pintarKvl();
+      }
     },
     // --- Tensión de un punto como suma de tensiones parciales (caídas) desde la referencia ---
     caidas: {
@@ -163,6 +309,32 @@ MPI.componentes = MPI.componentes || {};
         // corriente supuesta: hacia el punto de menor potencial (0 V)
         '<line x1="288" y1="102" x2="78" y2="102" stroke="var(--azul-cl)" stroke-width="1.6" marker-end="url(#cai-i)"/>' +
         T(184, 98, 'I (supuesta, hacia el menor potencial)', { fill: 'var(--azul-cl)', size: 9, style: 1 }) +
+        '</svg>'
+    },
+    // --- Divisor de tensión: el MISMO circuito dibujado de dos formas ---
+    'divisor-v': {
+      cap: 'El divisor dibujado en <strong>vertical</strong> (alimentación arriba, masa abajo): <em>R</em>₁ y <em>R</em>₂ en serie y la salida <em>V<sub>o</sub></em> tomada en el nodo intermedio. Con <em>V<sub>in</sub></em>=5&nbsp;V, 3&nbsp;kΩ y 2&nbsp;kΩ &#8594; <em>V<sub>o</sub></em>=2&nbsp;V.',
+      svg: '<svg viewBox="0 0 240 206" class="fc-svg" aria-label="Divisor de tensión dibujado en vertical">' + flecha('fa-dv') +
+        dot(80, 32) + W(80, 32, 80, 50) +
+        T(80, 24, 'V<tspan baseline-shift="sub" font-size="8">in</tspan> = 5 V', { fill: 'var(--amarillo)' }) +
+        resV(80, 50, 46, 'R₁ = 3 kΩ', 128) +
+        W(80, 96, 80, 128) + dot(80, 112) +
+        '<line x1="80" y1="112" x2="158" y2="112" stroke="var(--acento)" stroke-width="1.4" marker-end="url(#fa-dv)"/>' +
+        T(162, 108, 'V<tspan baseline-shift="sub" font-size="8">o</tspan> = 2 V', { fill: 'var(--acento)', anchor: 'start' }) +
+        resV(80, 128, 46, 'R₂ = 2 kΩ', 128) +
+        W(80, 174, 80, 188) + gnd(80, 188) + T(98, 200, '0 V', { fill: 'var(--txt-tenue)', size: 9, anchor: 'start' }) +
+        '</svg>'
+    },
+    'divisor-l': {
+      cap: 'El <strong>mismo</strong> divisor dibujado <strong>en «L» (tumbado)</strong>: es <strong>el mismo circuito</strong> y la misma cuenta (5&nbsp;V&#8594;2&nbsp;V). Da igual la forma del dibujo; lo importante es <strong>identificar</strong> las dos resistencias en serie y la salida en su unión.',
+      svg: '<svg viewBox="0 0 285 150" class="fc-svg" aria-label="Divisor de tensión dibujado en L">' + flecha('fa-dl') +
+        dot(36, 50) + T(40, 30, 'V<tspan baseline-shift="sub" font-size="8">in</tspan> = 5 V', { fill: 'var(--amarillo)' }) +
+        W(36, 50, 52, 50) + res(52, 41, 76, 18, 'R₁ = 3 kΩ') + W(128, 50, 172, 50) +
+        dot(172, 50) +
+        '<line x1="172" y1="50" x2="212" y2="50" stroke="var(--acento)" stroke-width="1.4" marker-end="url(#fa-dl)"/>' +
+        T(216, 54, 'V<tspan baseline-shift="sub" font-size="8">o</tspan> = 2 V', { fill: 'var(--acento)', anchor: 'start' }) +
+        W(172, 50, 172, 62) + resV(172, 62, 46, 'R₂ = 2 kΩ', 205) +
+        W(172, 108, 172, 122) + gnd(172, 122) +
         '</svg>'
     },
 
@@ -467,6 +639,10 @@ MPI.componentes = MPI.componentes || {};
     var nombre = (cfg && cfg.fig) || 'ohm';
     var f = FIGS[nombre] || FIGS.ohm;
     el.classList.add('mpi-fig-circuito');
-    el.innerHTML = f.svg + '<p class="fc-cap">' + f.cap + '</p>';
+    if (f.init) {
+      f.init(el);
+    } else {
+      el.innerHTML = f.svg + '<p class="fc-cap">' + f.cap + '</p>';
+    }
   };
 })();

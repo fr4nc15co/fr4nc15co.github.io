@@ -945,6 +945,37 @@ math.formula { font-size: 1.3rem; margin: 1rem 0; color: var(--txt); display: bl
 .fc-svg { width: 100%; max-width: 420px; height: auto; }
 .fc-cap { margin: .3rem 0 0; font-size: .86rem; color: var(--txt-2); text-align: center; }
 
+/* === Kirchhoff interactivo (kk-*) — LKC y LKV en vivo === */
+.mpi-kirchhoff { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem 1.2rem; margin: 1.2rem 0; text-align: left; }
+.kk-cuerpo { display: flex; flex-wrap: wrap; gap: 1.4rem; align-items: flex-start; }
+.kk-esquema { flex: 0 0 300px; max-width: 100%; }
+.kk-esquema .fc-svg { max-width: 100%; }
+.kk-panel { flex: 1 1 200px; min-width: 180px; display: flex; flex-direction: column; gap: .8rem; }
+.kk-hint { font-size: .82rem; color: var(--txt-tenue); margin: 0; }
+.kk-ctrl { display: flex; flex-direction: column; gap: .3rem; }
+.kk-lab { font-size: .88rem; color: var(--txt-2); }
+.kk-lab strong { font-family: var(--mono); color: var(--num); font-weight: 600; }
+.kk-c1 { color: var(--acento); }
+.kk-c2 { color: var(--acento-2); }
+.kk-panel input[type="range"] { width: 100%; accent-color: var(--acento); }
+.kk-resultado { display: flex; flex-direction: column; gap: .2rem; background: var(--bg-3); border: 1px solid var(--borde); border-left: 3px solid var(--acento); border-radius: 8px; padding: .5rem .7rem; margin-top: .2rem; }
+.kk-res-tit { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--txt-tenue); }
+.kk-resultado strong { font-family: var(--mono); font-size: 1rem; font-weight: 700; color: var(--acento); }
+.kk-resultados-kvl { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .2rem; }
+.kk-res { flex: 1 1 80px; display: flex; flex-direction: column; gap: .15rem; background: var(--bg-3); border: 1px solid var(--borde); border-radius: 8px; padding: .45rem .6rem; }
+.kk-res strong { font-family: var(--mono); font-size: .95rem; font-weight: 700; }
+.kk-res-v1 { border-left: 3px solid var(--acento); }
+.kk-res-v1 strong { color: var(--acento); }
+.kk-res-v2 { border-left: 3px solid var(--acento-2); }
+.kk-res-v2 strong { color: var(--acento-2); }
+.kk-res-i { border-left: 3px solid var(--azul-cl); }
+.kk-res-i strong { color: var(--azul-cl); }
+.kk-balance { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: 1rem 0 .5rem; padding: .65rem .9rem; background: var(--bg-3); border: 1px solid var(--borde); border-radius: 8px; font-family: var(--mono); font-size: .9rem; }
+.kk-eq { color: var(--txt-tenue); }
+.kk-eqnum { color: var(--txt-2); }
+.kk-eqnum strong { color: var(--amarillo); font-weight: 700; }
+.mpi-kirchhoff .fc-cap { text-align: left; }
+
 /* === Componente sim-serie-paralelo (spr-*) === */
 .mpi-spr { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1rem 1.2rem; margin: 1.2rem 0; }
 .spr-svg { display: block; width: 100%; max-width: 560px; height: auto; margin: .2rem auto .4rem; background: var(--bg); border: 1px solid var(--borde); border-radius: 8px; }
