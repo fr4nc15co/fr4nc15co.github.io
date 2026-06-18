@@ -88,7 +88,29 @@ MPI.contenidoTemas = MPI.contenidoTemas || {};
         'con los registros y el código verificados contra el datasheet del PIC32MX.</p>' +
         '<p><a href="#/">← Volver al índice</a></p></div></article>';
     }
-    return '<article class="mpi-tema">' + cont.html + '</article>';
+
+    // Buscar tema anterior y siguiente
+    var idxActual = MPI.temas.findIndex(function (t) { return t.slug === slug; });
+    var temaPrev = idxActual > 0 ? MPI.temas[idxActual - 1] : null;
+    var temaSig = idxActual < MPI.temas.length - 1 ? MPI.temas[idxActual + 1] : null;
+
+    // Construir navegación
+    var navHTML = '<nav class="mpi-tema-nav">';
+    if (temaPrev) {
+      navHTML += '<a href="#/tema/' + temaPrev.slug + '" class="mpi-tema-nav-item mpi-tema-nav-prev">' +
+        '<span class="mpi-tema-nav-label">← Anterior</span>' +
+        '<span class="mpi-tema-nav-title">' + temaPrev.titulo + '</span>' +
+        '</a>';
+    }
+    if (temaSig) {
+      navHTML += '<a href="#/tema/' + temaSig.slug + '" class="mpi-tema-nav-item mpi-tema-nav-next">' +
+        '<span class="mpi-tema-nav-label">Siguiente →</span>' +
+        '<span class="mpi-tema-nav-title">' + temaSig.titulo + '</span>' +
+        '</a>';
+    }
+    navHTML += '</nav>';
+
+    return '<article class="mpi-tema">' + cont.html + navHTML + '</article>';
   }
 
   function marcarActivo(slug) {

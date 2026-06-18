@@ -1028,3 +1028,41 @@ math.formula { font-size: 1.3rem; margin: 1rem 0; color: var(--txt); display: bl
 .codigo-tabs .ct-panel { display: none; }
 .codigo-tabs .ct-panel.ct-activa { display: block; }
 .codigo-tabs .ct-panel > :first-child { margin-top: .5rem; }
+
+/* === Navegación entre temas === */
+.mpi-tema-nav {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--borde);
+}
+.mpi-tema-nav-item {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  padding: 1rem;
+  background: var(--bg-2);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  color: var(--txt);
+  transition: border-color .15s, background .15s;
+}
+.mpi-tema-nav-item:hover {
+  border-color: var(--acento);
+  background: var(--bg-3);
+  text-decoration: none;
+}
+.mpi-tema-nav-label {
+  font-size: .82rem;
+  color: var(--txt-tenue);
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.mpi-tema-nav-title {
+  font-size: .95rem;
+  color: var(--acento);
+  font-weight: 500;
+}
