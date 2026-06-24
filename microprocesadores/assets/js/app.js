@@ -7,6 +7,8 @@ window.MPI = window.MPI || {};
 MPI.contenidoTemas = MPI.contenidoTemas || {};
 
 (function () {
+  var tocObserver = null;
+
   function $(sel, raiz) { return (raiz || document).querySelector(sel); }
 
   function gaEvent(name, params) { if (typeof gtag === 'function') gtag('event', name, params); }
@@ -110,7 +112,34 @@ MPI.contenidoTemas = MPI.contenidoTemas || {};
     }
     navHTML += '</nav>';
 
-    return '<article class="mpi-tema">' + cont.html + navHTML + '</article>';
+    // Índice lateral del tema (prototipo, solo para el ADC). Asignamos IDs a
+    // los h2/h3 en runtime y construimos un TOC con scroll-spy.
+    var htmlTema = cont.html;
+    var tocHTML = '';
+    {
+      var parser = new DOMParser();
+      var doc = parser.parseFromString('<div id="raiz">' + cont.html + '</div>', 'text/html');
+      var heads = doc.querySelectorAll('h2, h3');
+      var items = [];
+      for (var i = 0; i < heads.length; i++) {
+        var h = heads[i];
+        var id = 'ap-' + i;
+        h.setAttribute('id', id);
+        items.push({ id: id, texto: h.textContent.trim(), nivel: h.tagName.toLowerCase() });
+      }
+      if (items.length >= 3) {
+        htmlTema = doc.getElementById('raiz').innerHTML;
+        tocHTML = '<aside class="mpi-toc"><div class="mpi-toc-tit">En este tema</div><ol class="mpi-toc-lista">';
+        items.forEach(function (it) {
+          tocHTML += '<li class="mpi-toc-' + it.nivel + '"><a href="#/tema/' + slug + '" data-ap="' + it.id + '">' + it.texto + '</a></li>';
+        });
+        tocHTML += '</ol></aside>';
+      }
+    }
+
+    var articulo = '<article class="mpi-tema">' + htmlTema + navHTML + '</article>';
+    if (tocHTML) return '<div class="mpi-con-toc">' + articulo + tocHTML + '</div>';
+    return articulo;
   }
 
   function marcarActivo(slug) {
@@ -153,6 +182,42 @@ MPI.contenidoTemas = MPI.contenidoTemas || {};
     montarComponentes(main);
     main.scrollTop = 0;
     window.scrollTo(0, 0);
+    activarToc(main);
+  }
+
+  // Índice lateral del tema: salto suave al hacer click + scroll-spy que
+  // resalta el apartado visible. Se desconecta el observer al re-enrutar.
+  function activarToc(main) {
+    if (tocObserver) { tocObserver.disconnect(); tocObserver = null; }
+    var toc = $('.mpi-toc', main);
+    if (!toc) return;
+
+    var enlaces = {};
+    var links = toc.querySelectorAll('a[data-ap]');
+    for (var i = 0; i < links.length; i++) enlaces[links[i].getAttribute('data-ap')] = links[i];
+
+    toc.addEventListener('click', function (ev) {
+      var a = ev.target.closest('a[data-ap]');
+      if (!a) return;
+      ev.preventDefault();
+      var destino = document.getElementById(a.getAttribute('data-ap'));
+      if (destino) destino.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
+
+    function marcar(id) {
+      for (var k in enlaces) enlaces[k].parentNode.classList.toggle('mpi-toc-activo', k === id);
+    }
+
+    tocObserver = new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (e) {
+        if (e.isIntersecting) marcar(e.target.id);
+      });
+    }, { rootMargin: '0px 0px -70% 0px', threshold: 0 });
+
+    Object.keys(enlaces).forEach(function (id) {
+      var h = document.getElementById(id);
+      if (h) tocObserver.observe(h);
+    });
   }
 
   function init() {
