@@ -271,7 +271,7 @@
         },
         {
           "tipo": "prosa",
-          "html": "<p><em>Ampliación opcional:</em> los registros del buffer <code class=\"reg\">ADC1BUF0</code>–<code class=\"reg\">ADC1BUFF</code> están separados 4 palabras entre sí (la dirección virtual de ADC1BUF0 es 0xBF809070, la de ADC1BUF1 es 0xBF809080, etc.), detalle necesario si quieres recorrerlos con un puntero en un bucle.</p>"
+          "html": "<p><em>Ampliación opcional:</em> los registros del buffer <code class=\"reg\">ADC1BUF0</code>–<code class=\"reg\">ADC1BUFF</code> están separados 4 palabras entre sí (la dirección virtual de ADC1BUF0 es 0xBF809070, la de ADC1BUF1 es 0xBF809080, etc.), detalle necesario si quieres recorrerlos con un puntero en un bucle. Estas direcciones virtuales pertenecen al bloque de SFR en KSEG1: repasa el acceso a periféricos mediante punteros en la <a href=\"#/tema/arquitectura-mips\">sección 5.3 (Mapa de memoria: FMT, KSEG0 y KSEG1)</a>.</p>"
         }
       ]
     }
