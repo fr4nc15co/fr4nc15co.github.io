@@ -750,13 +750,27 @@
             }
         }
     </style>
-  <!-- Google tag (gtag.js) -->
+  <!-- Google tag (gtag.js) + Consent Mode v2 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-M022B3BJJS"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
+    // Por defecto sin consentimiento (RGPD/LSSI): no se usan cookies de analítica
+    gtag('consent', 'default', {
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'ad_personalization': 'denied',
+      'analytics_storage': 'denied',
+      'wait_for_update': 500
+    });
     gtag('js', new Date());
     gtag('config', 'G-M022B3BJJS');
+    // Aplica el consentimiento previo si el usuario ya lo dio
+    try {
+      if (localStorage.getItem('cookie-consent') === 'granted') {
+        gtag('consent', 'update', { 'analytics_storage': 'granted' });
+      }
+    } catch (e) {}
   </script>
 </head>
 <body>
@@ -1368,12 +1382,43 @@
             <a href="mailto:francisco.martin@iit.comillas.edu">
                 <i class="fas fa-envelope"></i> francisco.martin@iit.comillas.edu
             </a>
+            <p style="margin-top:10px"><a href="/privacidad.html">Política de privacidad y cookies</a></p>
         </div>
     </footer>
 
     <script>
         const navTabs = document.querySelectorAll('.nav-tab');
         const sections = document.querySelectorAll('section');
+
+        // --- Analítica de interacción (GA4) ---
+        // Respeta Consent Mode v2: sólo se contabiliza si el usuario acepta las cookies.
+        function gaEvent(name, params) {
+            if (typeof gtag === 'function') gtag('event', name, params || {});
+        }
+
+        // Un único listener delegado registra qué tabs y elementos clickables se usan.
+        document.addEventListener('click', (event) => {
+            const el = event.target.closest('a[href], button');
+            if (!el) return;
+
+            const label = (el.getAttribute('title') || el.getAttribute('aria-label') || el.textContent || '')
+                .trim().replace(/\s+/g, ' ').slice(0, 80);
+
+            if (el.classList.contains('nav-tab')) {
+                gaEvent('select_tab', { tab_name: el.dataset.section || label });
+            } else if (el.classList.contains('lang-btn')) {
+                gaEvent('change_language', { language: el.dataset.lang || label });
+            } else if (el.tagName === 'A') {
+                const href = el.getAttribute('href') || '';
+                gaEvent('link_click', {
+                    link_text: label,
+                    link_url: href,
+                    outbound: /^https?:\/\//i.test(href) && !href.includes(location.host)
+                });
+            } else {
+                gaEvent('button_click', { button_text: label });
+            }
+        });
 
         const makeCardClickable = (selector) => {
             document.querySelectorAll(selector).forEach(card => {
@@ -1672,5 +1717,6 @@
 
         applyLanguage(currentLang);
     </script>
+    <script src="/cookies.js" defer></script>
 </body>
 </html>
