@@ -17,7 +17,7 @@ const TOTAL_TESTS = 14;
 
 // Versión visible en Ajustes. Mantener en sincronía con CACHE_VERSION de sw.js:
 // al publicar se sube una y otra (v4 → v5 → …) para que se note el despliegue.
-const APP_VERSION = "v5";
+const APP_VERSION = "v6";
 
 // Medallero: una medalla por prueba, con el concepto del tema como nombre. El
 // arte pixel-art (componente hardware por prueba) está en
@@ -58,7 +58,8 @@ async function boot() {
   world = new World($("game-canvas"), collisions, npcs);
   quiz = new Quiz();
 
-  music = new Audio("assets/music/song.ogg");
+  // AAC/.m4a: iOS Safari no soporta Ogg Vorbis (la música quedaba muda en iPhone).
+  music = new Audio("assets/music/song.m4a");
   music.loop = true;
   applyVolume(loadVolume());
 
