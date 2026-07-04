@@ -1,0 +1,16 @@
+{
+  "name": "Gamificación de Microprocesadores — ICAI",
+  "short_name": "Micros ICAI",
+  "description": "Juego estilo Pokémon para repasar Microprocesadores (GITT Comillas ICAI)",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#10141f",
+  "theme_color": "#10141f",
+  "icons": [
+    { "src": "assets/pwa/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/pwa/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Gamificación de Microprocesadores — ICAI</title>
+<!-- PWA: instalable y jugable sin conexión (ver sw.js) -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#10141f">
+<link rel="apple-touch-icon" href="assets/pwa/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -68,6 +74,23 @@
       <div id="sel-error" class="error hidden"></div>
       <button id="btn-start" class="btn btn-primary">Comenzar aventura</button>
       <div class="help-keys">Muévete con <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o las flechas · Habla con <kbd>E</kbd></div>
+    </div>
+  </div>
+
+  <!-- Instrucciones antes de empezar la aventura -->
+  <div id="screen-instructions" class="screen hidden">
+    <div class="panel">
+      <h2>📜 Tu misión</h2>
+      <p id="instr-goal"></p>
+      <p class="instr-hint">🧭 La flecha dorada del borde de la pantalla siempre
+        apunta hacia la persona que buscas.</p>
+      <div class="instr-install">
+        <strong>📲 ¿Quieres jugar sin conexión?</strong>
+        Instala el juego en tu móvil y se descargará entero (~3 MB):<br>
+        · <strong>Android</strong>: menú <kbd>⋮</kbd> del navegador → «Añadir a pantalla de inicio»<br>
+        · <strong>iPhone</strong>: botón compartir <kbd>⬆︎</kbd> en Safari → «Añadir a pantalla de inicio»
+      </div>
+      <button id="btn-instructions-go" class="btn btn-primary">¡A jugar!</button>
     </div>
   </div>
 

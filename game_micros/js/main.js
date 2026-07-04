@@ -54,6 +54,7 @@ async function boot() {
 
   $("loading").classList.add("hidden");
   showTitle();
+  registerServiceWorker();
 }
 
 function showTitle() {
@@ -124,8 +125,23 @@ function startNewGame() {
   state.nextTest = nextTest;
   saveGame(START.x, START.y, START.direction);
   $("screen-select").classList.add("hidden");
-  enterWorld(START.x, START.y, START.direction);
+  showInstructions(nextTest);
 }
+
+// Pantalla de instrucciones antes de la aventura: misión (a quién buscar) y
+// cómo instalar la PWA para jugar sin conexión. Solo en partida nueva.
+function showInstructions(nextTest) {
+  const npc = npcs.find(n => n.test === nextTest);
+  $("instr-goal").textContent = nextTest === 1
+    ? `${state.name}, ve a buscar a Bruno al laboratorio 1: está atascado con el tema de programación en C y necesita tu ayuda.`
+    : `${state.name}, retomas la aventura en la prueba ${nextTest}: ve a buscar a ${npc.name}, que te está esperando.`;
+  $("screen-instructions").classList.remove("hidden");
+}
+
+$("btn-instructions-go").addEventListener("click", () => {
+  $("screen-instructions").classList.add("hidden");
+  enterWorld(START.x, START.y, START.direction);
+});
 
 // ---------- mundo ----------
 
@@ -464,7 +480,8 @@ function wireSettings() {
     clearTimeout(deleteTimer);
     localStorage.removeItem(SAVE_KEY);
     saveDisabled = true; // que beforeunload no reescriba la partida recién borrada
-    location.reload();
+    btnDelete.textContent = "🧹 Borrando…";
+    clearOfflineCache().finally(() => location.reload());
   });
   $("btn-close-settings").addEventListener("click", () => hideOverlay("screen-settings"));
 }
@@ -498,6 +515,37 @@ function loadSave() {
 window.addEventListener("beforeunload", () => {
   if (["world", "dialog", "overlay"].includes(state.mode)) saveGame();
 });
+
+// ---------- PWA (sin conexión) ----------
+
+// El sw.js precachea el juego entero para jugar offline; ver comentario allí
+// sobre subir CACHE_VERSION al publicar. En localhost la caché-primero
+// serviría ficheros viejos al editar, así que solo se activa con `?pwa`
+// (mismo patrón que `?touch`).
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return; // http sin TLS o navegador viejo
+  const isLocalhost = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
+  if (isLocalhost && !new URLSearchParams(location.search).has("pwa")) return;
+  navigator.serviceWorker.register("sw.js").catch(err =>
+    console.warn("Sin modo offline (service worker no registrado):", err));
+}
+
+// Borra la caché offline y desregistra el service worker. Se usa desde
+// "Borrar partida": al recargar, si hay conexión, se vuelve a instalar solo.
+async function clearOfflineCache() {
+  try {
+    if (window.caches) {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter(k => k.startsWith("gamif-micros-")).map(k => caches.delete(k)));
+    }
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+  } catch (err) {
+    console.warn("No se pudo borrar la caché offline:", err);
+  }
+}
 
 function startMusic() {
   music.play().catch(() => { /* el navegador puede bloquearla hasta otro gesto */ });
