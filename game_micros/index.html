@@ -53,6 +53,8 @@
   <div id="hud" class="hidden">
     <img id="hud-lives" src="assets/lives/3lives.png" alt="Vidas">
     <div id="hud-test" class="hud-badge">Prueba 1/14</div>
+    <button id="hud-map" title="Mapa (M)">🗺️</button>
+    <button id="hud-medals" title="Medallas (B)">🏅</button>
     <button id="hud-gear" title="Configuración"><img src="assets/lives/gear.png" alt="Ajustes"></button>
   </div>
 
@@ -101,11 +103,31 @@
       </div>
       <label class="field">
         <span>Clave de checkpoint <em>(opcional)</em></span>
-        <input id="sel-clave" type="text" maxlength="10" placeholder="P. ej. TRISB" autocomplete="off">
+        <input id="sel-clave" type="text" maxlength="10" placeholder="P. ej. PORTB" autocomplete="off">
       </label>
       <div id="sel-error" class="error hidden"></div>
       <button id="btn-start" class="btn btn-primary">Comenzar aventura</button>
       <div class="help-keys">Muévete con <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o las flechas · Habla con <kbd>E</kbd></div>
+    </div>
+  </div>
+
+  <!-- Minimapa (tecla M o botón 🗺️ del HUD; tocar/clicar o Esc para cerrar) -->
+  <div id="screen-map" class="screen hidden">
+    <div id="map-frame">
+      <img src="assets/map/icaiMap.png" alt="Mapa del ICAI">
+      <div id="map-you" class="map-dot dot-you"></div>
+      <div id="map-target" class="map-dot dot-target hidden"></div>
+    </div>
+    <div id="map-legend" class="hud-badge"></div>
+  </div>
+
+  <!-- Medallero (tecla B o botón 🏅 del HUD; tocar/clicar o Esc para cerrar) -->
+  <div id="screen-medals" class="screen hidden">
+    <div class="medals-box">
+      <h2>🏅 Medallero</h2>
+      <div id="medals-count" class="hud-badge"></div>
+      <div id="medals-grid"></div>
+      <div class="medals-hint">Consigue una medalla por cada prueba superada.</div>
     </div>
   </div>
 

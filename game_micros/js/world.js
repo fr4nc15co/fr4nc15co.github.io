@@ -13,7 +13,8 @@ const VIEW_H = 16 * TILE; // 256
 const MOVE_TIME = 1 / 6;  // segundos por casilla, como en el original
 
 // Teletransportes (escaleras/puertas) copiados de GameUpdater.java. Eje Y hacia arriba.
-const TELEPORTS = [
+// Exportados para que el minimapa marque las escaleras.
+export const TELEPORTS = [
   { xMin: 16, xMax: 19, y: 41, tx: 96,  ty: 6 },
   { xMin: 95, xMax: 97, y: 1,  tx: 18,  ty: 46 },
   { xMin: 43, xMax: 46, y: 56, tx: 112, ty: 83 },

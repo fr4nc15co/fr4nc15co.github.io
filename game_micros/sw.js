@@ -5,7 +5,7 @@
 // ⚠️ Al publicar cambios hay que subir CACHE_VERSION: es lo que hace que el
 // navegador detecte el sw.js nuevo, redescargue todo y tire la caché vieja.
 // Si se añaden/renombran ficheros, actualizar también la lista PRECACHE.
-const CACHE_VERSION = "gamif-micros-v2";
+const CACHE_VERSION = "gamif-micros-v4";
 
 const PRECACHE = [
   "./",
@@ -28,6 +28,20 @@ const PRECACHE = [
   "./assets/lives/gear.png",
   "./assets/map/collisions.json",
   "./assets/map/icaiMap.png",
+  "./assets/medals/prueba1.png",
+  "./assets/medals/prueba2.png",
+  "./assets/medals/prueba3.png",
+  "./assets/medals/prueba4.png",
+  "./assets/medals/prueba5.png",
+  "./assets/medals/prueba6.png",
+  "./assets/medals/prueba7.png",
+  "./assets/medals/prueba8.png",
+  "./assets/medals/prueba9.png",
+  "./assets/medals/prueba10.png",
+  "./assets/medals/prueba11.png",
+  "./assets/medals/prueba12.png",
+  "./assets/medals/prueba13.png",
+  "./assets/medals/prueba14.png",
   "./assets/music/song.ogg",
   "./assets/people/chica/andar_derecha_1.png",
   "./assets/people/chica/andar_derecha_2.png",

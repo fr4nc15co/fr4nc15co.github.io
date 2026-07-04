@@ -3,7 +3,7 @@
 // localStorage y música. Réplica web de gameApp/Game.java.
 
 import { loadTests, loadQuestions, loadPeople, loadCollisions } from "./data.js";
-import { World } from "./world.js";
+import { World, TELEPORTS } from "./world.js";
 import { Quiz, formatText, escapeHTML } from "./quiz.js";
 import { sfx, setSfxVolume } from "./sfx.js";
 import { track } from "./analytics.js";
@@ -14,6 +14,17 @@ const SAVE_KEY = "gamif.micros.save";
 const VOLUME_KEY = "gamif.micros.volume";
 const START = { x: 13, y: 70, direction: "frente" };
 const TOTAL_TESTS = 14;
+
+// Medallero: una medalla por prueba, con el concepto del tema como nombre. El
+// arte pixel-art (componente hardware por prueba) está en
+// assets/medals/prueba{n}.png, generado por tools/make_medals.py. No hay estado
+// nuevo: las medallas ganadas son las pruebas 1..nextTest-1, así que se
+// reinician con el progreso al perder.
+const MEDALS = [
+  "Experto en C", "Puertos", "Temporizadores", "Prescaler", "Interrupciones",
+  "Prioridades", "UART", "PWM", "Remapeo", "I2C", "Conversión A/D",
+  "Máq. de estados", "PIC32", "Proyecto final",
+];
 
 // Pantalla táctil: puntero "gordo" o soporte touch. `?touch` fuerza los
 // controles en escritorio para poder probarlos.
@@ -50,6 +61,8 @@ async function boot() {
   wireTitle();
   wireSelect();
   wireSettings();
+  wireMap();
+  wireMedals();
   wireDialogKeys();
   wireTouchControls();
 
@@ -263,6 +276,26 @@ function advanceDialog() {
 
 function wireDialogKeys() {
   document.addEventListener("keydown", (e) => {
+    // minimapa: M lo abre en el mundo; M o Esc lo cierran
+    if (!$("screen-map").classList.contains("hidden")) {
+      if (e.code === "KeyM" || e.key === "Escape") closeMap();
+      return;
+    }
+    if (state.mode === "world" && e.code === "KeyM") {
+      openMap();
+      return;
+    }
+
+    // medallero: B lo abre en el mundo; B o Esc lo cierran
+    if (!$("screen-medals").classList.contains("hidden")) {
+      if (e.code === "KeyB" || e.key === "Escape") closeMedals();
+      return;
+    }
+    if (state.mode === "world" && e.code === "KeyB") {
+      openMedals();
+      return;
+    }
+
     // teclado del mundo
     if (["world", "dialog"].includes(state.mode)) {
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) {
@@ -403,10 +436,16 @@ function showEndTest(passed, results) {
   const panel = $("endtest-panel");
   if (passed) {
     const nextKey = tests.get(state.nextTest).key;
+    const earnedNum = state.nextTest - 1; // ya se incrementó nextTest en endTest
+    const medalName = MEDALS[earnedNum - 1];
     panel.innerHTML = `
       <div class="center" style="display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center">
         <div class="result-icon">🎉</div>
         <div class="result-title">¡Prueba superada!</div>
+        <div class="earned-medal">
+          <img src="assets/medals/prueba${earnedNum}.png" alt="Medalla ${escapeHTML(medalName)}">
+          <div class="medal-name">🏅 ¡Medalla ${escapeHTML(medalName)}!</div>
+        </div>
         <div class="result-sub">Busca a la siguiente persona por el mapa.<br>
         Apunta la clave de checkpoint para continuar otro día:</div>
         <div class="key-badge">${nextKey}</div>
@@ -457,6 +496,68 @@ function hideOverlay(id) {
 
 $("btn-gameover-continue").addEventListener("click", () => hideOverlay("screen-gameover"));
 $("btn-win-restart").addEventListener("click", () => location.reload());
+
+// ---------- minimapa ----------
+
+// Coloca un elemento sobre #map-frame en porcentaje: así los puntos escalan
+// con la imagen sin recalcular nada al redimensionar.
+function positionOnMap(el, x, y) {
+  const { width: W, height: H } = world.collisions;
+  el.style.left = `${((x + 0.5) / W) * 100}%`;
+  el.style.top = `${((H - 1 - y + 0.5) / H) * 100}%`;
+}
+
+function wireMap() {
+  $("hud-map").addEventListener("click", () => { if (state.mode === "world") openMap(); });
+  $("screen-map").addEventListener("click", closeMap); // tocar/clicar en cualquier sitio cierra
+  // marcas fijas de escaleras/puertas (los teletransportes del mundo)
+  for (const t of TELEPORTS) {
+    const s = document.createElement("span");
+    s.className = "map-tp";
+    s.textContent = "🪜";
+    positionOnMap(s, (t.xMin + t.xMax) / 2, t.y);
+    $("map-frame").appendChild(s);
+  }
+}
+
+function openMap() {
+  positionOnMap($("map-you"), Math.round(world.player.x), Math.round(world.player.y));
+  const target = world.compassTarget;
+  $("map-target").classList.toggle("hidden", !target);
+  if (target) positionOnMap($("map-target"), target.x, target.y);
+  $("map-legend").textContent = target
+    ? `🔵 Tú · 🟡 ${target.name} (prueba ${target.test}) · 🪜 Escaleras`
+    : "🔵 Tú · 🪜 Escaleras";
+  showOverlay("screen-map");
+}
+
+function closeMap() { hideOverlay("screen-map"); }
+
+// ---------- medallero ----------
+
+function wireMedals() {
+  $("hud-medals").addEventListener("click", () => { if (state.mode === "world") openMedals(); });
+  $("screen-medals").addEventListener("click", closeMedals); // tocar/clicar cierra
+}
+
+function openMedals() {
+  const earnedCount = Math.max(0, Math.min(state.nextTest - 1, TOTAL_TESTS));
+  $("medals-grid").innerHTML = MEDALS.map((name, i) => {
+    const n = i + 1;
+    const earned = n <= earnedCount;
+    return `<div class="medal ${earned ? "earned" : "locked"}">
+        <div class="medal-wrap">
+          <img src="assets/medals/prueba${n}.png" alt="Medalla ${escapeHTML(name)}">
+          ${earned ? "" : '<span class="medal-lock">🔒</span>'}
+        </div>
+        <div class="medal-name">${escapeHTML(name)}</div>
+      </div>`;
+  }).join("");
+  $("medals-count").textContent = `${earnedCount}/${TOTAL_TESTS} medallas`;
+  showOverlay("screen-medals");
+}
+
+function closeMedals() { hideOverlay("screen-medals"); }
 
 // ---------- configuración ----------
 
