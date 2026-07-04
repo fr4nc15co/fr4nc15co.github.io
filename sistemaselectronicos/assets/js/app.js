@@ -70,10 +70,13 @@ MPI.config = {
         : '') +
       '</header><div class="mpi-tarjetas">';
     MPI.temas.forEach(function (t) {
+      var estado = t.disponible ? 'Disponible' : 'En construcción';
       html += '<a class="mpi-tarjeta' + (t.disponible ? '' : ' mpi-tarjeta-pendiente') + '" href="#/tema/' + t.slug + '">' +
-        '<span class="mpi-tarjeta-num">Tema ' + t.num + '</span>' +
+        '<span class="mpi-tarjeta-num">Tema ' + t.num +
+          '<span class="mpi-punto' + (t.disponible ? '' : ' mpi-punto-pendiente') + '" title="' + estado + '" aria-label="' + estado + '"></span>' +
+        '</span>' +
         '<span class="mpi-tarjeta-tit">' + t.titulo + '</span>' +
-        '<span class="mpi-tarjeta-est">' + (t.disponible ? 'Disponible' : 'En construcción') + '</span>' +
+        (t.disponible ? '' : '<span class="mpi-tarjeta-est">En construcción</span>') +
         '</a>';
     });
     html += '</div>';

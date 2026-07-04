@@ -5,27 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Microprocesadores · PIC32MX230F064D</title>
   <link rel="stylesheet" href="assets/css/estilos.css">
-  <!-- Google tag (gtag.js) + Consent Mode v2 -->
+  <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-M022B3BJJS"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
-    // Por defecto sin consentimiento (RGPD/LSSI): no se usan cookies de analítica
-    gtag('consent', 'default', {
-      'ad_storage': 'denied',
-      'ad_user_data': 'denied',
-      'ad_personalization': 'denied',
-      'analytics_storage': 'denied',
-      'wait_for_update': 500
-    });
     gtag('js', new Date());
     gtag('config', 'G-M022B3BJJS');
-    // Aplica el consentimiento previo si el usuario ya lo dio
-    try {
-      if (localStorage.getItem('cookie-consent') === 'granted') {
-        gtag('consent', 'update', { 'analytics_storage': 'granted' });
-      }
-    } catch (e) {}
   </script>
 </head>
 <body>
@@ -39,8 +25,7 @@
       <nav id="mpi-nav" aria-label="Temas"></nav>
       <footer class="mpi-pie">Material de estudio · GITT · ICAI<br>
         Web: Dr. Francisco Martín Martínez<br>
-        Última actualización: junio 2026<br>
-        <a href="/privacidad.html" style="color:inherit">Política de privacidad y cookies</a></footer>
+        Última actualización: junio 2026</footer>
     </aside>
     <main id="mpi-main" class="mpi-main"></main>
   </div>
@@ -92,6 +77,5 @@
       document.getElementById('mpi-main').addEventListener('click', function () { lay.classList.remove('mpi-sidebar-abierta'); });
     })();
   </script>
-  <script src="/cookies.js" data-purpose="y saber qué temas son más útiles" defer></script>
 </body>
 </html>
