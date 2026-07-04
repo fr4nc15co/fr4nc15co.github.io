@@ -15,6 +15,10 @@ const VOLUME_KEY = "gamif.micros.volume";
 const START = { x: 13, y: 70, direction: "frente" };
 const TOTAL_TESTS = 14;
 
+// Versión visible en Ajustes. Mantener en sincronía con CACHE_VERSION de sw.js:
+// al publicar se sube una y otra (v4 → v5 → …) para que se note el despliegue.
+const APP_VERSION = "v5";
+
 // Medallero: una medalla por prueba, con el concepto del tema como nombre. El
 // arte pixel-art (componente hardware por prueba) está en
 // assets/medals/prueba{n}.png, generado por tools/make_medals.py. No hay estado
@@ -66,6 +70,7 @@ async function boot() {
   wireDialogKeys();
   wireTouchControls();
 
+  $("app-version").textContent = APP_VERSION;
   $("loading").classList.add("hidden");
   showTitle();
   registerServiceWorker();
