@@ -577,6 +577,19 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
 .result-q.ok  { background: var(--ok-soft); color: var(--ok); }
 .result-q.bad { background: var(--bad-soft); color: var(--bad); }
 
+/* Aviso de última vida (recuperar vidas con Fran) */
+.result-warn {
+  align-self: stretch;
+  text-align: left;
+  line-height: 1.5;
+  font-size: 14px;
+  color: #7a3d00;
+  background: #fff2e0;
+  border: 2px solid #ffb45c;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
 /* Enunciados de las preguntas falladas (sin solución) */
 .result-fails {
   align-self: stretch;

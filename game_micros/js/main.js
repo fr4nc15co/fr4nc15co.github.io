@@ -210,13 +210,17 @@ function openDialog(npc) {
     canTest = true;
   } else {
     // no es tu prueba: te orienta hacia la siguiente (y Fran te cura)
+    const guide = npcs.find(n => n.test === state.nextTest);
+    const goHint = guide ? `Ahora ve a por ${guide.name}.` : "Sigue explorando el ICAI.";
     if (npc.name === "Fran" && state.lives < 3) {
       state.lives = 3;
       updateHUD();
       saveGame();
+      // Fran restaura las vidas: confirma la curación en vez de la pista genérica.
+      text = `Tranquilo, para eso están las tutorías. Repasamos tus dudas y…\n¡vidas restauradas! ${goHint}`;
+    } else {
+      text = guide ? guide.restDialog : "Sigue explorando el ICAI.";
     }
-    const guide = npcs.find(n => n.test === state.nextTest);
-    text = guide ? guide.restDialog : "Sigue explorando el ICAI.";
   }
 
   $("dialog-portrait").src = npc.portrait;
@@ -461,6 +465,14 @@ function showEndTest(passed, results) {
       ? formatText(r.question)
       : escapeHTML(String(r.question)).replace(/\n/g, "<br>");
     const fails = results.map((r, i) => ({ ...r, num: i + 1 })).filter(r => !r.ok);
+    // A una vida: avisa de que puede recuperarlas buscando al NPC Fran por el
+    // mapa (hablar con él cura las vidas) antes de arriesgar la última.
+    const lifeWarning = state.lives === 1 ? `
+        <div class="result-warn">
+          ⚠️ ¡Te queda <b>una sola vida</b>! Si la pierdes, volverás a la prueba 1.<br>
+          ¿Quieres recuperar vidas? Quizá debas buscar a <b>Fran</b> por el mapa y
+          resolver tus dudas con él en una tutoría antes de reintentar.
+        </div>` : "";
     const failList = fails.length === 0 ? "" : `
         <div class="result-fails">
           <div class="result-fails-head">Repasa antes de reintentar:</div>
@@ -476,7 +488,7 @@ function showEndTest(passed, results) {
         <div class="result-title">No has superado la prueba</div>
         <div class="result-sub">Pierdes una vida (te quedan ${state.lives}).
         Hay que acertar todas las preguntas.<br>Este es tu resultado:</div>
-        <div class="result-grid">${grid}</div>${failList}
+        <div class="result-grid">${grid}</div>${lifeWarning}${failList}
         <button id="btn-endtest" class="btn btn-primary">Volver al mapa</button>
       </div>`;
   }
