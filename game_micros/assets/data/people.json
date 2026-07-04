@@ -1,0 +1,114 @@
+[
+ {
+  "Prueba": 1,
+  "Nombre": "Bruno",
+  "Coordenada X": 28,
+  "Coordenada Y": 61,
+  "Personaje de la prueba": "Hola, te estaba esperando. Estoy atascado con el tema de programación en C.\n¿Te puedo hacer alguna pregunta?\nENTER para realizar prueba\nESC para salir",
+  "El resto de personajes": "Me ha dicho Bruno que necesitaba tu ayuda. Está esperándote en el laboratorio 1."
+ },
+ {
+  "Prueba": 2,
+  "Nombre": "Javi",
+  "Coordenada X": 56,
+  "Coordenada Y": 24,
+  "Personaje de la prueba": "¡Hola! Estoy esperando a Fran para que me resuelva alguna duda de puertos\nde entrada y salida del microprocesador. ¿Tienes un rato?\nENTER para realizar prueba\nESC para salir",
+  "El resto de personajes": "Si no tienes dónde ir, Javi estaba en la puerta del despacho de Fran, el D-10.\nTenía alguna duda."
+ },
+ {
+  "Prueba": 3,
+  "Nombre": "Santiago",
+  "Coordenada X": 59,
+  "Coordenada Y": 9,
+  "Personaje de la prueba": "Ya era hora, llegas tarde a clase. Venga, vamos a empezar con el tema de temporizadores.\nENTER para realizar prueba\nESC para salir",
+  "El resto de personajes": "¿No tenías clase ahora en el aula 205 con Santiago?"
+ },
+ {
+  "Prueba": 4,
+  "Nombre": "María",
+  "Coordenada X": 66,
+  "Coordenada Y": 70,
+  "Personaje de la prueba": "Llevo 4 horas con este laboratorio de timers, me estoy volviendo loca. ¿Me ayudas?\nENTER para realizar prueba\nESC para salir",
+  "El resto de personajes": "María me ha dicho que necesitaba ayuda con el laboratorio de temporizadores,\ncreo que me ha dicho que iba al laboratorio 3."
+ },
+ {
+  "Prueba": 5,
+  "Nombre": "José",
+  "Coordenada X": 53,
+  "Coordenada Y": 55,
+  "Personaje de la prueba": "Te estaba buscando, tengo ya tu placa arreglada, pero antes tendrás que superar\neste test sobre interrupciones.\nENTER para realizar prueba\nESC para salir",
+  "El resto de personajes": "¡Corre al almacén, me han dicho que te buscaban!"
+ },
+ {
+  "Prueba": 6,
+  "Nombre": "Tony",
+  "Coordenada X": 62,
+  "Coordenada Y": 6,
+  "Personaje de la prueba": "Esta semana toca el laboratorio de interrupciones. ¿Lo empezamos para llegar preparados?\nTiene pinta de ser fácil…\nENTER para realizar prueba\nESC para salir",
+  "El resto de personajes": "Tony me ha dicho que habíais quedado para empezar el laboratorio de\ninterrupciones en el laboratorio 8."
+ },
+ {
+  "Prueba": 7,
+  "Nombre": "Pablo",
+  "Coordenada X": 25,
+  "Coordenada Y": 61,
+  "Personaje de la prueba": "Acabo de tener la clase teórica de comunicación serie asíncrona,\ny hay cosas que no entiendo. ¿Te importa si lo miramos juntos?\nENTER para realizar prueba\nESC para salir",
+  "El resto de personajes": "Ve al aula 202, Pablo te estaba buscando para estudiar juntos."
+ },
+ {
+  "Prueba": 8,
+  "Nombre": "Álvaro",
+  "Coordenada X": 64,
+  "Coordenada Y": 38,
+  "Personaje de la prueba": "El tema de PWM me parece complicadísimo, ¿me resuelves alguna duda que tengo?\nENTER para realizar prueba\nESC para salir",
+  "El resto de personajes": "¿Qué haces aquí? ¿No tendrías que estar en el laboratorio 5 con Álvaro?"
+ },
+ {
+  "Prueba": 9,
+  "Nombre": "Ignacio",
+  "Coordenada X": 96,
+  "Coordenada Y": 46,
+  "Personaje de la prueba": "Estoy súper nervioso por el examen de laboratorio. ¿Repasamos juntos?\nENTER para realizar prueba\nESC para salir",
+  "El resto de personajes": "Ignacio se ha ido a El Gruñidor a repasar para el examen de laboratorio,\npodrías ir con él. Baja por las escaleras 1."
+ },
+ {
+  "Prueba": 10,
+  "Nombre": "Mencía",
+  "Coordenada X": 67,
+  "Coordenada Y": 32,
+  "Personaje de la prueba": "¡Hola! Creo que acabamos hoy la clase de buses I2C y SPI. ¿Repasamos?\nENTER para realizar prueba\nESC para salir",
+  "El resto de personajes": "Me ha dicho Mencía que tenías clase ahora en el laboratorio 6. ¿Qué haces aquí?"
+ },
+ {
+  "Prueba": 11,
+  "Nombre": "Alejandro",
+  "Coordenada X": 3,
+  "Coordenada Y": 61,
+  "Personaje de la prueba": "¡Menos mal que has llegado! ¿Me ayudas con el tema del conversor AD?\nENTER para realizar prueba\nESC para salir",
+  "El resto de personajes": "Está Alejandro en el aula 201, me había dicho que le ibas a ayudar con unas dudas."
+ },
+ {
+  "Prueba": 12,
+  "Nombre": "Ale",
+  "Coordenada X": 67,
+  "Coordenada Y": 81,
+  "Personaje de la prueba": "Ya era hora, vamos a ver cómo de preparado estás.\n¿Te has mirado el tema de organización de un sistema?\nENTER para realizar prueba\nESC para salir",
+  "El resto de personajes": "Ale te espera en el laboratorio 2, date prisa."
+ },
+ {
+  "Prueba": 13,
+  "Nombre": "Fran",
+  "Coordenada X": 127,
+  "Coordenada Y": 82,
+  "Personaje de la prueba": "¿Preparado para el examen final?\nENTER para realizar prueba\nESC para salir",
+  "El resto de personajes": "Fran y Dani te están esperando en el aula O-202 de ICADE para el examen final.\nBaja por las escaleras 2, las de la capilla. ¿Estás preparado?"
+ },
+ {
+  "Prueba": 14,
+  "Nombre": "Dani",
+  "Coordenada X": 126,
+  "Coordenada Y": 82,
+  "Personaje de la prueba": "Enhorabuena, has aprobado el examen... pero queda el proyecto final: una bomba de infusión para el hospital.\nNo hay que programar nada: quiero ver si sabes PLANTEAR el diseño. Ficheros, periféricos, pines, alarmas...\nENTER para realizar prueba\nESC para salir",
+  "El resto de personajes": "Dani quiere ponerte un último reto de diseño. Sigue en el aula O-202 de ICADE, junto a Fran."
+ }
+]

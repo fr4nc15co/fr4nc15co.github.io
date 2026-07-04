@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Gamificación de Microprocesadores — ICAI</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="stage">
+  <canvas id="game-canvas" width="768" height="512"></canvas>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <img id="hud-lives" src="assets/lives/3lives.png" alt="Vidas">
+    <div id="hud-test" class="hud-badge">Prueba 1/14</div>
+    <button id="hud-gear" title="Configuración"><img src="assets/lives/gear.png" alt="Ajustes"></button>
+  </div>
+
+  <!-- Caja de diálogo estilo Pokémon -->
+  <div id="dialog" class="hidden">
+    <img id="dialog-portrait" src="" alt="">
+    <div id="dialog-body">
+      <div id="dialog-name"></div>
+      <div id="dialog-text"></div>
+      <div id="dialog-actions"></div>
+    </div>
+  </div>
+
+  <!-- Pantalla de título -->
+  <div id="screen-title" class="screen">
+    <img class="title-logo" src="assets/title/title.png" alt="Pokémon ICAI">
+    <div class="title-sub">Gamificación de Microprocesadores</div>
+    <div class="title-buttons">
+      <button id="btn-new" class="btn btn-primary">Nueva partida</button>
+      <button id="btn-continue" class="btn hidden">Continuar partida</button>
+      <button id="btn-reset" class="btn btn-ghost hidden">Empezar de cero</button>
+    </div>
+    <div class="title-credits">
+      <img src="assets/title/logoComillas.png" alt="Comillas ICAI">
+    </div>
+  </div>
+
+  <!-- Selección de personaje -->
+  <div id="screen-select" class="screen hidden">
+    <div class="panel">
+      <h2>Crea tu personaje</h2>
+      <label class="field">
+        <span>Nombre</span>
+        <input id="sel-name" type="text" maxlength="15" placeholder="Tu nombre" autocomplete="off">
+      </label>
+      <div class="field">
+        <span>Personaje</span>
+        <div class="gender-row">
+          <button class="gender-card selected" data-gender="chico">
+            <img src="assets/people/chico/frente.png" alt="Chico"><span>Chico</span>
+          </button>
+          <button class="gender-card" data-gender="chica">
+            <img src="assets/people/chica/frente.png" alt="Chica"><span>Chica</span>
+          </button>
+        </div>
+      </div>
+      <label class="field">
+        <span>Clave de checkpoint <em>(opcional)</em></span>
+        <input id="sel-clave" type="text" maxlength="10" placeholder="P. ej. TRISB" autocomplete="off">
+      </label>
+      <div id="sel-error" class="error hidden"></div>
+      <button id="btn-start" class="btn btn-primary">Comenzar aventura</button>
+      <div class="help-keys">Muévete con <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o las flechas · Habla con <kbd>E</kbd></div>
+    </div>
+  </div>
+
+  <!-- Overlay de test (la UI de preguntas) -->
+  <div id="quiz" class="hidden">
+    <div id="quiz-card">
+      <header id="quiz-header">
+        <div id="quiz-tag"></div>
+        <div id="quiz-title"></div>
+        <div id="quiz-progress-label"></div>
+      </header>
+      <div id="quiz-progress"><div id="quiz-progress-fill"></div></div>
+      <section id="quiz-question"></section>
+      <section id="quiz-answers"></section>
+      <footer id="quiz-footer">
+        <button id="quiz-prev" class="btn btn-ghost">← Anterior</button>
+        <div id="quiz-dots"></div>
+        <button id="quiz-next" class="btn btn-primary">Siguiente →</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Resultado del test -->
+  <div id="screen-endtest" class="screen hidden">
+    <div class="panel" id="endtest-panel"></div>
+  </div>
+
+  <!-- Game over -->
+  <div id="screen-gameover" class="screen hidden">
+    <div class="panel center">
+      <h2>💀 Te has quedado sin vidas</h2>
+      <p>Vuelves a empezar desde la primera prueba.<br>¡No te rindas, el PIC32 no se domina en un día!</p>
+      <button id="btn-gameover-continue" class="btn btn-primary">Volver al mapa</button>
+    </div>
+  </div>
+
+  <!-- Victoria -->
+  <div id="screen-win" class="screen hidden">
+    <div class="panel center">
+      <h2>🏆 ¡Enhorabuena!</h2>
+      <p>Has superado las 14 pruebas de Microprocesadores, proyecto final incluido.<br>Ya estás más que preparado para el examen.</p>
+      <button id="btn-win-restart" class="btn btn-primary">Jugar otra vez</button>
+    </div>
+  </div>
+
+  <!-- Configuración -->
+  <div id="screen-settings" class="screen hidden">
+    <div class="panel">
+      <h2>Configuración</h2>
+      <label class="field">
+        <span>Volumen de la música</span>
+        <input id="set-volume" type="range" min="0" max="100" step="5">
+      </label>
+      <div class="field">
+        <span>Controles</span>
+        <div class="help-keys">
+          <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / flechas — moverse ·
+          <kbd>E</kbd> — hablar · <kbd>Enter</kbd> — aceptar · <kbd>Esc</kbd> — salir
+        </div>
+      </div>
+      <div class="settings-buttons">
+        <button id="btn-delete-save" class="btn btn-danger">🗑️ Borrar partida</button>
+        <button id="btn-save" class="btn">💾 Guardar partida</button>
+        <button id="btn-close-settings" class="btn btn-primary">Cerrar</button>
+      </div>
+      <div class="credits">
+        Autora original: Alejandra De La Rica · Mantenimiento: Francisco Martín<br>
+        Versión web · fmartin@comillas.edu
+      </div>
+    </div>
+  </div>
+
+  <div id="loading" class="screen"><div class="loader"></div><p>Cargando ICAI…</p></div>
+</div>
+
+<!-- Controles táctiles (solo en pantallas táctiles, fuera del stage para que
+     conserven tamaño de dedo aunque el escenario se escale) -->
+<div id="touch-controls" class="hidden">
+  <div id="touch-dpad">
+    <button class="tc-btn tc-up"    data-code="ArrowUp"    aria-label="Arriba">▲</button>
+    <button class="tc-btn tc-left"  data-code="ArrowLeft"  aria-label="Izquierda">◀</button>
+    <button class="tc-btn tc-right" data-code="ArrowRight" aria-label="Derecha">▶</button>
+    <button class="tc-btn tc-down"  data-code="ArrowDown"  aria-label="Abajo">▼</button>
+  </div>
+  <button id="touch-action" class="tc-btn" aria-label="Hablar / aceptar">💬</button>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

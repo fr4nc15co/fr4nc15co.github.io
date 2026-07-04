@@ -1,0 +1,94 @@
+[
+ {
+  "PREGUNTA": "Las interrupciones pueden tener un número de prioridad máximo de ______(1) y un mínimo de _______(2), ya que el main tiene una prioridad de _______(3).",
+  "HUECOS": 3,
+  "OPCIONES": 4,
+  "OPCION A": "0",
+  "OPCION B": "1",
+  "OPCION C": "3",
+  "OPCION D": "7",
+  "ENTRADA 1": "7",
+  "ENTRADA 2": "1",
+  "ENTRADA 3": "0"
+ },
+ {
+  "PREGUNTA": "Para configurar las interrupciones en el periférico hay que habilitar el bit _____(1), borrar el bit _____(2), poner el nivel de prioridad en _____(3) y la subprioridad en _____(4).",
+  "HUECOS": 4,
+  "OPCIONES": 4,
+  "OPCION A": "xxIF",
+  "OPCION B": "xxIS",
+  "OPCION C": "xxIP",
+  "OPCION D": "xxIE",
+  "ENTRADA 1": "xxIE",
+  "ENTRADA 2": "xxIF",
+  "ENTRADA 3": "xxIP",
+  "ENTRADA 4": "xxIS"
+ },
+ {
+  "PREGUNTA": "Aparte de inicializar bien el periférico, para que funcionen las interrupciones debe estar activo el modo multivector con ___(1). Además, deben\n\thabilitarse las interrupciones de manera general con ______(2).",
+  "HUECOS": 2,
+  "OPCIONES": 5,
+  "OPCION A": "INTCON|=12",
+  "OPCION B": "asm(\"ei\")",
+  "OPCION C": "InicializarReloj()",
+  "OPCION D": "asm(\"di\")",
+  "OPCION E": "INTCONbits.MVEC=0",
+  "ENTRADA 1": "INTCON|=12",
+  "ENTRADA 2": "asm(\"ei\")"
+ },
+ {
+  "PREGUNTA": "Verdadero o falso:\n\t1) Si una variable VAR es global y se llama en varias funciones, significa que es compartida y debo protegerla __(1).\n\t2) Si VAR se toca en dos funciones llamadas desde la interrupción, VAR no es compartida __(2).\n\t3) Si VAR se toca en dos funciones, una llamada desde la interrupción y otra desde el main, VAR es compartida __(3).",
+  "HUECOS": 3,
+  "OPCIONES": 2,
+  "OPCION A": "VERDADERO",
+  "OPCION B": "FALSO",
+  "ENTRADA 1": "FALSO",
+  "ENTRADA 2": "VERDADERO",
+  "ENTRADA 3": "VERDADERO"
+ },
+ {
+  "PREGUNTA": "Hay que proteger en las zonas de código donde la prioridad sea _______(1), y saber que, en caso de igualdad de prioridad y subprioridad, el de IRQ _____(2) es el prioritario.",
+  "HUECOS": 2,
+  "OPCIONES": 3,
+  "OPCION A": "mayor",
+  "OPCION B": "menor",
+  "OPCION C": "igual",
+  "ENTRADA 1": "menor",
+  "ENTRADA 2": "menor"
+ },
+ {
+  "PREGUNTA": "Para medir la diferencia entre dos tiempos obtenidos con uint32_t getTicks(void) y corregir el overflow:\n\t\t#include <xc.h>\n\t\t#define PIN_PULSADOR 5\n\t\tint main(void) {\n\t\t\tANSELB &= ~(1<<PIN_PULSADOR); TRISB = 1<<PIN_PULSADOR;\n\t\t\tint pulsador, delta;\n\t\t\trefant=getTicks();\n\t\t\twhile (1) {\n\t\t\t\tpulsador_ant = pulsador;\n\t\t\t\tpulsador = (PORTB >> PIN_PULSADOR) & 0x1;\n\t\t\t\tif (pulsador!=pulsador_ant && pulsador==0) {\n\t\t\t\t\tref=getTicks();\n\t\t\t\t\t_______(1)\n\t\t\t\t\trefant=ref;\n\t\t\t\t}\n\t\t\t}\n\t\treturn 0; \n\t\t}",
+  "HUECOS": 1,
+  "OPCIONES": 3,
+  "OPCION A": "delta=ref-refant;\nif(delta<0) { delta=-delta;} ",
+  "OPCION B": "if(ref<refant) {delta=ref+ (0xFFFFFFFF-refant)}\nelse{delta=ref-refant};",
+  "OPCION C": "delta=ref-refant;\nInicializaTimer1();",
+  "ENTRADA 1": "if(ref<refant) {delta=ref+ (0xFFFFFFFF-refant)}\nelse{delta=ref-refant};"
+ },
+ {
+  "PREGUNTA": "Si en vez del Timer usamos el periférico de External Interrupt con INT0 con prioridad 2, debo buscar en la tabla de interrupciones, donde veo:\n\tVector: ___(1), IFS0/IEC0<___(2)>, IPC0<___(3)>, y en la interrupción la x de IPLxSOFT es: ___(4)",
+  "HUECOS": 4,
+  "OPCIONES": 6,
+  "OPCION A": "1",
+  "OPCION B": "2",
+  "OPCION C": "3",
+  "OPCION D": "28:24",
+  "OPCION E": "5:0",
+  "OPCION F": "No es ese registro",
+  "ENTRADA 1": "3",
+  "ENTRADA 2": "3",
+  "ENTRADA 3": "28:24",
+  "ENTRADA 4": "2"
+ },
+ {
+  "PREGUNTA": "La rutina de la interrupción hay que declararla (poner la cabecera) en ___(1) y definirla (interior de la rutina) en ___(2).\n\tPara que salte hay que escribir NombreInterrupcion() en ___(3).",
+  "HUECOS": 3,
+  "OPCIONES": 3,
+  "OPCION A": "un .c",
+  "OPCION B": "un .h",
+  "OPCION C": "ningún lado, no se puede",
+  "ENTRADA 1": "ningún lado, no se puede",
+  "ENTRADA 2": "un .c",
+  "ENTRADA 3": "ningún lado, no se puede"
+ }
+]

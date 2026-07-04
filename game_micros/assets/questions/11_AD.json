@@ -1,0 +1,46 @@
+[
+ {
+  "PREGUNTA": "Sobre el funcionamiento general de un SAR ADC:\na) En un SAR ADC es necesario saber el número de bits que tiene, ya que 3,3V en uno de dos bits equivale a una lectura del AD de ___________,\nb) mientras que en uno de 10 bits, 3,3V es un ___________.\nc) Además, hay que recordar que el proceso consta de ___________ etapas, que te marcan el tiempo que tarda en tener una medida, y\nd) que el tiempo mínimo y más típico son ___________ ciclos.\ne) En el PIC32MX contamos con un SAR ADC de ___________ bits.",
+  "HUECOS": 5,
+  "RESPUESTA 1": "3",
+  "RESPUESTA 2": "1023",
+  "RESPUESTA 3": "2",
+  "RESPUESTA 4": "13",
+  "RESPUESTA 5": "10"
+ },
+ {
+  "PREGUNTA": "En relación a los registros de configuración del AD:\na) El registro ADxCON3 es el encargado de configurar el _________.\nb) El bit ADRC se utiliza para seleccionar la ___________ del conversor. ¿Se utilizará el reloj externo o el interno?\nc) El bit SAMC se utiliza para indicar el número de ciclos de ___________ (n), y tarda esas n veces _______.\nd) El bit ADCS se utiliza para establecer el ___________ y obtener el tiempo TAD.",
+  "HUECOS": 5,
+  "RESPUESTA 1": "reloj",
+  "RESPUESTA 2": "frecuencia",
+  "RESPUESTA 3": "muestreo",
+  "RESPUESTA 4": "TAD",
+  "RESPUESTA 5": "preescalado"
+ },
+ {
+  "PREGUNTA": "En el registro ADxCON2:\na) El bit CSCNA se utiliza para habilitar _________.\nb) El bit BUFM se utiliza para habilitar ___________.\nc) El bit BUFS se utiliza en modo doble buffer para indicar de dónde se lee: (1) parte ___________ y (0) parte _______.\nd) El bit SMPI sirve para indicar el número de ___________ antes de saltar la interrupción.",
+  "HUECOS": 5,
+  "RESPUESTA 1": "el escaneo automatico",
+  "RESPUESTA 2": "el uso de doble buffer",
+  "RESPUESTA 3": "baja",
+  "RESPUESTA 4": "alta",
+  "RESPUESTA 5": "las conversiones"
+ },
+ {
+  "PREGUNTA": "El registro ADxCON1 tiene los bits de encendido (ON) y otros encargados de:\na) El bit SAMP sirve para empezar ___________ cuando se pone a 1 y para iniciar ____________ si se pone a 0.\nb) El bit ASAM sirve para poner el modo de muestreo: ___________ (1) y ________ (0).\nc) Cuando la conversión se hace en ___________ hay que vigilar que acaba, con el bit DONE.\nd) El campo SSRC indica cómo empieza ___________, ya sea con un número o con el timer.",
+  "HUECOS": 6,
+  "RESPUESTA 1": "el muestreo",
+  "RESPUESTA 2": "la conversion",
+  "RESPUESTA 3": "automatico",
+  "RESPUESTA 4": "manual",
+  "RESPUESTA 5": "manual",
+  "RESPUESTA 6": "la conversion"
+ },
+ {
+  "PREGUNTA": "En el AD funcionando con:\na) Conversión no secuencial, se usa _______ para elegir el canal.\nb) En cambio, en modo secuencial de canales se debe usar _______ para la selección, y que internamente avance en orden creciente.\nc) Hay que recordar que el canal y el pin son cosas distintas: el pin debe configurarse en ____________.",
+  "HUECOS": 3,
+  "RESPUESTA 1": "AD1CHS",
+  "RESPUESTA 2": "AD1CSSL",
+  "RESPUESTA 3": "ANSELx"
+ }
+]

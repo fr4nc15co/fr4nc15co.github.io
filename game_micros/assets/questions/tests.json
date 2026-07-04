@@ -1,0 +1,86 @@
+[
+ {
+  "TestNum": 1,
+  "TestType": "MC",
+  "FileName": "1_programminginc",
+  "Key": "PUNTERO"
+ },
+ {
+  "TestNum": 2,
+  "TestType": "DD",
+  "FileName": "2_puertosEntrada",
+  "Key": "TRISB"
+ },
+ {
+  "TestNum": 3,
+  "TestType": "FG",
+  "FileName": "3_timers",
+  "Key": "PRESCALER"
+ },
+ {
+  "TestNum": 4,
+  "TestType": "DD",
+  "FileName": "4_timersLab",
+  "Key": "T2CON"
+ },
+ {
+  "TestNum": 5,
+  "TestType": "DD",
+  "FileName": "5_interrupciones",
+  "Key": "VECTOR"
+ },
+ {
+  "TestNum": 6,
+  "TestType": "DD",
+  "FileName": "6_interrupcionesLab",
+  "Key": "PRIORIDAD"
+ },
+ {
+  "TestNum": 7,
+  "TestType": "MC",
+  "FileName": "7_UART",
+  "Key": "BAUDIOS"
+ },
+ {
+  "TestNum": 8,
+  "TestType": "FG",
+  "FileName": "8_oc",
+  "Key": "PWM"
+ },
+ {
+  "TestNum": 9,
+  "TestType": "DD",
+  "FileName": "9_examenLab",
+  "Key": "SYSKEY"
+ },
+ {
+  "TestNum": 10,
+  "TestType": "DD",
+  "FileName": "10_I2C",
+  "Key": "STARTBIT"
+ },
+ {
+  "TestNum": 11,
+  "TestType": "FG",
+  "FileName": "11_AD",
+  "Key": "MUESTREO"
+ },
+ {
+  "TestNum": 12,
+  "TestType": "MC",
+  "FileName": "12_MaqEstados",
+  "Key": "MOORE"
+ },
+ {
+  "TestNum": 13,
+  "TestType": "MC",
+  "FileName": "13_ExFinal",
+  "Key": "PIC32"
+ },
+ {
+  "TestNum": 14,
+  "TestType": "DD",
+  "FileName": "14_proyectoFinal",
+  "Key": "BOLO"
+ }
+]

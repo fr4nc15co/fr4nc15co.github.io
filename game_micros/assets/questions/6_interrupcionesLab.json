@@ -1,0 +1,36 @@
+[
+ {
+  "PREGUNTA": "Cuando tengo varias interrupciones (A, B) tengo que saber qué prioridad tiene cada una. Si A tiene una prioridad menor que B:\n    Si salta el flag de B en la interrupción de A, ______(1).\n    Si salta el flag de B en el main, ______(2).\n    Si salta el flag de A en el main, ______(3).\n    Si salta el flag de A en la interrupción de B, ______(4).",
+  "HUECOS": 4,
+  "OPCIONES": 4,
+  "OPCION A": "salta a B",
+  "OPCION B": "no salta a B",
+  "OPCION C": "salta a A",
+  "OPCION D": "no salta a A",
+  "ENTRADA 1": "salta a B",
+  "ENTRADA 2": "salta a B",
+  "ENTRADA 3": "salta a A",
+  "ENTRADA 4": "no salta a A"
+ },
+ {
+  "PREGUNTA": "Hay que proteger en las zonas de código donde la prioridad sea _______(1), y saber que, en caso de igualdad de prioridad y subprioridad, el de IRQ _____(2) es el prioritario.",
+  "HUECOS": 2,
+  "OPCIONES": 3,
+  "OPCION A": "mayor",
+  "OPCION B": "menor",
+  "OPCION C": "igual",
+  "ENTRADA 1": "menor",
+  "ENTRADA 2": "menor"
+ },
+ {
+  "PREGUNTA": "Si tenemos una variable uint32_t que solo se usa en el interior de una interrupción o de una función, pero queremos que guarde el valor de la última vez que se entró en ella,\n\tdebo definirla como ___(1); y si queremos que se inicialice cada vez, ___(2).",
+  "HUECOS": 2,
+  "OPCIONES": 4,
+  "OPCION A": "global uint32_t var=0",
+  "OPCION B": "local uint32_t var=0",
+  "OPCION C": "static uint32_t var=0",
+  "OPCION D": "uint32_t var=0",
+  "ENTRADA 1": "static uint32_t var=0",
+  "ENTRADA 2": "uint32_t var=0"
+ }
+]

@@ -1,0 +1,186 @@
+[
+ {
+  "PREGUNTA": "¿Qué debe tener obligatoriamente el código de un microcontrolador?",
+  "OPCION 1": "a. Un main y un while(1)",
+  "OPCION 2": "b. Funciones",
+  "OPCION 3": "c. Interrupciones",
+  "OPCION 4": "d. Variables",
+  "CORRECTA": "a. Un main y un while(1)"
+ },
+ {
+  "PREGUNTA": "Dada una función de tipo: void function (float *pvariable). ¿Qué hay que declarar en el main y pasar a la función?",
+  "OPCION 1": "a. float * v; function (v);",
+  "OPCION 2": "b. float * v; function (&v);",
+  "OPCION 3": "c. float * v; function (*v);",
+  "OPCION 4": "d. float v; function (&v);",
+  "CORRECTA": "d. float v; function (&v);"
+ },
+ {
+  "PREGUNTA": "Si un LED (bit 0 del puerto C) se enciende a nivel bajo, ¿qué instrucción NO lo enciende?",
+  "OPCION 1": "a. LATCCLR=1",
+  "OPCION 2": "b. LATCSET=1",
+  "OPCION 3": "c. LATC&=0xFFFE",
+  "OPCION 4": "d. LATC=0",
+  "CORRECTA": "b. LATCSET=1"
+ },
+ {
+  "PREGUNTA": "¿Dónde van las inicializaciones de los periféricos por norma general?",
+  "OPCION 1": "a. En las interrupciones de dicho periférico, después de borrar el flag",
+  "OPCION 2": "b. En una función que se puede llamar desde dentro del while(1) varias veces",
+  "OPCION 3": "c. Antes del while(1), de manera que solo se ejecutan una vez",
+  "OPCION 4": "d. En las interrupciones de otro periférico, después de borrar el flag",
+  "CORRECTA": "c. Antes del while(1), de manera que solo se ejecutan una vez"
+ },
+ {
+  "PREGUNTA": "¿Qué es lo que debo hacer cuando manejo interrupciones?",
+  "OPCION 1": "a. MVEC y asm(\"ei\")",
+  "OPCION 2": "b. Configurar prioridades y habilitarlas en el periférico",
+  "OPCION 3": "c. Tener cuidado con el acceso a variables compartidas",
+  "OPCION 4": "d. Todas",
+  "CORRECTA": "d. Todas"
+ },
+ {
+  "PREGUNTA": "Quiero configurar un timer para que salte cada 5 ms:",
+  "OPCION 1": "a. PRx=24999",
+  "OPCION 2": "b. PRx=49999",
+  "OPCION 3": "c. PRx=4999",
+  "OPCION 4": "d. PRx=25000",
+  "CORRECTA": "a. PRx=24999"
+ },
+ {
+  "PREGUNTA": "Si tengo que escribir en varios bits, por ejemplo el valor 5...",
+  "OPCION 1": "a. Solo con un | es suficiente",
+  "OPCION 2": "b. Solo con un & es suficiente",
+  "OPCION 3": "c. Debo poner a 0 esos bits con un & y hacer un | con el 5 en esos bits",
+  "OPCION 4": "d. Vale poner registro = 5<<bits;",
+  "CORRECTA": "c. Debo poner a 0 esos bits con un & y hacer un | con el 5 en esos bits"
+ },
+ {
+  "PREGUNTA": "¿Qué protocolo/s de comunicaciones es/son half duplex?",
+  "OPCION 1": "a. I2C",
+  "OPCION 2": "b. SPI",
+  "OPCION 3": "c. I2C y SPI",
+  "OPCION 4": "d. I2C y UART",
+  "CORRECTA": "a. I2C"
+ },
+ {
+  "PREGUNTA": "¿Qué protocolo/s de comunicaciones es/son síncronos?",
+  "OPCION 1": "a. I2C",
+  "OPCION 2": "b. UART",
+  "OPCION 3": "c. I2C y SPI",
+  "OPCION 4": "d. I2C y UART",
+  "CORRECTA": "c. I2C y SPI"
+ },
+ {
+  "PREGUNTA": "¿Qué protocolo/s de comunicaciones tiene/n 2 cables? (GND no cuenta)",
+  "OPCION 1": "a. I2C",
+  "OPCION 2": "b. UART",
+  "OPCION 3": "c. I2C y SPI",
+  "OPCION 4": "d. I2C y UART",
+  "CORRECTA": "d. I2C y UART"
+ },
+ {
+  "PREGUNTA": "¿Qué protocolo permite varios maestros?",
+  "OPCION 1": "a. UART",
+  "OPCION 2": "b. SPI",
+  "OPCION 3": "c. I2C",
+  "OPCION 4": "d. I2C y SPI",
+  "CORRECTA": "c. I2C"
+ },
+ {
+  "PREGUNTA": "¿Qué par es correcto para entradas?",
+  "OPCION 1": "a. TRISx=0 - PORTx",
+  "OPCION 2": "b. TRISx=1 - LATx",
+  "OPCION 3": "c. TRISx=1 - PORTx",
+  "OPCION 4": "d. TRISx=0 - LATx",
+  "CORRECTA": "c. TRISx=1 - PORTx"
+ },
+ {
+  "PREGUNTA": "En el conversor AD, ¿qué registro hay que poner para ir alternando entre la parte alta y baja de los buffers?",
+  "OPCION 1": "a. SMPI=1",
+  "OPCION 2": "b. SAMP=1",
+  "OPCION 3": "c. BUFM=1",
+  "OPCION 4": "d. BUFS=1",
+  "CORRECTA": "c. BUFM=1"
+ },
+ {
+  "PREGUNTA": "¿Qué se suele hacer para mejorar la precisión de la medida del conversor AD?",
+  "OPCION 1": "a. Aumentar el tiempo de muestreo SAMC",
+  "OPCION 2": "b. Medir la misma señal en varios pines analógicos",
+  "OPCION 3": "c. Hacer la media de varias medidas",
+  "OPCION 4": "d. Ralentizar el reloj del conversor",
+  "CORRECTA": "c. Hacer la media de varias medidas"
+ },
+ {
+  "PREGUNTA": "¿Qué haremos si queremos medir varios canales a la vez?",
+  "OPCION 1": "a. Cambiar el CH0SA manualmente y saber cuál estamos leyendo",
+  "OPCION 2": "b. Activar el escaneo automático e indicar cuáles en el AD1CSSL",
+  "OPCION 3": "c. Las dos opciones simultáneamente",
+  "OPCION 4": "d. Solo una de las dos",
+  "CORRECTA": "d. Solo una de las dos"
+ },
+ {
+  "PREGUNTA": "¿Qué frecuencia tiene el reloj de periféricos?",
+  "OPCION 1": "a. 20MHz",
+  "OPCION 2": "b. 40MHz",
+  "OPCION 3": "c. 10MHz",
+  "OPCION 4": "d. 5MHz",
+  "CORRECTA": "d. 5MHz"
+ },
+ {
+  "PREGUNTA": "En interrupciones, ¿qué es lo que NO coincide?",
+  "OPCION 1": "a. La subprioridad con el x de IPLxSOFT",
+  "OPCION 2": "b. La prioridad con el x de IPLxSOFT",
+  "OPCION 3": "c. El número del vector con el periférico cuya interrupción estamos habilitando",
+  "OPCION 4": "d. Dos de las anteriores",
+  "CORRECTA": "a. La subprioridad con el x de IPLxSOFT"
+ },
+ {
+  "PREGUNTA": "¿Cuál NO es una costumbre recomendable?",
+  "OPCION 1": "a. Hacer el LATx después del TRISx en la inicialización",
+  "OPCION 2": "b. Apagar el periférico antes de configurarlo",
+  "OPCION 3": "c. Hacer drivers que permitan manejar cada periférico por separado",
+  "OPCION 4": "d. Apagar el flag al entrar en una interrupción",
+  "CORRECTA": "a. Hacer el LATx después del TRISx en la inicialización"
+ },
+ {
+  "PREGUNTA": "En el Output Compare, ¿qué timers puedo usar?",
+  "OPCION 1": "a. Timers 4 y 5",
+  "OPCION 2": "b. Timers 2 y 3",
+  "OPCION 3": "c. Timers 1 y 2",
+  "OPCION 4": "d. Timers 3 y 5",
+  "CORRECTA": "b. Timers 2 y 3"
+ },
+ {
+  "PREGUNTA": "En el AD, ¿qué timer puedo usar?",
+  "OPCION 1": "a. Timer 4",
+  "OPCION 2": "b. Timer 2",
+  "OPCION 3": "c. Timer 1",
+  "OPCION 4": "d. Timer 3",
+  "CORRECTA": "d. Timer 3"
+ },
+ {
+  "PREGUNTA": "¿Qué timers son de tipo B?",
+  "OPCION 1": "a. 1, 2, 3 y 4",
+  "OPCION 2": "b. 2 y 4",
+  "OPCION 3": "c. 2, 3, 4 y 5",
+  "OPCION 4": "d. 3 y 5",
+  "CORRECTA": "c. 2, 3, 4 y 5"
+ },
+ {
+  "PREGUNTA": "En la programación con máquina de estados, ¿qué partes hay?",
+  "OPCION 1": "a. Hacer el dibujo de la máquina de estados",
+  "OPCION 2": "b. Definición de un enum con los estados",
+  "OPCION 3": "c. Lectura, transición de estados (delta), función lambda, actuación",
+  "OPCION 4": "d. Todas las anteriores",
+  "CORRECTA": "d. Todas las anteriores"
+ },
+ {
+  "PREGUNTA": "¿Para qué sirve una tarea inactiva, vista el último día?",
+  "OPCION 1": "a. No sirve para nada, pues es inactiva",
+  "OPCION 2": "b. Hace que las rutinas de dentro del while/estado se ejecuten cada cierto Ts",
+  "OPCION 3": "c. Deshabilita un periférico",
+  "OPCION 4": "d. Es un estado dentro de la máquina de estados",
+  "CORRECTA": "b. Hace que las rutinas de dentro del while/estado se ejecuten cada cierto Ts"
+ }
+]

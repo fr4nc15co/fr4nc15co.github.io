@@ -1,0 +1,54 @@
+[
+ {
+  "PREGUNTA": "El timer cuenta cuando la señal de entrada de su reloj pasa a valer ______(1). La cuenta se almacena en el registro TMR, que hay que poner a _______(2) al inicio para que empiece a contar.",
+  "HUECOS": 2,
+  "OPCIONES": 2,
+  "OPCION A": "0",
+  "OPCION B": "1",
+  "ENTRADA 1": "0",
+  "ENTRADA 2": "0"
+ },
+ {
+  "PREGUNTA": "Si quiero hacer una señal periódica, el while de bloqueo del timer va _____(1).",
+  "HUECOS": 1,
+  "OPCIONES": 3,
+  "OPCION A": "Dentro del while(1)",
+  "OPCION B": "Fuera del while(1)",
+  "OPCION C": "Sustituye al while(1)",
+  "ENTRADA 1": "Dentro del while(1)"
+ },
+ {
+  "PREGUNTA": "Si te pido una señal de frecuencia 2 Hz, el periodo es ___(1), y el timer lo configuro a _____(2).",
+  "HUECOS": 2,
+  "OPCIONES": 4,
+  "OPCION A": "1s",
+  "OPCION B": "0,25s",
+  "OPCION C": "2s",
+  "OPCION D": "0,5s",
+  "ENTRADA 1": "0,5s",
+  "ENTRADA 2": "0,25s"
+ },
+ {
+  "PREGUNTA": "En caso de querer una señal periódica que esté a nivel alto un 25% del tiempo y un 75% a nivel bajo:\n      tengo que configurar el timer para que funcione al máximo común divisor de ambos tiempos, en este caso un __(1)%, y llevar una cuenta para saber si es menor que ____(2) (poner en la salida un 1 y si no un 0), y cuando la cuenta llegue a ____(3), reiniciarla.",
+  "HUECOS": 3,
+  "OPCIONES": 4,
+  "OPCION A": "75",
+  "OPCION B": "1",
+  "OPCION C": "25",
+  "OPCION D": "3",
+  "ENTRADA 1": "25",
+  "ENTRADA 2": "1",
+  "ENTRADA 3": "3"
+ },
+ {
+  "PREGUNTA": "En drivers, la cabecera de la función va en el ____(1), mientras que la definición de la función va en el ____(2). En el .c del driver hay que incluir el ____(3). En el main.c se incluye solo el ____(4).",
+  "HUECOS": 4,
+  "OPCIONES": 2,
+  "OPCION A": ".c",
+  "OPCION B": ".h",
+  "ENTRADA 1": ".h",
+  "ENTRADA 2": ".c",
+  "ENTRADA 3": ".h",
+  "ENTRADA 4": ".h"
+ }
+]
