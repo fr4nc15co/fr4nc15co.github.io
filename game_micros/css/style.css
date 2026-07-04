@@ -362,7 +362,7 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
   white-space: pre-wrap;
 }
 
-#quiz-answers { padding: 12px 22px 6px; overflow: auto; }
+#quiz-answers { padding: 12px 22px 6px; overflow: auto; flex: 1; }
 
 /* Multiple choice */
 .mc-option {
@@ -446,6 +446,8 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
   gap: 10px;
   padding: 12px 20px 16px;
   border-top: 1px solid #edf0f7;
+  flex-wrap: wrap;
+  flex-shrink: 0;
 }
 #quiz-dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
 .dot {

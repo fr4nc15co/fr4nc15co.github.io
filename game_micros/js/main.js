@@ -6,6 +6,7 @@ import { loadTests, loadQuestions, loadPeople, loadCollisions } from "./data.js"
 import { World } from "./world.js";
 import { Quiz, formatText, escapeHTML } from "./quiz.js";
 import { sfx, setSfxVolume } from "./sfx.js";
+import { track } from "./analytics.js";
 
 const SAVE_KEY = "gamif.micros.save";
 // El volumen va en su propia clave: la partida se borra al ganar/reiniciar y
@@ -78,6 +79,7 @@ function wireTitle() {
     startMusic();
     const s = loadSave();
     Object.assign(state, s);
+    track("game_start", { mode: "continue", test_number: state.nextTest });
     $("screen-title").classList.add("hidden");
     enterWorld(s.x, s.y, s.direction);
   });
@@ -123,6 +125,7 @@ function startNewGame() {
   state.name = name;
   state.lives = 3;
   state.nextTest = nextTest;
+  track("game_start", { mode: clave ? "checkpoint" : "new", test_number: nextTest });
   saveGame(START.x, START.y, START.direction);
   $("screen-select").classList.add("hidden");
   showInstructions(nextTest);
@@ -350,14 +353,21 @@ function wireTouchControls() {
 
 async function startTest(testNumber) {
   if (testNumber !== state.nextTest) return;
+  track("test_start", { test_number: testNumber });
   saveGame();
   const test = tests.get(testNumber);
   const questions = await loadQuestions(test);
   state.mode = "quiz";
-  quiz.start(test, questions, (passed, results) => endTest(passed, results));
+  quiz.start(test, questions, (passed, results) => endTest(passed, results), abandonTest);
+}
+
+function abandonTest() {
+  track("test_abandoned", { test_number: state.nextTest });
+  state.mode = "world";
 }
 
 function endTest(passed, results) {
+  track(passed ? "test_passed" : "test_failed", { test_number: state.nextTest });
   if (passed) {
     state.nextTest += 1;
   } else {
@@ -369,6 +379,7 @@ function endTest(passed, results) {
   if (state.lives <= 0) {
     // game over: se reinicia el progreso, como en el original
     sfx.gameover();
+    track("game_over");
     state.lives = 3;
     state.nextTest = 1;
     saveGame(START.x, START.y, START.direction);
@@ -379,6 +390,7 @@ function endTest(passed, results) {
   }
   if (state.nextTest > TOTAL_TESTS) {
     sfx.win();
+    track("victory");
     localStorage.removeItem(SAVE_KEY);
     showOverlay("screen-win");
     return;
@@ -529,6 +541,8 @@ function registerServiceWorker() {
   navigator.serviceWorker.register("sw.js").catch(err =>
     console.warn("Sin modo offline (service worker no registrado):", err));
 }
+
+window.addEventListener("appinstalled", () => track("pwa_install"));
 
 // Borra la caché offline y desregistra el service worker. Se usa desde
 // "Borrar partida": al recargar, si hay conexión, se vuelve a instalar solo.

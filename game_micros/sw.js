@@ -5,13 +5,15 @@
 // ⚠️ Al publicar cambios hay que subir CACHE_VERSION: es lo que hace que el
 // navegador detecte el sw.js nuevo, redescargue todo y tire la caché vieja.
 // Si se añaden/renombran ficheros, actualizar también la lista PRECACHE.
-const CACHE_VERSION = "gamif-micros-v1";
+const CACHE_VERSION = "gamif-micros-v2";
 
 const PRECACHE = [
   "./",
   "./index.html",
   "./manifest.json",
   "./css/style.css",
+  "./js/analytics.js",
+  "./js/cookies.js",
   "./js/data.js",
   "./js/main.js",
   "./js/quiz.js",

@@ -37,18 +37,21 @@ export class Quiz {
       prev: document.getElementById("quiz-prev"),
       next: document.getElementById("quiz-next"),
       dots: document.getElementById("quiz-dots"),
+      quit: document.getElementById("quiz-quit"),
     };
     this.el.prev.addEventListener("click", () => this.go(-1));
     this.el.next.addEventListener("click", () => this.nextOrFinish());
+    this.el.quit.addEventListener("click", () => this.abandon());
     document.addEventListener("keydown", (e) => this.onKey(e));
   }
 
   get active() { return !this.el.root.classList.contains("hidden"); }
 
-  start(test, questions, onFinish) {
+  start(test, questions, onFinish, onAbandon) {
     this.test = test;
     this.questions = questions;
     this.onFinish = onFinish;
+    this.onAbandon = onAbandon;
     this.index = 0;
     // respuestas del usuario: MC -> letra; DD/FG -> array de strings por hueco
     this.answers = questions.map(q =>
@@ -60,6 +63,11 @@ export class Quiz {
   }
 
   close() { this.el.root.classList.add("hidden"); }
+
+  abandon() {
+    this.close();
+    if (this.onAbandon) this.onAbandon();
+  }
 
   go(delta) {
     const next = this.index + delta;

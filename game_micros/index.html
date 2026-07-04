@@ -10,6 +10,38 @@
 <link rel="apple-touch-icon" href="assets/pwa/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- GA4 + Consent Mode v2: misma propiedad y misma clave de consentimiento
+     ('cookie-consent') que fr4nc15co.github.io. Por defecto todo denegado
+     (RGPD); el banner de js/cookies.js pide permiso. En localhost solo se
+     activa con `?ga` en la URL (mismo patrón que el SW con `?pwa`), para no
+     ensuciar los datos al desarrollar. -->
+<script>
+(function () {
+  var isLocalhost = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
+  if (isLocalhost && !new URLSearchParams(location.search).has("ga")) return;
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function () { dataLayer.push(arguments); };
+  gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'analytics_storage': 'denied',
+    'wait_for_update': 500
+  });
+  gtag('js', new Date());
+  gtag('config', 'G-M022B3BJJS');
+  // Aplica el consentimiento previo si el usuario ya lo dio (aquí o en el sitio)
+  try {
+    if (localStorage.getItem('cookie-consent') === 'granted') {
+      gtag('consent', 'update', { 'analytics_storage': 'granted' });
+    }
+  } catch (e) {}
+  var s = document.createElement('script');
+  s.async = true;
+  s.src = 'https://www.googletagmanager.com/gtag/js?id=G-M022B3BJJS';
+  document.head.appendChild(s);
+})();
+</script>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -106,6 +138,7 @@
       <section id="quiz-question"></section>
       <section id="quiz-answers"></section>
       <footer id="quiz-footer">
+        <button id="quiz-quit" class="btn btn-small btn-ghost">Abandonar</button>
         <button id="quiz-prev" class="btn btn-ghost">← Anterior</button>
         <div id="quiz-dots"></div>
         <button id="quiz-next" class="btn btn-primary">Siguiente →</button>
@@ -179,5 +212,6 @@
 </div>
 
 <script type="module" src="js/main.js"></script>
+<script src="js/cookies.js" data-purpose="y saber en qué pruebas se atascan los alumnos" defer></script>
 </body>
 </html>
