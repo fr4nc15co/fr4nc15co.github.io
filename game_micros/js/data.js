@@ -118,6 +118,19 @@ export async function loadPeople() {
     portrait: null,
   });
 
+  // Banco de trabajo del taller: menú de minijuegos de clasificar componentes.
+  // `taller: true` hace que main.js abra su menú (openTaller) en vez de un diálogo.
+  npcs.push({
+    test: null,
+    name: "Banco de trabajo",
+    taller: true,
+    x: 50, y: 53,
+    dialog: null,
+    restDialog: null,
+    sprite: "assets/people/npc/taller.png",
+    portrait: null,
+  });
+
   return npcs;
 }
 

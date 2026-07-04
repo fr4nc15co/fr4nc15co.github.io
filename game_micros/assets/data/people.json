@@ -36,8 +36,8 @@
   "Nombre": "José",
   "Coordenada X": 53,
   "Coordenada Y": 55,
-  "Personaje de la prueba": "Te estaba buscando, tengo ya tu placa arreglada, pero antes tendrás que superar\neste test sobre interrupciones.\nENTER para realizar prueba\nESC para salir",
-  "El resto de personajes": "¡Corre al almacén, me han dicho que te buscaban!"
+  "Personaje de la prueba": "Te estaba buscando, tengo ya tu placa arreglada, pero antes tendrás que superar\neste test sobre interrupciones.\n¿Ves esa caja de herramientas que tengo detrás? Es el banco de trabajo del taller:\nacércate cuando quieras y practica clasificando componentes.\nENTER para realizar prueba\nESC para salir",
+  "El resto de personajes": "¡Corre al almacén, me han dicho que te buscaban! Y si quieres practicar, en mi taller hay un banco de trabajo con minijuegos de componentes."
  },
  {
   "Prueba": 6,

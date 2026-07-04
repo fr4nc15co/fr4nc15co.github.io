@@ -110,6 +110,7 @@
 
   <!-- Minimapa (tecla M o botón 🗺️ del HUD; tocar/clicar o Esc para cerrar) -->
   <div id="screen-map" class="screen hidden">
+    <div id="map-mission" class="hud-badge"></div>
     <div id="map-frame">
       <img src="assets/map/icaiMap.png" alt="Mapa del ICAI">
       <div id="map-you" class="map-dot dot-you"></div>
@@ -124,6 +125,7 @@
       <h2>🏅 Medallero</h2>
       <div id="medals-count" class="hud-badge"></div>
       <div id="medals-grid"></div>
+      <div id="medals-games"></div>
       <div class="medals-hint">Consigue una medalla por cada prueba superada.</div>
     </div>
   </div>
@@ -203,10 +205,13 @@
   <div id="screen-settings" class="screen hidden">
     <div class="panel">
       <h2>Configuración</h2>
-      <label class="field">
+      <div class="field">
         <span>Volumen de la música</span>
-        <input id="set-volume" type="range" min="0" max="100" step="5">
-      </label>
+        <div class="volume-row">
+          <button id="btn-mute" class="mute-btn" type="button" aria-label="Silenciar/activar sonido">🔊</button>
+          <input id="set-volume" type="range" min="0" max="100" step="5">
+        </div>
+      </div>
       <div class="field">
         <span>Controles</span>
         <div class="help-keys">

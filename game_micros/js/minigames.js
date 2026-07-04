@@ -14,22 +14,147 @@ const recordKey = (kind) => `gamif.micros.${kind}`;
 const ZIPI_DURATION = 20000; // ms
 const TOTAL_TESTS = 14;      // total de medallas (igual que en main.js)
 
-// Catálogo del menú de la recreativa del bar (main.js llama a openMenu(medallas)).
-// `unlockAt` = medallas necesarias para desbloquear (Hex y Simon siempre libres).
+// Catálogo de minijuegos. `hub` = dónde salen ("bar" = recreativa, "taller" =
+// banco de trabajo). `unlockAt` = medallas necesarias (0 = siempre libre).
 // `scoreLabel` = etiqueta de puntuación en la pantalla de resultado.
 const GAMES = [
-  { kind: "zipi",          icon: "🔢", name: "Binario → Hex", unlockAt: 0, scoreLabel: "Aciertos",
+  { kind: "zipi",          hub: "bar",    icon: "🔢", name: "Binario → Hex", unlockAt: 0, scoreLabel: "Aciertos",
     desc: "Convierte binarios a hexadecimal a contrarreloj." },
-  { kind: "zape",          icon: "💡", name: "Caza el bit",   unlockAt: 1, scoreLabel: "LEDs acertados",
+  { kind: "zape",          hub: "bar",    icon: "💡", name: "Caza el bit",   unlockAt: 1, scoreLabel: "LEDs acertados",
     desc: "Repite la secuencia de LEDs (Simon)." },
-  { kind: "equilibrista",  icon: "⚖️", name: "Equilibrista",  unlockAt: 2, scoreLabel: "Segundos",
+  { kind: "equilibrista",  hub: "bar",    icon: "⚖️", name: "Equilibrista",  unlockAt: 2, scoreLabel: "Segundos",
     desc: "Mantén el LED dentro de la pista con ← →." },
-  { kind: "francotirador", icon: "🎯", name: "Francotirador", unlockAt: 4, scoreLabel: "Dianas",
+  { kind: "francotirador", hub: "bar",    icon: "🎯", name: "Francotirador", unlockAt: 4, scoreLabel: "Dianas",
     desc: "Dispara cuando el cursor pase por la diana." },
-  { kind: "gato",          icon: "🐱", name: "Gato y ratón",  unlockAt: 6, scoreLabel: "Segundos",
+  { kind: "gato",          hub: "bar",    icon: "🐱", name: "Gato y ratón",  unlockAt: 6, scoreLabel: "Segundos",
     desc: "Escapa del perseguidor por el anillo de LEDs." },
-  { kind: "reflejo",       icon: "⚡", name: "Reflejo fatal", unlockAt: 8, scoreLabel: "Puntos",
+  { kind: "reflejo",       hub: "bar",    icon: "⚡", name: "Reflejo fatal", unlockAt: 8, scoreLabel: "Puntos",
     desc: "Pulsa en cuanto el LED se ponga verde." },
+  { kind: "clasifica",     hub: "taller", icon: "🧩", name: "Clasifica el componente", unlockAt: 0, scoreLabel: "Puntos",
+    desc: "Manda cada componente a su tipo de E/S o a si necesita bus (UART/I2C/SPI)." },
+  { kind: "periferico",    hub: "taller", icon: "🧠", name: "¿Con qué lo hago?", unlockAt: 12, scoreLabel: "Puntos",
+    desc: "Elige el periférico correcto para cada necesidad. Repaso antes del examen final." },
+  { kind: "disena",        hub: "taller", icon: "🛠️", name: "Diseña el sistema", unlockAt: 5, scoreLabel: "Niveles",
+    desc: "Reparte periféricos a pines y timers respetando el datasheet (proyecto final)." },
+];
+
+// Pines curados y VERIFICADOS del PIC32MX230F064D (referencia de la asignatura):
+//  oc  = canal OC que ese pin puede sacar por remapeo (TABLE 11-2): grupo RPA0→OC1,
+//        RPA1→OC2, RPA3→OC3, RPA2→OC4/OC5.
+//  an  = canal analógico (AN0/AN1 = RA0/RA1; AN2..AN5 = RB0..RB3). null = no analógico.
+const PINS = {
+  RA0:  { oc: "OC1",  an: "AN0"  },
+  RA1:  { oc: "OC2",  an: "AN1"  },
+  RB0:  { oc: "OC3",  an: "AN2"  },
+  RB1:  { oc: "OC2",  an: "AN3"  },
+  RB2:  { oc: "OC45", an: "AN4"  },
+  RB3:  { oc: "OC1",  an: "AN5"  },
+  RB4:  { oc: "OC1",  an: null   },
+  RB7:  { oc: "OC1",  an: null   },
+  RB10: { oc: "OC3",  an: null   },
+  RB11: { oc: "OC2",  an: null   },
+  RB13: { oc: "OC45", an: null   },
+  RB14: { oc: "OC3",  an: null   },
+  RB15: { oc: "OC1",  an: null   },
+  RC7:  { oc: "OC1",  an: null   },
+  RC8:  { oc: "OC2",  an: null   },
+  RC9:  { oc: "OC3",  an: null   },
+};
+// canal OC → grupo de remapeo (un grupo = un canal, salvo OC45 que ofrece OC4 y OC5)
+const OC_GROUP = { OC1: "G1", OC2: "G2", OC3: "G3", OC45: "G4" };
+const GROUP_CAP = { G1: 1, G2: 1, G3: 1, G4: 2 }; // canales OC disponibles por grupo
+
+// Niveles del puzzle. Cada requisito necesita un pin (y timer si es OC). `byTimer`
+// en un ADC significa muestreo disparado por Timer3 a `adcFreq` (T3 queda casado).
+const DISENA_LEVELS = [
+  {
+    title: "Riego inteligente",
+    adcFreq: 1000, // el ADC muestrea a 1 kHz por Timer3
+    reqs: [
+      { id: "servo", name: "Servo de la válvula · PWM 50 Hz", need: "OC", freq: 50 },
+      { id: "hum",   name: "Sensor de humedad · ADC por timer", need: "ADC", byTimer: true },
+      { id: "oled",  name: "Pantalla OLED · I2C", need: "I2C" },
+      { id: "led",   name: "LED de estado", need: "GPIO" },
+    ],
+    pool: ["RA0", "RB3", "RC7", "RB0", "RB2", "RB13", "RB15"],
+  },
+  {
+    title: "Dos ventiladores iguales",
+    reqs: [
+      { id: "v1",  name: "Ventilador 1 · PWM 20 kHz", need: "OC", freq: 20000 },
+      { id: "v2",  name: "Ventilador 2 · PWM 20 kHz", need: "OC", freq: 20000 },
+      { id: "pot", name: "Potenciómetro · ADC por sondeo", need: "ADC", byTimer: false },
+    ],
+    pool: ["RC7", "RB13", "RB10", "RB0", "RB1", "RB15"],
+  },
+  {
+    title: "Dos PWM distintas",
+    reqs: [
+      { id: "a", name: "PWM A · 1 kHz", need: "OC", freq: 1000 },
+      { id: "b", name: "PWM B · 2 kHz", need: "OC", freq: 2000 },
+      { id: "z", name: "Zumbador on/off", need: "GPIO" },
+    ],
+    pool: ["RC7", "RB10", "RB13", "RB15", "RC9"],
+  },
+];
+
+// "¿Con qué lo hago?": necesidad → periférico correcto (ok) vs distractor plausible
+// (no). Solo pares con respuesta inequívoca; el distractor es de otra categoría
+// (nada de dos comunicaciones, ni OC-vs-Timer para PWM).
+const TASKS = [
+  { task: "Leer un potenciómetro", ok: "ADC", no: "GPIO digital" },
+  { task: "Leer un LM35 (temperatura)", ok: "ADC", no: "Timer" },
+  { task: "Encender / apagar un LED", ok: "GPIO (LAT)", no: "OC (PWM)" },
+  { task: "Regular el brillo de un LED", ok: "OC (PWM)", no: "GPIO" },
+  { task: "Generar un tono en un zumbador pasivo", ok: "OC (PWM)", no: "GPIO" },
+  { task: "Interrupción periódica cada 1 s", ok: "Timer", no: "ADC" },
+  { task: "Medir cuánto tarda el usuario en pulsar", ok: "Timer", no: "UART" },
+  { task: "Antirrebote temporizado de un botón", ok: "Timer", no: "ADC" },
+  { task: "Detectar una pulsación al instante (sin sondeo)", ok: "Interrupción externa (INT)", no: "ADC" },
+  { task: "Enviar mensajes al PC por consola", ok: "UART", no: "GPIO" },
+];
+
+// Componentes para "Clasifica el componente". `cat` = cubo correcto. Los chips
+// I2C/SPI con nombre críptico llevan entre paréntesis qué son.
+const COMPONENTS = [
+  // Entrada digital (on/off)
+  { name: "Pulsador", cat: "digital-in", icon: "🔘" },
+  { name: "Interruptor", cat: "digital-in", icon: "🎚️" },
+  { name: "Final de carrera", cat: "digital-in", icon: "⬜" },
+  { name: "Sensor PIR (movimiento)", cat: "digital-in", icon: "🚶" },
+  { name: "Sensor IR de obstáculo", cat: "digital-in", icon: "🚧" },
+  { name: "Encoder incremental", cat: "digital-in", icon: "🎡" },
+  { name: "Sensor Hall digital", cat: "digital-in", icon: "🧲" },
+  // Entrada analógica
+  { name: "Potenciómetro", cat: "analog-in", icon: "🎚️" },
+  { name: "LDR (fotorresistencia)", cat: "analog-in", icon: "🔆" },
+  { name: "NTC / termistor", cat: "analog-in", icon: "🌡️" },
+  { name: "LM35 (sensor de temperatura)", cat: "analog-in", icon: "🌡️" },
+  { name: "Micrófono", cat: "analog-in", icon: "🎤" },
+  { name: "FSR (sensor de fuerza)", cat: "analog-in", icon: "✋" },
+  { name: "Sensor de gas MQ", cat: "analog-in", icon: "💨" },
+  // Salida digital (on/off)
+  { name: "LED", cat: "digital-out", icon: "💡" },
+  { name: "Relé", cat: "digital-out", icon: "🔀" },
+  { name: "Zumbador activo", cat: "digital-out", icon: "🔔" },
+  { name: "Electroválvula", cat: "digital-out", icon: "🚰" },
+  // Salida PWM / analógica
+  { name: "Servomotor", cat: "pwm", icon: "⚙️" },
+  { name: "Motor DC (velocidad)", cat: "pwm", icon: "🌀" },
+  { name: "LED regulable (brillo)", cat: "pwm", icon: "🔆" },
+  { name: "Zumbador pasivo (tono)", cat: "pwm", icon: "🎵" },
+  // Comunicación (sin distinguir protocolo)
+  { name: "Módulo Bluetooth HC-05", cat: "comm", icon: "📶" },
+  { name: "Módulo GPS", cat: "comm", icon: "🛰️" },
+  { name: "SSD1306 (pantalla OLED)", cat: "comm", icon: "🖥️" },
+  { name: "DS3231 (reloj RTC)", cat: "comm", icon: "⏰" },
+  { name: "BME280 (sensor ambiental)", cat: "comm", icon: "🌦️" },
+  { name: "MPU6050 (acelerómetro)", cat: "comm", icon: "📐" },
+  { name: "24LC256 (memoria EEPROM)", cat: "comm", icon: "💾" },
+  { name: "PCF8574 (expansor de E/S)", cat: "comm", icon: "🔧" },
+  { name: "Tarjeta SD", cat: "comm", icon: "💳" },
+  { name: "nRF24L01 (radio 2,4 GHz)", cat: "comm", icon: "📡" },
+  { name: "MAX7219 (matriz de LEDs)", cat: "comm", icon: "🔢" },
 ];
 
 const gameMeta = (kind) => GAMES.find(g => g.kind === kind);
@@ -59,23 +184,29 @@ export class Minigames {
       francotirador: () => this.startFrancotirador(),
       gato: () => this.startGato(),
       reflejo: () => this.startReflejo(),
+      clasifica: () => this.startClasifica(),
+      periferico: () => this.startPeriferico(),
+      disena: () => this.startDisena(),
     })[kind]();
   }
 
-  // Menú de la recreativa: lista los minijuegos; los que superan tu nº de
-  // medallas salen bloqueados. `medals` = medallas conseguidas (main.js lo pasa).
-  openMenu(medals = 0) {
+  // Menú de un hub ("bar" = recreativa, "taller" = banco de trabajo): lista sus
+  // minijuegos; los que superan tu nº de medallas salen bloqueados.
+  openMenu(medals = 0, hub = "bar") {
     this.teardown();
     this.active = "menu";
     this.menuMode = true;
     this.root.classList.remove("hidden");
+    const title = hub === "taller" ? "🛠️ Banco de trabajo" : "🕹️ Recreativa del bar";
+    const list = GAMES.filter(g => (g.hub || "bar") === hub)
+      .sort((a, b) => a.unlockAt - b.unlockAt); // ordenados por medallas necesarias
     this.body.innerHTML = `
       <div class="mg-head">
-        <div class="mg-title">🕹️ Recreativa del bar</div>
+        <div class="mg-title">${title}</div>
         <div class="mg-record">🏅 ${medals}/${TOTAL_TESTS}</div>
       </div>
       <div class="mg-menu">
-        ${GAMES.map(g => {
+        ${list.map(g => {
           const locked = medals < g.unlockAt;
           return `
           <button class="mg-menu-item${locked ? " locked" : ""}" data-kind="${g.kind}"${locked ? " disabled" : ""}>
@@ -120,6 +251,17 @@ export class Minigames {
   unlockAt(kind) {
     const g = gameMeta(kind);
     return g ? g.unlockAt : 0;
+  }
+
+  /** Minijuegos desbloqueados/total por hub: { bar:{unlocked,total}, taller:{...} }. */
+  hubProgress(medals) {
+    const byHub = {};
+    for (const g of GAMES) {
+      const h = g.hub || "bar";
+      (byHub[h] = byHub[h] || { unlocked: 0, total: 0 }).total++;
+      if (medals >= g.unlockAt) byHub[h].unlocked++;
+    }
+    return byHub;
   }
 
   /** Próximo minijuego que se desbloqueará con más medallas (o null si ya están todos). */
@@ -668,5 +810,273 @@ export class Minigames {
 
     this.cleanup = () => { for (const id of timeouts) clearTimeout(id); };
     after(700, roundStart);
+  }
+
+  // ---------- Clasifica el componente: manda cada componente a su tipo (taller) ----------
+  startClasifica() {
+    this.teardown();
+    const DURATION = 30000; // ms
+    let score = 0, current = null, raf = 0;
+    const startAt = performance.now();
+
+    const BINS = [
+      { key: "digital-in",  icon: "🔘", label: "Entrada digital" },
+      { key: "analog-in",   icon: "📈", label: "Entrada analógica" },
+      { key: "digital-out", icon: "💡", label: "Salida digital" },
+      { key: "pwm",         icon: "🎛️", label: "Salida PWM" },
+      { key: "comm",        icon: "🔌", label: "Necesita UART, I2C o SPI" },
+    ];
+
+    this.body.innerHTML = `
+      <div class="mg-head">
+        <div class="mg-title">🧩 Clasifica el componente</div>
+        <div class="mg-record">Récord: ${this.record("clasifica")}</div>
+      </div>
+      <div class="mg-timebar"><div class="mg-timefill" id="mg-cl-time"></div></div>
+      <div class="mg-score">Puntos: <b id="mg-cl-score">0</b></div>
+      <div class="mg-comp" id="mg-cl-comp"></div>
+      <div class="mg-bins">
+        ${BINS.map((b, i) => `
+          <button class="mg-bin" data-key="${b.key}">
+            <span class="mg-bin-k">${i + 1}</span>
+            <span class="mg-bin-ic">${b.icon}</span>
+            <span>${b.label}</span>
+          </button>`).join("")}
+      </div>
+      <div class="mg-hint">${this.touch ? "Toca el tipo correcto" : "Teclas 1-5"} · fallar resta 2 puntos</div>`;
+
+    const compEl = document.getElementById("mg-cl-comp");
+    const scoreEl = document.getElementById("mg-cl-score");
+    const timeEl = document.getElementById("mg-cl-time");
+    const binEl = {};
+    for (const b of BINS) binEl[b.key] = this.body.querySelector(`.mg-bin[data-key="${b.key}"]`);
+
+    const timeouts = [];
+    const flash = (key, cls) => {
+      const el = binEl[key];
+      if (!el) return;
+      el.classList.add(cls);
+      timeouts.push(setTimeout(() => el.classList.remove(cls), 300));
+    };
+
+    const next = () => {
+      current = COMPONENTS[Math.floor(Math.random() * COMPONENTS.length)];
+      compEl.innerHTML = `<span class="mg-comp-ic">${current.icon}</span><span class="mg-comp-name">${current.name}</span>`;
+    };
+
+    const choose = (key) => {
+      if (!current) return;
+      if (key === current.cat) {
+        score += 1;
+        sfx.blip();
+        flash(key, "bin-ok");
+      } else {
+        score = Math.max(0, score - 2); // fallar resta 2 puntos
+        sfx.fail();
+        flash(key, "bin-bad");
+        flash(current.cat, "bin-ok"); // resalta el cubo correcto
+      }
+      scoreEl.textContent = score;
+      next();
+    };
+
+    for (const b of BINS) binEl[b.key].addEventListener("click", () => choose(b.key));
+    this.keyHandler = (e) => {
+      if (/^[1-5]$/.test(e.key)) { e.preventDefault(); choose(BINS[Number(e.key) - 1].key); }
+    };
+
+    const tick = (now) => {
+      const remaining = Math.max(0, DURATION - (now - startAt));
+      timeEl.style.width = `${(remaining / DURATION) * 100}%`;
+      if (remaining <= 0) { this.showResult("clasifica", score, "Puntos"); return; }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    this.cleanup = () => { cancelAnimationFrame(raf); for (const id of timeouts) clearTimeout(id); };
+    next();
+  }
+
+  // ---------- ¿Con qué lo hago?: elige el periférico para cada necesidad (taller) ----------
+  startPeriferico() {
+    this.teardown();
+    const DURATION = 30000; // ms
+    let score = 0, current = null, options = [], raf = 0;
+    const startAt = performance.now();
+    const timeouts = [];
+
+    this.body.innerHTML = `
+      <div class="mg-head">
+        <div class="mg-title">🧠 ¿Con qué lo hago?</div>
+        <div class="mg-record">Récord: ${this.record("periferico")}</div>
+      </div>
+      <div class="mg-timebar"><div class="mg-timefill" id="mg-pe-time"></div></div>
+      <div class="mg-score">Puntos: <b id="mg-pe-score">0</b></div>
+      <div class="mg-comp" id="mg-pe-task"></div>
+      <div class="mg-ab" id="mg-pe-ab"></div>
+      <div class="mg-hint">${this.touch ? "Toca el periférico correcto" : "Teclas 1 / 2 (o ← →)"} · fallar resta 2 puntos</div>`;
+
+    const taskEl = document.getElementById("mg-pe-task");
+    const scoreEl = document.getElementById("mg-pe-score");
+    const timeEl = document.getElementById("mg-pe-time");
+    const abEl = document.getElementById("mg-pe-ab");
+
+    const render = () => {
+      taskEl.innerHTML = `<span class="mg-comp-name">${current.task}</span>`;
+      abEl.innerHTML = options.map((o, i) =>
+        `<button class="mg-ab-btn" data-i="${i}"><span class="mg-ab-k">${i + 1}</span><span>${o}</span></button>`).join("");
+      [...abEl.querySelectorAll(".mg-ab-btn")].forEach(btn =>
+        btn.addEventListener("click", () => choose(Number(btn.dataset.i))));
+    };
+
+    const next = () => {
+      current = TASKS[Math.floor(Math.random() * TASKS.length)];
+      options = Math.random() < 0.5 ? [current.ok, current.no] : [current.no, current.ok];
+      render();
+    };
+
+    const choose = (i) => {
+      if (!current) return;
+      const btns = abEl.querySelectorAll(".mg-ab-btn");
+      const ok = options[i] === current.ok;
+      if (ok) {
+        score += 1;
+        sfx.blip();
+        btns[i].classList.add("ok");
+      } else {
+        score = Math.max(0, score - 2); // fallar resta 2 puntos
+        sfx.fail();
+        btns[i].classList.add("bad");
+        const okIdx = options.indexOf(current.ok);
+        if (btns[okIdx]) btns[okIdx].classList.add("ok"); // resalta el correcto
+      }
+      scoreEl.textContent = score;
+      // congela un instante para ver el color y pasa a la siguiente
+      const frozen = current; current = null;
+      timeouts.push(setTimeout(() => { if (frozen) next(); }, 260));
+    };
+
+    this.keyHandler = (e) => {
+      if (e.key === "1" || e.key === "ArrowLeft") { e.preventDefault(); choose(0); }
+      else if (e.key === "2" || e.key === "ArrowRight") { e.preventDefault(); choose(1); }
+    };
+
+    const tick = (now) => {
+      const remaining = Math.max(0, DURATION - (now - startAt));
+      timeEl.style.width = `${(remaining / DURATION) * 100}%`;
+      if (remaining <= 0) { this.showResult("periferico", score, "Puntos"); return; }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    this.cleanup = () => { cancelAnimationFrame(raf); for (const id of timeouts) clearTimeout(id); };
+    next();
+  }
+
+  // ---------- Diseña el sistema: reparte pines y timers (taller, proyecto final) ----------
+  startDisena() {
+    this.teardown();
+    let solved = 0, lives = 3, level = null;
+    const timeouts = [];
+
+    // Valida un reparto por REGLAS (no plantilla). Devuelve {ok, reason}.
+    const validate = (lvl, get) => {
+      const pins = {};                 // pin → reqId (un uso por pin)
+      const timerFreq = { T2: new Set(), T3: new Set() };
+      if (lvl.adcFreq) timerFreq.T3.add(lvl.adcFreq); // ADC por timer ocupa T3
+      const ocGroups = { G1: 0, G2: 0, G3: 0, G4: 0 };
+
+      for (const r of lvl.reqs) {
+        if (r.need === "I2C") continue; // I2C no se remapea: sin decisión de pin
+        const a = get(r.id);
+        if (!a.pin) return { ok: false, reason: `Falta asignar un pin a «${r.name}».` };
+        if (pins[a.pin]) return { ok: false, reason: `El pin ${a.pin} está usado dos veces (una función por pin).` };
+        pins[a.pin] = r.id;
+        const p = PINS[a.pin];
+
+        if (r.need === "ADC") {
+          if (!p.an) return { ok: false, reason: `${a.pin} no es analógico: el ADC necesita un pin ANx.` };
+        } else if (r.need === "OC") {
+          if (!p.oc) return { ok: false, reason: `${a.pin} no puede sacar una salida OC (mira la tabla de remapeo).` };
+          ocGroups[OC_GROUP[p.oc]]++;
+          const t = a.timer || "T2";
+          timerFreq[t].add(r.freq);
+        }
+        // GPIO: cualquier pin vale
+      }
+      // canales OC por grupo (un grupo = un canal; OC4/5 = dos)
+      for (const g in ocGroups) {
+        if (ocGroups[g] > GROUP_CAP[g])
+          return { ok: false, reason: `Demasiados OC en el mismo grupo de remapeo (${g}): no hay tantos canales.` };
+      }
+      // cada timer, un único periodo
+      for (const t of ["T2", "T3"]) {
+        if (timerFreq[t].size > 1)
+          return { ok: false, reason: `${t} no puede tener dos periodos a la vez (agrupa por frecuencia o usa el otro timer).` };
+      }
+      return { ok: true, reason: "¡Diseño válido!" };
+    };
+
+    const render = () => {
+      const pinOpts = (sel) =>
+        `<option value="">—</option>` +
+        level.pool.map(p => `<option value="${p}"${p === sel ? " selected" : ""}>${p}${PINS[p].an ? " ·" + PINS[p].an : ""}</option>`).join("");
+      const rows = level.reqs.map(r => {
+        if (r.need === "I2C")
+          return `<div class="mg-des-row"><span class="mg-des-name">${r.name}</span>
+            <span class="mg-des-fixed">pines fijos (no se remapea)</span></div>`;
+        const tmr = r.need === "OC"
+          ? `<select class="mg-des-t" data-r="${r.id}"><option value="T2">T2</option><option value="T3">T3</option></select>` : "";
+        return `<div class="mg-des-row">
+          <span class="mg-des-name">${r.name}</span>
+          <select class="mg-des-p" data-r="${r.id}">${pinOpts("")}</select>${tmr}</div>`;
+      }).join("");
+      this.body.innerHTML = `
+        <div class="mg-head">
+          <div class="mg-title">🛠️ Diseña el sistema</div>
+          <div class="mg-record">Récord: ${this.record("disena")}</div>
+        </div>
+        <div class="mg-score">Nivel: <b>${level.title}</b> · Resueltos: <b id="mg-de-s">${solved}</b> · ${"❤".repeat(lives) || "—"}</div>
+        <div class="mg-des">${rows}</div>
+        <button id="mg-de-check" class="btn btn-primary btn-small">Comprobar</button>
+        <div class="mg-hint" id="mg-de-msg">Asigna cada periférico a un pin legal (y su timer). El ADC va por Timer3.</div>`;
+      document.getElementById("mg-de-check").addEventListener("click", check);
+    };
+
+    const getAssign = (id) => ({
+      pin: (this.body.querySelector(`.mg-des-p[data-r="${id}"]`) || {}).value || "",
+      timer: (this.body.querySelector(`.mg-des-t[data-r="${id}"]`) || {}).value || "T2",
+    });
+
+    const nextLevel = () => {
+      const others = DISENA_LEVELS.filter(l => l !== level);
+      level = others[Math.floor(Math.random() * others.length)] || DISENA_LEVELS[0];
+      render();
+    };
+
+    const check = () => {
+      const res = validate(level, getAssign);
+      const msg = document.getElementById("mg-de-msg");
+      if (res.ok) {
+        solved++;
+        sfx.pass();
+        msg.textContent = "✓ " + res.reason;
+        this.body.classList.add("mg-flash-ok");
+        timeouts.push(setTimeout(nextLevel, 900));
+      } else {
+        lives--;
+        sfx.fail();
+        this.body.classList.remove("mg-flash-bad"); void this.body.offsetWidth;
+        this.body.classList.add("mg-flash-bad");
+        msg.textContent = "✗ " + res.reason;
+        if (lives <= 0) { timeouts.push(setTimeout(() => this.showResult("disena", solved, "Niveles"), 700)); return; }
+        // refresca el marcador de vidas
+        const sc = this.body.querySelector(".mg-score");
+        if (sc) sc.innerHTML = `Nivel: <b>${level.title}</b> · Resueltos: <b id="mg-de-s">${solved}</b> · ${"❤".repeat(lives) || "—"}`;
+      }
+    };
+
+    this.keyHandler = (e) => { if (e.key === "Enter") { e.preventDefault(); check(); } };
+    this.cleanup = () => { for (const id of timeouts) clearTimeout(id); };
+    level = DISENA_LEVELS[Math.floor(Math.random() * DISENA_LEVELS.length)];
+    render();
   }
 }

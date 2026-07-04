@@ -36,6 +36,36 @@ export function setSfxVolume(v) {
   if (master) master.gain.value = masterGain(v);
 }
 
+let musicSource = null;
+let musicGain = null;
+
+/**
+ * Enruta el elemento <audio> de música por Web Audio con su propio GainNode.
+ * Necesario para iOS Safari, donde `audio.volume` es de solo lectura (se ignora
+ * y el 0 no silencia). Debe llamarse desde un gesto del usuario. Devuelve true
+ * si el enrutado se realizó (a partir de ahí el volumen se controla con
+ * `setMusicVolume`, no con `audio.volume`, o se atenuaría dos veces).
+ */
+export function attachMusic(el) {
+  const c = ensureCtx();
+  if (!c || musicSource) return false;
+  try {
+    musicSource = c.createMediaElementSource(el);
+    musicGain = c.createGain();
+    musicGain.gain.value = volume; // música ya masterizada: ganancia lineal
+    musicSource.connect(musicGain).connect(c.destination);
+    return true;
+  } catch {
+    musicSource = null;
+    musicGain = null;
+    return false;
+  }
+}
+
+export function setMusicVolume(v) {
+  if (musicGain) musicGain.gain.value = v;
+}
+
 /** Una nota: freq en Hz, dur en segundos, `at` retrasa el inicio (para arpegios). */
 function tone(freq, dur, { type = "square", at = 0, gain = 0.2, slide = 0 } = {}) {
   const c = ensureCtx();

@@ -6,7 +6,7 @@ import { loadTests, loadQuestions, loadPeople, loadCollisions } from "./data.js"
 import { World, TELEPORTS } from "./world.js";
 import { Quiz, formatText, escapeHTML } from "./quiz.js";
 import { Minigames } from "./minigames.js";
-import { sfx, setSfxVolume } from "./sfx.js";
+import { sfx, setSfxVolume, attachMusic, setMusicVolume } from "./sfx.js";
 import { track } from "./analytics.js";
 
 const SAVE_KEY = "gamif.micros.save";
@@ -18,7 +18,7 @@ const TOTAL_TESTS = 14;
 
 // Versión visible en Ajustes. Mantener en sincronía con CACHE_VERSION de sw.js:
 // al publicar se sube una y otra (v4 → v5 → …) para que se note el despliegue.
-const APP_VERSION = "v7";
+const APP_VERSION = "v8";
 
 // Medallero: una medalla por prueba, con el concepto del tema como nombre. El
 // arte pixel-art (componente hardware por prueba) está en
@@ -192,7 +192,7 @@ function loop(time) {
   if (["world", "dialog", "overlay", "quiz"].includes(state.mode)) {
     const npc = world.update(dt, state.mode === "world");
     world.render();
-    if (npc) { if (npc.arcade) openArcade(); else openDialog(npc); }
+    if (npc) { if (npc.arcade) openArcade(); else if (npc.taller) openTaller(); else openDialog(npc); }
     if (dialogCtl) dialogCtl.tick();
     // en diálogo también se ocultan: el diálogo táctil es fijo y trae botones
     $("touch-controls").classList.toggle("hidden", !IS_TOUCH || state.mode !== "world");
@@ -230,6 +230,10 @@ function openDialog(npc) {
       saveGame();
       // Fran restaura las vidas: confirma la curación en vez de la pista genérica.
       text = `Tranquilo, para eso están las tutorías. Repasamos tus dudas y…\n¡vidas restauradas! ${goHint}`;
+    } else if (npc.name === "José") {
+      // José invita a practicar en su banco del taller aunque no toque su prueba.
+      const bye = guide ? `Si no me quieres ayudar, vete con ${guide.name}.` : "Sigue explorando el ICAI.";
+      text = `Si te aburres esperando, mira la caja de herramientas que tengo detrás:\nes el banco de trabajo del taller, para practicar con los componentes. ${bye}`;
     } else {
       text = guide ? guide.restDialog : "Sigue explorando el ICAI.";
     }
@@ -330,7 +334,15 @@ function openArcade() {
   sfx.blip();
   state.mode = "overlay";
   const medals = Math.max(0, Math.min(state.nextTest - 1, TOTAL_TESTS));
-  minigames.openMenu(medals);
+  minigames.openMenu(medals, "bar");
+}
+
+/** Abre el menú del banco de trabajo del taller (objeto con taller:true). */
+function openTaller() {
+  sfx.blip();
+  state.mode = "overlay";
+  const medals = Math.max(0, Math.min(state.nextTest - 1, TOTAL_TESTS));
+  minigames.openMenu(medals, "taller");
 }
 
 /** Avance tipo "botón A": completa el texto, y si ya está completo acepta o cierra. */
@@ -598,12 +610,13 @@ function wireMap() {
     positionOnMap(s, (t.xMin + t.xMax) / 2, t.y);
     $("map-frame").appendChild(s);
   }
-  // marca fija de la recreativa del bar (donde se juegan/desbloquean los minijuegos)
+  // marcas fijas de los hubs de minijuegos: recreativa (🕹️) y taller (🛠️)
   for (const npc of npcs) {
-    if (!npc.arcade) continue;
+    const icon = npc.arcade ? "🕹️" : npc.taller ? "🛠️" : null;
+    if (!icon) continue;
     const s = document.createElement("span");
     s.className = "map-mg";
-    s.textContent = "🕹️";
+    s.textContent = icon;
     s.title = npc.name;
     positionOnMap(s, npc.x, npc.y);
     $("map-frame").appendChild(s);
@@ -615,9 +628,12 @@ function openMap() {
   const target = world.compassTarget;
   $("map-target").classList.toggle("hidden", !target);
   if (target) positionOnMap($("map-target"), target.x, target.y);
+  $("map-mission").textContent = target
+    ? `🎯 Ve a buscar a ${target.name} · prueba ${target.test}/${TOTAL_TESTS}`
+    : "🏆 ¡Has superado las 14 pruebas!";
   $("map-legend").textContent = target
-    ? `🔵 Tú · 🟡 ${target.name} (prueba ${target.test}) · 🕹️ Recreativa · 🪜 Escaleras`
-    : "🔵 Tú · 🕹️ Recreativa · 🪜 Escaleras";
+    ? `🔵 Tú · 🟡 ${target.name} (prueba ${target.test}) · 🕹️ Recreativa · 🛠️ Taller · 🪜 Escaleras`
+    : "🔵 Tú · 🕹️ Recreativa · 🛠️ Taller · 🪜 Escaleras";
   showOverlay("screen-map");
 }
 
@@ -644,6 +660,12 @@ function openMedals() {
       </div>`;
   }).join("");
   $("medals-count").textContent = `${earnedCount}/${TOTAL_TESTS} medallas`;
+  // minijuegos desbloqueados por hub, según las medallas conseguidas
+  const prog = minigames.hubProgress(earnedCount);
+  const bar = prog.bar || { unlocked: 0, total: 0 };
+  const taller = prog.taller || { unlocked: 0, total: 0 };
+  $("medals-games").textContent =
+    `🕹️ Recreativa: ${bar.unlocked}/${bar.total} · 🛠️ Taller: ${taller.unlocked}/${taller.total} minijuegos`;
   showOverlay("screen-medals");
 }
 
@@ -651,17 +673,29 @@ function closeMedals() { hideOverlay("screen-medals"); }
 
 // ---------- configuración ----------
 
+let lastNonZeroVol = 0.1; // para restaurar al desmutear
+
+// Punto único para cambiar el volumen: aplica, guarda y sincroniza slider + altavoz.
+function setVolume(v) {
+  if (v > 0) lastNonZeroVol = v;
+  applyVolume(v);
+  localStorage.setItem(VOLUME_KEY, String(v));
+  $("set-volume").value = Math.round(v * 100);
+  const muted = v === 0;
+  $("btn-mute").textContent = muted ? "🔇" : "🔊";
+  $("btn-mute").classList.toggle("muted", muted);
+}
+
 function wireSettings() {
+  lastNonZeroVol = currentVolume > 0 ? currentVolume : 0.1;
   $("hud-gear").addEventListener("click", () => {
     if (state.mode !== "world") return;
-    $("set-volume").value = Math.round(music.volume * 100);
+    setVolume(currentVolume); // sincroniza slider e icono al abrir
     showOverlay("screen-settings");
   });
-  $("set-volume").addEventListener("input", (e) => {
-    const v = Number(e.target.value) / 100;
-    applyVolume(v);
-    localStorage.setItem(VOLUME_KEY, String(v));
-  });
+  $("set-volume").addEventListener("input", (e) => setVolume(Number(e.target.value) / 100));
+  // Altavoz: mute/restaura al instante.
+  $("btn-mute").addEventListener("click", () => setVolume(currentVolume > 0 ? 0 : lastNonZeroVol));
   $("btn-save").addEventListener("click", () => {
     saveGame();
     $("btn-save").textContent = "✅ Partida guardada";
@@ -752,12 +786,26 @@ async function clearOfflineCache() {
   }
 }
 
+let musicRouted = false; // música enrutada por Web Audio (iOS: única vía para el volumen)
+let currentVolume = 0.1;
+
 function startMusic() {
+  // Enrutar por Web Audio en el primer gesto: en iOS es la única forma de que el
+  // slider (y el 0 = silencio) afecten a la música. En escritorio también, para
+  // un único punto de control. Requiere gesto de usuario, por eso va aquí.
+  if (!musicRouted && attachMusic(music)) {
+    musicRouted = true;
+    applyVolume(currentVolume); // reaplica ya por la ganancia de Web Audio
+  }
   music.play().catch(() => { /* el navegador puede bloquearla hasta otro gesto */ });
 }
 
 function applyVolume(v) {
-  music.volume = v;
+  currentVolume = v;
+  // Ya enrutada: el volumen va por la ganancia de Web Audio; `audio.volume` se
+  // deja a 1 para no atenuar dos veces (en iOS además se ignora).
+  if (musicRouted) { music.volume = 1; setMusicVolume(v); }
+  else music.volume = v; // fallback antes del enrutado / sin Web Audio (escritorio)
   setSfxVolume(v);
 }
 
