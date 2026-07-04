@@ -439,6 +439,16 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
 }
 #quiz-prev:hover { color: var(--ink); border-color: #b9c0d4; }
 
+/* "Abandonar": btn-ghost está pensado para fondos oscuros (texto blanco);
+   sobre la tarjeta blanca del quiz necesita sus propios colores */
+#quiz-quit {
+  background: transparent;
+  color: var(--ink-soft);
+  border-color: var(--border);
+  box-shadow: none;
+}
+#quiz-quit:hover { color: var(--bad); border-color: var(--bad); background: var(--bad-soft); }
+
 #quiz-footer {
   display: flex;
   align-items: center;
