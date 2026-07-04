@@ -581,7 +581,8 @@ function loadVolume() {
 // overlays de quiz/pantallas pueden ser position:fixed a tamaño natural y
 // seguir legibles en móvil.
 function fitStage() {
-  const s = Math.min(1, (innerWidth - 20) / 768, (innerHeight - 20) / 512);
+  let s = Math.min((innerWidth - 20) / 768, (innerHeight - 20) / 512);
+  if (s > 1) s = Math.floor(s * 2) / 2; // al agrandar, en pasos de 0,5 (×1,5, ×2, ×2,5…)
   const stage = document.getElementById("stage");
   stage.style.width = `${Math.round(768 * s)}px`;
   stage.style.height = `${Math.round(512 * s)}px`;

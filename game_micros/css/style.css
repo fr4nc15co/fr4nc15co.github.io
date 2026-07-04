@@ -36,7 +36,7 @@ body {
 
 #stage {
   position: relative;
-  width: 768px;   /* main.js lo reescala para que quepa en la ventana */
+  width: 768px;   /* main.js lo reescala: encoge en ventanas pequeñas, agranda en pasos de 0,5 (×1,5, ×2…) en grandes */
   height: 512px;
   border-radius: 18px;
   overflow: hidden;
