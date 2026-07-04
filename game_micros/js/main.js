@@ -5,6 +5,7 @@
 import { loadTests, loadQuestions, loadPeople, loadCollisions } from "./data.js";
 import { World, TELEPORTS } from "./world.js";
 import { Quiz, formatText, escapeHTML } from "./quiz.js";
+import { Minigames } from "./minigames.js";
 import { sfx, setSfxVolume } from "./sfx.js";
 import { track } from "./analytics.js";
 
@@ -17,7 +18,7 @@ const TOTAL_TESTS = 14;
 
 // Versión visible en Ajustes. Mantener en sincronía con CACHE_VERSION de sw.js:
 // al publicar se sube una y otra (v4 → v5 → …) para que se note el despliegue.
-const APP_VERSION = "v6";
+const APP_VERSION = "v7";
 
 // Medallero: una medalla por prueba, con el concepto del tema como nombre. El
 // arte pixel-art (componente hardware por prueba) está en
@@ -36,6 +37,9 @@ const IS_TOUCH = matchMedia("(pointer: coarse)").matches
   || "ontouchstart" in window
   || new URLSearchParams(location.search).has("touch");
 
+// NPCs del bar con minijuego (nombre → clave del minijuego en minigames.js).
+const MINIGAME_NPCS = { Zipi: "zipi", Zape: "zape" };
+
 const $ = (id) => document.getElementById(id);
 
 const state = {
@@ -46,7 +50,7 @@ const state = {
   nextTest: 1,
 };
 
-let tests, npcs, world, quiz, music;
+let tests, npcs, world, quiz, music, minigames;
 let dialogCtl = null; // controlador del diálogo activo
 
 // ---------- arranque ----------
@@ -57,6 +61,8 @@ async function boot() {
   npcs = people;
   world = new World($("game-canvas"), collisions, npcs);
   quiz = new Quiz();
+  // los minijuegos son overlays: al cerrarlos se vuelve al mundo
+  minigames = new Minigames({ touch: IS_TOUCH, onClose: () => { state.mode = "world"; } });
 
   // AAC/.m4a: iOS Safari no soporta Ogg Vorbis (la música quedaba muda en iPhone).
   music = new Audio("assets/music/song.m4a");
@@ -186,7 +192,7 @@ function loop(time) {
   if (["world", "dialog", "overlay", "quiz"].includes(state.mode)) {
     const npc = world.update(dt, state.mode === "world");
     world.render();
-    if (npc) openDialog(npc);
+    if (npc) { if (npc.arcade) openArcade(); else openDialog(npc); }
     if (dialogCtl) dialogCtl.tick();
     // en diálogo también se ocultan: el diálogo táctil es fijo y trae botones
     $("touch-controls").classList.toggle("hidden", !IS_TOUCH || state.mode !== "world");
@@ -229,23 +235,47 @@ function openDialog(npc) {
     }
   }
 
+  // NPCs del bar: Zipi lanza su minijuego (Hex); Zape hace de guía de la
+  // recreativa (avisa del próximo desbloqueo y te manda a la máquina).
+  const minigame = npc.test === null ? MINIGAME_NPCS[npc.name] : undefined;
+  const arcadeGuide = npc.name === "Zape";
+  const medals = Math.max(0, Math.min(state.nextTest - 1, TOTAL_TESTS));
+  const need = minigame ? minigames.unlockAt(minigame) : 0;
+  const locked = minigame && !arcadeGuide && medals < need;
+
+  if (arcadeGuide) {
+    const next = minigames.nextLocked(medals);
+    text += next
+      ? `\n\n🔓 Lo próximo en la recreativa: ${next.name} (con ${next.unlockAt} 🏅).`
+      : `\n\n🕹️ ¡Ya lo has desbloqueado todo! Pásate por la recreativa.`;
+  }
+
   $("dialog-portrait").src = npc.portrait;
   $("dialog-name").textContent = npc.name;
   $("dialog-text").textContent = "";
   const actions = $("dialog-actions");
   const kbd = (k) => IS_TOUCH ? "" : ` <kbd>${k}</kbd>`;
+  const playBtn = arcadeGuide
+    ? `<button id="dlg-arcade" class="btn btn-primary btn-small">🕹️ A la recreativa${kbd("Enter")}</button>`
+    : !minigame ? ""
+    : locked ? `<button class="btn btn-small" disabled>🔒 Consigue ${need} 🏅</button>`
+    : `<button id="dlg-play" class="btn btn-primary btn-small">🎮 Jugar${kbd("Enter")}</button>`;
   actions.innerHTML = canTest
     ? `<button id="dlg-no" class="btn btn-small">Ahora no${kbd("Esc")}</button>
        <button id="dlg-yes" class="btn btn-primary btn-small">Hacer la prueba${kbd("Enter")}</button>`
-    : `<button id="dlg-no" class="btn btn-small">Cerrar${kbd("Esc")}</button>`;
+    : `<button id="dlg-no" class="btn btn-small">Cerrar${kbd("Esc")}</button>${playBtn}`;
   $("dlg-no").addEventListener("click", closeDialog);
   if (canTest) $("dlg-yes").addEventListener("click", acceptDialog);
+  if (arcadeGuide) $("dlg-arcade").addEventListener("click", goToArcadeFromDialog);
+  else if (minigame && !locked) $("dlg-play").addEventListener("click", launchDialogMinigame);
   $("dialog").classList.remove("hidden");
 
   // efecto máquina de escribir, como el original (una letra por fotograma)
   let shown = 0;
   dialogCtl = {
     npc, canTest,
+    minigame: (arcadeGuide || locked) ? undefined : minigame, // bloqueado: Enter/💬 no lo lanza
+    toArcade: arcadeGuide, // Enter/💬 abre la recreativa
     done: false,
     tick() {
       if (this.done) return;
@@ -275,12 +305,42 @@ function acceptDialog() {
   startTest(npc.test);
 }
 
+/** Lanza el minijuego del NPC del diálogo activo (botón "Jugar" / Enter). */
+function launchDialogMinigame() {
+  if (!dialogCtl || !dialogCtl.minigame) return;
+  const kind = dialogCtl.minigame;
+  closeDialog();
+  startMinigame(kind);
+}
+
+function startMinigame(kind) {
+  state.mode = "overlay";
+  minigames.start(kind);
+}
+
+/** Desde el diálogo de Zape: cierra y abre el menú de la recreativa. */
+function goToArcadeFromDialog() {
+  closeDialog();
+  openArcade();
+}
+
+/** Abre el menú de la recreativa del bar (objeto con arcade:true).
+ *  Los minijuegos se desbloquean según las medallas conseguidas (pruebas superadas). */
+function openArcade() {
+  sfx.blip();
+  state.mode = "overlay";
+  const medals = Math.max(0, Math.min(state.nextTest - 1, TOTAL_TESTS));
+  minigames.openMenu(medals);
+}
+
 /** Avance tipo "botón A": completa el texto, y si ya está completo acepta o cierra. */
 function advanceDialog() {
   if (!dialogCtl) return;
   sfx.blip();
   if (!dialogCtl.done) dialogCtl.skip();
   else if (dialogCtl.canTest) acceptDialog();
+  else if (dialogCtl.minigame) launchDialogMinigame();
+  else if (dialogCtl.toArcade) goToArcadeFromDialog();
   else closeDialog();
 }
 
@@ -319,7 +379,9 @@ function wireDialogKeys() {
         closeDialog();
       } else if (e.key === "Enter") {
         if (!dialogCtl.done) dialogCtl.skip();
-        else acceptDialog();
+        else if (dialogCtl.canTest) acceptDialog();
+        else if (dialogCtl.minigame) launchDialogMinigame();
+        else if (dialogCtl.toArcade) goToArcadeFromDialog();
       }
     }
   });
@@ -536,6 +598,16 @@ function wireMap() {
     positionOnMap(s, (t.xMin + t.xMax) / 2, t.y);
     $("map-frame").appendChild(s);
   }
+  // marca fija de la recreativa del bar (donde se juegan/desbloquean los minijuegos)
+  for (const npc of npcs) {
+    if (!npc.arcade) continue;
+    const s = document.createElement("span");
+    s.className = "map-mg";
+    s.textContent = "🕹️";
+    s.title = npc.name;
+    positionOnMap(s, npc.x, npc.y);
+    $("map-frame").appendChild(s);
+  }
 }
 
 function openMap() {
@@ -544,8 +616,8 @@ function openMap() {
   $("map-target").classList.toggle("hidden", !target);
   if (target) positionOnMap($("map-target"), target.x, target.y);
   $("map-legend").textContent = target
-    ? `🔵 Tú · 🟡 ${target.name} (prueba ${target.test}) · 🪜 Escaleras`
-    : "🔵 Tú · 🪜 Escaleras";
+    ? `🔵 Tú · 🟡 ${target.name} (prueba ${target.test}) · 🕹️ Recreativa · 🪜 Escaleras`
+    : "🔵 Tú · 🕹️ Recreativa · 🪜 Escaleras";
   showOverlay("screen-map");
 }
 
@@ -715,6 +787,7 @@ window.__gamif = {
   state,
   teleport: (x, y) => world.spawnPlayer(x, y, "frente"),
   pos: () => world.player && { x: world.player.x, y: world.player.y, direction: world.player.direction },
+  minigame: (kind) => startMinigame(kind), // 'zipi' | 'zape'
 };
 
 boot().catch(err => {

@@ -89,9 +89,9 @@ export async function loadPeople() {
   }));
 
   const extra = [
-    { name: "Zipi", x: 91, y: 19, dialog: "¿Qué te pongo?" },
-    { name: "Zape", x: 91, y: 15, dialog: "¿Quieres un Charlie? Claro, sin problema." },
-    { name: "Pau",  x: 89, y: 7,  dialog: "Yo soy de ICADE, mejor busca a otro." },
+    { name: "Zipi", x: 91, y: 19, dialog: "¿Un reto rápido mientras te pongo el café?\nTe enseño un número en binario y me lo cantas en hexadecimal.\nA ver cuántos aciertas en 20 segundos." },
+    { name: "Zape", x: 91, y: 15, dialog: "¿Jugamos a la memoria?\nTe marco una secuencia de LEDs y la repites; cada ronda uno más.\n¿Hasta dónde llegas?" },
+    { name: "Pau",  x: 89, y: 7,  dialog: "Yo soy de ICADE, ¡no sé de micros! Busca a otro." },
   ];
   for (const e of extra) {
     npcs.push({
@@ -104,6 +104,20 @@ export async function loadPeople() {
       portrait: `assets/people/retratos/${e.name}.png`,
     });
   }
+
+  // Recreativa del bar: objeto interactivo (no persona) que abre el menú de
+  // minijuegos. `arcade: true` hace que main.js abra el menú en vez de un diálogo.
+  npcs.push({
+    test: null,
+    name: "Recreativa",
+    arcade: true,
+    x: 87, y: 10, // a la izquierda según entras al bar, cerca de Pau (89,7)
+    dialog: null,
+    restDialog: null,
+    sprite: "assets/people/npc/arcade.png",
+    portrait: null,
+  });
+
   return npcs;
 }
 

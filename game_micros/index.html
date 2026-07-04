@@ -77,9 +77,6 @@
       <button id="btn-continue" class="btn hidden">Continuar partida</button>
       <button id="btn-reset" class="btn btn-ghost hidden">Empezar de cero</button>
     </div>
-    <div class="title-credits">
-      <img src="assets/title/logoComillas.png" alt="Comillas ICAI">
-    </div>
   </div>
 
   <!-- Selección de personaje -->
@@ -131,6 +128,14 @@
     </div>
   </div>
 
+  <!-- Minijuegos de los NPCs del bar (Zipi: binario→hex; Zape: Simon de LEDs) -->
+  <div id="screen-minigame" class="screen hidden">
+    <div class="mg-card">
+      <button id="mg-close" class="mg-close" aria-label="Cerrar">✕</button>
+      <div id="mg-body"></div>
+    </div>
+  </div>
+
   <!-- Instrucciones antes de empezar la aventura -->
   <div id="screen-instructions" class="screen hidden">
     <div class="panel">
@@ -138,6 +143,9 @@
       <p id="instr-goal"></p>
       <p class="instr-hint">🧭 La flecha dorada del borde de la pantalla siempre
         apunta hacia la persona que buscas.</p>
+      <p class="instr-hint">🕹️ ¿Un descanso? En el bar hay una <b>recreativa</b> con
+        minijuegos que se van desbloqueando según ganas medallas 🏅. La verás
+        marcada con 🕹️ en el mapa (tecla <kbd>M</kbd>).</p>
       <div class="instr-install">
         <strong>📲 ¿Quieres jugar sin conexión?</strong>
         Instala el juego en tu móvil y se descargará entero (~3 MB):<br>

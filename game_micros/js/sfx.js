@@ -71,4 +71,6 @@ export const sfx = {
   gameover() { [392, 330, 262, 196].forEach((f, i) => tone(f, 0.22, { at: i * 0.17 })); },
   /** Victoria final: fanfarria. */
   win() { [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone(f, 0.16, { at: i * 0.11 })); },
+  /** LED del minijuego de Zape: un tono distinto por pad (0..3), estilo Simon. */
+  led(i) { tone([392, 523, 659, 784][i % 4], 0.26, { gain: 0.22 }); },
 };
