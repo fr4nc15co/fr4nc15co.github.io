@@ -69,6 +69,16 @@ MPI.contenidoTemas = MPI.contenidoTemas || {};
       '<p>10 minutos de podcast — lo principal de cada tema en Spotify:</p>' +
       '<iframe style="border-radius:12px; margin-top:1em;" src="https://open.spotify.com/embed/show/71kXCYVjY8jtbpBc2Z9AhU?utm_source=generator" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>' +
       '</section>';
+    html += '<section class="mpi-inicio-seccion"><h2>Después de clase</h2>' +
+      '<p>Hacer los ejercicios que hemos visto en clase. Si quieres divertirte:</p>' +
+      '<a href="https://fr4nc15co.github.io/game_micros/" target="_blank" style="display:flex; align-items:center; gap:1.5em; border-radius:12px; margin-top:1em; padding:1.5em; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; text-decoration:none; transition:transform 0.2s; cursor:pointer;" onmouseover="this.style.transform=\'scale(1.02)\'" onmouseout="this.style.transform=\'scale(1)\'">' +
+      '<span style="font-size:4em; flex-shrink:0;">🎮</span>' +
+      '<div style="flex:1;">' +
+      '<div style="font-size:1.2em; font-weight:bold; margin-bottom:0.25em;">Juego de Microprocesadores</div>' +
+      '<div style="font-size:0.9em; opacity:0.9;">Aprende mientras te diviertes</div>' +
+      '</div>' +
+      '</a>' +
+      '</section>';
     html += '<section class="mpi-inicio-seccion"><h2>Referencias</h2>' +
       '<ul>' +
       '<li><strong>Datasheet:</strong> PIC32MX1XX/2XX 32-bit Microcontroller (DS60001168L) — Microchip Technology — especificaciones de registros, periféricos, vectores de interrupción.</li>' +
