@@ -16,9 +16,10 @@ const VOLUME_KEY = "gamif.micros.volume";
 const START = { x: 13, y: 70, direction: "frente" };
 const TOTAL_TESTS = 14;
 
-// Versión visible en Ajustes. Mantener en sincronía con CACHE_VERSION de sw.js:
-// al publicar se sube una y otra (v4 → v5 → …) para que se note el despliegue.
-const APP_VERSION = "v8";
+// Versión visible en Ajustes. Fuente única de verdad: CACHE_VERSION de sw.js
+// ("gamif-micros-v10" → "v10"), así solo se sube un número al publicar y no
+// pueden desincronizarse. Se lee de sw.js por red (no-store); sin conexión, del
+// nombre de la caché instalada. Ver resolveAppVersion().
 
 // Medallero: una medalla por prueba, con el concepto del tema como nombre. El
 // arte pixel-art (componente hardware por prueba) está en
@@ -77,7 +78,7 @@ async function boot() {
   wireDialogKeys();
   wireTouchControls();
 
-  $("app-version").textContent = APP_VERSION;
+  resolveAppVersion().then(v => { if (v) $("app-version").textContent = v; });
   $("loading").classList.add("hidden");
   showTitle();
   registerServiceWorker();
@@ -772,6 +773,28 @@ window.addEventListener("beforeunload", () => {
 // sobre subir CACHE_VERSION al publicar. En localhost la caché-primero
 // serviría ficheros viejos al editar, así que solo se activa con `?pwa`
 // (mismo patrón que `?touch`).
+// Deriva la versión mostrada en Ajustes de CACHE_VERSION de sw.js (fuente
+// única). Primero por red (siempre la desplegada, también en localhost sin SW);
+// si falla (offline), del nombre de la caché instalada, quedándose con la mayor.
+async function resolveAppVersion() {
+  try {
+    const txt = await (await fetch("sw.js", { cache: "no-store" })).text();
+    const m = txt.match(/CACHE_VERSION\s*=\s*["']gamif-micros-([^"']+)["']/);
+    if (m) return m[1];
+  } catch { /* sin conexión: probamos la caché */ }
+  try {
+    if (window.caches) {
+      const vers = (await caches.keys())
+        .filter(k => k.startsWith("gamif-micros-"))
+        .map(k => k.slice("gamif-micros-".length));
+      if (vers.length) {
+        return vers.sort((a, b) => (parseInt(b.slice(1)) || 0) - (parseInt(a.slice(1)) || 0))[0];
+      }
+    }
+  } catch { /* nada que mostrar */ }
+  return "";
+}
+
 function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return; // http sin TLS o navegador viejo
   const isLocalhost = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);

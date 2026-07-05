@@ -13,7 +13,7 @@
  },
  {
   "TestNum": 3,
-  "TestType": "FG",
+  "TestType": "DD",
   "FileName": "3_timers",
   "Key": "PRESCALER"
  },
@@ -43,7 +43,7 @@
  },
  {
   "TestNum": 8,
-  "TestType": "FG",
+  "TestType": "DD",
   "FileName": "8_oc",
   "Key": "PWM"
  },
@@ -61,7 +61,7 @@
  },
  {
   "TestNum": 11,
-  "TestType": "FG",
+  "TestType": "DD",
   "FileName": "11_AD",
   "Key": "MUESTREO"
  },

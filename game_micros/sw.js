@@ -5,7 +5,7 @@
 // ⚠️ Al publicar cambios hay que subir CACHE_VERSION: es lo que hace que el
 // navegador detecte el sw.js nuevo, redescargue todo y tire la caché vieja.
 // Si se añaden/renombran ficheros, actualizar también la lista PRECACHE.
-const CACHE_VERSION = "gamif-micros-v9";
+const CACHE_VERSION = "gamif-micros-v11";
 
 const PRECACHE = [
   "./",
@@ -149,6 +149,9 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET" || new URL(req.url).origin !== location.origin) return;
+  // Nunca cachear el propio sw.js: Ajustes lee de aquí la versión desplegada
+  // (resolveAppVersion en main.js), así que debe servirse siempre fresco.
+  if (new URL(req.url).pathname.endsWith("/sw.js")) return; // → red por defecto
   e.respondWith(
     // ignoreSearch: que `index.html?touch` sirva el index.html cacheado
     caches.match(req, { ignoreSearch: true }).then((hit) =>

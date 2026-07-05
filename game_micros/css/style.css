@@ -32,6 +32,12 @@ body {
   color: var(--ink);
   touch-action: manipulation;   /* sin zoom por doble toque */
   overscroll-behavior: none;    /* sin rebote elástico en móvil */
+  /* A pantalla completa (PWA standalone, status bar black-translucent) el
+     contenido se mete bajo la isla dinámica / notch: dejamos ese margen. En
+     escritorio y navegadores sin notch los env() valen 0 y no afectan. */
+  padding:
+    env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 #stage {
@@ -45,7 +51,7 @@ body {
 }
 
 /* en táctil el juego se pega arriba y deja la zona baja para los controles */
-body.touch { align-items: flex-start; padding-top: 14px; }
+body.touch { align-items: flex-start; padding-top: calc(14px + env(safe-area-inset-top)); }
 
 #game-canvas {
   display: block;
@@ -222,7 +228,8 @@ body.touch { align-items: flex-start; padding-top: 14px; }
    abajo del viewport (los controles táctiles se ocultan mientras tanto) */
 body.touch #dialog {
   position: fixed;
-  left: 10px; right: 10px;
+  left: calc(10px + env(safe-area-inset-left));
+  right: calc(10px + env(safe-area-inset-right));
   bottom: calc(10px + env(safe-area-inset-bottom));
   max-width: 640px;
   margin: 0 auto;
@@ -272,6 +279,11 @@ body.touch .gap-input, body.touch .gap-select { font-size: 16px; }
   background: rgba(13,17,27,.86);
   backdrop-filter: blur(4px);
   z-index: 20;
+  /* fixed → no hereda el padding del body: el contenido centrado y los botones
+     de los bordes se apartan de la isla dinámica / notch por su cuenta */
+  padding:
+    env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 #screen-title { background: linear-gradient(180deg, #2a75bb 0%, #173d63 55%, #10141f 100%); }
@@ -419,6 +431,9 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
   display: flex;
   align-items: center;
   justify-content: center;
+  padding:
+    env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
   background:
     radial-gradient(900px 500px at 80% -10%, rgba(42,117,187,.35), transparent 60%),
     radial-gradient(700px 500px at 10% 110%, rgba(227,53,13,.28), transparent 60%),
@@ -919,7 +934,9 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
   /* el botón 💬 se centra vertical respecto a la cruceta (más alta), quedando
      a la altura de las flechas ◀ ▶; la cruceta ocupa toda la fila y no se mueve */
   align-items: center;
-  padding: 0 16px calc(16px + env(safe-area-inset-bottom));
+  padding:
+    0 calc(16px + env(safe-area-inset-right))
+    calc(16px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
   pointer-events: none;   /* solo los botones capturan el dedo */
   z-index: 15;
 }
