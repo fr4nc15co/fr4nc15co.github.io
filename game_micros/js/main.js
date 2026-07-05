@@ -106,7 +106,7 @@ function wireTitle() {
     Object.assign(state, s);
     track("game_start", { mode: "continue", test_number: state.nextTest });
     $("screen-title").classList.add("hidden");
-    enterWorld(s.x, s.y, s.direction);
+    showInstructions(state.nextTest, s);
   });
   $("btn-reset").addEventListener("click", () => {
     localStorage.removeItem(SAVE_KEY);
@@ -157,18 +157,25 @@ function startNewGame() {
 }
 
 // Pantalla de instrucciones antes de la aventura: misión (a quién buscar) y
-// cómo instalar la PWA para jugar sin conexión. Solo en partida nueva.
-function showInstructions(nextTest) {
+// cómo instalar la PWA para jugar sin conexión. Se muestra tanto al empezar
+// una partida nueva como al continuar (recordatorio de misión). Si se pasa un
+// guardado (`save`), se retoma en su posición; si no, se arranca en START.
+let instructionsEntry = null;
+function showInstructions(nextTest, save) {
   const npc = npcs.find(n => n.test === nextTest);
   $("instr-goal").textContent = nextTest === 1
     ? `${state.name}, ve a buscar a Bruno al laboratorio 1: está atascado con el tema de programación en C y necesita tu ayuda.`
     : `${state.name}, retomas la aventura en la prueba ${nextTest}: ve a buscar a ${npc.name}, que te está esperando.`;
+  instructionsEntry = save
+    ? { x: save.x, y: save.y, direction: save.direction }
+    : { x: START.x, y: START.y, direction: START.direction };
   $("screen-instructions").classList.remove("hidden");
 }
 
 $("btn-instructions-go").addEventListener("click", () => {
   $("screen-instructions").classList.add("hidden");
-  enterWorld(START.x, START.y, START.direction);
+  const e = instructionsEntry || START;
+  enterWorld(e.x, e.y, e.direction);
 });
 
 // ---------- mundo ----------
@@ -464,6 +471,9 @@ function wireTouchControls() {
     "Muévete con la cruceta y habla con el botón 💬";
   document.querySelector("#screen-settings .help-keys").textContent =
     "Cruceta — moverse · 💬 — hablar / aceptar";
+  // en táctil no hay tecla M: el mapa se abre con el botón 🗺️ del HUD
+  const mapHint = document.getElementById("instr-map-hint");
+  if (mapHint) mapHint.textContent = "botón 🗺️";
 }
 
 // ---------- pruebas ----------
@@ -546,12 +556,15 @@ function showEndTest(passed, results) {
       : escapeHTML(String(r.question)).replace(/\n/g, "<br>");
     const fails = results.map((r, i) => ({ ...r, num: i + 1 })).filter(r => !r.ok);
     // A una vida: avisa de que puede recuperarlas buscando al NPC Fran por el
-    // mapa (hablar con él cura las vidas) antes de arriesgar la última.
+    // mapa (hablar con él cura las vidas) antes de arriesgar la última. En la
+    // prueba 13 Fran es el objetivo y te examina (no cura), así que ahí se omite
+    // la pista de la tutoría para no engañar al jugador.
+    const canHealWithFran = state.nextTest !== 13;
     const lifeWarning = state.lives === 1 ? `
         <div class="result-warn">
-          ⚠️ ¡Te queda <b>una sola vida</b>! Si la pierdes, volverás a la prueba 1.<br>
+          ⚠️ ¡Te queda <b>una sola vida</b>! Si la pierdes, volverás a la prueba 1.${canHealWithFran ? `<br>
           ¿Quieres recuperar vidas? Quizá debas buscar a <b>Fran</b> por el mapa y
-          resolver tus dudas con él en una tutoría antes de reintentar.
+          resolver tus dudas con él en una tutoría antes de reintentar.` : ""}
         </div>` : "";
     const failList = fails.length === 0 ? "" : `
         <div class="result-fails">

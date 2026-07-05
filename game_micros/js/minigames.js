@@ -28,8 +28,8 @@ const GAMES = [
     desc: "Dispara cuando el cursor pase por la diana." },
   { kind: "gato",          hub: "bar",    icon: "🐱", name: "Gato y ratón",  unlockAt: 6, scoreLabel: "Segundos",
     desc: "Escapa del perseguidor por el anillo de LEDs." },
-  { kind: "reflejo",       hub: "bar",    icon: "⚡", name: "Reflejo fatal", unlockAt: 8, scoreLabel: "Puntos",
-    desc: "Pulsa en cuanto el LED se ponga verde." },
+  { kind: "rosco",         hub: "bar",    icon: "🔤", name: "El Rosco",      unlockAt: 8, scoreLabel: "Aciertos",
+    desc: "Pasapalabra de la asignatura: define un término por cada letra, a contrarreloj." },
   { kind: "clasifica",     hub: "taller", icon: "🧩", name: "Clasifica el componente", unlockAt: 0, scoreLabel: "Puntos",
     desc: "Manda cada componente a su tipo de E/S o a si necesita bus (UART/I2C/SPI)." },
   { kind: "periferico",    hub: "taller", icon: "🧠", name: "¿Con qué lo hago?", unlockAt: 12, scoreLabel: "Puntos",
@@ -157,6 +157,40 @@ const COMPONENTS = [
   { name: "MAX7219 (matriz de LEDs)", cat: "comm", icon: "🔢" },
 ];
 
+// "El Rosco": una definición por letra del abecedario (27, con la Ñ). `contains`
+// = la respuesta contiene esa letra (no empieza por ella). `accept` = sinónimos
+// que también se dan por buenos. La corrección ignora mayúsculas, acentos y
+// espacios sobrantes.
+const ROSCO = [
+  { letter: "A", answer: "ADC", def: "Periférico que convierte una tensión continua en un número." },
+  { letter: "B", answer: "BIT", def: "Unidad mínima de información: vale 0 o 1." },
+  { letter: "C", answer: "CONDENSADOR", def: "Componente que almacena carga; sirve para filtrar y desacoplar.", accept: ["capacitor"] },
+  { letter: "D", answer: "DIGITAL", def: "Señal que solo toma dos valores, 0 o 1." },
+  { letter: "E", answer: "EEPROM", def: "Memoria no volátil que conserva datos sin alimentación." },
+  { letter: "F", answer: "FLANCO", def: "Instante en que una señal pasa de 0 a 1 o de 1 a 0.", accept: ["flanco de subida", "flanco de bajada"] },
+  { letter: "G", answer: "GPIO", def: "Pines de propósito general configurables como entrada o salida." },
+  { letter: "H", answer: "HEXADECIMAL", def: "Sistema de numeración en base 16 (0-9 y A-F).", accept: ["hex"] },
+  { letter: "I", answer: "INTERRUPCION", def: "Evento que detiene el flujo del programa para atender algo urgente.", accept: ["interrupt", "irq"] },
+  { letter: "J", answer: "JUMPER", def: "Puente que une dos pines para configurar una placa.", accept: ["puente"] },
+  { letter: "K", answer: "KILO", def: "Prefijo que multiplica por mil; 1 ___ohmio = 1000 ohmios." },
+  { letter: "L", answer: "LED", def: "Diodo que emite luz al pasar corriente." },
+  { letter: "M", answer: "MICROCONTROLADOR", def: "Chip que integra CPU, memoria y periféricos.", accept: ["micro", "mcu"] },
+  { letter: "N", answer: "NOT", def: "Puerta lógica que invierte su entrada.", accept: ["inversor", "puerta not"] },
+  { letter: "Ñ", contains: true, answer: "SEÑAL", def: "Magnitud que transporta información; puede ser analógica o digital." },
+  { letter: "O", answer: "OC", def: "(siglas) Módulo que genera señales PWM comparando el conteo de un timer con un valor." },
+  { letter: "P", answer: "PRESCALER", def: "(en inglés) Divisor que ralentiza el reloj de un timer antes de contar.", accept: ["preescalado", "predivisor"] },
+  { letter: "Q", contains: true, answer: "ARQUITECTURA", def: "Disposición interna de una CPU (Harvard, Von Neumann…)." },
+  { letter: "R", answer: "RESISTENCIA", def: "Componente que limita el paso de corriente, medido en ohmios.", accept: ["resistor"] },
+  { letter: "S", answer: "SPI", def: "Bus serie síncrono con líneas MOSI, MISO, SCK y SS." },
+  { letter: "T", answer: "TIMER", def: "Periférico que cuenta pulsos de reloj para medir tiempo o generar eventos.", accept: ["temporizador"] },
+  { letter: "U", answer: "UART", def: "Comunicación serie asíncrona (TX/RX), sin señal de reloj." },
+  { letter: "V", answer: "VOLTAJE", def: "Diferencia de potencial eléctrico, medida en voltios.", accept: ["tension", "voltios"] },
+  { letter: "W", contains: true, answer: "HARDWARE", def: "Parte física y tangible de un sistema (chips, placas…)." },
+  { letter: "X", contains: true, answer: "MULTIPLEXOR", def: "Circuito que selecciona una de varias entradas hacia la salida.", accept: ["mux", "multiplexer"] },
+  { letter: "Y", answer: "Y", def: "Puerta lógica cuya salida es 1 solo si todas sus entradas valen 1.", accept: ["and", "puerta y", "puerta and"] },
+  { letter: "Z", contains: true, answer: "PIEZOELECTRICO", def: "Elemento que vibra y emite sonido al aplicarle una tensión.", accept: ["piezo", "zumbador", "buzzer"] },
+];
+
 const gameMeta = (kind) => GAMES.find(g => g.kind === kind);
 
 export class Minigames {
@@ -168,7 +202,9 @@ export class Minigames {
     this.keyHandler = null; // el juego activo atiende sus propias teclas
     this.cleanup = null;    // para de timers/rAF del juego activo
     this.active = null;     // 'zipi' | 'zape' | 'menu' | null
-    this.menuMode = false;  // lanzado desde la recreativa: al salir se vuelve al menú
+    this.menuMode = false;  // lanzado desde un hub: al salir se vuelve a su menú
+    this.menuHub = "bar";   // hub del menú actual (bar/taller) para volver al correcto
+    this.menuMedals = 0;    // medallas con las que se abrió el menú
     document.getElementById("mg-close").addEventListener("click", () => this.close());
     document.addEventListener("keydown", (e) => this.onKey(e));
   }
@@ -183,7 +219,7 @@ export class Minigames {
       equilibrista: () => this.startEquilibrista(),
       francotirador: () => this.startFrancotirador(),
       gato: () => this.startGato(),
-      reflejo: () => this.startReflejo(),
+      rosco: () => this.startRosco(),
       clasifica: () => this.startClasifica(),
       periferico: () => this.startPeriferico(),
       disena: () => this.startDisena(),
@@ -196,6 +232,8 @@ export class Minigames {
     this.teardown();
     this.active = "menu";
     this.menuMode = true;
+    this.menuHub = hub;
+    this.menuMedals = medals;
     this.root.classList.remove("hidden");
     const title = hub === "taller" ? "🛠️ Banco de trabajo" : "🕹️ Recreativa del bar";
     const list = GAMES.filter(g => (g.hub || "bar") === hub)
@@ -307,7 +345,7 @@ export class Minigames {
     const menu = this.menuMode; // start() lo reescribe; capturar antes
     document.getElementById("mg-again").addEventListener("click", () => this.start(kind, { menu }));
     document.getElementById("mg-exit").addEventListener("click", () =>
-      menu ? this.openMenu() : this.close());
+      menu ? this.openMenu(this.menuMedals, this.menuHub) : this.close());
   }
 
   // ---------- Zipi: binario → hexadecimal, contrarreloj ----------
@@ -743,73 +781,139 @@ export class Minigames {
     after(chaseMs, chase);
   }
 
-  // ---------- Reflejo fatal: pulsa al ponerse verde (ExamenA2 "Reflejos") ----------
-  startReflejo() {
+  // ---------- El Rosco: pasapalabra de la asignatura, contrarreloj ----------
+  startRosco() {
     this.teardown();
-    let points = 0, alive = true, phase = "idle", greenAt = 0;
-    const timeouts = [];
-    const after = (ms, fn) => { const id = setTimeout(fn, ms); timeouts.push(id); return id; };
+    const DURATION = 120000; // ms
+    let score = 0, idx = 0, finished = false;
+    const startAt = performance.now();
+    // estado por letra: "pending" (sin contestar) | "pass" (pasapalabra) | "ok" | "bad"
+    const status = ROSCO.map(() => "pending");
 
     this.body.innerHTML = `
       <div class="mg-head">
-        <div class="mg-title">⚡ Reflejo fatal</div>
-        <div class="mg-record">Récord: ${this.record("reflejo")}</div>
+        <div class="mg-title">🔤 El Rosco</div>
+        <div class="mg-record">Récord: ${this.record("rosco")}</div>
       </div>
-      <div class="mg-score">Puntos: <b id="mg-re-p">0</b></div>
-      <button class="mg-bigpad wait" id="mg-re-pad"></button>
-      <div class="mg-status" id="mg-re-s">Espera al verde…</div>
-      <div class="mg-hint">${this.touch ? "Toca el LED al ponerse verde" : "Espacio / Enter al ponerse verde"}</div>`;
+      <div class="mg-timebar"><div class="mg-timefill" id="mg-ro-time"></div></div>
+      <div class="mg-score">Aciertos: <b id="mg-ro-score">0</b> / ${ROSCO.length}</div>
+      <div class="mg-rosco-ring" id="mg-ro-ring"></div>
+      <div class="mg-rosco-clue">
+        <div class="mg-rosco-lead" id="mg-ro-lead"></div>
+        <div class="mg-rosco-def" id="mg-ro-def"></div>
+      </div>
+      <div class="mg-rosco-input">
+        <input id="mg-ro-in" type="text" autocomplete="off" autocapitalize="off"
+               autocorrect="off" spellcheck="false" placeholder="Respuesta…" />
+        <button class="mg-key mg-key-ok" id="mg-ro-ok" title="Responder">✓</button>
+        <button class="mg-key mg-key-wide" id="mg-ro-pass" title="Pasapalabra">↻</button>
+      </div>
+      <div class="mg-hint">Enter responde · ${this.touch ? "↻ = " : "Tab = "}pasapalabra</div>`;
 
-    const pad = document.getElementById("mg-re-pad");
-    const pEl = document.getElementById("mg-re-p");
-    const sEl = document.getElementById("mg-re-s");
+    const ring = document.getElementById("mg-ro-ring");
+    const leadEl = document.getElementById("mg-ro-lead");
+    const defEl = document.getElementById("mg-ro-def");
+    const scoreEl = document.getElementById("mg-ro-score");
+    const timeEl = document.getElementById("mg-ro-time");
+    const input = document.getElementById("mg-ro-in");
 
-    const end = (msg) => {
-      if (!alive) return;
-      alive = false;
-      sfx.fail();
-      this.body.classList.add("mg-flash-bad");
-      sEl.textContent = msg;
-      after(600, () => this.showResult("reflejo", points, "Puntos"));
+    // letras dispuestas en anillo (el rosco), como en el concurso
+    const cells = ROSCO.map((e, i) => {
+      const d = document.createElement("div");
+      d.className = "mg-rl";
+      d.textContent = e.letter;
+      const ang = (i / ROSCO.length) * 2 * Math.PI - Math.PI / 2;
+      d.style.left = `calc(50% + ${Math.cos(ang) * 46}%)`;
+      d.style.top = `calc(50% + ${Math.sin(ang) * 46}%)`;
+      ring.appendChild(d);
+      return d;
+    });
+
+    const drawRing = () => cells.forEach((d, i) => {
+      d.className = "mg-rl " + status[i] + (i === idx ? " cur" : "");
+    });
+
+    // normaliza para comparar: minúsculas, sin acentos, sin espacios de más
+    const norm = (s) => (s || "").toLowerCase().trim()
+      .normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ");
+
+    // siguiente letra por resolver (pending o pass), en orden circular; -1 si no queda
+    const nextIndex = (from) => {
+      for (let k = 1; k <= ROSCO.length; k++) {
+        const j = (from + k) % ROSCO.length;
+        if (status[j] === "pending" || status[j] === "pass") return j;
+      }
+      return -1;
     };
 
-    const roundStart = () => {
-      if (!alive) return;
-      phase = "wait";
-      pad.className = "mg-bigpad wait";
-      sEl.textContent = "Espera al verde…";
-      after(1000 + Math.random() * 2800, () => {
-        if (!alive || phase !== "wait") return;
-        phase = "go";
-        pad.className = "mg-bigpad go";
-        greenAt = performance.now();
-        sEl.textContent = "¡YA!";
-        after(1000, () => { if (alive && phase === "go") end("Demasiado lento"); });
-      });
+    const showClue = () => {
+      const e = ROSCO[idx];
+      leadEl.textContent = e.contains ? `Contiene la ${e.letter}` : `Empieza por ${e.letter}`;
+      defEl.textContent = e.def;
+      input.value = "";
+      drawRing();
+      input.focus();
     };
 
-    const press = () => {
-      if (!alive) return;
-      if (phase === "wait") { end("¡Salida en falso!"); return; }
-      if (phase !== "go") return;
-      const ms = performance.now() - greenAt;
-      const pts = Math.max(1, Math.round((1000 - ms) / 10));
-      points += pts;
-      pEl.textContent = points;
-      phase = "between";
-      pad.className = "mg-bigpad";
-      sEl.textContent = `${Math.round(ms)} ms  (+${pts})`;
-      sfx.blip();
-      after(800, roundStart);
+    const flash = (ok) => {
+      this.body.classList.remove("mg-flash-ok", "mg-flash-bad");
+      void this.body.offsetWidth;
+      this.body.classList.add(ok ? "mg-flash-ok" : "mg-flash-bad");
     };
 
-    pad.addEventListener("click", press);
-    this.keyHandler = (e) => {
-      if (e.key === " " || e.code === "Space" || e.key === "Enter") { e.preventDefault(); press(); }
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      this.showResult("rosco", score, "Aciertos");
     };
 
-    this.cleanup = () => { for (const id of timeouts) clearTimeout(id); };
-    after(700, roundStart);
+    const advance = () => {
+      const j = nextIndex(idx);
+      if (j === -1) { finish(); return; } // rosco completo
+      idx = j;
+      showClue();
+    };
+
+    const submit = () => {
+      if (finished) return;
+      const guess = norm(input.value);
+      if (!guess) return;
+      const e = ROSCO[idx];
+      const ok = [e.answer, ...(e.accept || [])].some(a => norm(a) === guess);
+      status[idx] = ok ? "ok" : "bad";
+      if (ok) { score++; scoreEl.textContent = score; sfx.blip(); }
+      else { sfx.fail(); }
+      flash(ok);
+      advance();
+    };
+
+    const pass = () => {
+      if (finished) return;
+      status[idx] = "pass";
+      sfx.step();
+      // si solo quedan pasapalabras, nextIndex vuelve a ellas (se puede reintentar)
+      advance();
+    };
+
+    document.getElementById("mg-ro-ok").addEventListener("click", submit);
+    document.getElementById("mg-ro-pass").addEventListener("click", () => { pass(); input.focus(); });
+    // el input recibe las letras de forma nativa; solo interceptamos Enter y Tab
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); submit(); }
+      else if (e.key === "Tab") { e.preventDefault(); pass(); }
+    });
+
+    let raf = 0;
+    const tick = (now) => {
+      const remaining = Math.max(0, DURATION - (now - startAt));
+      timeEl.style.width = `${(remaining / DURATION) * 100}%`;
+      if (remaining <= 0) { finish(); return; }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+
+    this.cleanup = () => cancelAnimationFrame(raf);
+    showClue();
   }
 
   // ---------- Clasifica el componente: manda cada componente a su tipo (taller) ----------

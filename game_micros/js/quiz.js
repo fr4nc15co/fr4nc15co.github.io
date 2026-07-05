@@ -278,7 +278,13 @@ export function escapeHTML(s) {
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
-const CODE_HINT = /[{};]|=>|::|\b(if|else|while|for|return|void|int|uint32_t)\b/;
+// Solo se trata como código el texto con puntuación estructural de C
+// ({ } ; => ::), que no aparece en la prosa. Las palabras clave sueltas
+// (if, int, while, void…) NO bastan: el enunciado en español las menciona en
+// prosa ("la sentencia if en C", "un main y un while(1)", "void function(...)")
+// y no debe pintarse como un bloque de código monoespaciado. El código real de
+// las preguntas (int main() {while(1); return 0;}) siempre lleva llaves o ";".
+const CODE_HINT = /[{};]|=>|::/;
 
 /** Pregunta MC: los bloques con pinta de código C van en <pre>. */
 export function formatText(text) {
