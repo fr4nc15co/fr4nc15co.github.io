@@ -9,13 +9,41 @@
   var KEY = 'cookie-consent';            // 'granted' | 'denied'
   var PRIVACY_URL = '/privacidad.html';
 
-  // Finalidad mostrada en el banner (personalizable por web con
-  // data-purpose en la etiqueta <script src="/cookies.js" ...>)
-  var DEFAULT_PURPOSE = 'y mejorar la web';
-  function getPurpose() {
+  // Idioma del banner según <html lang> ('es' por defecto).
+  function getLang() {
+    var l = (document.documentElement.getAttribute('lang') || 'es').toLowerCase();
+    return l.indexOf('en') === 0 ? 'en' : 'es';
+  }
+
+  // Textos del banner en ES/EN.
+  var STRINGS = {
+    es: {
+      aria: 'Aviso de cookies',
+      intro: 'Usamos cookies de <strong>Google Analytics</strong> para medir las visitas de forma anónima ',
+      purpose: 'y mejorar la web',
+      tail: '. No se instalan hasta que las aceptas. Más información en la ',
+      link: 'política de cookies',
+      reject: 'Rechazar',
+      accept: 'Aceptar'
+    },
+    en: {
+      aria: 'Cookie notice',
+      intro: 'We use <strong>Google Analytics</strong> cookies to measure visits anonymously ',
+      purpose: 'and improve the site',
+      tail: '. They are not installed until you accept. More information in our ',
+      link: 'cookie policy',
+      reject: 'Decline',
+      accept: 'Accept'
+    }
+  };
+
+  // Finalidad personalizable por web con data-purpose (es) y data-purpose-en (en)
+  // en la etiqueta <script src="/cookies.js" ...>.
+  function getPurpose(lang) {
     var s = document.querySelector('script[src$="cookies.js"]');
-    var p = s && s.getAttribute('data-purpose');
-    return p && p.trim() ? p.trim() : DEFAULT_PURPOSE;
+    var attr = lang === 'en' ? 'data-purpose-en' : 'data-purpose';
+    var p = s && s.getAttribute(attr);
+    return p && p.trim() ? p.trim() : STRINGS[lang].purpose;
   }
 
   function gtag() {
@@ -75,18 +103,17 @@
     div.id = 'cc-banner';
     div.setAttribute('role', 'dialog');
     div.setAttribute('aria-live', 'polite');
-    div.setAttribute('aria-label', 'Aviso de cookies');
+    var t = STRINGS[getLang()];
+    div.setAttribute('aria-label', t.aria);
     div.innerHTML =
       '<div class="cc-inner">' +
         '<div class="cc-text">' +
-          'Usamos cookies de <strong>Google Analytics</strong> para medir las visitas de forma anónima ' +
-          getPurpose() + '. ' +
-          'No se instalan hasta que las aceptas. ' +
-          'Más información en la <a href="' + PRIVACY_URL + '">política de cookies</a>.' +
+          t.intro + getPurpose(getLang()) + t.tail +
+          '<a href="' + PRIVACY_URL + '">' + t.link + '</a>.' +
         '</div>' +
         '<div class="cc-actions">' +
-          '<button id="cc-reject" type="button">Rechazar</button>' +
-          '<button id="cc-accept" type="button">Aceptar</button>' +
+          '<button id="cc-reject" type="button">' + t.reject + '</button>' +
+          '<button id="cc-accept" type="button">' + t.accept + '</button>' +
         '</div>' +
       '</div>';
     document.body.appendChild(div);

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://fr4nc15co.github.io/sitemap.xml
