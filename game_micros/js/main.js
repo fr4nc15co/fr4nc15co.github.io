@@ -465,13 +465,25 @@ function wireTouchControls() {
     else if (state.mode === "dialog") advanceDialog();
   });
 
+  // Botón de correr: mantener pulsado equivale a la tecla Q (el doble de rápido).
+  const run = $("touch-run");
+  const setRun = (on, e) => {
+    if (e) e.preventDefault();
+    world.keys[on ? "add" : "delete"]("KeyQ");
+    run.classList.toggle("pressed", on);
+  };
+  run.addEventListener("pointerdown", (e) => { run.setPointerCapture(e.pointerId); setRun(true, e); });
+  for (const ev of ["pointerup", "pointercancel", "pointerleave"]) {
+    run.addEventListener(ev, (e) => setRun(false, e));
+  }
+
   $("touch-controls").addEventListener("contextmenu", (e) => e.preventDefault());
 
   // adapta los textos de ayuda pensados para teclado
   document.querySelector("#screen-select .help-keys").textContent =
-    "Muévete con la cruceta y habla con el botón 💬";
+    "Muévete con la cruceta, corre con 🏃 y habla con 💬";
   document.querySelector("#screen-settings .help-keys").textContent =
-    "Cruceta — moverse · 💬 — hablar / aceptar";
+    "Cruceta — moverse · 🏃 — correr · 💬 — hablar / aceptar";
   // en táctil no hay tecla M: el mapa se abre con el botón 🗺️ del HUD
   const mapHint = document.getElementById("instr-map-hint");
   if (mapHint) mapHint.textContent = "botón 🗺️";
@@ -567,13 +579,29 @@ function showEndTest(passed, results) {
           ¿Quieres recuperar vidas? Quizá debas buscar a <b>Fran</b> por el mapa y
           resolver tus dudas con él en una tutoría antes de reintentar.` : ""}
         </div>` : "";
+    // Detalle de qué está mal, sin desvelar la solución: en DD/FG los huecos
+    // fallados (con lo que puso el alumno); en MC, la opción que eligió.
+    const wrongDetail = (r) => {
+      if (r.type === "MC") {
+        return `<div class="result-fail-marks"><span class="mark-bad">✗ La opción que elegiste no es correcta</span></div>`;
+      }
+      const bad = (r.blanks || []).filter(b => !b.ok);
+      if (!bad.length) return "";
+      const chips = bad.map(b => {
+        const val = b.user.trim() === ""
+          ? `<i>(sin responder)</i>`
+          : `«${escapeHTML(b.user)}»`;
+        return `<span class="mark-bad">✗ Hueco ${b.num}: ${val}</span>`;
+      }).join("");
+      return `<div class="result-fail-marks">${chips}</div>`;
+    };
     const failList = fails.length === 0 ? "" : `
         <div class="result-fails">
           <div class="result-fails-head">Repasa antes de reintentar:</div>
           ${fails.map(r => `
           <div class="result-fail">
             <span class="result-fail-num">${r.num}</span>
-            <div class="result-fail-text">${failHTML(r)}</div>
+            <div class="result-fail-text">${failHTML(r)}${wrongDetail(r)}</div>
           </div>`).join("")}
         </div>`;
     panel.innerHTML = `
@@ -732,6 +760,15 @@ function wireSettings() {
     localStorage.removeItem(SAVE_KEY);
     saveDisabled = true; // que beforeunload no reescriba la partida recién borrada
     btnDelete.textContent = "🧹 Borrando…";
+    clearOfflineCache().finally(() => location.reload());
+  });
+  // Forzar actualización: borra la caché offline y desregistra el SW (sin tocar
+  // la partida) y recarga; al volver, el SW se reinstala con la última versión
+  // publicada y reprecacha todo. Útil si un usuario PWA quedó en una versión vieja.
+  const btnUpdate = $("btn-force-update");
+  btnUpdate.addEventListener("click", () => {
+    btnUpdate.disabled = true;
+    btnUpdate.textContent = "🔄 Actualizando…";
     clearOfflineCache().finally(() => location.reload());
   });
   $("btn-close-settings").addEventListener("click", () => hideOverlay("screen-settings"));

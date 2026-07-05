@@ -681,6 +681,18 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
   overflow-x: auto;
   white-space: pre-wrap;
 }
+/* Detalle de fallo por hueco/opción (sin desvelar la solución) */
+.result-fail-marks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.mark-bad {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--bad);
+  background: #fff;
+  border: 1px solid var(--bad);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+.mark-bad i { font-weight: 600; opacity: .8; }
 
 /* ---------- Minijuegos (Zipi / Zape) ---------- */
 .mg-card {
@@ -965,12 +977,27 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
 }
 .tc-up { grid-area: up; } .tc-down { grid-area: down; }
 .tc-left { grid-area: left; } .tc-right { grid-area: right; }
-#touch-action {
-  width: 76px; height: 76px;
+/* Botones estilo Game Boy: A (💬 hablar/aceptar) y B (🏃 correr), en diagonal
+   como el DMG (A arriba-derecha, B abajo-izquierda). */
+#touch-right { display: flex; align-items: center; gap: 8px; }
+.gb-col { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.gb-col.gb-a { transform: translateY(-16px); } /* A más arriba */
+.gb-col.gb-b { transform: translateY(16px); }  /* B más abajo */
+.gb-btn {
+  width: 66px; height: 66px;
   border-radius: 50%;
-  font-size: 26px;
-  background: rgba(227,53,13,.65);
-  box-shadow: 0 4px 12px rgba(0,0,0,.4);
+  font-size: 26px; font-weight: 900;
+  color: #fff;
+  border: 2px solid #4a1630;
+  background: radial-gradient(circle at 35% 30%, #c94d80, #8e2d57 60%, #6e1f44);
+  box-shadow: 0 5px 0 #531634, 0 7px 12px rgba(0,0,0,.45);
+  text-shadow: 0 1px 1px rgba(0,0,0,.5);
+}
+.gb-btn.pressed, .gb-btn:active {
+  transform: translateY(3px);
+  background: radial-gradient(circle at 35% 30%, #b5416f, #7d2149 60%, #5e1a3a);
+  box-shadow: 0 2px 0 #531634, 0 3px 8px rgba(0,0,0,.45);
+  border-color: #4a1630;
 }
 
 /* ---------- Carga ---------- */

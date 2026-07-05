@@ -83,12 +83,23 @@ export class Quiz {
 
   finish() {
     // se pasa también el enunciado para que la pantalla de suspenso pueda
-    // recordar al alumno qué preguntas falló (sin desvelar la solución)
-    const results = this.questions.map((q, i) => ({
-      ok: this.isCorrect(q, this.answers[i]),
-      type: q.type,
-      question: q.question,
-    }));
+    // recordar al alumno qué preguntas falló (sin desvelar la solución) y, en
+    // DD/FG, qué hueco concreto está mal y qué escribió/eligió en él.
+    const results = this.questions.map((q, i) => {
+      const answer = this.answers[i];
+      const ok = this.isCorrect(q, answer);
+      let picked = null, blanks = null;
+      if (q.type === "MC") {
+        picked = answer; // letra elegida o null
+      } else {
+        blanks = q.answers.map((a, k) => ({
+          num: k + 1,
+          user: String(answer[k] ?? ""),
+          ok: norm(answer[k]) === norm(a),
+        }));
+      }
+      return { ok, type: q.type, question: q.question, picked, blanks };
+    });
     const passed = results.every(r => r.ok);
     this.close();
     this.onFinish(passed, results);

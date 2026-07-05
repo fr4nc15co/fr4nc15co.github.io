@@ -104,7 +104,7 @@
       </label>
       <div id="sel-error" class="error hidden"></div>
       <button id="btn-start" class="btn btn-primary">Comenzar aventura</button>
-      <div class="help-keys">Muévete con <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o las flechas · Habla con <kbd>E</kbd></div>
+      <div class="help-keys">Muévete con <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o las flechas · Corre con <kbd>Q</kbd> · Habla con <kbd>E</kbd></div>
     </div>
   </div>
 
@@ -217,10 +217,11 @@
         <span>Controles</span>
         <div class="help-keys">
           <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / flechas — moverse ·
-          <kbd>E</kbd> — hablar · <kbd>Enter</kbd> — aceptar · <kbd>Esc</kbd> — salir
+          <kbd>Q</kbd> — correr · <kbd>E</kbd> — hablar · <kbd>Enter</kbd> — aceptar · <kbd>Esc</kbd> — salir
         </div>
       </div>
       <div class="settings-buttons">
+        <button id="btn-force-update" class="btn">🔄 Buscar actualización</button>
         <button id="btn-delete-save" class="btn btn-danger">🗑️ Borrar partida</button>
         <button id="btn-save" class="btn">💾 Guardar partida</button>
         <button id="btn-close-settings" class="btn btn-primary">Cerrar</button>
@@ -244,7 +245,14 @@
     <button class="tc-btn tc-right" data-code="ArrowRight" aria-label="Derecha">▶</button>
     <button class="tc-btn tc-down"  data-code="ArrowDown"  aria-label="Abajo">▼</button>
   </div>
-  <button id="touch-action" class="tc-btn" aria-label="Hablar / aceptar">💬</button>
+  <div id="touch-right">
+    <div class="gb-col gb-b">
+      <button id="touch-run" class="tc-btn gb-btn" aria-label="Correr">🏃</button>
+    </div>
+    <div class="gb-col gb-a">
+      <button id="touch-action" class="tc-btn gb-btn" aria-label="Hablar / aceptar">💬</button>
+    </div>
+  </div>
 </div>
 
 <script type="module" src="js/main.js"></script>

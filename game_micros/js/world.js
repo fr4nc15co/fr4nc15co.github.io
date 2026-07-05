@@ -10,7 +10,8 @@ const TILE = 16;          // px por casilla en el mapa original
 const SCALE = 2;          // factor de dibujo en el canvas (768x512 = 24x16 casillas)
 const VIEW_W = 24 * TILE; // 384
 const VIEW_H = 16 * TILE; // 256
-const MOVE_TIME = 1 / 6;  // segundos por casilla, como en el original
+const MOVE_TIME = 1 / 6;   // segundos por casilla, como en el original
+const RUN_TIME = 1 / 12;   // corriendo (tecla Q / botón 🏃): el doble de rápido
 
 // Teletransportes (escaleras/puertas) copiados de GameUpdater.java. Eje Y hacia arriba.
 // Exportados para que el minimapa marque las escaleras.
@@ -147,6 +148,7 @@ export class World {
       direction: direction || "frente",
       moving: false,
       elapsed: 0,
+      moveTime: MOVE_TIME, // duración de la casilla actual (menor al correr)
     };
   }
 
@@ -167,6 +169,7 @@ export class World {
           p.targetY = ny;
           p.moving = true;
           p.elapsed = 0;
+          p.moveTime = this.keys.has("KeyQ") ? RUN_TIME : MOVE_TIME;
           sfx.step();
         }
       }
@@ -174,7 +177,7 @@ export class World {
 
     if (p.moving) {
       p.elapsed += dt;
-      const alpha = Math.min(p.elapsed / MOVE_TIME, 1);
+      const alpha = Math.min(p.elapsed / p.moveTime, 1);
       // misma interpolación que el original: lerp desde la posición actual
       p.x = p.x + (p.targetX - p.x) * alpha;
       p.y = p.y + (p.targetY - p.y) * alpha;
@@ -229,7 +232,7 @@ export class World {
   playerFrame() {
     const p = this.player;
     if (!p.moving) return p.direction;
-    const alpha = p.elapsed / MOVE_TIME;
+    const alpha = p.elapsed / p.moveTime;
     if (alpha < 1 / 3) return `andar_${p.direction}_1`;
     if (alpha < 2 / 3) return p.direction;
     return `andar_${p.direction}_2`;
