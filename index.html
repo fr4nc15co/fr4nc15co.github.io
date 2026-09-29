@@ -7,18 +7,18 @@
     <meta name="description" content="Web del Dr. Francisco Martín Martínez, profesor e investigador en el IIT de la Universidad Pontificia Comillas (ICAI): docencia de microprocesadores y sistemas electrónicos e investigación en sistemas energéticos, renovables y flexibilidad de la demanda.">
     <meta name="author" content="Francisco Martín Martínez">
     <link rel="canonical" href="https://fr4nc15co.github.io/">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%231a1f2e'/><text x='32' y='44' font-size='34' font-family='Arial,sans-serif' font-weight='bold' fill='%235dade2' text-anchor='middle'>FM</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%2314263A'/><text x='32' y='44' font-size='34' font-family='Arial,sans-serif' font-weight='bold' fill='%23E0A00E' text-anchor='middle'>FM</text></svg>">
     <!-- Open Graph / Twitter -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="Dr. Francisco Martín Martínez">
     <meta property="og:description" content="Profesor e investigador en el IIT de la Universidad Pontificia Comillas (ICAI): docencia de microprocesadores y sistemas electrónicos e investigación en sistemas energéticos.">
     <meta property="og:url" content="https://fr4nc15co.github.io/">
-    <meta property="og:image" content="https://fr4nc15co.github.io/images/profile.jpg">
+    <meta property="og:image" content="https://fr4nc15co.github.io/images/profile.JPG">
     <meta property="og:locale" content="es_ES">
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Dr. Francisco Martín Martínez">
     <meta name="twitter:description" content="Profesor e investigador en el IIT de la Universidad Pontificia Comillas (ICAI): microprocesadores, sistemas electrónicos y sistemas energéticos.">
-    <meta name="twitter:image" content="https://fr4nc15co.github.io/images/profile.jpg">
+    <meta name="twitter:image" content="https://fr4nc15co.github.io/images/profile.JPG">
     <!-- Datos estructurados (schema.org Person) -->
     <script type="application/ld+json">
     {
@@ -32,7 +32,7 @@
       "jobTitle": "Associate Professor",
       "email": "francisco.martin@iit.comillas.edu",
       "url": "https://fr4nc15co.github.io/",
-      "image": "https://fr4nc15co.github.io/images/profile.jpg",
+      "image": "https://fr4nc15co.github.io/images/profile.JPG",
       "identifier": "https://orcid.org/0000-0003-2968-7144",
       "affiliation": {
         "@type": "Organization",
@@ -171,6 +171,14 @@
         },
         {
           "@type": "ScholarlyArticle",
+          "name": "Señales de precio a la inversión en un mercado eléctrico con elevada penetración de renovables",
+          "author": { "@id": "https://fr4nc15co.github.io/#person" },
+          "datePublished": "2019",
+          "inLanguage": "es",
+          "isPartOf": { "@type": "Periodical", "name": "Papeles de Energía" }
+        },
+        {
+          "@type": "ScholarlyArticle",
           "name": "Impact of EV penetration in the interconnected urban environment of a smart city",
           "author": { "@id": "https://fr4nc15co.github.io/#person" },
           "datePublished": "2017",
@@ -264,7 +272,7 @@
       ]
     }
     </script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
@@ -392,8 +400,6 @@
             box-shadow: inset 0 -2px 0 var(--solar);
         }
 
-        .energy-icons-bg { display: none; }
-
         .header-content {
             display: grid;
             grid-template-columns: 1fr auto;
@@ -465,6 +471,23 @@
 
         .header-info .stat strong { font-weight: 600; color: var(--ink); }
 
+        /* Collaboration invite: the page's one primary action */
+        .collab {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 14px 24px;
+            margin-top: 22px;
+        }
+
+        .collab p {
+            flex: 1 1 30ch;
+            max-width: 64ch;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: var(--ink);
+        }
+
         /* Load curve: the one bold element */
         .load-curve {
             margin: 36px 0 6px;
@@ -513,29 +536,78 @@
         /* Curve sequence is driven by the inline script after the figure;
            without JS or with reduced motion the final state shows as-is. */
 
+        /* Profiles: two that matter up front, the rest one step quieter */
         .header-links {
             display: flex;
             flex-wrap: wrap;
-            gap: 6px 20px;
+            align-items: baseline;
+            gap: 8px 28px;
             margin: 26px 0 0;
-            padding: 16px 0 20px;
+            padding: 14px 0 18px;
             border-top: 1px solid var(--rule);
             font-family: var(--font-display);
-            font-size: 1rem;
         }
 
         .header-links a {
             display: inline-flex;
             align-items: center;
             gap: 7px;
-            color: var(--ink-2);
             text-decoration: none;
         }
 
-        .header-links a:hover { color: var(--link); text-decoration: underline; }
-        .header-links i { font-size: 0.85em; color: var(--muted); }
+        .header-links i { font-size: 0.9em; }
+
+        .links-primary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 22px;
+            font-size: 1.0625rem;
+            font-weight: 500;
+        }
+
+        .links-primary a { color: var(--ink); }
+        .links-primary i { color: var(--ink-2); }
+
+        /* details can't lay out its slotted content as flex everywhere, so keep it inline */
+        .links-more {
+            flex: 1 1 auto;
+            font-size: 0.9375rem;
+            line-height: 1.9;
+        }
+
+        .links-more summary {
+            list-style: none;
+            color: var(--muted);
+            cursor: pointer;
+            margin-right: 18px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .links-more summary::-webkit-details-marker { display: none; }
+
+        .links-more summary::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-right: 1.5px solid currentColor;
+            border-bottom: 1.5px solid currentColor;
+            transform: translateY(-2px) rotate(45deg);
+            transition: transform .2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .links-more[open] summary::after { transform: translateY(1px) rotate(-135deg); }
+        .links-more summary:hover { color: var(--ink); }
+
+        .links-more-list { display: inline; }
+
+        .links-more a { color: var(--ink-2); margin-right: 18px; white-space: nowrap; }
+        .links-more i { color: var(--muted); }
+
+        .header-links a:hover,
         .header-links a:hover i { color: var(--link); }
-        .header-links a:nth-child(4) { margin-left: 18px; }
+        .header-links a:hover span { text-decoration: underline; }
 
         /* ---------- Navigation ---------- */
         .nav-tabs {
@@ -636,6 +708,63 @@
             margin: -12px 0 12px;
         }
 
+        /* ---------- Selected papers ---------- */
+        .section-lead { margin-bottom: 28px; }
+
+        .selected-papers {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 40px;
+        }
+
+        .selected-paper {
+            border-top: 1px solid var(--ink);
+            padding-top: 14px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .paper-meta {
+            font-family: var(--font-display);
+            font-size: var(--step--1);
+            font-weight: 500;
+            color: var(--ink-2);
+            line-height: 1.3;
+        }
+
+        .paper-year {
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            color: var(--solar-ink);
+            margin-right: 6px;
+        }
+
+        .selected-paper .title {
+            font-family: var(--font-text);
+            font-size: var(--step-1);
+            font-weight: 600;
+            line-height: 1.3;
+            color: var(--ink);
+            text-wrap: balance;
+            margin: 10px 0 12px;
+            transition: color .15s ease-out;
+        }
+
+        .selected-paper .title a { color: inherit; }
+
+        .selected-paper .authors {
+            font-size: var(--step--1);
+            color: var(--ink-2);
+            margin-bottom: 8px;
+        }
+
+        .selected-paper .authors b { font-weight: 600; color: var(--ink); }
+        .selected-paper .doi-link { margin-top: auto; padding-top: 10px; }
+
+        .selected-paper[data-clickable="1"] { cursor: pointer; }
+        .selected-paper[data-clickable="1"]:hover .title { color: var(--link); }
+
         /* ---------- Research areas ---------- */
         .research-grid {
             display: grid;
@@ -693,6 +822,7 @@
             font-variant-numeric: tabular-nums;
             color: var(--ink-2);
             padding-top: 2px;
+            text-wrap: balance;
         }
 
         .article-item .title,
@@ -723,9 +853,18 @@
             margin-top: 2px;
         }
 
-        .article-item .doi-link { margin-top: 6px; }
+        .article-item .metrics,
+        .selected-paper .metrics {
+            font-family: var(--font-display);
+            font-size: 0.8125rem;
+            font-variant-numeric: tabular-nums;
+            color: var(--muted);
+            margin-top: 2px;
+        }
 
-        .article-item .doi-link a {
+        .doi-link { margin-top: 6px; }
+
+        .doi-link a {
             font-family: var(--font-display);
             font-size: var(--step--1);
             word-break: break-all;
@@ -735,7 +874,8 @@
 
         /* 44px tap height without growing the visible control */
         .lang-btn::before,
-        .article-item .doi-link a::before {
+        .doi-link a::before,
+        .footer-content a::before {
             content: '';
             position: absolute;
             left: 0;
@@ -805,6 +945,54 @@
         .btn:hover {
             background: var(--ink);
             color: var(--paper);
+        }
+
+        .btn-primary {
+            min-height: 44px;
+            padding: 10px 20px;
+            background: var(--ink);
+            border-color: var(--ink);
+            color: var(--paper);
+            font-size: 1.0625rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .btn-primary i { font-size: 0.9em; }
+
+        .btn-primary:hover {
+            background: var(--link);
+            border-color: var(--link);
+            color: var(--paper);
+        }
+
+        /* Closing invite at the end of Research */
+        .collab-close {
+            margin-top: 64px;
+            padding-top: 28px;
+            border-top: 1px solid var(--rule);
+        }
+
+        .collab-close h2 { margin-top: 0; }
+
+        .collab-close p {
+            max-width: 60ch;
+            color: var(--ink-2);
+            margin-bottom: 20px;
+        }
+
+        .collab-close .collab-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 20px;
+        }
+
+        .collab-address {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            color: var(--ink-2);
+            user-select: all;
         }
 
         /* ---------- Teaching ---------- */
@@ -953,7 +1141,7 @@
         /* ---------- Hobbies ---------- */
         .hobbies-grid {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 28px;
             margin-top: 8px;
         }
@@ -989,24 +1177,45 @@
             color: var(--muted);
         }
 
-        .footer-content a { color: var(--ink-2); }
+        .footer-content a { color: var(--ink-2); position: relative; }
 
         /* ---------- Responsive ---------- */
         @media (max-width: 820px) {
             .research-grid,
             .teaching-grid { grid-template-columns: 1fr; gap: 0 0; }
             .research-grid { gap: 24px; }
+            .selected-papers { grid-template-columns: 1fr; gap: 32px; }
             .hobbies-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+        }
+
+        @media (max-width: 370px) {
+            .narrow-hide { display: none; }
         }
 
         @media (max-width: 640px) {
             .container, .nav-tabs, .footer-content { padding-left: 16px; padding-right: 16px; }
             header { padding-top: 16px; }
             .lang-switcher { margin-bottom: 16px; }
-            .header-content { grid-template-columns: 1fr; }
-            .profile-photo { grid-column: 1; grid-row: 1; width: 88px; }
-            .header-info { grid-row: 2; }
-            .header-links a:nth-child(4) { margin-left: 0; }
+            /* Photo sits beside the name instead of above it */
+            .header-content { grid-template-columns: minmax(0, 1fr) 64px; column-gap: 0; }
+            .profile-photo { grid-column: 2; grid-row: 1; width: 64px; }
+            .header-info { grid-column: 1 / -1; grid-row: 1; }
+            .header-info h1 { font-size: 2.25rem; padding-right: 76px; margin-bottom: 14px; }
+            .header-info .title { font-size: 1.0625rem; margin-bottom: 8px; }
+            .header-info .bio,
+            .collab p { font-size: 0.9375rem; line-height: 1.5; }
+            .collab { margin-top: 16px; gap: 12px; }
+
+            .load-curve { margin-top: 20px; }
+            .load-curve svg { height: 64px; }
+            .curve-legend { margin-top: 6px; font-size: 0.8125rem; }
+
+            /* 44px tap targets */
+            .header-links { margin-top: 16px; padding: 4px 0 8px; gap: 0 20px; }
+            .header-links a,
+            .links-more summary { min-height: 44px; }
+            .links-more { flex-basis: 100%; line-height: 1.5; }
+            .links-primary { gap: 0 16px; font-size: 1rem; }
             .nav-tab { padding: 12px 12px 10px; font-size: 1rem; }
             .nav-tab:first-child { padding-left: 0; }
             section h2 { margin-top: 48px; }
@@ -1057,13 +1266,7 @@
             </div>
             <div class="header-content">
                 <div class="profile-photo">
-                    <img src="images/profile.JPG" alt="Francisco Martín Martínez">
-                </div>
-                <div class="energy-icons-bg energy-icons-left">
-                    <div class="icon"><i class="fas fa-solar-panel"></i></div>
-                    <div class="icon"><i class="fas fa-battery-full"></i></div>
-                    <div class="icon"><i class="fas fa-microchip"></i></div>
-                    <div class="icon"><i class="fas fa-lightbulb"></i></div>
+                    <img src="images/profile-400.jpg" srcset="images/profile-270.jpg 270w, images/profile-400.jpg 400w, images/profile.JPG 755w" sizes="(max-width: 640px) 80px, 166px" alt="Francisco Martín Martínez" width="755" height="751" fetchpriority="high" decoding="async">
                 </div>
                 <div class="header-info">
                     <h1>Francisco Martín Martínez</h1>
@@ -1072,6 +1275,10 @@
                     <div class="stats">
                         <div class="stat" data-i18n="statPublications"><strong>16+ publications</strong></div>
                         <div class="stat" data-i18n="statHindex"><strong>h-index 11</strong></div>
+                    </div>
+                    <div class="collab">
+                        <p data-i18n="collabText">Open to research collaboration on demand flexibility, renewable integration and grid planning, and to developing optimization tools tailored to partners&rsquo; needs.</p>
+                        <a class="btn btn-primary" href="mailto:francisco.martin@iit.comillas.edu"><i class="fas fa-envelope" aria-hidden="true"></i> <span data-i18n="collabCta">Write to me</span></a>
                     </div>
                 </div>
             </div>
@@ -1170,53 +1377,37 @@
                     requestAnimationFrame(frame);
                 })();
             </script>
-            <nav class="header-links" aria-label="Profiles">
-                <a href="mailto:francisco.martin@iit.comillas.edu" title="Email">
-                    <i class="fas fa-envelope"></i> <span data-i18n="email">Email</span>
-                </a>
-                <a href="https://www.iit.comillas.edu/personas/fmartin" target="_blank" title="IIT">
-                    <i class="fas fa-university"></i> IIT
-                </a>
-                <a href="https://web.comillas.edu/profesor/fmartin" target="_blank" title="Comillas">
-                    <i class="fas fa-graduation-cap"></i> Comillas
-                </a>
-                <a href="https://www.linkedin.com/in/fmartinmartinez" target="_blank" title="LinkedIn">
-                    <i class="fab fa-linkedin"></i> Linkedin
-                </a>
-                <a href="https://scholar.google.com/citations?user=uyrn9soAAAAJ" target="_blank" title="Google Scholar">
-                    <i class="fas fa-graduation-cap"></i> Google Scholar
-                </a>
-                <a href="https://github.com/fr4nc15co" target="_blank" title="GitHub">
-                    <i class="fab fa-github"></i> GitHub
-                </a>
-                <a href="https://orcid.org/0000-0003-2968-7144" target="_blank" title="ORCID">
-                    <i class="fas fa-id-card"></i> Orcid
-                </a>
-                <a href="https://www.webofscience.com/wos/author/record/AAG-8205-2019" target="_blank" title="Researcher ID">
-                    <i class="fas fa-book"></i> Researcher ID
-                </a>
-                <a href="https://ieeexplore.ieee.org/author/37085614408" target="_blank" title="IEEE">
-                    <i class="fas fa-microchip"></i> IEEE
-                </a>
-                <a href="https://www.scopus.com/authid/detail.uri?authorId=57207948302" target="_blank" title="Scopus">
-                    <i class="fas fa-chart-bar"></i> Scopus
-                </a>
-                <a href="https://www.researchgate.net/profile/Francisco_Martin-Martinez2" target="_blank" title="ResearchGate">
-                    <i class="fas fa-network-wired"></i> ResearchGate
-                </a>
-                    </nav>
+            <nav class="header-links" aria-label="Profiles" data-i18n-label="profilesLabel">
+                <div class="links-primary">
+                    <a href="https://scholar.google.com/citations?user=uyrn9soAAAAJ" target="_blank" rel="noopener"><i class="fab fa-google-scholar" aria-hidden="true"></i> <span><span class="narrow-hide">Google </span>Scholar</span></a>
+                    <a href="https://orcid.org/0000-0003-2968-7144" target="_blank" rel="noopener"><i class="fab fa-orcid" aria-hidden="true"></i> <span>ORCID</span></a>
+                    <a href="https://www.iit.comillas.edu/personas/fmartin" target="_blank" rel="noopener"><i class="fas fa-building" aria-hidden="true"></i> <span>IIT</span></a>
+                    <a href="https://www.linkedin.com/in/fmartinmartinez" target="_blank" rel="noopener"><i class="fab fa-linkedin" aria-hidden="true"></i> <span>LinkedIn</span></a>
+                </div>
+                <details class="links-more" open>
+                    <summary data-i18n="moreProfiles">More profiles</summary>
+                    <div class="links-more-list">
+                        <a href="https://www.researchgate.net/profile/Francisco_Martin-Martinez2" target="_blank" rel="noopener"><i class="fab fa-researchgate" aria-hidden="true"></i> <span>ResearchGate</span></a>
+                        <a href="https://www.scopus.com/authid/detail.uri?authorId=57207948302" target="_blank" rel="noopener"><i class="fas fa-chart-bar" aria-hidden="true"></i> <span>Scopus</span></a>
+                        <a href="https://www.webofscience.com/wos/author/record/AAG-8205-2019" target="_blank" rel="noopener"><i class="fas fa-book" aria-hidden="true"></i> <span>Researcher ID</span></a>
+                        <a href="https://ieeexplore.ieee.org/author/37085614408" target="_blank" rel="noopener"><i class="fas fa-microchip" aria-hidden="true"></i> <span>IEEE</span></a>
+                        <a href="https://github.com/fr4nc15co" target="_blank" rel="noopener"><i class="fab fa-github" aria-hidden="true"></i> <span>GitHub</span></a>
+                        <a href="https://web.comillas.edu/profesor/fmartin" target="_blank" rel="noopener"><i class="fas fa-building-columns" aria-hidden="true"></i> <span>Comillas</span></a>
+                    </div>
+                </details>
+            </nav>
         </div>
     </header>
 
     <div class="nav-tabs" role="tablist" aria-label="Secciones" data-i18n-label="tabsLabel">
         <button class="nav-tab active" type="button" role="tab" id="tab-research" aria-controls="research" aria-selected="true" data-section="research" data-hash="research">
-            <i class="fas fa-flask"></i> <span data-i18n="tabResearch">Research</span>
+            <i class="fas fa-flask" aria-hidden="true"></i> <span data-i18n="tabResearch">Research</span>
         </button>
         <button class="nav-tab" type="button" role="tab" id="tab-teaching" aria-controls="teaching" aria-selected="false" tabindex="-1" data-section="teaching" data-hash="teaching">
-            <i class="fas fa-chalkboard-user"></i> <span data-i18n="tabTeaching">Teaching</span>
+            <i class="fas fa-chalkboard-user" aria-hidden="true"></i> <span data-i18n="tabTeaching">Teaching</span>
         </button>
         <button class="nav-tab" type="button" role="tab" id="tab-education" aria-controls="education" aria-selected="false" tabindex="-1" data-section="education" data-hash="cv">
-            <i class="fas fa-book"></i> <span data-i18n="tabCv">CV</span>
+            <i class="fas fa-book" aria-hidden="true"></i> <span data-i18n="tabCv">CV</span>
         </button>
     </div>
 
@@ -1224,29 +1415,45 @@
         <div class="sections">
             <!-- Research Section -->
             <section id="research" class="active" role="tabpanel" aria-labelledby="tab-research">
-                <h2 data-i18n="researchHeading">Research</h2>
+                <h2 data-i18n="selectedHeading">Selected papers</h2>
+                <p class="section-lead" data-i18n="selectedLead">Demand flexibility, end to end: how to assess it, how aggregators deploy it, and what it is worth in system planning.</p>
+                <ol class="selected-papers">
+                    <li class="selected-paper">
+                        <div class="paper-meta"><span class="paper-year">2024</span> Applied Energy</div>
+                        <h3 class="title"><a href="https://doi.org/10.1016/j.apenergy.2024.123834" target="_blank" rel="noopener">Indicators for suitability and feasibility assessment of flexible energy resources</a></h3>
+                        <div class="authors">Calvo-Báscones, P., <b>Martín, F.</b></div>
+                        <div class="metrics">JCR-JIF: 11.000 Q1 (2024) · SJR: 2.902 Q1 (2024)</div>
+                        <div class="doi-link"><a href="https://doi.org/10.1016/j.apenergy.2024.123834" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.apenergy.2024.123834</a></div>
+                    </li>
+                    <li class="selected-paper">
+                        <div class="paper-meta"><span class="paper-year">2024</span> Heliyon</div>
+                        <h3 class="title"><a href="https://doi.org/10.1016/j.heliyon.2024.e30101" target="_blank" rel="noopener">Technical deployment of aggregator business models</a></h3>
+                        <div class="authors"><b>Martín, F.</b>, Boal, J., Sánchez, A., Becker Robles, C., Rodríguez-Vilches, R.</div>
+                        <div class="metrics">JCR-JIF: 3.600 Q1 (2024) · SJR: 0.644 Q1 (2024)</div>
+                        <div class="doi-link"><a href="https://doi.org/10.1016/j.heliyon.2024.e30101" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.heliyon.2024.e30101</a></div>
+                    </li>
+                    <li class="selected-paper">
+                        <div class="paper-meta"><span class="paper-year">2025</span> International Journal of Electrical Power & Energy Systems</div>
+                        <h3 class="title"><a href="https://doi.org/10.1016/j.ijepes.2025.110483" target="_blank" rel="noopener">Demand response cost analysis and its effect on system planning</a></h3>
+                        <div class="authors">Freire-Barceló, T., <b>Martín, F.</b>, Sánchez, A.</div>
+                        <div class="metrics">JCR-JIF: 5.000 Q1 (2024) · SJR: 1.714 Q1 (2024)</div>
+                        <div class="doi-link"><a href="https://doi.org/10.1016/j.ijepes.2025.110483" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.ijepes.2025.110483</a></div>
+                    </li>
+                </ol>
+
+                <h2 data-i18n="researchHeading">Research areas</h2>
                 <div class="research-grid">
                     <div class="research-card no-effect">
-                        <h3 data-i18n="cardRenewTitle"><i class="fas fa-leaf"></i> Renewable Energy Systems</h3>
+                        <h3 data-i18n="cardRenewTitle"><i class="fas fa-leaf" aria-hidden="true"></i> Renewable Energy Systems</h3>
                         <p data-i18n="cardRenewDesc">Transmission expansion planning and integration of distributed energy resources (DERs) in modern electrical systems.</p>
                     </div>
                     <div class="research-card no-effect">
-                        <h3 data-i18n="cardFlexTitle"><i class="fas fa-plug"></i> Demand Flexibility</h3>
+                        <h3 data-i18n="cardFlexTitle"><i class="fas fa-plug" aria-hidden="true"></i> Demand Flexibility</h3>
                         <p data-i18n="cardFlexDesc">Aggregator models, demand response and microgrid management for energy optimization.</p>
                     </div>
                     <div class="research-card no-effect">
-                        <h3 data-i18n="cardOptTitle"><i class="fas fa-brain"></i> Optimization</h3>
-                        <p data-i18n="cardOptDesc">Optimization techniques for energy systems.</p>
-                    </div>
-                </div>
-
-                 <h2 data-i18n="toolsHeading">Tools</h2>
-                <div class="article-list">
-                    <div class="article-item">
-                        <div class="year">IIT</div>
-                        <div class="title"><a href="https://www.iit.comillas.edu/ofertas_tecnologicas/3" target="_blank" rel="noopener noreferrer"><i class="fas fa-bolt"></i> SPLODER</a></div>
-                        <div class="authors" data-i18n="sploderDesc">Expansion, operation and reliability models for electric systems</div>
-                        <div class="authors venue" data-i18n="energySystemsTool">Energy Systems Tool</div>
+                        <h3 data-i18n="cardOptTitle"><i class="fas fa-bolt" aria-hidden="true"></i> Planning &amp; Optimization Models</h3>
+                        <p data-i18n="cardOptDesc">Expansion, operation and reliability models for electric systems, including <a href="https://www.iit.comillas.edu/ofertas_tecnologicas/3" target="_blank" rel="noopener noreferrer">SPLODER</a>, an IIT energy systems tool.</p>
                     </div>
                 </div>
 
@@ -1281,110 +1488,116 @@
                         <div class="year">2025</div>
                         <div class="title"><a href="https://doi.org/10.1016/j.ijepes.2025.110483" target="_blank" rel="noopener">Demand response cost analysis and its effect on system planning</a></div>
                         <div class="authors">Freire-Barceló, T., <b>Martín, F.</b>, Sánchez, A.</div>
-                        <div class="authors venue">International Journal of Electrical Power & Energy Systems, Vol. 165, pp. 110483, April 2025 | JCR-JIF: 5.000 Q1 (2024) - SJR: 1.714 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.ijepes.2025.110483" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.ijepes.2025.110483</a></div>
+                        <div class="authors venue">International Journal of Electrical Power & Energy Systems, Vol. 165, pp. 110483, April 2025</div>
+                        <div class="metrics">JCR-JIF: 5.000 Q1 (2024) · SJR: 1.714 Q1 (2024)</div><div class="doi-link"><a href="https://doi.org/10.1016/j.ijepes.2025.110483" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.ijepes.2025.110483</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2024</div>
                         <div class="title"><a href="https://doi.org/10.1016/j.apenergy.2024.123834" target="_blank" rel="noopener">Indicators for suitability and feasibility assessment of flexible energy resources</a></div>
                         <div class="authors">Calvo-Báscones, P., <b>Martín, F.</b></div>
-                        <div class="authors venue">Applied Energy, Vol. 372, pp. 123834, October 2024 | JCR-JIF: 11.000 Q1 (2024) - SJR: 2.902 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.apenergy.2024.123834" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.apenergy.2024.123834</a></div>
+                        <div class="authors venue">Applied Energy, Vol. 372, pp. 123834, October 2024</div>
+                        <div class="metrics">JCR-JIF: 11.000 Q1 (2024) · SJR: 2.902 Q1 (2024)</div><div class="doi-link"><a href="https://doi.org/10.1016/j.apenergy.2024.123834" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.apenergy.2024.123834</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2024</div>
                         <div class="title"><a href="https://doi.org/10.1016/j.egyr.2024.04.037" target="_blank" rel="noopener">Design and assessment of energy infrastructure in new decarbonized urban districts: a Spanish case study</a></div>
                         <div class="authors">De Rosa, L., Martínez, M., Linares, J.I., Mateo, C., Gómez, T., Cossent, R., Postigo Marcos, F., Sánchez, A., <b>Martín, F.</b></div>
-                        <div class="authors venue">Energy Reports, Vol. 11, pp. 4631-4641, June 2024 | JCR-JIF: 5.100 Q2 (2024) - SJR: 1.172 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.egyr.2024.04.037" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.egyr.2024.04.037</a></div>
+                        <div class="authors venue">Energy Reports, Vol. 11, pp. 4631-4641, June 2024</div>
+                        <div class="metrics">JCR-JIF: 5.100 Q2 (2024) · SJR: 1.172 Q1 (2024)</div><div class="doi-link"><a href="https://doi.org/10.1016/j.egyr.2024.04.037" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.egyr.2024.04.037</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2024</div>
                         <div class="title"><a href="https://doi.org/10.1016/j.heliyon.2024.e30101" target="_blank" rel="noopener">Technical deployment of aggregator business models</a></div>
                         <div class="authors"><b>Martín, F.</b>, Boal, J., Sánchez, A., Becker Robles, C., Rodríguez-Vilches, R.</div>
-                        <div class="authors venue">Heliyon, Vol. 10, No. 9, pp. e30101, May 2024 | JCR-JIF: 3.600 Q1 (2024) - SJR: 0.644 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.heliyon.2024.e30101" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.heliyon.2024.e30101</a></div>
+                        <div class="authors venue">Heliyon, Vol. 10, No. 9, pp. e30101, May 2024</div>
+                        <div class="metrics">JCR-JIF: 3.600 Q1 (2024) · SJR: 0.644 Q1 (2024)</div><div class="doi-link"><a href="https://doi.org/10.1016/j.heliyon.2024.e30101" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.heliyon.2024.e30101</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2024</div>
                         <div class="title"><a href="https://doi.org/10.1016/j.rser.2023.114179" target="_blank" rel="noopener">Methodology to assess prosumer participation in European electricity markets</a></div>
                         <div class="authors">Rodríguez-Vilches, R., <b>Martín, F.</b>, Sánchez, A., Gutiérrez de la Cámara, J.R., Muñoz Delgado, S.</div>
-                        <div class="authors venue">Renewable & Sustainable Energy Reviews, Vol. 191, pp. 114179, March 2024 | JCR-JIF: 16.300 Q1 (2024) - SJR: 3.901 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.rser.2023.114179" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.rser.2023.114179</a></div>
+                        <div class="authors venue">Renewable & Sustainable Energy Reviews, Vol. 191, pp. 114179, March 2024</div>
+                        <div class="metrics">JCR-JIF: 16.300 Q1 (2024) · SJR: 3.901 Q1 (2024)</div><div class="doi-link"><a href="https://doi.org/10.1016/j.rser.2023.114179" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.rser.2023.114179</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2024</div>
                         <div class="title"><a href="https://doi.org/10.1016/j.ijepes.2023.109747" target="_blank" rel="noopener">System planning with demand assets in balancing markets</a></div>
                         <div class="authors">Freire-Barceló, T., <b>Martín, F.</b>, Sánchez, A.</div>
-                        <div class="authors venue">International Journal of Electrical Power & Energy Systems, Vol. 156, pp. 109747, February 2024 | JCR-JIF: 5.000 Q1 (2024) - SJR: 1.714 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.ijepes.2023.109747" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.ijepes.2023.109747</a></div>
+                        <div class="authors venue">International Journal of Electrical Power & Energy Systems, Vol. 156, pp. 109747, February 2024</div>
+                        <div class="metrics">JCR-JIF: 5.000 Q1 (2024) · SJR: 1.714 Q1 (2024)</div><div class="doi-link"><a href="https://doi.org/10.1016/j.ijepes.2023.109747" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.ijepes.2023.109747</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2022</div>
                         <div class="title"><a href="https://doi.org/10.1016/j.egyr.2022.03.032" target="_blank" rel="noopener">Exploring the roles of storage technologies in the Spanish electricity system with high share of renewable energy</a></div>
                         <div class="authors">Huclin, S., Chaves, J.P., Ramos, A., Rivier, M., Freire-Barceló, T., <b>Martín, F.</b>, Gómez, T., Sánchez, A.</div>
-                        <div class="authors venue">Energy Reports, Vol. 8, pp. 4041-4057, November 2022 | JCR-JIF: 5.100 Q2 (2024) - SJR: 1.172 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.egyr.2022.03.032" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.egyr.2022.03.032</a></div>
+                        <div class="authors venue">Energy Reports, Vol. 8, pp. 4041-4057, November 2022</div>
+                        <div class="metrics">JCR-JIF: 5.100 Q2 (2024) · SJR: 1.172 Q1 (2024)</div><div class="doi-link"><a href="https://doi.org/10.1016/j.egyr.2022.03.032" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.egyr.2022.03.032</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2022</div>
                         <div class="title"><a href="https://doi.org/10.1016/j.egyr.2022.08.014" target="_blank" rel="noopener">Storage and demand response contribution to firm capacity: analysis of the Spanish electricity system</a></div>
                         <div class="authors">Freire-Barceló, T., <b>Martín, F.</b>, Sánchez, A., Rivier, M., Gómez, T., Huclin, S., Chaves, J.P., Ramos, A.</div>
-                        <div class="authors venue">Energy Reports, Vol. 8, pp. 10546-10560, November 2022 | JCR-JIF: 5.100 Q2 (2024) - SJR: 1.172 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.egyr.2022.08.014" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.egyr.2022.08.014</a></div>
+                        <div class="authors venue">Energy Reports, Vol. 8, pp. 10546-10560, November 2022</div>
+                        <div class="metrics">JCR-JIF: 5.100 Q2 (2024) · SJR: 1.172 Q1 (2024)</div><div class="doi-link"><a href="https://doi.org/10.1016/j.egyr.2022.08.014" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.egyr.2022.08.014</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2022</div>
                         <div class="title"><a href="https://doi.org/10.1016/j.epsr.2022.107953" target="_blank" rel="noopener">A literature review of explicit demand flexibility providing energy services</a></div>
                         <div class="authors">Freire-Barceló, T., <b>Martín, F.</b>, Sánchez, A.</div>
-                        <div class="authors venue">Electric Power Systems Research, Vol. 209, pp. 107953, August 2022 | JCR-JIF: 4.200 Q2 (2024) - SJR: 1.137 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.epsr.2022.107953" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.epsr.2022.107953</a></div>
+                        <div class="authors venue">Electric Power Systems Research, Vol. 209, pp. 107953, August 2022</div>
+                        <div class="metrics">JCR-JIF: 4.200 Q2 (2024) · SJR: 1.137 Q1 (2024)</div><div class="doi-link"><a href="https://doi.org/10.1016/j.epsr.2022.107953" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.epsr.2022.107953</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2019</div>
                         <div class="title"><a href="https://doi.org/10.1016/j.enpol.2020.111436" target="_blank" rel="noopener">Rethinking the electricity market design: remuneration mechanisms to reach high RES shares</a></div>
                         <div class="authors">Gerres, T., Chaves, J.P., <b>Martín, F.</b>, Rivier, M., Cossent, R., Sánchez, A., Gómez, T.</div>
-                        <div class="authors venue">Energy Policy, Vol. 129, pp. 1320-1330, June 2019 | JCR-JIF: 9.200 Q1 (2024) - SJR: 2.692 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.enpol.2020.111436" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.enpol.2020.111436</a></div>
+                        <div class="authors venue">Energy Policy, Vol. 129, pp. 1320-1330, June 2019</div>
+                        <div class="metrics">JCR-JIF: 9.200 Q1 (2024) · SJR: 2.692 Q1 (2024)</div><div class="doi-link"><a href="https://doi.org/10.1016/j.enpol.2020.111436" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.enpol.2020.111436</a></div>
+                    </div>
+                    <div class="article-item">
+                        <div class="year">2019</div>
+                        <div class="title">Señales de precio a la inversión en un mercado eléctrico con elevada penetración de renovables</div>
+                        <div class="authors">Gómez, T., Rivier, M., Chaves, J.P., <b>Martín, F.</b>, Gerres, T.</div>
+                        <div class="authors venue">Papeles de Energía, Nº 6, pp. 9-38, January 2019</div>
                     </div>
                     <div class="article-item">
                         <div class="year">2017</div>
                         <div class="title"><a href="https://doi.org/10.1016/j.energy.2017.12.006" target="_blank" rel="noopener">Impact of EV penetration in the interconnected urban environment of a smart city</a></div>
                         <div class="authors">Calvillo, C., Sánchez, A., Villar, J., <b>Martín, F.</b></div>
-                        <div class="authors venue">Energy, Vol. 141, pp. 2218-2233, December 2017 | JCR-JIF: 9.400 Q1 (2024) - SJR: 2.211 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.energy.2017.12.006" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.energy.2017.12.006</a></div>
+                        <div class="authors venue">Energy, Vol. 141, pp. 2218-2233, December 2017</div>
+                        <div class="metrics">JCR-JIF: 9.400 Q1 (2024) · SJR: 2.211 Q1 (2024)</div><div class="doi-link"><a href="https://doi.org/10.1016/j.energy.2017.12.006" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.energy.2017.12.006</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2017</div>
                         <div class="title"><a href="https://doi.org/10.1016/j.energy.2017.06.055" target="_blank" rel="noopener">Centralized vs distributed generation. A model to assess the relevance of some thermal and electric factors</a></div>
                         <div class="authors"><b>Martín, F.</b>, Sánchez, A., Rivier, M., Calvillo, C.</div>
-                        <div class="authors venue">Energy, Vol. 134, pp. 850-863, September 2017 | JCR-JIF: 9.400 Q1 (2024) - SJR: 2.211 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.energy.2017.06.055" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.energy.2017.06.055</a></div>
+                        <div class="authors venue">Energy, Vol. 134, pp. 850-863, September 2017</div>
+                        <div class="metrics">JCR-JIF: 9.400 Q1 (2024) · SJR: 2.211 Q1 (2024)</div><div class="doi-link"><a href="https://doi.org/10.1016/j.energy.2017.06.055" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.energy.2017.06.055</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2016</div>
                         <div class="title"><a href="https://doi.org/10.1016/j.apenergy.2016.08.117" target="_blank" rel="noopener">Optimal planning and operation of aggregated Distributed Energy Resources with market participation</a></div>
                         <div class="authors">Calvillo, C., Sánchez, A., Villar, J., <b>Martín, F.</b></div>
-                        <div class="authors venue">Applied Energy, Vol. 182, pp. 340-357, November 2016 | JCR-JIF: 11.000 Q1 (2024) - SJR: 2.902 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.apenergy.2016.08.117" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.apenergy.2016.08.117</a></div>
+                        <div class="authors venue">Applied Energy, Vol. 182, pp. 340-357, November 2016</div>
+                        <div class="metrics">JCR-JIF: 11.000 Q1 (2024) · SJR: 2.902 Q1 (2024)</div><div class="doi-link"><a href="https://doi.org/10.1016/j.apenergy.2016.08.117" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.apenergy.2016.08.117</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2016</div>
                         <div class="title"><a href="https://doi.org/10.1016/j.epsr.2016.05.028" target="_blank" rel="noopener">Prosumers' optimal DER investments and DR usage for thermal and electrical loads in isolated microgrids</a></div>
                         <div class="authors"><b>Martín, F.</b>, Sánchez, A., Rivier, M.</div>
-                        <div class="authors venue">Electric Power Systems Research, Vol. 140, pp. 473-484, November 2016 | JCR-JIF: 4.200 Q2 (2024) - SJR: 1.137 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.epsr.2016.05.028" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.epsr.2016.05.028</a></div>
+                        <div class="authors venue">Electric Power Systems Research, Vol. 140, pp. 473-484, November 2016</div>
+                        <div class="metrics">JCR-JIF: 4.200 Q2 (2024) · SJR: 1.137 Q1 (2024)</div><div class="doi-link"><a href="https://doi.org/10.1016/j.epsr.2016.05.028" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.epsr.2016.05.028</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2016</div>
                         <div class="title"><a href="https://doi.org/10.1016/j.rser.2016.05.025" target="_blank" rel="noopener">A literature review of microgrids: a functional layer based classification</a></div>
                         <div class="authors"><b>Martín, F.</b>, Sánchez, A., Rivier, M.</div>
-                        <div class="authors venue">Renewable & Sustainable Energy Reviews, Vol. 62, pp. 1133-1153, September 2016 | JCR-JIF: 16.300 Q1 (2024) - SJR: 3.901 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.rser.2016.05.025" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.rser.2016.05.025</a></div>
+                        <div class="authors venue">Renewable & Sustainable Energy Reviews, Vol. 62, pp. 1133-1153, September 2016</div>
+                        <div class="metrics">JCR-JIF: 16.300 Q1 (2024) · SJR: 3.901 Q1 (2024)</div><div class="doi-link"><a href="https://doi.org/10.1016/j.rser.2016.05.025" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.rser.2016.05.025</a></div>
                     </div>
                 </div>
                 <div class="list-toggle-wrap">
-                    <button id="journal-toggle-btn" class="btn" type="button" aria-expanded="false">Show all journal articles</button>
+                    <button id="journal-toggle-btn" class="btn" type="button" aria-expanded="false" aria-controls="journal-articles-list">Mostrar todos los artículos</button>
                 </div>
 
                 <h2 data-i18n="conferenceHeading">Conference Papers & Book Chapters</h2>
@@ -1419,27 +1632,30 @@
                         <div class="doi-link"><a href="https://doi.org/10.1007/978-3-319-03224-5_10" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1007/978-3-319-03224-5_10</a></div>
                     </div>
                 </div>
+                <div class="list-toggle-wrap">
+                    <button id="conference-toggle-btn" class="btn" type="button" aria-expanded="false" aria-controls="conference-list">Mostrar todas las ponencias y capítulos</button>
+                </div>
 
                 <h2 data-i18n="projectsHeading">Latest Research Projects</h2>
                 <p class="section-note" data-i18n="projectsNote">European and institutional project names are kept in their official language.</p>
                 <div class="article-list" id="research-projects-list">
                     <div class="article-item">
-                        <div class="year">2025-2029</div>
+                        <div class="year">2025–2029</div>
                         <div class="title">SOCIAREM: Solar Open Community Instruments for All Residents in Europe and the Mediterranean region</div>
                         <div class="authors">Horizon Europe Grant agreement ID: 101235482 | European Commission</div>
                     </div>
                     <div class="article-item">
-                        <div class="year">2025-2026</div>
+                        <div class="year">2025–2026</div>
                         <div class="title">Deployment and implementation of PROFITFLEX demand aggregation systems</div>
                         <div class="authors">PROFITFLEX SL</div>
                     </div>
                     <div class="article-item">
                         <div class="year">2025</div>
                         <div class="title">Distribution Investment Calculation Model</div>
-                        <div class="authors">Aelec | Jan 2025 - May 2025</div>
+                        <div class="authors">Aelec | Jan 2025 – May 2025</div>
                     </div>
                     <div class="article-item">
-                        <div class="year">2024-2025</div>
+                        <div class="year">2024–2025</div>
                         <div class="title">Technical-Economic Benefits of Distributed Storage and Demand Response</div>
                         <div class="authors">Samso EDS S.L., UNEF, AEPIBAL, PIMEC, OCTOPUS</div>
                     </div>
@@ -1449,18 +1665,18 @@
                         <div class="authors">Iberdrola S.A.</div>
                     </div>
                     <div class="article-item">
-                        <div class="year">2023-2024</div>
+                        <div class="year">2023–2024</div>
                         <div class="title">Artificial Intelligence for Hotel Energy Savings</div>
                         <div class="authors">Substrate AI, S.A.</div>
                     </div>
                     <div class="article-item">
-                        <div class="year">2020-2024</div>
+                        <div class="year">2020–2024</div>
                         <div class="title">REDREAM: Real consumer engagement through a new user-centric ecosystem for end-users' assets</div>
                         <div class="authors">Horizon 2020 Grant agreement No. 957837 | European Commission</div>
                     </div>
                     <div class="article-item">
-                        <div class="year">2020-2023</div>
-                        <div class="title">FLEXENER: 100% Renewable, Flexible and Robust Energy System - Scenarios</div>
+                        <div class="year">2020–2023</div>
+                        <div class="title">FLEXENER: 100% Renewable, Flexible and Robust Energy System – Scenarios</div>
                         <div class="authors">Iberdrola Generación España, S.A.U.</div>
                     </div>
                     <div class="article-item">
@@ -1469,7 +1685,7 @@
                         <div class="authors">IDOM Consulting, Engineering and Architecture S.A.U.</div>
                     </div>
                     <div class="article-item">
-                        <div class="year">2019-2023</div>
+                        <div class="year">2019–2023</div>
                         <div class="title">Analysis of Spanish electricity system expansion and operation 2030-2050</div>
                         <div class="authors">Iberdrola España S.A.U.</div>
                     </div>
@@ -1489,7 +1705,7 @@
                         <div class="authors">Iberdrola S.A.</div>
                     </div>
                     <div class="article-item">
-                        <div class="year">2017-2018</div>
+                        <div class="year">2017–2018</div>
                         <div class="title">Distributed energy efficiency system connected to cloud for homes with high renewable penetration</div>
                         <div class="authors">Endesa Energía, S.A.U.</div>
                     </div>
@@ -1499,71 +1715,77 @@
                         <div class="authors">Iberdrola S.A.</div>
                     </div>
                     <div class="article-item">
-                        <div class="year">2016-2017</div>
+                        <div class="year">2016–2017</div>
                         <div class="title">Evaluation of energy scenarios with reduced distributed energy resources costs</div>
                         <div class="authors">Gas Natural SDG, S.A.</div>
                     </div>
                 </div>
 
                 <div class="list-toggle-wrap">
-                    <button id="projects-toggle-btn" class="btn" type="button" aria-expanded="false">Show all research projects</button>
+                    <button id="projects-toggle-btn" class="btn" type="button" aria-expanded="false" aria-controls="research-projects-list">Mostrar todos los proyectos de investigación</button>
                 </div>
+
+                <aside class="collab-close" aria-labelledby="collab-heading">
+                    <h2 id="collab-heading" data-i18n="collabHeading">Work with us</h2>
+                    <p data-i18n="collabClose">Tell me the problem you're working on and where you see the overlap. I usually reply within a week.</p>
+                    <div class="collab-actions">
+                        <a class="btn btn-primary" href="mailto:francisco.martin@iit.comillas.edu"><i class="fas fa-envelope" aria-hidden="true"></i> <span data-i18n="collabCta">Write to me</span></a>
+                        <span class="collab-address">francisco.martin@iit.comillas.edu</span>
+                    </div>
+                </aside>
             </section>
 
             <!-- Teaching Section -->
             <section id="teaching" role="tabpanel" aria-labelledby="tab-teaching" hidden>
+                <h2 data-i18n="teachingHeading">Teaching – ICAI</h2>
+                <div class="teaching-grid">
+                <div class="teaching-card">
+                    <h3><i class="fas fa-microchip" aria-hidden="true"></i> <span data-i18n="microTitle">Microprocesadores PIC32MX</span></h3>
+                    <p class="subtitle" data-i18n="interactivePlatform">Interactive Educational Platform</p>
+                    <p data-i18n="microDesc">Interactive web with teaching materials, simulators, practical exercises and virtual laboratories for teaching microprocessor architecture, peripherals and systems.</p>
+                    <a href="microprocesadores/" class="btn">
+                        <i class="fas fa-globe" aria-hidden="true"></i> <span data-i18n="visitPlatform">Visit Platform</span>
+                    </a>
+                </div>
+                <div class="teaching-card">
+                    <h3><i class="fas fa-microchip" aria-hidden="true"></i> <span data-i18n="seTitle">Sistemas Electrónicos PI 4</span></h3>
+                    <p class="subtitle" data-i18n="interactivePlatform">Interactive Educational Platform</p>
+                    <p data-i18n="seDesc">Interactive web with teaching materials, simulators, practical exercises and virtual laboratories for teaching microprocessor architecture, peripherals and systems.</p>
+                    <a href="sistemaselectronicos/" class="btn">
+                        <i class="fas fa-globe" aria-hidden="true"></i> <span data-i18n="visitPlatform">Visit Platform</span>
+                    </a>
+                </div>
+
+                <div class="teaching-card">
+                    <h3><i class="fas fa-gamepad" aria-hidden="true"></i> <span data-i18n="gameTitle">Juego de Microprocesadores</span></h3>
+                    <p class="subtitle" data-i18n="gamificationPlatform">Interactive Game</p>
+                    <p data-i18n="gameDesc">Educational game for learning microprocessor concepts through gameplay. Explore the ICAI campus, complete challenges, and master embedded systems in an engaging way.</p>
+                    <a href="game_micros/" class="btn">
+                        <i class="fas fa-play" aria-hidden="true"></i> <span data-i18n="playGame">Play Game</span>
+                    </a>
+                </div>
+
+                <div class="teaching-card">
+                    <h3><i class="fab fa-bluetooth-b" aria-hidden="true"></i> <span data-i18n="bleTitle">Bluetooth and IoT</span></h3>
+                    <p class="subtitle" data-i18n="resourcesSubtitle">Educational Resources</p>
+                    <p data-i18n="bleDesc">Materials, examples and projects for teaching Bluetooth communications, embedded systems and IoT in the classroom.</p>
+                    <a href="https://github.com/fr4nc15co/BLE-HM10" class="btn" target="_blank">
+                        <i class="fab fa-github" aria-hidden="true"></i> <span data-i18n="seeGithub">See on GitHub</span>
+                    </a>
+                </div>
+                </div>
+
                 <h2 data-i18n="whereHeading">Where to find me</h2>
 
-
-                <p data-i18n="whereText">I do not have fixed office hours, so the best option is to send me an e-mail/Teams message to arrange an appointment (in person or online).</p>
+                <p data-i18n="whereText">I do not have fixed office hours, so the best option is to send me an <a href="mailto:francisco.martin@iit.comillas.edu">e-mail</a> or a Teams message to arrange an appointment (in person or online).</p>
 
                 <div class="map-wrapper">
                 <button type="button" class="map-consent" id="map-load"
                     data-map-src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d6269.458540340053!2d-3.716417552889334!3d40.424359519247425!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd422868d4768a13%3A0x6bb401f7b653deaa!2sUniversidad%20Pontificia%20de%20Comillas%20de%20Madrid!5e1!3m2!1ses!2ses!4v1781430306323!5m2!1ses!2ses">
-                    <i class="fas fa-map-marker-alt"></i>
+                    <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
                     <span data-i18n="mapLoad">Ver mapa</span>
                     <small data-i18n="mapNote">Al cargarlo se conecta con Google Maps</small>
                 </button>
-                </div>
-
-
-
-                <h2 data-i18n="teachingHeading">Teaching - ICAI</h2>
-                <div class="teaching-grid">
-                <div class="teaching-card">
-                    <h3><i class="fas fa-microchip"></i> <span data-i18n="microTitle">Microprocesadores PIC32MX</span></h3>
-                    <p class="subtitle" data-i18n="interactivePlatform">Interactive Educational Platform</p>
-                    <p data-i18n="microDesc">Interactive web with teaching materials, simulators, practical exercises and virtual laboratories for teaching microprocessor architecture, peripherals and systems.</p>
-                    <a href="microprocesadores/" class="btn">
-                        <i class="fas fa-globe"></i> <span data-i18n="visitPlatform">Visit Platform</span>
-                    </a>
-                </div>
-                <div class="teaching-card">
-                    <h3><i class="fas fa-microchip"></i> <span data-i18n="seTitle">Sistemas Electrónicos PI 4</span></h3>
-                    <p class="subtitle" data-i18n="interactivePlatform">Interactive Educational Platform</p>
-                    <p data-i18n="seDesc">Interactive web with teaching materials, simulators, practical exercises and virtual laboratories for teaching microprocessor architecture, peripherals and systems.</p>
-                    <a href="sistemaselectronicos/" class="btn">
-                        <i class="fas fa-globe"></i> <span data-i18n="visitPlatform">Visit Platform</span>
-                    </a>
-                </div>
-
-                <div class="teaching-card">
-                    <h3><i class="fas fa-gamepad"></i> <span data-i18n="gameTitle">Juego de Microprocesadores</span></h3>
-                    <p class="subtitle" data-i18n="gamificationPlatform">Interactive Game</p>
-                    <p data-i18n="gameDesc">Educational game for learning microprocessor concepts through gameplay. Explore the ICAI campus, complete challenges, and master embedded systems in an engaging way.</p>
-                    <a href="game_micros/" class="btn">
-                        <i class="fas fa-play"></i> <span data-i18n="playGame">Play Game</span>
-                    </a>
-                </div>
-
-                <div class="teaching-card">
-                    <h3><i class="fab fa-bluetooth-b"></i> <span data-i18n="bleTitle">Bluetooth and IoT</span></h3>
-                    <p class="subtitle" data-i18n="resourcesSubtitle">Educational Resources</p>
-                    <p data-i18n="bleDesc">Materials, examples and projects for teaching Bluetooth communications, embedded systems and IoT in the classroom.</p>
-                    <a href="https://github.com/fr4nc15co/BLE-HM10" class="btn" target="_blank">
-                        <i class="fab fa-github"></i> <span data-i18n="seeGithub">See on GitHub</span>
-                    </a>
-                </div>
                 </div>
 
                 <h2 data-i18n="thesisHeading">Thesis Supervision <span class="badge">20+</span></h2>
@@ -1571,82 +1793,82 @@
 
                 <div class="tfg-grid">
                     <div class="tfg-card">
-                        <i class="fa-solid fa-chart-bar"></i>
+                        <i class="fa-solid fa-chart-bar" aria-hidden="true"></i>
                         <h3 data-i18n="tfgUxTitle">UX Analytics Server</h3>
                         <p data-i18n="tfgUxDesc">Design and implementation of a server to study the user experience in applications and websites</p>
                         <a href="https://github.com/miguelsbeato/TFG" target="_blank">
-                            <i class="fab fa-github"></i> GitHub
+                            <i class="fab fa-github" aria-hidden="true"></i> GitHub
                         </a>
                     </div>
                      <div class="tfg-card">
-                        <i class="fas fa-car"></i>
+                        <i class="fas fa-car" aria-hidden="true"></i>
                         <h3 data-i18n="tfgEvTitle">Leveraging Generative AI for Intelligent EV Charging Software</h3>
                         <p data-i18n="tfgEvDesc">Explores the use of RL and generative AI as an alternative to classical optimization in energy demand management</p>
                         <a href="https://github.com/AlvaroGonzalez05/tfg" target="_blank">
-                            <i class="fab fa-github"></i> GitHub
+                            <i class="fab fa-github" aria-hidden="true"></i> GitHub
                         </a>
                     </div>
 
                     <div class="tfg-card">
-                        <i class="fas fa-gamepad"></i>
+                        <i class="fas fa-gamepad" aria-hidden="true"></i>
                         <h3 data-i18n="tfgGameTitle">Gamification of Microprocessors</h3>
                         <p data-i18n="tfgGameDesc">Interactive educational platform through games and simulators.</p>
                         <a href="https://github.com/aleedelarica/Gamificacion-de-Microprocesadores" target="_blank">
-                            <i class="fab fa-github"></i> GitHub
+                            <i class="fab fa-github" aria-hidden="true"></i> GitHub
                         </a>
                     </div>
 
                     <div class="tfg-card">
-                        <i class="fas fa-home"></i>
+                        <i class="fas fa-home" aria-hidden="true"></i>
                         <h3 data-i18n="tfgMirrorTitle">Smart Mirror</h3>
                         <p data-i18n="tfgMirrorDesc">IoT system with smart display and home automation controls.</p>
                         <a href="https://github.com/fr4nc15co/EspejoInteligente" target="_blank">
-                            <i class="fab fa-github"></i> GitHub
+                            <i class="fab fa-github" aria-hidden="true"></i> GitHub
                         </a>
                     </div>
 
                     <div class="tfg-card">
-                        <i class="fas fa-chart-bar"></i>
+                        <i class="fas fa-chart-bar" aria-hidden="true"></i>
                         <h3 data-i18n="tfgClassTitle">Classification Methods</h3>
                         <p data-i18n="tfgClassDesc">Comparative analysis of ML algorithms for classification.</p>
                         <a href="https://github.com/fr4nc15co/classification_methods" target="_blank">
-                            <i class="fab fa-github"></i> GitHub
+                            <i class="fab fa-github" aria-hidden="true"></i> GitHub
                         </a>
                     </div>
 
                     <div class="tfg-card">
-                        <i class="fas fa-sign-language"></i>
+                        <i class="fas fa-sign-language" aria-hidden="true"></i>
                         <h3 data-i18n="tfgVoiceSignTitle">Voice to Sign Language Robotic Hand</h3>
                         <p data-i18n="tfgVoiceSignDesc">Robotic hand that converts voice commands into sign language gestures using speech recognition.</p>
                         <a href="https://github.com/AlejandraBotin/voice-to-sign-robotic-hand" target="_blank">
-                            <i class="fab fa-github"></i> GitHub
+                            <i class="fab fa-github" aria-hidden="true"></i> GitHub
                         </a>
                     </div>
                 </div>
                 <h2 data-i18n="otherResourcesHeading">Other useful resources</h2>
                 <div class="teaching-grid">
                 <div class="teaching-card">
-                    <h3><i class="fas fa-file-pdf"></i> PDF to Markdown</h3>
+                    <h3><i class="fas fa-file-pdf" aria-hidden="true"></i> PDF to Markdown</h3>
                     <p class="subtitle" data-i18n="docToolSubtitle">Document Processing Tool</p>
                     <p data-i18n="docToolDesc">Tool for converting PDF documents to Markdown format using Docling, useful for document processing and analysis in educational and research contexts.</p>
                     <a href="https://github.com/fr4nc15co/pdftomd_Docling" class="btn" target="_blank">
-                        <i class="fab fa-github"></i> <span data-i18n="seeGithub">See on GitHub</span>
+                        <i class="fab fa-github" aria-hidden="true"></i> <span data-i18n="seeGithub">See on GitHub</span>
                     </a>
                 </div>
                 <div class="teaching-card">
-                    <h3><i class="fas fa-layer-group"></i> Web interactiva de estudio por temas</h3>
+                    <h3><i class="fas fa-layer-group" aria-hidden="true"></i> <span data-i18n="studyTemplateTitle">Web interactiva de estudio por temas</span></h3>
                     <p class="subtitle" data-i18n="studyTemplateSubtitle">Plantilla reutilizable</p>
-                    <p data-i18n="studyTemplateDesc">Esqueleto para construir una web de estudio por temas de cualquier asignatura (teoria + visualizadores + simuladores + ejercicios autocorregidos).</p>
+                    <p data-i18n="studyTemplateDesc">Esqueleto para construir una web de estudio por temas de cualquier asignatura (teoría + visualizadores + simuladores + ejercicios autocorregidos).</p>
                     <a href="https://github.com/fr4nc15co/plantilla-web-asignatura" class="btn" target="_blank">
-                        <i class="fab fa-github"></i> <span data-i18n="seeGithub">See on GitHub</span>
+                        <i class="fab fa-github" aria-hidden="true"></i> <span data-i18n="seeGithub">See on GitHub</span>
                     </a>
                 </div>
                 <div class="teaching-card">
-                    <h3><i class="fas fa-chart-line"></i> <span data-i18n="claudeUsageTitle">See Your Claude Usage</span></h3>
+                    <h3><i class="fas fa-chart-line" aria-hidden="true"></i> <span data-i18n="claudeUsageTitle">See Your Claude Usage</span></h3>
                     <p class="subtitle" data-i18n="claudeUsageSubtitle">Tool for API tracking</p>
                     <p data-i18n="claudeUsageDesc">Track and analyze your Claude API usage patterns, helping you understand and optimize your usage.</p>
                     <a href="https://github.com/fr4nc15co/seeYourClaudeUsage" class="btn" target="_blank">
-                        <i class="fab fa-github"></i> <span data-i18n="seeGithub">See on GitHub</span>
+                        <i class="fab fa-github" aria-hidden="true"></i> <span data-i18n="seeGithub">See on GitHub</span>
                     </a>
                 </div>
                 </div>
@@ -1680,35 +1902,35 @@
                     <div class="org-heading">Universidad Pontificia Comillas</div>
                     <div class="education-list">
                         <div class="education-item current">
-                            <div class="year">2025 - Present</div>
-                            <div class="degree">Associate Professor - Profesor Propio Adjunto</div>
+                            <div class="year">2025–<span data-i18n="present">Present</span></div>
+                            <div class="degree">Associate Professor – Profesor Propio Adjunto</div>
                             <div class="institution">Universidad Pontificia Comillas ICAI-ICADE, Madrid</div>
                         </div>
                         <div class="education-item">
-                            <div class="year">2015 - 2025</div>
-                            <div class="degree">Research Professor - Profesor Colaborador</div>
+                            <div class="year">2015–2025</div>
+                            <div class="degree">Research Professor – Profesor Colaborador</div>
                             <div class="institution">Universidad Pontificia Comillas ICAI, Madrid</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="org-group">
-                    <div class="org-heading">Instituto de Investigación Tecnológica (IIT)</div>
+                    <div class="org-heading" data-i18n="iitName">Instituto de Investigación Tecnológica (IIT)</div>
                     <div class="education-list">
                         <div class="education-item">
-                            <div class="year">2024 - 2025</div>
-                            <div class="degree">Research Associate Professor - Investigador Propio Adjunto</div>
-                            <div class="institution">Instituto de Investigación Tecnológica (IIT), Comillas</div>
+                            <div class="year">2024–2025</div>
+                            <div class="degree">Research Associate Professor – Investigador Propio Adjunto</div>
+                            <div class="institution" data-i18n="iitNameComillas">Instituto de Investigación Tecnológica (IIT), Comillas</div>
                         </div>
                         <div class="education-item">
-                            <div class="year">2017 - 2024</div>
-                            <div class="degree">Researcher - Investigador Colaborador Asistente</div>
-                            <div class="institution">Instituto de Investigación Tecnológica (IIT), Comillas</div>
+                            <div class="year">2017–2024</div>
+                            <div class="degree">Researcher – Investigador Colaborador Asistente</div>
+                            <div class="institution" data-i18n="iitNameComillas">Instituto de Investigación Tecnológica (IIT), Comillas</div>
                         </div>
                         <div class="education-item">
-                            <div class="year">2013 - 2017</div>
-                            <div class="degree">Research Assistant - Investigador en formación</div>
-                            <div class="institution">Instituto de Investigación Tecnológica (IIT), Comillas</div>
+                            <div class="year">2013–2017</div>
+                            <div class="degree">Research Assistant – Investigador en formación</div>
+                            <div class="institution" data-i18n="iitNameComillas">Instituto de Investigación Tecnológica (IIT), Comillas</div>
                         </div>
                     </div>
                 </div>
@@ -1717,17 +1939,17 @@
                     <div class="org-heading">Stemy Energy</div>
                     <div class="education-list">
                         <div class="education-item">
-                            <div class="year">2018 - 2024</div>
+                            <div class="year">2018–2024</div>
                             <div class="degree">Co-Founder & Chief Operating Officer</div>
                             <div class="institution">Stemy Energy, Madrid</div>
                         </div>
                         <div class="education-item">
-                            <div class="year">Jun 2018 - Jul 2024</div>
+                            <div class="year">Jun 2018 – Jul 2024</div>
                             <div class="degree">Chief Operating Officer & Advisor of energy resources modeling and electric market regulation</div>
                             <div class="institution">Stemy Energy, Madrid</div>
                         </div>
                         <div class="education-item">
-                            <div class="year">Jun 2020 - Jun 2023</div>
+                            <div class="year">Jun 2020 – Jun 2023</div>
                             <div class="degree">Head of Hardware Department</div>
                             <div class="institution">Stemy Energy, Madrid</div>
                             <div class="authors">Coordinator of the hardware department with 2-4 team members</div>
@@ -1740,12 +1962,7 @@
                     <div class="article-item">
                         <div class="year">2026</div>
                         <div class="title">Sexenio (2020-2025)</div>
-                        <div class="authors">ANECA, research performance evaluation. Field 6.2 - Engineering and Architecture. Communications, Computing and Electronics Engineering</div>
-                    </div>
-                    <div class="article-item">
-                        <div class="year">2020</div>
-                        <div class="title">Sexenio (2014-2019)</div>
-                        <div class="authors">ANECA, research performance evaluation. Field 6.2 - Engineering and Architecture. Communications, Computing and Electronics Engineering</div>
+                        <div class="authors">ANECA, research performance evaluation. Field 6.2 – Engineering and Architecture. Communications, Computing and Electronics Engineering</div>
                     </div>
                     <div class="article-item">
                         <div class="year">2022</div>
@@ -1758,6 +1975,11 @@
                         <div class="authors">ANECA accreditation. Profesor Contratado Doctor</div>
                     </div>
                     <div class="article-item">
+                        <div class="year">2020</div>
+                        <div class="title">Sexenio (2014-2019)</div>
+                        <div class="authors">ANECA, research performance evaluation. Field 6.2 – Engineering and Architecture. Communications, Computing and Electronics Engineering</div>
+                    </div>
+                    <div class="article-item">
                         <div class="year">2018</div>
                         <div class="title">Research Assistant</div>
                         <div class="authors">ANECA accreditation. Profesor Ayudante Doctor</div>
@@ -1768,24 +1990,29 @@
                 <p class="section-note" data-i18n="hobbiesLead">A little life beyond models and papers.</p>
                 <div class="hobbies-grid">
                     <div class="hobby-card">
-                        <i class="fas fa-camera-retro"></i>
+                        <i class="fas fa-camera-retro" aria-hidden="true"></i>
                         <h3 data-i18n="hobbyPhotoTitle">Photography</h3>
                         <p data-i18n="hobbyPhotoDesc">Photo walks chasing light, city scenes and landscapes.</p>
                     </div>
                     <div class="hobby-card">
-                        <i class="fas fa-film"></i>
+                        <i class="fas fa-film" aria-hidden="true"></i>
                         <h3 data-i18n="hobbyCinemaTitle">Cinema</h3>
                         <p data-i18n="hobbyCinemaDesc">Classic and science-fiction movie sessions to switch off.</p>
                     </div>
                     <div class="hobby-card">
-                        <i class="fas fa-mountain"></i>
+                        <i class="fas fa-mountain" aria-hidden="true"></i>
                         <h3 data-i18n="hobbyHikingTitle">Mountain Hiking</h3>
                         <p data-i18n="hobbyHikingDesc">Trails and hikes to recharge at higher altitude.</p>
                     </div>
                     <div class="hobby-card">
-                        <i class="fas fa-spa"></i>
+                        <i class="fas fa-spa" aria-hidden="true"></i>
                         <h3 data-i18n="hobbyYogaTitle">Yoga</h3>
                         <p data-i18n="hobbyYogaDesc">Breathing and mobility sessions to improve focus and balance.</p>
+                    </div>
+                    <div class="hobby-card">
+                        <i class="fas fa-gamepad" aria-hidden="true"></i>
+                        <h3 data-i18n="hobbyGamesTitle">Video Games</h3>
+                        <p data-i18n="hobbyGamesDesc">Playing on the Nintendo Switch 2 to unwind.</p>
                     </div>
                 </div>
             </section>
@@ -1794,9 +2021,11 @@
 
     <footer>
         <div class="footer-content">
-            <span>&copy; <span id="footer-year">2026</span></span>
-            <a href="/privacidad.html">Política de privacidad y cookies</a>
-            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es" rel="license" target="_blank">Contenido bajo licencia CC BY-NC-SA 4.0</a>
+            <span>&copy; <span id="footer-year">2026</span> Francisco Martín Martínez</span>
+            <a href="mailto:francisco.martin@iit.comillas.edu">francisco.martin@iit.comillas.edu</a>
+            <span><span data-i18n="lastUpdated">Última actualización</span>: <time id="last-updated" datetime="2026-09-29">29 de septiembre de 2026</time></span>
+            <a href="/privacidad.html" data-i18n="privacyLink">Política de privacidad y cookies</a>
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es" rel="license" target="_blank" data-i18n="licenseLink">Contenido bajo licencia CC BY-NC-SA 4.0</a>
         </div>
     </footer>
 
@@ -1970,11 +2199,19 @@
         makeCardClickable('.teaching-card');
         makeCardClickable('.tfg-card');
         makeCardClickable('.article-item');
+        makeCardClickable('.selected-paper');
+
+        // visibleCount 0 collapses the whole list behind its button
+        const expandableLists = [
+            { listId: 'journal-articles-list', buttonId: 'journal-toggle-btn', key: 'journal', visibleCount: 5 },
+            { listId: 'conference-list', buttonId: 'conference-toggle-btn', key: 'conference', visibleCount: 2 },
+            { listId: 'research-projects-list', buttonId: 'projects-toggle-btn', key: 'projects', visibleCount: 2 }
+        ];
 
         const setupExpandableList = (config) => {
             const list = document.getElementById(config.listId);
             const toggleBtn = document.getElementById(config.buttonId);
-            const visibleCount = 5;
+            const visibleCount = config.visibleCount;
 
             if (!list || !toggleBtn) {
                 return;
@@ -1983,7 +2220,14 @@
             const items = Array.from(list.querySelectorAll('.article-item'));
             let expanded = false;
 
+            config.renderLabel = () => {
+                const dict = I18N[currentLang];
+                const text = expanded ? dict[config.key + 'Collapse'] : dict[config.key + 'Expand'];
+                toggleBtn.textContent = text.replace('{n}', items.length);
+            };
+
             const updateVisibility = (animate) => {
+                list.hidden = !expanded && visibleCount === 0;
                 items.forEach((item, index) => {
                     const shouldHide = !expanded && index >= visibleCount;
                     const reveal = animate && !shouldHide && item.classList.contains('is-hidden');
@@ -2004,7 +2248,7 @@
                     }
                 });
 
-                toggleBtn.textContent = expanded ? config.collapseText : config.expandText;
+                config.renderLabel();
                 toggleBtn.setAttribute('aria-expanded', String(expanded));
             };
 
@@ -2033,23 +2277,21 @@
                 phdInProgress: 'In progress',
                 phdStarting: 'Starting',
                 statThesis: '<strong>20+ TFGs supervised</strong>',
-                email: 'Email',
                 tabResearch: 'Research',
                 tabTeaching: 'Teaching',
                 tabCv: 'CV',
                 tabsLabel: 'Sections',
                 langLabel: 'Language',
                 skipLink: 'Skip to content',
-                researchHeading: 'Research',
-                cardRenewTitle: '<i class="fas fa-leaf"></i> Renewable Energy Systems',
+                selectedHeading: 'Selected papers',
+                selectedLead: 'Demand flexibility, end to end: how to assess it, how aggregators deploy it, and what it is worth in system planning.',
+                researchHeading: 'Research areas',
+                cardRenewTitle: '<i class="fas fa-leaf" aria-hidden="true"></i> Renewable Energy Systems',
                 cardRenewDesc: 'Transmission expansion planning and integration of distributed energy resources (DERs) in modern electrical systems.',
-                cardFlexTitle: '<i class="fas fa-plug"></i> Demand Flexibility',
+                cardFlexTitle: '<i class="fas fa-plug" aria-hidden="true"></i> Demand Flexibility',
                 cardFlexDesc: 'Aggregator models, demand response and microgrid management for energy optimization.',
-                cardOptTitle: '<i class="fas fa-brain"></i> Optimization',
-                cardOptDesc: 'Optimization techniques for energy systems.',
-                toolsHeading: 'Tools',
-                energySystemsTool: 'Energy Systems Tool',
-                sploderDesc: 'Expansion, operation and reliability models for electric systems',
+                cardOptTitle: '<i class="fas fa-bolt" aria-hidden="true"></i> Planning &amp; Optimization Models',
+                cardOptDesc: 'Expansion, operation and reliability models for electric systems, including <a href="https://www.iit.comillas.edu/ofertas_tecnologicas/3" target="_blank" rel="noopener noreferrer">SPLODER</a>, an IIT energy systems tool.',
                 certHeading: 'Certifications & Accreditations',
                 journalHeading: 'Latest Journal Articles',
                 journalNote: 'Article titles are kept in their original publication language.',
@@ -2060,8 +2302,15 @@
                 phdHeading: 'Supervised PhD students',
                 phdNote: 'Thesis titles are kept in their original submitted language.',
                 whereHeading: 'Where to find me',
-                whereText: 'I do not have fixed office hours, so the best option is to send me an e-mail/Teams message to arrange an appointment (in person or online).',
-                teachingHeading: 'Teaching - ICAI',
+                whereText: 'I do not have fixed office hours, so the best option is to send me an <a href="mailto:francisco.martin@iit.comillas.edu">e-mail</a> or a Teams message to arrange an appointment (in person or online).',
+                collabText: 'Open to research collaboration on demand flexibility, renewable integration and grid planning, and to developing optimization tools tailored to partners&rsquo; needs.',
+                collabCta: 'Write to me',
+                moreProfiles: 'More profiles',
+                profilesLabel: 'Profiles',
+                collabHeading: 'Work with us',
+                collabClose: 'Tell me the problem you&rsquo;re working on and where you see the overlap. I usually reply within a week.',
+                teachingHeading: 'Teaching – ICAI',
+                present: 'Present',
                 microTitle: 'Microprocesadores PIC32MX',
                 interactivePlatform: 'Interactive Educational Platform',
                 microDesc: 'Interactive web with teaching materials, simulators, practical exercises and virtual laboratories for teaching microprocessor architecture, peripherals and systems.',
@@ -2095,6 +2344,7 @@
                 otherResourcesHeading: 'Other useful resources',
                 docToolSubtitle: 'Document Processing Tool',
                 docToolDesc: 'Tool for converting PDF documents to Markdown format using Docling, useful for document processing and analysis in educational and research contexts.',
+                studyTemplateTitle: 'Interactive topic-based study site',
                 studyTemplateSubtitle: 'Reusable Template',
                 studyTemplateDesc: 'Skeleton to build an interactive study-by-topic website for any course (theory + visualizers + simulators + self-graded exercises).',
                 claudeUsageTitle: 'See Your Claude Usage',
@@ -2106,6 +2356,11 @@
                 cvMaster: 'Master in Engineering Systems Modeling',
                 cvEngineer: 'Industrial Engineer (Electrical Specialization)',
                 expHeading: 'Professional Experience',
+                iitName: 'Institute for Research in Technology (IIT)',
+                iitNameComillas: 'Institute for Research in Technology (IIT), Comillas',
+                lastUpdated: 'Last updated',
+                privacyLink: 'Privacy and cookie policy (in Spanish)',
+                licenseLink: 'Content licensed under CC BY-NC-SA 4.0',
                 hobbiesHeading: 'Hobbies',
                 hobbiesLead: 'A little life beyond models and papers.',
                 hobbyPhotoTitle: 'Photography',
@@ -2116,9 +2371,13 @@
                 hobbyHikingDesc: 'Trails and hikes to recharge at higher altitude.',
                 hobbyYogaTitle: 'Yoga',
                 hobbyYogaDesc: 'Breathing and mobility sessions to improve focus and balance.',
-                journalExpand: 'Show all journal articles',
+                hobbyGamesTitle: 'Video Games',
+                hobbyGamesDesc: 'Playing on the Nintendo Switch 2 to unwind.',
+                journalExpand: 'Show all {n} journal articles',
                 journalCollapse: 'Show fewer journal articles',
-                projectsExpand: 'Show all research projects',
+                conferenceExpand: 'Show all {n} conference papers and chapters',
+                conferenceCollapse: 'Show fewer conference papers and chapters',
+                projectsExpand: 'Show all {n} research projects',
                 projectsCollapse: 'Show fewer research projects'
             },
             es: {
@@ -2133,23 +2392,21 @@
                 phdInProgress: 'En curso',
                 phdStarting: 'Comenzando',
                 statThesis: '<strong>20+ TFG dirigidos</strong>',
-                email: 'Correo',
                 tabResearch: 'Investigación',
                 tabTeaching: 'Docencia',
                 tabCv: 'CV',
                 tabsLabel: 'Secciones',
                 langLabel: 'Idioma',
                 skipLink: 'Saltar al contenido',
-                researchHeading: 'Investigación',
-                cardRenewTitle: '<i class="fas fa-leaf"></i> Sistemas energéticos renovables',
+                selectedHeading: 'Artículos destacados',
+                selectedLead: 'La flexibilidad de la demanda, de principio a fin: cómo evaluarla, cómo la despliegan los agregadores y cuánto vale en la planificación del sistema.',
+                researchHeading: 'Líneas de investigación',
+                cardRenewTitle: '<i class="fas fa-leaf" aria-hidden="true"></i> Sistemas energéticos renovables',
                 cardRenewDesc: 'Planificación de expansión de red e integración de recursos energéticos distribuidos (DERs) en sistemas eléctricos modernos.',
-                cardFlexTitle: '<i class="fas fa-plug"></i> Flexibilidad de la demanda',
+                cardFlexTitle: '<i class="fas fa-plug" aria-hidden="true"></i> Flexibilidad de la demanda',
                 cardFlexDesc: 'Modelos de agregación, respuesta de demanda y gestión de microredes para optimización energética.',
-                cardOptTitle: '<i class="fas fa-brain"></i> Optimización',
-                cardOptDesc: 'Técnicas de optimización aplicadas a sistemas energéticos.',
-                toolsHeading: 'Herramientas',
-                energySystemsTool: 'Herramienta de sistemas energéticos',
-                sploderDesc: 'Modelos de expansión, operación y fiabilidad para sistemas eléctricos',
+                cardOptTitle: '<i class="fas fa-bolt" aria-hidden="true"></i> Modelos de planificación y optimización',
+                cardOptDesc: 'Modelos de expansión, operación y fiabilidad para sistemas eléctricos, entre ellos <a href="https://www.iit.comillas.edu/ofertas_tecnologicas/3" target="_blank" rel="noopener noreferrer">SPLODER</a>, herramienta de sistemas energéticos del IIT.',
                 certHeading: 'Certificaciones y acreditaciones',
                 journalHeading: 'Últimos artículos en revista',
                 journalNote: 'Los títulos de artículos se mantienen en su idioma original de publicación.',
@@ -2160,8 +2417,15 @@
                 phdHeading: 'Doctorandos dirigidos',
                 phdNote: 'Los títulos de tesis se mantienen en su idioma original de presentación.',
                 whereHeading: 'Dónde encontrarme',
-                whereText: 'No tengo horas fijas de tutoría, así que lo mejor es enviarme un correo o mensaje por Teams para concertar una cita (presencial u online).',
-                teachingHeading: 'Docencia - ICAI',
+                whereText: 'No tengo horas fijas de tutoría, así que lo mejor es enviarme un <a href="mailto:francisco.martin@iit.comillas.edu">correo</a> o un mensaje por Teams para concertar una cita (presencial u online).',
+                collabText: 'Abierto a colaborar en investigación sobre flexibilidad de la demanda, integración renovable y planificación de redes, y a desarrollar herramientas de optimización adaptadas a sus necesidades.',
+                collabCta: 'Escríbeme',
+                moreProfiles: 'Más perfiles',
+                profilesLabel: 'Perfiles',
+                collabHeading: 'Colabora con nosotros',
+                collabClose: 'Cuéntame el problema en el que trabajas y dónde ves el punto en común. Suelo responder en menos de una semana.',
+                teachingHeading: 'Docencia – ICAI',
+                present: 'Actualidad',
                 microTitle: 'Microprocesadores PIC32MX',
                 interactivePlatform: 'Plataforma educativa interactiva',
                 microDesc: 'Web interactiva con materiales docentes, simuladores, ejercicios prácticos y laboratorios virtuales para arquitectura y periféricos de microprocesadores.',
@@ -2195,8 +2459,9 @@
                 otherResourcesHeading: 'Otros recursos útiles',
                 docToolSubtitle: 'Herramienta de procesado documental',
                 docToolDesc: 'Herramienta para convertir documentos PDF a Markdown con Docling, útil para procesado y análisis documental en contextos docentes e investigadores.',
+                studyTemplateTitle: 'Web interactiva de estudio por temas',
                 studyTemplateSubtitle: 'Plantilla reutilizable',
-                studyTemplateDesc: 'Esqueleto para construir una web interactiva de estudio por temas de cualquier asignatura (teoria + visualizadores + simuladores + ejercicios autocorregidos).',
+                studyTemplateDesc: 'Esqueleto para construir una web interactiva de estudio por temas de cualquier asignatura (teoría + visualizadores + simuladores + ejercicios autocorregidos).',
                 claudeUsageTitle: 'See Your Claude Usage',
                 claudeUsageSubtitle: 'Herramienta de seguimiento de API',
                 claudeUsageDesc: 'Monitorea y analiza tus patrones de uso de la API de Claude, ayudándote a entender y optimizar tu uso.',
@@ -2206,6 +2471,11 @@
                 cvMaster: 'Máster en Modelado de Sistemas de Ingeniería',
                 cvEngineer: 'Ingeniero Industrial (Especialidad Eléctrica)',
                 expHeading: 'Experiencia profesional',
+                iitName: 'Instituto de Investigación Tecnológica (IIT)',
+                iitNameComillas: 'Instituto de Investigación Tecnológica (IIT), Comillas',
+                lastUpdated: 'Última actualización',
+                privacyLink: 'Política de privacidad y cookies',
+                licenseLink: 'Contenido bajo licencia CC BY-NC-SA 4.0',
                 hobbiesHeading: 'Aficiones',
                 hobbiesLead: 'Un poco de vida más allá de los modelos y los artículos.',
                 hobbyPhotoTitle: 'Fotografía',
@@ -2216,10 +2486,14 @@
                 hobbyHikingDesc: 'Rutas de montaña para recargar energía al aire libre.',
                 hobbyYogaTitle: 'Yoga',
                 hobbyYogaDesc: 'Sesiones de respiración y movilidad para mejorar foco y equilibrio.',
-                journalExpand: 'Mostrar todos los artículos',
+                hobbyGamesTitle: 'Videojuegos',
+                hobbyGamesDesc: 'Partidas en la Nintendo Switch 2 para desconectar.',
+                journalExpand: 'Mostrar los {n} artículos',
                 journalCollapse: 'Mostrar menos artículos',
-                projectsExpand: 'Mostrar todos los proyectos',
-                projectsCollapse: 'Mostrar menos proyectos'
+                conferenceExpand: 'Mostrar las {n} ponencias y capítulos',
+                conferenceCollapse: 'Mostrar menos ponencias y capítulos',
+                projectsExpand: 'Mostrar los {n} proyectos de investigación',
+                projectsCollapse: 'Mostrar menos proyectos de investigación'
             }
         };
 
@@ -2227,19 +2501,17 @@
         let currentLang = localStorage.getItem(LANG_KEY) || 'es';
         if (!I18N[currentLang]) currentLang = 'es';
 
-        const journalExpandConfig = {
-            listId: 'journal-articles-list',
-            buttonId: 'journal-toggle-btn',
-            expandText: 'Show all journal articles',
-            collapseText: 'Show fewer journal articles'
-        };
+        const lastUpdated = document.getElementById('last-updated');
+        const served = new Date(document.lastModified);
+        // Without a Last-Modified header browsers report "now"; keep the hand-set date then
+        if (lastUpdated && !isNaN(served) && Date.now() - served > 60000) {
+            const pad = (v) => String(v).padStart(2, '0');
+            lastUpdated.dateTime = `${served.getFullYear()}-${pad(served.getMonth() + 1)}-${pad(served.getDate())}`;
+        }
 
-        const projectsExpandConfig = {
-            listId: 'research-projects-list',
-            buttonId: 'projects-toggle-btn',
-            expandText: 'Show all research projects',
-            collapseText: 'Show fewer research projects'
-        };
+        // Phones start with the secondary profiles folded away
+        const moreProfiles = document.querySelector('.links-more');
+        if (moreProfiles && window.matchMedia('(max-width: 640px)').matches) moreProfiles.open = false;
 
         const applyLanguage = (lang) => {
             currentLang = lang;
@@ -2264,22 +2536,12 @@
                 btn.setAttribute('aria-pressed', String(on));
             });
 
-            journalExpandConfig.expandText = dict.journalExpand;
-            journalExpandConfig.collapseText = dict.journalCollapse;
+            expandableLists.forEach((config) => config.renderLabel && config.renderLabel());
 
-            projectsExpandConfig.expandText = dict.projectsExpand;
-            projectsExpandConfig.collapseText = dict.projectsCollapse;
-
-            const journalBtn = document.getElementById(journalExpandConfig.buttonId);
-            if (journalBtn) {
-                const expanded = journalBtn.getAttribute('aria-expanded') === 'true';
-                journalBtn.textContent = expanded ? journalExpandConfig.collapseText : journalExpandConfig.expandText;
-            }
-
-            const projectsBtn = document.getElementById(projectsExpandConfig.buttonId);
-            if (projectsBtn) {
-                const expanded = projectsBtn.getAttribute('aria-expanded') === 'true';
-                projectsBtn.textContent = expanded ? projectsExpandConfig.collapseText : projectsExpandConfig.expandText;
+            if (lastUpdated) {
+                const [y, m, d] = lastUpdated.dateTime.split('-').map(Number);
+                lastUpdated.textContent = new Intl.DateTimeFormat(dict.pageLang, { day: 'numeric', month: 'long', year: 'numeric' })
+                    .format(new Date(y, m - 1, d));
             }
         };
 
@@ -2287,8 +2549,7 @@
             btn.addEventListener('click', () => applyLanguage(btn.getAttribute('data-lang')));
         });
 
-        setupExpandableList(journalExpandConfig);
-        setupExpandableList(projectsExpandConfig);
+        expandableLists.forEach(setupExpandableList);
 
         applyLanguage(currentLang);
     </script>
