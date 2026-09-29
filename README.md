@@ -1,5 +1,16 @@
 # fr4nc15co.github.io
 
+## Idiomas
+
+`index.html` es la fuente (español) y contiene el diccionario `I18N` con los textos en ambos idiomas.
+Tras editarla, regenera la versión inglesa (`en/index.html`) y el `sitemap.xml`:
+
+```bash
+python3 scripts/build_i18n.py
+```
+
+Título y descripción de cada idioma se definen en `PAGES` dentro del script.
+
 ## Licencia
 
 © 2026 Francisco Martín. Este trabajo está bajo licencia
