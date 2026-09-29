@@ -277,7 +277,7 @@
             --surface: #FFFFFF;
             --ink: #14263A;        /* slate ink */
             --ink-2: #3E5060;
-            --muted: #66767F;
+            --muted: #5A6972;
             --rule: #CDD4D5;
             --link: #2451C7;       /* grid blue */
             --solar: #E0A00E;      /* solar amber: "live" things only */
@@ -333,6 +333,26 @@
             border-radius: 2px;
         }
 
+        .skip-link {
+            position: absolute;
+            left: 16px;
+            top: 8px;
+            z-index: 20;
+            padding: 8px 14px;
+            background: var(--surface);
+            color: var(--ink);
+            font-family: var(--font-display);
+            font-weight: 600;
+            border-radius: 3px;
+            transform: translateY(-200%);
+        }
+
+        .skip-link:focus { transform: none; }
+
+        /* Keep jump targets clear of the sticky tab bar */
+        main, section h2, section h3 { scroll-margin-top: 72px; }
+        main:focus { outline: none; }
+
         .container {
             max-width: 1040px;
             margin: 0 auto;
@@ -362,6 +382,7 @@
             padding: 4px 10px;
             border-radius: 3px;
             cursor: pointer;
+            position: relative;
         }
 
         .lang-btn:hover { color: var(--ink); }
@@ -489,19 +510,8 @@
         .curve-legend .k-flex i { border-top: 3px solid var(--solar); }
         .curve-legend .k-solar i { height: 10px; border: 0; background: linear-gradient(var(--solar), transparent); opacity: 0.7; }
 
-        @media (prefers-reduced-motion: no-preference) {
-            .load-curve .flex {
-                stroke-dasharray: 1100;
-                stroke-dashoffset: 1100;
-                animation: draw 2.2s cubic-bezier(.45, 0, .2, 1) 0.4s forwards;
-            }
-            .load-curve .solar {
-                opacity: 0;
-                animation: rise 1.4s ease-out 0.2s forwards;
-            }
-            @keyframes draw { to { stroke-dashoffset: 0; } }
-            @keyframes rise { to { opacity: 1; } }
-        }
+        /* Curve sequence is driven by the inline script after the figure;
+           without JS or with reduced motion the final state shows as-is. */
 
         .header-links {
             display: flex;
@@ -565,6 +575,34 @@
         .nav-tab.active {
             color: var(--ink);
             border-bottom-color: var(--solar);
+        }
+
+        /* Sliding marker replaces the per-tab border once JS measures the tabs */
+        .nav-tabs.has-indicator .nav-tab { border-bottom-color: transparent; }
+
+        .nav-indicator {
+            position: absolute;
+            left: 0;
+            bottom: -1px;
+            width: 1px;
+            height: 3px;
+            background: var(--solar);
+            transform-origin: 0 50%;
+            pointer-events: none;
+        }
+
+        .nav-indicator.is-ready {
+            transition: transform .38s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Hover feedback eases instead of snapping */
+        a { transition: color .15s ease-out, text-decoration-color .15s ease-out; }
+        .nav-tab, .lang-btn, .header-links i,
+        .article-item .title, .teaching-card h3 { transition: color .15s ease-out; }
+        .map-wrapper iframe { transition: opacity .4s ease-out; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .nav-indicator.is-ready { transition-duration: 0s; }
         }
 
         /* ---------- Sections ---------- */
@@ -691,6 +729,20 @@
             font-family: var(--font-display);
             font-size: var(--step--1);
             word-break: break-all;
+            display: inline-block;
+            position: relative;
+        }
+
+        /* 44px tap height without growing the visible control */
+        .lang-btn::before,
+        .article-item .doi-link a::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: max(100%, 44px);
+            transform: translateY(-50%);
         }
 
         .article-item.is-hidden { display: none; }
@@ -830,7 +882,7 @@
         .tfg-card:hover { border-color: var(--ink-2); }
         .tfg-card > i { color: var(--muted); font-size: 1.1rem; }
 
-        .tfg-card h4 {
+        .tfg-card h3 {
             font-family: var(--font-display);
             font-size: 1.0625rem;
             font-weight: 600;
@@ -908,7 +960,7 @@
 
         .hobby-card i { color: var(--muted); font-size: 1.2rem; margin-bottom: 8px; }
 
-        .hobby-card h4 {
+        .hobby-card h3 {
             font-family: var(--font-display);
             font-size: 1.125rem;
             font-weight: 600;
@@ -996,11 +1048,12 @@
   </script>
 </head>
 <body>
+    <a class="skip-link" href="#main" data-i18n="skipLink">Saltar al contenido</a>
     <header>
         <div class="container">
-            <div class="lang-switcher" aria-label="Language selector">
-                <button class="lang-btn" type="button" data-lang="es">🇪🇸 ES</button>
-                <button class="lang-btn" type="button" data-lang="en">🇬🇧 EN</button>
+            <div class="lang-switcher" role="group" aria-label="Idioma" data-i18n-label="langLabel">
+                <button class="lang-btn" type="button" data-lang="es" lang="es" aria-pressed="false"><span aria-hidden="true">🇪🇸</span> ES</button>
+                <button class="lang-btn" type="button" data-lang="en" lang="en" aria-pressed="false"><span aria-hidden="true">🇬🇧</span> EN</button>
             </div>
             <div class="header-content">
                 <div class="profile-photo">
@@ -1044,6 +1097,79 @@
                     <span class="k-flex"><i></i><span data-i18n="curveFlex">Demand shifted with flexibility</span></span>
                 </figcaption>
             </figure>
+            <script>
+                // Load-curve sequence: the day sweeps 0 h to 24 h revealing demand and solar,
+                // then the flexible curve peels off the demand line into its shifted shape.
+                (function () {
+                    if (!window.matchMedia || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+                    var svg = document.querySelector('.load-curve svg');
+                    var demand = svg && svg.querySelector('.demand');
+                    var flex = svg && svg.querySelector('.flex');
+                    if (!demand || !flex) return;
+
+                    var NUM = /-?\d+(?:\.\d+)?/g;
+                    var from = demand.getAttribute('d').match(NUM).map(Number);
+                    var to = flex.getAttribute('d').match(NUM).map(Number);
+                    var parts = flex.getAttribute('d').split(NUM);
+                    if (from.length !== to.length) return;
+
+                    var ns = 'http://www.w3.org/2000/svg';
+                    var clip = document.createElementNS(ns, 'clipPath');
+                    clip.id = 'day-sweep';
+                    var rect = document.createElementNS(ns, 'rect');
+                    rect.setAttribute('x', '-10');
+                    rect.setAttribute('y', '-40');
+                    rect.setAttribute('height', '240');
+                    rect.setAttribute('width', '0');
+                    clip.appendChild(rect);
+                    svg.querySelector('defs').appendChild(clip);
+
+                    var solar = svg.querySelector('.solar');
+                    var group = demand.parentNode;
+                    solar.setAttribute('clip-path', 'url(#day-sweep)');
+                    group.setAttribute('clip-path', 'url(#day-sweep)');
+
+                    var build = function (t) {
+                        var out = parts[0];
+                        for (var i = 0; i < from.length; i++) {
+                            out += (from[i] + (to[i] - from[i]) * t).toFixed(1) + parts[i + 1];
+                        }
+                        return out;
+                    };
+                    var finalD = flex.getAttribute('d');
+                    flex.setAttribute('d', build(0));
+                    flex.style.opacity = '0';
+
+                    var inOut = function (t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+                    var outExpo = function (t) { return t === 1 ? 1 : 1 - Math.pow(2, -10 * t); };
+                    var SWEEP_AT = 150, SWEEP = 1150, MORPH_AT = 1150, MORPH = 1100;
+                    var start = null;
+
+                    var finish = function () {
+                        rect.setAttribute('width', '1020');
+                        solar.removeAttribute('clip-path');
+                        group.removeAttribute('clip-path');
+                        flex.setAttribute('d', finalD);
+                        flex.style.opacity = '';
+                    };
+
+                    var frame = function (now) {
+                        if (start === null) start = now;
+                        var e = now - start;
+                        var s = Math.min(Math.max((e - SWEEP_AT) / SWEEP, 0), 1);
+                        rect.setAttribute('width', String(inOut(s) * 1020));
+                        var m = Math.min(Math.max((e - MORPH_AT) / MORPH, 0), 1);
+                        if (m > 0) {
+                            flex.style.opacity = String(Math.min(m * 5, 1));
+                            flex.setAttribute('d', build(outExpo(m)));
+                        }
+                        if (m < 1) requestAnimationFrame(frame); else finish();
+                    };
+                    // A hidden tab never paints: jump to the end instead of animating unseen.
+                    if (document.visibilityState === 'hidden') { finish(); return; }
+                    requestAnimationFrame(frame);
+                })();
+            </script>
             <nav class="header-links" aria-label="Profiles">
                 <a href="mailto:francisco.martin@iit.comillas.edu" title="Email">
                     <i class="fas fa-envelope"></i> <span data-i18n="email">Email</span>
@@ -1082,22 +1208,22 @@
         </div>
     </header>
 
-    <nav class="nav-tabs">
-        <button class="nav-tab active" data-section="research">
+    <div class="nav-tabs" role="tablist" aria-label="Secciones" data-i18n-label="tabsLabel">
+        <button class="nav-tab active" type="button" role="tab" id="tab-research" aria-controls="research" aria-selected="true" data-section="research" data-hash="research">
             <i class="fas fa-flask"></i> <span data-i18n="tabResearch">Research</span>
         </button>
-        <button class="nav-tab" data-section="teaching">
+        <button class="nav-tab" type="button" role="tab" id="tab-teaching" aria-controls="teaching" aria-selected="false" tabindex="-1" data-section="teaching" data-hash="teaching">
             <i class="fas fa-chalkboard-user"></i> <span data-i18n="tabTeaching">Teaching</span>
         </button>
-        <button class="nav-tab" data-section="education">
+        <button class="nav-tab" type="button" role="tab" id="tab-education" aria-controls="education" aria-selected="false" tabindex="-1" data-section="education" data-hash="cv">
             <i class="fas fa-book"></i> <span data-i18n="tabCv">CV</span>
         </button>
-    </nav>
+    </div>
 
-    <main class="container">
+    <main class="container" id="main" tabindex="-1">
         <div class="sections">
             <!-- Research Section -->
-            <section id="research" class="active">
+            <section id="research" class="active" role="tabpanel" aria-labelledby="tab-research">
                 <h2 data-i18n="researchHeading">Research</h2>
                 <div class="research-grid">
                     <div class="research-card no-effect">
@@ -1153,108 +1279,108 @@
                 <div class="article-list" id="journal-articles-list">
                     <div class="article-item">
                         <div class="year">2025</div>
-                        <div class="title">Demand response cost analysis and its effect on system planning</div>
+                        <div class="title"><a href="https://doi.org/10.1016/j.ijepes.2025.110483" target="_blank" rel="noopener">Demand response cost analysis and its effect on system planning</a></div>
                         <div class="authors">Freire-Barceló, T., <b>Martín, F.</b>, Sánchez, A.</div>
                         <div class="authors venue">International Journal of Electrical Power & Energy Systems, Vol. 165, pp. 110483, April 2025 | JCR-JIF: 5.000 Q1 (2024) - SJR: 1.714 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.ijepes.2025.110483" target="_blank" rel="noopener">DOI: 10.1016/j.ijepes.2025.110483</a></div>
+                        <div class="doi-link"><a href="https://doi.org/10.1016/j.ijepes.2025.110483" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.ijepes.2025.110483</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2024</div>
-                        <div class="title">Indicators for suitability and feasibility assessment of flexible energy resources</div>
+                        <div class="title"><a href="https://doi.org/10.1016/j.apenergy.2024.123834" target="_blank" rel="noopener">Indicators for suitability and feasibility assessment of flexible energy resources</a></div>
                         <div class="authors">Calvo-Báscones, P., <b>Martín, F.</b></div>
                         <div class="authors venue">Applied Energy, Vol. 372, pp. 123834, October 2024 | JCR-JIF: 11.000 Q1 (2024) - SJR: 2.902 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.apenergy.2024.123834" target="_blank" rel="noopener">DOI: 10.1016/j.apenergy.2024.123834</a></div>
+                        <div class="doi-link"><a href="https://doi.org/10.1016/j.apenergy.2024.123834" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.apenergy.2024.123834</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2024</div>
-                        <div class="title">Design and assessment of energy infrastructure in new decarbonized urban districts: a Spanish case study</div>
+                        <div class="title"><a href="https://doi.org/10.1016/j.egyr.2024.04.037" target="_blank" rel="noopener">Design and assessment of energy infrastructure in new decarbonized urban districts: a Spanish case study</a></div>
                         <div class="authors">De Rosa, L., Martínez, M., Linares, J.I., Mateo, C., Gómez, T., Cossent, R., Postigo Marcos, F., Sánchez, A., <b>Martín, F.</b></div>
                         <div class="authors venue">Energy Reports, Vol. 11, pp. 4631-4641, June 2024 | JCR-JIF: 5.100 Q2 (2024) - SJR: 1.172 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.egyr.2024.04.037" target="_blank" rel="noopener">DOI: 10.1016/j.egyr.2024.04.037</a></div>
+                        <div class="doi-link"><a href="https://doi.org/10.1016/j.egyr.2024.04.037" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.egyr.2024.04.037</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2024</div>
-                        <div class="title">Technical deployment of aggregator business models</div>
+                        <div class="title"><a href="https://doi.org/10.1016/j.heliyon.2024.e30101" target="_blank" rel="noopener">Technical deployment of aggregator business models</a></div>
                         <div class="authors"><b>Martín, F.</b>, Boal, J., Sánchez, A., Becker Robles, C., Rodríguez-Vilches, R.</div>
                         <div class="authors venue">Heliyon, Vol. 10, No. 9, pp. e30101, May 2024 | JCR-JIF: 3.600 Q1 (2024) - SJR: 0.644 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.heliyon.2024.e30101" target="_blank" rel="noopener">DOI: 10.1016/j.heliyon.2024.e30101</a></div>
+                        <div class="doi-link"><a href="https://doi.org/10.1016/j.heliyon.2024.e30101" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.heliyon.2024.e30101</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2024</div>
-                        <div class="title">Methodology to assess prosumer participation in European electricity markets</div>
+                        <div class="title"><a href="https://doi.org/10.1016/j.rser.2023.114179" target="_blank" rel="noopener">Methodology to assess prosumer participation in European electricity markets</a></div>
                         <div class="authors">Rodríguez-Vilches, R., <b>Martín, F.</b>, Sánchez, A., Gutiérrez de la Cámara, J.R., Muñoz Delgado, S.</div>
                         <div class="authors venue">Renewable & Sustainable Energy Reviews, Vol. 191, pp. 114179, March 2024 | JCR-JIF: 16.300 Q1 (2024) - SJR: 3.901 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.rser.2023.114179" target="_blank" rel="noopener">DOI: 10.1016/j.rser.2023.114179</a></div>
+                        <div class="doi-link"><a href="https://doi.org/10.1016/j.rser.2023.114179" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.rser.2023.114179</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2024</div>
-                        <div class="title">System planning with demand assets in balancing markets</div>
+                        <div class="title"><a href="https://doi.org/10.1016/j.ijepes.2023.109747" target="_blank" rel="noopener">System planning with demand assets in balancing markets</a></div>
                         <div class="authors">Freire-Barceló, T., <b>Martín, F.</b>, Sánchez, A.</div>
                         <div class="authors venue">International Journal of Electrical Power & Energy Systems, Vol. 156, pp. 109747, February 2024 | JCR-JIF: 5.000 Q1 (2024) - SJR: 1.714 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.ijepes.2023.109747" target="_blank" rel="noopener">DOI: 10.1016/j.ijepes.2023.109747</a></div>
+                        <div class="doi-link"><a href="https://doi.org/10.1016/j.ijepes.2023.109747" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.ijepes.2023.109747</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2022</div>
-                        <div class="title">Exploring the roles of storage technologies in the Spanish electricity system with high share of renewable energy</div>
+                        <div class="title"><a href="https://doi.org/10.1016/j.egyr.2022.03.032" target="_blank" rel="noopener">Exploring the roles of storage technologies in the Spanish electricity system with high share of renewable energy</a></div>
                         <div class="authors">Huclin, S., Chaves, J.P., Ramos, A., Rivier, M., Freire-Barceló, T., <b>Martín, F.</b>, Gómez, T., Sánchez, A.</div>
                         <div class="authors venue">Energy Reports, Vol. 8, pp. 4041-4057, November 2022 | JCR-JIF: 5.100 Q2 (2024) - SJR: 1.172 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.egyr.2022.03.032" target="_blank" rel="noopener">DOI: 10.1016/j.egyr.2022.03.032</a></div>
+                        <div class="doi-link"><a href="https://doi.org/10.1016/j.egyr.2022.03.032" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.egyr.2022.03.032</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2022</div>
-                        <div class="title">Storage and demand response contribution to firm capacity: analysis of the Spanish electricity system</div>
+                        <div class="title"><a href="https://doi.org/10.1016/j.egyr.2022.08.014" target="_blank" rel="noopener">Storage and demand response contribution to firm capacity: analysis of the Spanish electricity system</a></div>
                         <div class="authors">Freire-Barceló, T., <b>Martín, F.</b>, Sánchez, A., Rivier, M., Gómez, T., Huclin, S., Chaves, J.P., Ramos, A.</div>
                         <div class="authors venue">Energy Reports, Vol. 8, pp. 10546-10560, November 2022 | JCR-JIF: 5.100 Q2 (2024) - SJR: 1.172 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.egyr.2022.08.014" target="_blank" rel="noopener">DOI: 10.1016/j.egyr.2022.08.014</a></div>
+                        <div class="doi-link"><a href="https://doi.org/10.1016/j.egyr.2022.08.014" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.egyr.2022.08.014</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2022</div>
-                        <div class="title">A literature review of explicit demand flexibility providing energy services</div>
+                        <div class="title"><a href="https://doi.org/10.1016/j.epsr.2022.107953" target="_blank" rel="noopener">A literature review of explicit demand flexibility providing energy services</a></div>
                         <div class="authors">Freire-Barceló, T., <b>Martín, F.</b>, Sánchez, A.</div>
                         <div class="authors venue">Electric Power Systems Research, Vol. 209, pp. 107953, August 2022 | JCR-JIF: 4.200 Q2 (2024) - SJR: 1.137 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.epsr.2022.107953" target="_blank" rel="noopener">DOI: 10.1016/j.epsr.2022.107953</a></div>
+                        <div class="doi-link"><a href="https://doi.org/10.1016/j.epsr.2022.107953" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.epsr.2022.107953</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2019</div>
-                        <div class="title">Rethinking the electricity market design: remuneration mechanisms to reach high RES shares</div>
+                        <div class="title"><a href="https://doi.org/10.1016/j.enpol.2020.111436" target="_blank" rel="noopener">Rethinking the electricity market design: remuneration mechanisms to reach high RES shares</a></div>
                         <div class="authors">Gerres, T., Chaves, J.P., <b>Martín, F.</b>, Rivier, M., Cossent, R., Sánchez, A., Gómez, T.</div>
                         <div class="authors venue">Energy Policy, Vol. 129, pp. 1320-1330, June 2019 | JCR-JIF: 9.200 Q1 (2024) - SJR: 2.692 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.enpol.2020.111436" target="_blank" rel="noopener">DOI: 10.1016/j.enpol.2020.111436</a></div>
+                        <div class="doi-link"><a href="https://doi.org/10.1016/j.enpol.2020.111436" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.enpol.2020.111436</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2017</div>
-                        <div class="title">Impact of EV penetration in the interconnected urban environment of a smart city</div>
+                        <div class="title"><a href="https://doi.org/10.1016/j.energy.2017.12.006" target="_blank" rel="noopener">Impact of EV penetration in the interconnected urban environment of a smart city</a></div>
                         <div class="authors">Calvillo, C., Sánchez, A., Villar, J., <b>Martín, F.</b></div>
                         <div class="authors venue">Energy, Vol. 141, pp. 2218-2233, December 2017 | JCR-JIF: 9.400 Q1 (2024) - SJR: 2.211 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.energy.2017.12.006" target="_blank" rel="noopener">DOI: 10.1016/j.energy.2017.12.006</a></div>
+                        <div class="doi-link"><a href="https://doi.org/10.1016/j.energy.2017.12.006" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.energy.2017.12.006</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2017</div>
-                        <div class="title">Centralized vs distributed generation. A model to assess the relevance of some thermal and electric factors</div>
+                        <div class="title"><a href="https://doi.org/10.1016/j.energy.2017.06.055" target="_blank" rel="noopener">Centralized vs distributed generation. A model to assess the relevance of some thermal and electric factors</a></div>
                         <div class="authors"><b>Martín, F.</b>, Sánchez, A., Rivier, M., Calvillo, C.</div>
                         <div class="authors venue">Energy, Vol. 134, pp. 850-863, September 2017 | JCR-JIF: 9.400 Q1 (2024) - SJR: 2.211 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.energy.2017.06.055" target="_blank" rel="noopener">DOI: 10.1016/j.energy.2017.06.055</a></div>
+                        <div class="doi-link"><a href="https://doi.org/10.1016/j.energy.2017.06.055" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.energy.2017.06.055</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2016</div>
-                        <div class="title">Optimal planning and operation of aggregated Distributed Energy Resources with market participation</div>
+                        <div class="title"><a href="https://doi.org/10.1016/j.apenergy.2016.08.117" target="_blank" rel="noopener">Optimal planning and operation of aggregated Distributed Energy Resources with market participation</a></div>
                         <div class="authors">Calvillo, C., Sánchez, A., Villar, J., <b>Martín, F.</b></div>
                         <div class="authors venue">Applied Energy, Vol. 182, pp. 340-357, November 2016 | JCR-JIF: 11.000 Q1 (2024) - SJR: 2.902 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.apenergy.2016.08.117" target="_blank" rel="noopener">DOI: 10.1016/j.apenergy.2016.08.117</a></div>
+                        <div class="doi-link"><a href="https://doi.org/10.1016/j.apenergy.2016.08.117" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.apenergy.2016.08.117</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2016</div>
-                        <div class="title">Prosumers' optimal DER investments and DR usage for thermal and electrical loads in isolated microgrids</div>
+                        <div class="title"><a href="https://doi.org/10.1016/j.epsr.2016.05.028" target="_blank" rel="noopener">Prosumers' optimal DER investments and DR usage for thermal and electrical loads in isolated microgrids</a></div>
                         <div class="authors"><b>Martín, F.</b>, Sánchez, A., Rivier, M.</div>
                         <div class="authors venue">Electric Power Systems Research, Vol. 140, pp. 473-484, November 2016 | JCR-JIF: 4.200 Q2 (2024) - SJR: 1.137 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.epsr.2016.05.028" target="_blank" rel="noopener">DOI: 10.1016/j.epsr.2016.05.028</a></div>
+                        <div class="doi-link"><a href="https://doi.org/10.1016/j.epsr.2016.05.028" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.epsr.2016.05.028</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2016</div>
-                        <div class="title">A literature review of microgrids: a functional layer based classification</div>
+                        <div class="title"><a href="https://doi.org/10.1016/j.rser.2016.05.025" target="_blank" rel="noopener">A literature review of microgrids: a functional layer based classification</a></div>
                         <div class="authors"><b>Martín, F.</b>, Sánchez, A., Rivier, M.</div>
                         <div class="authors venue">Renewable & Sustainable Energy Reviews, Vol. 62, pp. 1133-1153, September 2016 | JCR-JIF: 16.300 Q1 (2024) - SJR: 3.901 Q1 (2024)</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.rser.2016.05.025" target="_blank" rel="noopener">DOI: 10.1016/j.rser.2016.05.025</a></div>
+                        <div class="doi-link"><a href="https://doi.org/10.1016/j.rser.2016.05.025" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.rser.2016.05.025</a></div>
                     </div>
                 </div>
                 <div class="list-toggle-wrap">
@@ -1266,31 +1392,31 @@
                 <div class="article-list" id="conference-list">
                     <div class="article-item">
                         <div class="year">2023</div>
-                        <div class="title">Guiding the transition: design challenges in decarbonising electricity markets</div>
+                        <div class="title"><a href="https://doi.org/10.4337/9781800379022.00016" target="_blank" rel="noopener">Guiding the transition: design challenges in decarbonising electricity markets</a></div>
                         <div class="authors">Gerres, T., Chaves, J.P., <b>Martín, F.</b>, Rivier, M., Sánchez, A., Gómez, T.</div>
                         <div class="authors venue">Book chapter · Handbook on the Economics of Renewable Energy, Edward Elgar Publishing, 2023</div>
-                        <div class="doi-link"><a href="https://doi.org/10.4337/9781800379022.00016" target="_blank" rel="noopener">DOI: 10.4337/9781800379022.00016</a></div>
+                        <div class="doi-link"><a href="https://doi.org/10.4337/9781800379022.00016" target="_blank" rel="noopener" tabindex="-1">DOI: 10.4337/9781800379022.00016</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2019</div>
-                        <div class="title">The Role of Nuclear Power Plants in Electricity Systems with High RES Share</div>
+                        <div class="title"><a href="https://doi.org/10.1109/ptc.2019.8810545" target="_blank" rel="noopener">The Role of Nuclear Power Plants in Electricity Systems with High RES Share</a></div>
                         <div class="authors">Gerres, T., Chaves, J.P., <b>Martín, F.</b>, Rivier, M., Gómez, T.</div>
                         <div class="authors venue">Conference paper · 2019 IEEE Milan PowerTech, IEEE, 2019</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1109/ptc.2019.8810545" target="_blank" rel="noopener">DOI: 10.1109/PTC.2019.8810545</a></div>
+                        <div class="doi-link"><a href="https://doi.org/10.1109/ptc.2019.8810545" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1109/PTC.2019.8810545</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2015</div>
-                        <div class="title">Optimal planning and operation of distributed energy resources considering uncertainty on EVs</div>
+                        <div class="title"><a href="https://doi.org/10.1109/ISC2.2015.7366186" target="_blank" rel="noopener">Optimal planning and operation of distributed energy resources considering uncertainty on EVs</a></div>
                         <div class="authors"><b>Martín, F.</b>, Sánchez, A., Villar, J., Calvillo, C., Söder, L.</div>
                         <div class="authors venue">Conference paper · 2015 IEEE First International Smart Cities Conference (ISC2), IEEE, 2015</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1109/ISC2.2015.7366186" target="_blank" rel="noopener">DOI: 10.1109/ISC2.2015.7366186</a></div>
+                        <div class="doi-link"><a href="https://doi.org/10.1109/ISC2.2015.7366186" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1109/ISC2.2015.7366186</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2014</div>
-                        <div class="title">Use of Renewable Energy Systems in Smart Cities</div>
+                        <div class="title"><a href="https://doi.org/10.1007/978-3-319-03224-5_10" target="_blank" rel="noopener">Use of Renewable Energy Systems in Smart Cities</a></div>
                         <div class="authors">Sánchez, A., Calvillo, C., <b>Martín, F.</b>, Villar, J.</div>
                         <div class="authors venue">Book chapter · Green Energy and Technology, Springer, 2014</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1007/978-3-319-03224-5_10" target="_blank" rel="noopener">DOI: 10.1007/978-3-319-03224-5_10</a></div>
+                        <div class="doi-link"><a href="https://doi.org/10.1007/978-3-319-03224-5_10" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1007/978-3-319-03224-5_10</a></div>
                     </div>
                 </div>
 
@@ -1385,7 +1511,7 @@
             </section>
 
             <!-- Teaching Section -->
-            <section id="teaching">
+            <section id="teaching" role="tabpanel" aria-labelledby="tab-teaching" hidden>
                 <h2 data-i18n="whereHeading">Where to find me</h2>
 
 
@@ -1446,7 +1572,7 @@
                 <div class="tfg-grid">
                     <div class="tfg-card">
                         <i class="fa-solid fa-chart-bar"></i>
-                        <h4 data-i18n="tfgUxTitle">UX Analytics Server</h4>
+                        <h3 data-i18n="tfgUxTitle">UX Analytics Server</h3>
                         <p data-i18n="tfgUxDesc">Design and implementation of a server to study the user experience in applications and websites</p>
                         <a href="https://github.com/miguelsbeato/TFG" target="_blank">
                             <i class="fab fa-github"></i> GitHub
@@ -1454,7 +1580,7 @@
                     </div>
                      <div class="tfg-card">
                         <i class="fas fa-car"></i>
-                        <h4 data-i18n="tfgEvTitle">Leveraging Generative AI for Intelligent EV Charging Software</h4>
+                        <h3 data-i18n="tfgEvTitle">Leveraging Generative AI for Intelligent EV Charging Software</h3>
                         <p data-i18n="tfgEvDesc">Explores the use of RL and generative AI as an alternative to classical optimization in energy demand management</p>
                         <a href="https://github.com/AlvaroGonzalez05/tfg" target="_blank">
                             <i class="fab fa-github"></i> GitHub
@@ -1463,7 +1589,7 @@
 
                     <div class="tfg-card">
                         <i class="fas fa-gamepad"></i>
-                        <h4 data-i18n="tfgGameTitle">Gamification of Microprocessors</h4>
+                        <h3 data-i18n="tfgGameTitle">Gamification of Microprocessors</h3>
                         <p data-i18n="tfgGameDesc">Interactive educational platform through games and simulators.</p>
                         <a href="https://github.com/aleedelarica/Gamificacion-de-Microprocesadores" target="_blank">
                             <i class="fab fa-github"></i> GitHub
@@ -1472,7 +1598,7 @@
 
                     <div class="tfg-card">
                         <i class="fas fa-home"></i>
-                        <h4 data-i18n="tfgMirrorTitle">Smart Mirror</h4>
+                        <h3 data-i18n="tfgMirrorTitle">Smart Mirror</h3>
                         <p data-i18n="tfgMirrorDesc">IoT system with smart display and home automation controls.</p>
                         <a href="https://github.com/fr4nc15co/EspejoInteligente" target="_blank">
                             <i class="fab fa-github"></i> GitHub
@@ -1481,7 +1607,7 @@
 
                     <div class="tfg-card">
                         <i class="fas fa-chart-bar"></i>
-                        <h4 data-i18n="tfgClassTitle">Classification Methods</h4>
+                        <h3 data-i18n="tfgClassTitle">Classification Methods</h3>
                         <p data-i18n="tfgClassDesc">Comparative analysis of ML algorithms for classification.</p>
                         <a href="https://github.com/fr4nc15co/classification_methods" target="_blank">
                             <i class="fab fa-github"></i> GitHub
@@ -1490,7 +1616,7 @@
 
                     <div class="tfg-card">
                         <i class="fas fa-sign-language"></i>
-                        <h4 data-i18n="tfgVoiceSignTitle">Voice to Sign Language Robotic Hand</h4>
+                        <h3 data-i18n="tfgVoiceSignTitle">Voice to Sign Language Robotic Hand</h3>
                         <p data-i18n="tfgVoiceSignDesc">Robotic hand that converts voice commands into sign language gestures using speech recognition.</p>
                         <a href="https://github.com/AlejandraBotin/voice-to-sign-robotic-hand" target="_blank">
                             <i class="fab fa-github"></i> GitHub
@@ -1527,7 +1653,7 @@
             </section>
 
             <!-- Education Section -->
-            <section id="education">
+            <section id="education" role="tabpanel" aria-labelledby="tab-education" hidden>
                 <h2 data-i18n="cvHeading">Curriculum Vitae</h2>
                 <div class="education-list">
                     <div class="education-item">
@@ -1643,22 +1769,22 @@
                 <div class="hobbies-grid">
                     <div class="hobby-card">
                         <i class="fas fa-camera-retro"></i>
-                        <h4 data-i18n="hobbyPhotoTitle">Photography</h4>
+                        <h3 data-i18n="hobbyPhotoTitle">Photography</h3>
                         <p data-i18n="hobbyPhotoDesc">Photo walks chasing light, city scenes and landscapes.</p>
                     </div>
                     <div class="hobby-card">
                         <i class="fas fa-film"></i>
-                        <h4 data-i18n="hobbyCinemaTitle">Cinema</h4>
+                        <h3 data-i18n="hobbyCinemaTitle">Cinema</h3>
                         <p data-i18n="hobbyCinemaDesc">Classic and science-fiction movie sessions to switch off.</p>
                     </div>
                     <div class="hobby-card">
                         <i class="fas fa-mountain"></i>
-                        <h4 data-i18n="hobbyHikingTitle">Mountain Hiking</h4>
+                        <h3 data-i18n="hobbyHikingTitle">Mountain Hiking</h3>
                         <p data-i18n="hobbyHikingDesc">Trails and hikes to recharge at higher altitude.</p>
                     </div>
                     <div class="hobby-card">
                         <i class="fas fa-spa"></i>
-                        <h4 data-i18n="hobbyYogaTitle">Yoga</h4>
+                        <h3 data-i18n="hobbyYogaTitle">Yoga</h3>
                         <p data-i18n="hobbyYogaDesc">Breathing and mobility sessions to improve focus and balance.</p>
                     </div>
                 </div>
@@ -1717,22 +1843,129 @@
 
                 card.addEventListener('click', (event) => {
                     if (event.target.closest('a, button')) return;
+                    // Selecting text (e.g. to copy a citation) must not open the link
+                    if (String(window.getSelection()).trim()) return;
                     link.click();
                 });
             });
         };
 
-        navTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const sectionId = tab.dataset.section;
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const EASE_OUT = 'cubic-bezier(0.16, 1, 0.3, 1)';
 
-                navTabs.forEach(t => t.classList.remove('active'));
-                sections.forEach(s => s.classList.remove('active'));
+        // Amber marker slides to the active tab
+        const navBar = document.querySelector('.nav-tabs');
+        const indicator = document.createElement('span');
+        indicator.className = 'nav-indicator';
+        indicator.setAttribute('aria-hidden', 'true');
+        navBar.appendChild(indicator);
 
-                tab.classList.add('active');
-                document.getElementById(sectionId).classList.add('active');
+        const placeIndicator = () => {
+            const active = navBar.querySelector('.nav-tab.active');
+            if (!active) return;
+            indicator.style.transform = `translateX(${active.offsetLeft}px) scaleX(${active.offsetWidth})`;
+        };
+
+        placeIndicator();
+        navBar.classList.add('has-indicator');
+        requestAnimationFrame(() => indicator.classList.add('is-ready'));
+        if ('ResizeObserver' in window) {
+            const ro = new ResizeObserver(placeIndicator);
+            navTabs.forEach(t => ro.observe(t));
+        } else {
+            window.addEventListener('resize', placeIndicator);
+        }
+
+        const tabList = Array.from(navTabs);
+        const siteHeader = document.querySelector('header');
+
+        // Where the tab bar sits before it sticks
+        const barTop = () => siteHeader.getBoundingClientRect().bottom + window.scrollY;
+
+        // Only pull the bar up if the page is already scrolled past it
+        const snapToBar = () => {
+            const top = barTop();
+            if (window.scrollY > top) window.scrollTo(0, top);
+        };
+
+        const tabFromHash = () => {
+            const hash = decodeURIComponent(location.hash.slice(1));
+            return tabList.find(t => t.dataset.hash === hash);
+        };
+
+        const activateTab = (tab, { focus = false, push = false } = {}) => {
+            const target = document.getElementById(tab.dataset.section);
+            const wasActive = target.classList.contains('active');
+
+            tabList.forEach(t => {
+                const on = t === tab;
+                t.classList.toggle('active', on);
+                t.setAttribute('aria-selected', String(on));
+                t.tabIndex = on ? 0 : -1;
             });
+            sections.forEach(s => {
+                const on = s === target;
+                s.classList.toggle('active', on);
+                s.hidden = !on;
+            });
+            placeIndicator();
+            if (focus) tab.focus();
+
+            if (push && location.hash !== '#' + tab.dataset.hash) {
+                history.pushState(null, '', '#' + tab.dataset.hash);
+            }
+
+            if (wasActive) return false;
+
+            snapToBar();
+
+            if (target.animate) {
+                target.animate(
+                    reduceMotion.matches
+                        ? [{ opacity: 0 }, { opacity: 1 }]
+                        : [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
+                    { duration: reduceMotion.matches ? 160 : 280, easing: EASE_OUT }
+                );
+            }
+            return true;
+        };
+
+        tabList.forEach(tab => {
+            tab.addEventListener('click', () => activateTab(tab, { push: true }));
         });
+
+        navBar.addEventListener('keydown', (event) => {
+            const i = tabList.indexOf(document.activeElement);
+            if (i < 0) return;
+            const next = {
+                ArrowRight: tabList[(i + 1) % tabList.length],
+                ArrowLeft: tabList[(i - 1 + tabList.length) % tabList.length],
+                Home: tabList[0],
+                End: tabList[tabList.length - 1]
+            }[event.key];
+            if (!next) return;
+            event.preventDefault();
+            activateTab(next, { focus: true, push: true });
+        });
+
+        // Back/forward and hand-edited hashes; unknown hashes (e.g. #main) leave the tabs alone
+        const syncFromHash = () => {
+            const tab = tabFromHash() || (location.hash ? null : tabList[0]);
+            // History traversal restores the old scroll after this runs, so snap again next frame
+            if (tab && activateTab(tab)) requestAnimationFrame(snapToBar);
+        };
+        window.addEventListener('popstate', syncFromHash);
+        window.addEventListener('hashchange', syncFromHash);
+
+        // Deep link (#research, #teaching, #cv): open that tab and land on it
+        const initialTab = tabFromHash();
+        if (initialTab) {
+            activateTab(initialTab);
+            window.addEventListener('load', () => {
+                // A reload restores its own scroll position; only fresh visits jump to the tab bar
+                if (window.scrollY < 1) window.scrollTo(0, barTop());
+            });
+        }
 
         makeCardClickable('.teaching-card');
         makeCardClickable('.tfg-card');
@@ -1750,10 +1983,25 @@
             const items = Array.from(list.querySelectorAll('.article-item'));
             let expanded = false;
 
-            const updateVisibility = () => {
+            const updateVisibility = (animate) => {
                 items.forEach((item, index) => {
                     const shouldHide = !expanded && index >= visibleCount;
+                    const reveal = animate && !shouldHide && item.classList.contains('is-hidden');
                     item.classList.toggle('is-hidden', shouldHide);
+                    if (reveal && item.animate) {
+                        const order = index - visibleCount;
+                        item.animate(
+                            reduceMotion.matches
+                                ? [{ opacity: 0 }, { opacity: 1 }]
+                                : [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+                            {
+                                duration: reduceMotion.matches ? 160 : 320,
+                                delay: reduceMotion.matches ? 0 : Math.min(order * 35, 280),
+                                easing: EASE_OUT,
+                                fill: 'backwards'
+                            }
+                        );
+                    }
                 });
 
                 toggleBtn.textContent = expanded ? config.collapseText : config.expandText;
@@ -1768,7 +2016,7 @@
             updateVisibility();
             toggleBtn.addEventListener('click', () => {
                 expanded = !expanded;
-                updateVisibility();
+                updateVisibility(true);
             });
         };
 
@@ -1789,6 +2037,9 @@
                 tabResearch: 'Research',
                 tabTeaching: 'Teaching',
                 tabCv: 'CV',
+                tabsLabel: 'Sections',
+                langLabel: 'Language',
+                skipLink: 'Skip to content',
                 researchHeading: 'Research',
                 cardRenewTitle: '<i class="fas fa-leaf"></i> Renewable Energy Systems',
                 cardRenewDesc: 'Transmission expansion planning and integration of distributed energy resources (DERs) in modern electrical systems.',
@@ -1886,6 +2137,9 @@
                 tabResearch: 'Investigación',
                 tabTeaching: 'Docencia',
                 tabCv: 'CV',
+                tabsLabel: 'Secciones',
+                langLabel: 'Idioma',
+                skipLink: 'Saltar al contenido',
                 researchHeading: 'Investigación',
                 cardRenewTitle: '<i class="fas fa-leaf"></i> Sistemas energéticos renovables',
                 cardRenewDesc: 'Planificación de expansión de red e integración de recursos energéticos distribuidos (DERs) en sistemas eléctricos modernos.',
@@ -1999,8 +2253,15 @@
                 el.innerHTML = dict[key];
             });
 
+            document.querySelectorAll('[data-i18n-label]').forEach((el) => {
+                const key = el.getAttribute('data-i18n-label');
+                if (dict[key]) el.setAttribute('aria-label', dict[key]);
+            });
+
             document.querySelectorAll('.lang-btn').forEach((btn) => {
-                btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+                const on = btn.getAttribute('data-lang') === lang;
+                btn.classList.toggle('active', on);
+                btn.setAttribute('aria-pressed', String(on));
             });
 
             journalExpandConfig.expandText = dict.journalExpand;
@@ -2043,6 +2304,8 @@
                 f.setAttribute('loading', 'lazy');
                 f.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
                 f.setAttribute('title', 'Universidad Pontificia Comillas (ICAI)');
+                f.style.opacity = '0';
+                f.addEventListener('load', function () { f.style.opacity = '1'; });
                 btn.parentNode.replaceChild(f, btn);
             });
         })();
