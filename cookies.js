@@ -67,22 +67,22 @@
     if (document.getElementById('cc-styles')) return;
     var css =
       '#cc-banner{position:fixed;left:0;right:0;bottom:0;z-index:2147483647;' +
-      'background:#1a1f2e;color:#e0e0e0;border-top:1px solid #34495e;' +
-      'box-shadow:0 -4px 20px rgba(0,0,0,.35);' +
-      "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;" +
+      'background:var(--surface,#1a1f2e);color:var(--ink,#e0e0e0);border-top:1px solid var(--rule,#34495e);' +
+      'box-shadow:0 -4px 20px rgba(0,0,0,.18);' +
+      "font-family:var(--font-display,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif);" +
       'font-size:14px;line-height:1.5;animation:cc-up .25s ease-out}' +
       '@keyframes cc-up{from{transform:translateY(100%)}to{transform:translateY(0)}}' +
       '#cc-banner .cc-inner{max-width:1000px;margin:0 auto;padding:16px 20px;' +
       'display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;justify-content:space-between}' +
       '#cc-banner .cc-text{flex:1 1 320px;min-width:260px}' +
-      '#cc-banner a{color:#5dade2;text-decoration:underline}' +
+      '#cc-banner a{color:var(--link,#5dade2);text-decoration:underline}' +
       '#cc-banner .cc-actions{display:flex;gap:10px;flex-wrap:wrap}' +
       '#cc-banner button{cursor:pointer;border:0;border-radius:6px;padding:10px 18px;' +
       'font-size:14px;font-weight:600;font-family:inherit}' +
-      '#cc-reject{background:transparent;color:#e0e0e0;border:1px solid #5a6b80}' +
-      '#cc-reject:hover{background:#2a3142}' +
-      '#cc-accept{background:#5dade2;color:#0d1320}' +
-      '#cc-accept:hover{background:#7fc1e8}' +
+      '#cc-reject{background:transparent;color:var(--ink,#e0e0e0);border:1px solid var(--ink-2,#5a6b80)}' +
+      '#cc-reject:hover{background:var(--paper,#2a3142)}' +
+      '#cc-accept{background:var(--ink,#5dade2);color:var(--paper,#0d1320)}' +
+      '#cc-accept:hover{opacity:.88}' +
       '@media(max-width:560px){#cc-banner .cc-actions{width:100%}' +
       '#cc-banner button{flex:1}}';
     var s = document.createElement('style');
