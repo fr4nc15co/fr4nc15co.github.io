@@ -25,16 +25,16 @@ PAGES = {
         'file': ROOT / 'index.html',
         'locale': 'es_ES',
         'title': 'Francisco Martín Martínez · Investigador en energía · IIT Comillas',
-        'description': 'Profesor e investigador en el IIT de la Universidad Pontificia Comillas (ICAI): '
-                       'flexibilidad de la demanda, renovables y planificación de sistemas energéticos.',
+        'description': 'Profesor e investigador en el IIT Comillas (ICAI): respuesta y flexibilidad de la demanda '
+                       '(demand response), renovables y planificación energética.',
     },
     'en': {
         'path': '/en/',
         'file': ROOT / 'en' / 'index.html',
         'locale': 'en_GB',
         'title': 'Francisco Martín Martínez · Energy Systems Researcher · IIT Comillas',
-        'description': 'Associate Professor at the IIT, Universidad Pontificia Comillas (ICAI): '
-                       'demand flexibility, renewable integration and energy system planning.',
+        'description': 'Associate Professor at IIT Comillas (ICAI): demand response and demand flexibility, '
+                       'renewable integration and energy system planning.',
     },
 }
 DEFAULT_LANG = 'es'
