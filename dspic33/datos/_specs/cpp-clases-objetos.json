@@ -1,0 +1,531 @@
+{
+  "slug": "cpp-clases-objetos",
+  "titulo": "C++: programación orientada a objetos",
+  "temaNum": 18,
+  "lenguaje": "cpp",
+  "lead": "La herramienta central de la programación orientada a objetos en <strong>C++</strong> es la <strong>clase</strong>. En este tema aprenderás, con una clase <code>CComplex</code> de números complejos, a distinguir clase y objeto, encapsular sus datos, controlar su ciclo de vida con constructores y destructores, gestionar la memoria dinámica, usar referencias constantes y sobrecargar operadores sin alterar su significado intuitivo.",
+  "secciones": [
+    {
+      "titulo": "18.1 Conceptos iniciales",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Este tema introduce la <strong>programación orientada a objetos en C++</strong>: cómo definir tipos propios, controlar el ciclo de vida de sus objetos y construir interfaces seguras. Todos los ejemplos giran alrededor de una misma clase, <code>CComplex</code>, que representa números complejos. Antes de llegar a las clases hacen falta tres herramientas: el modificador <code>const</code>, la memoria dinámica y el reparto del código en archivos <code>.h</code> y <code>.cpp</code>.</p><h3>18.1.1 El modificador const</h3><p>El modificador <code>const</code> expresa que un dato <strong>no puede modificarse a través del identificador declarado</strong>. Además de documentar la intención del programa, permite que el compilador detecte cambios accidentales. Con punteros hay dos cosas que pueden ser constantes: el <em>dato apuntado</em> y la <em>dirección guardada en el puntero</em>.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Los tres punteros <code>const</code> del libro (10.2.1); las líneas marcadas como ERROR no llegan a ejecutarse porque el compilador las rechaza:</p>",
+          "codigo": "const int LON = 5;\nint valores[LON] = {};\nconst int* pLectura = valores;            // el dato apuntado es constante\nint* const pFijo = valores;               // el puntero es constante\nconst int* const pFijoLectura = valores;  // ambos son constantes\n\n// Operaciones permitidas y operaciones que producirían error\n++pLectura;            // correcto: el puntero puede avanzar\n*pLectura = 2;         // ERROR: no se puede modificar el dato mediante pLectura\npFijo[0] = 2;          // correcto: el dato apuntado no es const\n++pFijo;               // ERROR: pFijo no puede cambiar de dirección\n++pFijoLectura;        // ERROR: el puntero es const\n*pFijoLectura = 2;     // ERROR: el dato apuntado también es const\nLON = 6;               // ERROR: LON fue declarado const"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La clave está en mirar <strong>a qué lado del asterisco</strong> aparece <code>const</code>. Una forma cómoda de leer la declaración es <em>de derecha a izquierda</em>, empezando por el nombre: <code>pFijo</code> «es un puntero constante (<code>* const</code>) a <code>int</code>»; <code>pLectura</code> «es un puntero (<code>*</code>) a <code>int</code> constante».</p><table class=\"tabla-datos\"><thead><tr><th>Declaración</th><th>¿Puede cambiar la dirección? (<code>++p</code>)</th><th>¿Puede cambiar el dato? (<code>*p = 2</code>)</th><th>Qué es constante</th></tr></thead><tbody><tr><td><code>const int* pLectura</code></td><td>Sí</td><td>No</td><td>El dato (const a la izquierda del <code>*</code>)</td></tr><tr><td><code>int* const pFijo</code></td><td>No</td><td>Sí</td><td>El puntero (const a la derecha del <code>*</code>)</td></tr><tr><td><code>const int* const pFijoLectura</code></td><td>No</td><td>No</td><td>Ambos</td></tr></tbody></table><p>En el primer caso puede cambiarse la dirección almacenada en el puntero, pero no el valor accedido mediante él. En el segundo puede modificarse el dato, pero no la dirección. En el tercero no puede modificarse ninguno de los dos. Fíjate en que <code>const int*</code> no hace constante el array <code>valores</code>: solo impide modificarlo <em>a través de</em> <code>pLectura</code>.</p><p>Prueba cada operación sobre los tres punteros y comprueba si compila y por qué:</p><div class=\"mpi-mount\" data-componente=\"cpp-const-explorer\" data-config='{\"ejemplo\": \"10.2.1\"}'></div>"
+        },
+        {
+          "tipo": "nota",
+          "html": "Compilado con clang++ 21 (Apple clang 2100.3.34.2) con <code>-std=c++17 -Wall -Wextra</code>: las dos líneas marcadas «correcto» compilan y el compilador da exactamente <strong>cinco errores</strong>, uno en cada línea marcada ERROR. Para <code>*pLectura = 2</code> y <code>*pFijoLectura = 2</code> dice <em>read-only variable is not assignable</em>; para <code>++pFijo</code>, <code>++pFijoLectura</code> y <code>LON = 6</code>, <em>cannot assign to variable … with const-qualified type</em> (<code>int *const</code>, <code>const int *const</code>, <code>const int</code>)."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>18.1.2 Memoria dinámica</h3><p>El operador <code>new</code> reserva memoria y devuelve un puntero al objeto creado. El operador <code>delete</code> libera un objeto individual y <code>delete[]</code> libera un vector creado con <code>new[]</code>. Toda reserva debe tener una <strong>estrategia clara de liberación</strong>; si no, se produce una <strong>fuga de memoria</strong> (memoria reservada que ya nadie puede liberar).</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Reserva y liberación de un objeto y de un vector (10.2.2):</p>",
+          "codigo": "int* numero = new int(0);\ndouble* datos = new double[10];\ndelete numero;\ndelete[] datos;"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>No debe devolverse un puntero a una variable local, porque esa variable deja de existir al terminar la función (el compilador lo detecta: con <code>int* mal() { int x = 5; return &amp;x; }</code>, clang avisa <em>address of stack memory associated with local variable 'x' returned</em>). Si una función reserva memoria dinámica y <strong>transfiere la propiedad</strong> al llamante, este debe liberarla. En C++ moderno se prefieren los contenedores como <code>std::vector</code> y los punteros inteligentes, que reducen los errores de la gestión manual: la función siguiente devuelve el vector <em>por valor</em> y no hay ningún <code>delete</code> que olvidar.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Devolver un <code>std::vector</code> en lugar de un puntero (10.2.2). Por ejemplo, <code>getVector(3, 7)</code> devuelve <code>{3, 4, 5, 6}</code>:</p>",
+          "codigo": "std::vector<int> getVector(int min, int max) {\n    std::vector<int> v(max - min);\n    for (int i = 0; i < max - min; ++i)\n        v[i] = min + i;\n    return v;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>18.1.3 Organización del código: archivos .h y .cpp</h3><p>En proyectos pequeños se puede escribir todo en un único archivo, pero al definir clases conviene <strong>separar la interfaz de la implementación</strong>: así otros archivos saben cómo usar una clase sin depender de los detalles de su código.</p><p>El <strong>archivo de cabecera</strong> (<code>.h</code>) contiene normalmente la declaración de la clase: variables miembro, constructores, funciones miembro y operadores disponibles, más las cabeceras que necesita esa declaración. Debe protegerse frente a inclusiones repetidas con <code>#pragma once</code> o con guardas <code>#ifndef</code>/<code>#define</code>/<code>#endif</code>.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Cabecera <code>CComplex.h</code> (esqueleto; la declaración completa se ve en 10.3):</p>",
+          "codigo": "// CComplex.h\n#pragma once\n#include <iosfwd>  // declara std::ostream\n\nclass CComplex {\n    // declaración de miembros y funciones\n};"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>El <strong>archivo de implementación</strong> (<code>.cpp</code>) incluye primero su propia cabecera y contiene las definiciones de las funciones. El operador de ámbito <code>::</code> indica que la función pertenece a la clase:</p>",
+          "codigo": "// CComplex.cpp\n#include \"CComplex.h\"\n#include <ostream>\n\nCComplex::CComplex() : m_d_real(0.0), m_d_imag(0.0) {}\n\ndouble CComplex::getReal() const { return m_d_real; }"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>El archivo que usa la clase, por ejemplo <code>main.cpp</code>, incluye la <em>cabecera</em> (con la clase completa del tema imprime <code>(2,3)</code>):</p>",
+          "codigo": "// main.cpp\n#include \"CComplex.h\"\n#include <iostream>\n\nint main() {\n    CComplex value(2.0, 3.0);\n    std::cout << value << std::endl;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><code>main.cpp</code> <strong>no debe incluir el archivo <code>.cpp</code></strong>: los distintos <code>.cpp</code> se compilan por separado y el <strong>enlazador</strong> reúne después sus definiciones. <em>Ampliación (no está en el libro):</em> los pasos con clang son estos.</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": true,
+          "items": [
+            "<code>clang++ -std=c++17 -c CComplex.cpp</code> → <code>CComplex.o</code> (definiciones de la clase).",
+            "<code>clang++ -std=c++17 -c main.cpp</code> → <code>main.o</code> (solo conoce la declaración de <code>CComplex.h</code>).",
+            "<code>clang++ CComplex.o main.o -o programa</code> → el enlazador une las llamadas de <code>main.o</code> con las definiciones de <code>CComplex.o</code>.",
+            "Si <code>main.cpp</code> hiciera <code>#include \"CComplex.cpp\"</code> y además se compilara <code>CComplex.cpp</code>, cada función quedaría definida dos veces y el enlazador fallaría con <em>duplicate symbol</em> (comprobado con clang)."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Las funciones muy breves pueden definirse <em>dentro</em> de la clase; en ese caso son implícitamente <code>inline</code>. En estos capítulos algunas definiciones aparecen dentro de la clase para ahorrar espacio, pero la organización recomendada para las prácticas es <strong>declarar en el <code>.h</code> y definir en el <code>.cpp</code></strong>, salvo que haya una razón concreta para usar <code>inline</code>.</p><p>No se recomienda escribir <code>using namespace std;</code> en una cabecera, porque afectaría a todos los archivos que la incluyan. Es preferible usar nombres cualificados, como <code>std::ostream</code> y <code>std::string</code>. Por la misma razón la cabecera incluye <code>&lt;iosfwd&gt;</code>, que solo <em>declara</em> <code>std::ostream</code> y <code>std::istream</code> (basta para nombrarlos en los prototipos), y deja <code>&lt;ostream&gt;</code>/<code>&lt;istream&gt;</code> para el <code>.cpp</code>, que es quien los usa de verdad.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "18.2 Clases y objetos",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Una <strong>clase</strong> es un tipo de dato definido por el programador. Reúne <strong>variables miembro</strong>, que representan el <em>estado</em>, y <strong>funciones miembro</strong>, que representan el <em>comportamiento</em>. Un <strong>objeto</strong> es una instancia concreta de una clase, del mismo modo que una variable es una instancia de un tipo básico: <code>CComplex</code> es la clase; <code>c1</code> y <code>c2</code> son objetos.</p><p>La <strong>encapsulación</strong> protege el estado interno mediante los especificadores de acceso:</p><table class=\"tabla-datos\"><thead><tr><th>Especificador</th><th>Quién puede acceder</th></tr></thead><tbody><tr><td><code>private</code></td><td>Solo la propia clase y sus funciones amigas (<code>friend</code>).</td></tr><tr><td><code>public</code></td><td>Cualquier usuario: es la <em>interfaz</em> de la clase.</td></tr><tr><td><code>protected</code></td><td>La clase y sus clases derivadas (herencia, tema de herencia y polimorfismo).</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Declaración de <code>CComplex</code>, la que se guardaría en <code>CComplex.h</code> (10.3). Las definiciones de sus funciones se ven en las secciones siguientes y se guardarían en <code>CComplex.cpp</code>:</p>",
+          "codigo": "class CComplex {\nprivate:\n    double m_d_real;\n    double m_d_imag;\npublic:\n    CComplex();\n    CComplex(double real, double imag);\n    CComplex(const CComplex& other);\n    ~CComplex();\n    double getReal() const;\n    double getImag() const;\n    CComplex& operator=(const CComplex& other);\n    CComplex& operator+=(const CComplex& other);\n    CComplex operator+(const CComplex& other) const;\n    friend std::ostream& operator<<(std::ostream& out, const CComplex& c);\n    friend std::istream& operator>>(std::istream& in, CComplex& c);\n};"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Por convenio, los atributos se mantienen privados o protegidos y se accede a ellos mediante funciones miembro (<code>getReal()</code>, <code>getImag()</code>). Una nomenclatura coherente ayuda a distinguir el estado del objeto de las variables locales: el prefijo <code>m_</code> marca los miembros, y en <code>m_d_real</code> la <code>d</code> recuerda además que el miembro es <code>double</code>.</p><p>En la declaración ya aparece todo lo que se estudia en el tema: dos constructores y el constructor de copia (10.4, 10.5), el destructor (10.4.2), las consultas <code>const</code> (10.6), la asignación (10.5), los operadores <code>+=</code> y <code>+</code> (10.7) y los operadores de flujo como funciones amigas (10.6).</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "18.3 Ciclo de vida de un objeto",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>La vida de un objeto tiene tres fases: <strong>creación, utilización y destrucción</strong>. Al crearlo se reserva memoria para sus miembros y se ejecuta un <strong>constructor</strong>. Al terminar su ámbito, o al aplicar <code>delete</code> sobre un objeto dinámico, se ejecuta el <strong>destructor</strong> <em>antes</em> de liberar la memoria.</p><h3>18.3.1 Constructores</h3><p>Un constructor tiene el <strong>mismo nombre que la clase</strong> y <strong>no declara tipo de retorno</strong>. Puede sobrecargarse para admitir distintas formas de inicialización: <code>CComplex c2;</code> usa el constructor sin parámetros y <code>CComplex c1(0.0, 1.0);</code> el de dos <code>double</code>. La <strong>lista de inicialización</strong> (lo que va tras los dos puntos) es la forma recomendada de construir los miembros: los inicializa directamente, en lugar de crearlos y asignarles después un valor.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Constructores de <code>CComplex</code> con lista de inicialización (10.4.1):</p>",
+          "codigo": "CComplex::CComplex() : m_d_real(0.0), m_d_imag(0.0) {}\n\nCComplex::CComplex(double real, double imag) : m_d_real(real), m_d_imag(imag) {}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Si no se declara ningún constructor, el compilador puede generar uno por defecto. Sin embargo, en cuanto la clase necesita establecer <em>invariantes</em> (condiciones que su estado debe cumplir siempre) o gestionar recursos, conviene declarar explícitamente las operaciones necesarias.</p><h3>18.3.2 Destructor</h3><p>El destructor se llama como la clase precedida por <code>~</code>, <strong>no recibe parámetros</strong> y <strong>solo puede existir uno</strong> por clase. Es esencial cuando el objeto posee recursos que deben liberarse, como memoria dinámica, ficheros o dispositivos. <code>CComplex</code> solo tiene dos <code>double</code>, así que le basta el destructor que genera el compilador, pedido explícitamente con <code>= default</code>:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Destructor de <code>CComplex</code> (10.4.2):</p>",
+          "codigo": "CComplex::~CComplex() = default;"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Dos reglas que conviene grabarse:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "Los objetos <strong>automáticos</strong> (variables locales, en la pila) se destruyen al terminar su ámbito, <strong>en orden inverso a su creación</strong>: el último en construirse es el primero en destruirse.",
+            "Los objetos creados con <strong><code>new</code></strong> (en el <em>heap</em>) no se destruyen hasta ejecutar <strong><code>delete</code></strong>; olvidar esta operación provoca una fuga."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El ejemplo completo de 10.8 recorre las dos reglas paso a paso con un visualizador de pila y heap.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "18.4 Asignación y constructor de copia",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>C++ define por defecto una <strong>copia miembro a miembro</strong>. Esta copia basta para clases formadas solo por valores, como <code>CComplex</code>, pero no para clases que poseen memoria dinámica u otros recursos exclusivos: copiar un puntero miembro a miembro deja dos objetos apuntando al mismo recurso. En esos casos debe implementarse una <strong>copia profunda</strong>.</p><p>Como primer paso puede escribirse el operador de asignación recibiendo <code>other</code> <strong>por valor</strong>:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p><code>operator=</code> con el parámetro por valor (primera versión, didáctica, de 10.5):</p>",
+          "codigo": "CComplex& CComplex::operator=(CComplex other) {\n    if (this != &other) {\n        m_d_real = other.m_d_real;\n        m_d_imag = other.m_d_imag;\n    }\n    return *this;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La llamada <code>c2 = c1</code> construye entonces un <strong>tercer objeto</strong>: el parámetro local <code>other</code>, que es una copia de <code>c1</code> hecha con el constructor de copia. Al terminar <code>operator=</code> se destruye ese parámetro. En el ejemplo siguiente se construyen tres objetos y se destruyen tres: <code>c1</code>, <code>c2</code> y la copia temporal <code>other</code>. En esta versión la comprobación <code>this != &amp;other</code> es redundante, porque <code>other</code> siempre es un objeto distinto; se conserva para compararla con la versión por referencia, donde sí protege frente a <code>c1 = c1</code>.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Uso (10.5):</p>",
+          "codigo": "CComplex c1(0.0, 1.0);   // objeto 1\nCComplex c2;             // objeto 2\nc2 = c1;                 // objeto 3: parámetro other, después destruido"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La copia del parámetro no aporta nada, porque <code>operator=</code> solo necesita <em>leer</em> el objeto origen. La <strong>versión definitiva</strong> recibe una <strong>referencia constante</strong>: con ella se construyen únicamente <code>c1</code> y <code>c2</code> y, al terminar su ámbito, se destruyen esos mismos dos objetos.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p><code>operator=</code> definitivo, con referencia constante (10.5):</p>",
+          "codigo": "CComplex& CComplex::operator=(const CComplex& other) {\n    if (this != &other) {              // evita trabajo en c1 = c1\n        m_d_real = other.m_d_real;\n        m_d_imag = other.m_d_imag;\n    }\n    return *this;                      // permite a = b = c\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Dos detalles de esta versión: <code>this</code> es la dirección del objeto de la izquierda y <code>&amp;other</code> la del de la derecha, así que <code>this != &amp;other</code> detecta la autoasignación; y devolver <code>*this</code> por referencia permite encadenar <code>a = b = c</code> sin crear objetos nuevos.</p><p>El <strong>constructor de copia</strong>, en cambio, <strong>debe</strong> recibir una referencia: <code>CComplex(const CComplex&amp; other)</code>. Si recibiera <code>other</code> por valor, habría que copiarlo antes de entrar en el propio constructor de copia, lo que exigiría otra copia, y así sin fin: no es una definición válida (clang la rechaza con <em>copy constructor must pass its first argument by reference</em>). Una vez disponible <code>operator=</code> con referencia constante, el constructor puede reutilizarlo mediante <code>*this = other</code>:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Constructor de copia que reutiliza <code>operator=</code> (10.5):</p>",
+          "codigo": "CComplex::CComplex(const CComplex& other) { *this = other; }"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La expresión <code>*this</code> representa el objeto que se está construyendo: el constructor crea un objeto nuevo y <code>operator=</code> copia en él el estado de <code>other</code>. En <code>CComplex</code> esta técnica evita duplicar la lógica porque sus dos miembros son valores simples. Si una clase posee punteros, miembros <code>const</code>, referencias o clases base, esos elementos deben inicializarse correctamente <em>antes</em> de llamar a <code>operator=</code>; en tales casos suele ser preferible una lista de inicialización o una función auxiliar de copia.</p><p>Compara las dos versiones de <code>operator=</code> ejecutando <code>c2 = c1</code> y <code>CComplex c3(c1)</code> paso a paso y contando los objetos vivos:</p><div class=\"mpi-mount\" data-componente=\"cpp-ciclo-vida\" data-config='{\"escenario\": \"10.5\"}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><em>Ampliación (no está en el libro).</em> Resultado al compilar el ejemplo con una traza en cada constructor, destructor y <code>operator=</code> (clang++ 21 (Apple clang 2100.3.34.2) con <code>-std=c++17 -Wall -Wextra</code>):</p><table class=\"tabla-datos\"><thead><tr><th>Instrucción</th><th>Con <code>operator=(CComplex other)</code></th><th>Con <code>operator=(const CComplex&amp; other)</code></th></tr></thead><tbody><tr><td><code>CComplex c1(0.0, 1.0);</code></td><td>constructor (0,1) → 1 vivo</td><td>constructor (0,1) → 1 vivo</td></tr><tr><td><code>CComplex c2;</code></td><td>constructor por defecto → 2 vivos</td><td>constructor por defecto → 2 vivos</td></tr><tr><td><code>c2 = c1;</code></td><td>constructor de copia de <code>other</code> → 3 vivos; <code>operator=</code>; destructor de <code>other</code> → 2 vivos</td><td><code>operator=</code> → siguen 2 vivos</td></tr><tr><td><code>CComplex c3(c1);</code></td><td>constructor de copia → 3 vivos</td><td>constructor de copia (que llama a <code>operator=</code>) → 3 vivos</td></tr><tr><td>fin del ámbito</td><td>destructores de c3, c2, c1 → 0 vivos</td><td>destructores de c3, c2, c1 → 0 vivos</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Cuidado al combinar las dos versiones.</strong> El constructor de copia que hace <code>*this = other</code> solo vale con el <code>operator=</code> que recibe <code>const CComplex&amp;</code>, como indica el libro. Si se juntara con el <code>operator=</code> por valor, cada asignación necesitaría copiar <code>other</code>, la copia llamaría otra vez a <code>operator=</code>, y así sin fin: compilado con clang, <code>c2 = c1</code> encadena constructores de copia hasta desbordar la pila (<em>Segmentation fault</em>). Por eso, en la primera versión, la copia de <code>other</code> debe hacerla un constructor de copia miembro a miembro (el que genera el compilador o uno con lista de inicialización). Tampoco pueden declararse a la vez las dos versiones de <code>operator=</code>: <code>c2 = c1</code> sería ambigua (<em>use of overloaded operator '=' is ambiguous</em>)."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Para clases que gestionan recursos se aplica la <strong>regla de tres</strong>: si es necesario definir el destructor, el constructor de copia o el operador de asignación, normalmente deben definirse los tres. En C++ moderno la regla se amplía a <strong>cinco</strong> al considerar las operaciones de movimiento (constructor y asignación de movimiento, tema de C++ moderno).</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "18.5 Funciones miembro y funciones amigas",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Las funciones miembro forman la interfaz de la clase. Deben preservar sus invariantes y declarar <strong><code>const</code> al final</strong> cuando no modifican el estado del objeto. Ese <code>const</code> promete que la función no cambia <code>*this</code>, y es lo que permite llamarla sobre un objeto constante o a través de una referencia <code>const CComplex&amp;</code>:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Consulta <code>const</code> (10.6):</p>",
+          "codigo": "double CComplex::getReal() const { return m_d_real; }"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Una función <strong><code>friend</code></strong> (amiga) <strong>no pertenece a la clase</strong>, pero puede acceder a su parte privada. Es útil para los operadores de flujo, cuyo operando izquierdo es un <code>std::ostream</code> o un <code>std::istream</code> y no un <code>CComplex</code>, de modo que no pueden ser funciones miembro de <code>CComplex</code>.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Operador de escritura en un flujo (10.6):</p>",
+          "codigo": "std::ostream& operator<<(std::ostream& out, const CComplex& c) {\n    out << '(' << c.m_d_real << ',' << c.m_d_imag << ')';\n    return out;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La declaración correspondiente se incluye dentro de la clase con la palabra <code>friend</code> (ver 18.2). Al devolver el flujo <strong>por referencia</strong> pueden encadenarse expresiones como <code>std::cout &lt;&lt; c1 &lt;&lt; c2</code>: <code>std::cout &lt;&lt; c1</code> devuelve el propio <code>std::cout</code>, que recibe a continuación <code>c2</code>.</p><h3>18.5.1 Lectura con std::istream</h3><p>El operador <code>&gt;&gt;</code> permite leer un <code>CComplex</code> desde cualquier flujo de entrada. Su primer parámetro es <code>std::istream&amp;</code>, porque recibe el flujo, y el segundo <strong>no puede ser <code>const</code></strong>, ya que la operación modifica el objeto leído. La declaración se incluye en <code>CComplex.h</code> como función <code>friend</code>; su definición se guarda en <code>CComplex.cpp</code>, que debe incluir <code>&lt;istream&gt;</code>.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Operador de lectura desde un flujo (10.6.1):</p>",
+          "codigo": "std::istream& operator>>(std::istream& in, CComplex& c) {\n    double real;\n    double imag;\n    if (in >> real >> imag) {       // intenta leer dos números\n        c.m_d_real = real;           // solo modifica c si ambas lecturas funcionan\n        c.m_d_imag = imag;\n    }\n    return in;                       // permite encadenar lecturas\n}"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Por ejemplo, si el usuario escribe <code>2.5 -1.0</code>, el código siguiente almacena 2.5 como parte real y -1.0 como parte imaginaria (10.6.1):</p>",
+          "codigo": "CComplex c;\nstd::cout << \"Introduzca la parte real y la imaginaria: \";\nif (std::cin >> c) {                  // operator>> devuelve el propio flujo\n    std::cout << \"Número leído: \" << c << '\\n';\n} else {\n    std::cout << \"Entrada no válida\\n\";\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Si alguna lectura falla, <code>std::istream</code> conserva un <strong>estado de error</strong>, la condición del <code>if</code> resulta falsa y el objeto <code>c</code> <strong>mantiene su valor anterior</strong>. Devolver <code>in</code> por referencia permite expresiones encadenadas como <code>std::cin &gt;&gt; c1 &gt;&gt; c2</code>.</p><p>Compilado y ejecutado con clang: con la entrada <code>2.5 -1.0</code> el programa escribe <code>Número leído: (2.5,-1)</code> (el formato por defecto de <code>double</code> no escribe <code>.0</code>, por eso sale <code>-1</code>); con <code>2.5 abc</code> la segunda lectura falla, escribe <code>Entrada no válida</code> y <code>c</code> sigue valiendo <code>(0,0)</code>, aunque la parte real sí se hubiera podido leer.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "18.6 Sobrecarga de operadores",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>La sobrecarga permite que los operadores habituales trabajen con objetos: <code>c1 + c2</code> en lugar de <code>suma(c1, c2)</code>. Debe emplearse <strong>solo cuando la operación tenga un significado natural y coherente</strong>, y el operador no debe producir efectos laterales sorprendentes.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p><code>operator+=</code> y <code>operator+</code> como funciones miembro (10.7). <code>operator+</code> se construye a partir de <code>+=</code>:</p>",
+          "codigo": "CComplex& CComplex::operator+=(const CComplex& other) {\n    m_d_real += other.m_d_real;\n    m_d_imag += other.m_d_imag;\n    return *this;\n}\n\nCComplex CComplex::operator+(const CComplex& other) const {\n    CComplex result(*this);\n    result += other;\n    return result;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Fíjate en las diferencias entre los dos operadores:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<code>operator+=</code> <strong>modifica</strong> el operando izquierdo (<code>*this</code>) y lo devuelve por referencia, como <code>+=</code> con enteros.",
+            "<code>operator+</code> devuelve un objeto <strong>por valor</strong>, porque el resultado es un objeto nuevo (<code>result</code>, copia de <code>*this</code>). <strong>Nunca</strong> debe devolverse una referencia a una variable local: <code>result</code> deja de existir al salir de la función.",
+            "<code>operator+</code> <strong>no modifica</strong> el operando izquierdo (por eso es una función <code>const</code>); esa conducta corresponde a <code>operator+=</code>.",
+            "Los compiladores actuales eliminan muchas copias temporales mediante la <strong>optimización del valor de retorno</strong> (RVO/NRVO) y las operaciones de movimiento. Compilado con clang, <code>CComplex c3 = c1 + c2;</code> llama una vez al constructor de copia (<code>result(*this)</code>) y una vez a <code>operator+=</code>: <code>result</code> se construye directamente en <code>c3</code> y no queda ningún temporal que destruir."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>18.6.1 operator+ como función con dos parámetros</h3><p>Cuando <code>operator+</code> se define como función miembro, el operando izquierdo es el objeto implícito <code>*this</code> y solo aparece un parámetro explícito. También puede definirse como <strong>función no miembro con dos parámetros explícitos</strong>: <code>left</code> corresponde al operando situado a la izquierda de <code>+</code> y <code>right</code> al situado a la derecha.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p><code>operator+</code> como función amiga con dos parámetros (10.7.1):</p>",
+          "codigo": "// Declaración dentro de CComplex.h\nfriend CComplex operator+(CComplex left, const CComplex& right);\n\n// Definición en CComplex.cpp\nCComplex operator+(CComplex left, const CComplex& right) {\n    left += right;       // modifica la copia, no el operando original\n    return left;         // devuelve el nuevo resultado\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><code>left</code> se recibe <strong>por valor</strong> para obtener directamente la copia que actuará como resultado; <code>right</code> se recibe <strong>por referencia constante</strong> porque solo se consulta. La palabra <code>friend</code> solo es necesaria si la función accede a miembros privados (esta solo usa <code>+=</code>, que es público, así que podría ser una función libre normal).</p><p>Esta versión es una <strong>alternativa</strong> a <code>operator+</code> miembro: <strong>no deben declararse a la vez</strong> ambas versiones equivalentes, porque la expresión <code>c1 + c2</code> sería ambigua. Comprobado con clang: con las dos declaradas, <code>c1 + c2</code> no compila (<em>use of overloaded operator '+' is ambiguous</em>, con las dos funciones como candidatas).</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "18.7 Ejemplo completo de uso",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Programa principal que usa la clase completa (10.8). Ejecútalo línea a línea y observa la pila, el heap y el registro de constructores y destructores:</p><div class=\"mpi-mount\" data-componente=\"cpp-ciclo-vida\" data-config='{\"escenario\": \"10.8\"}'></div><p>El ejemplo crea tres objetos automáticos con nombre —<code>c1</code>, <code>c2</code> y <code>c3</code>, en la pila— y un objeto dinámico mediante <code>new</code>, en el heap. Por tanto se construyen <strong>cuatro objetos con nombre</strong>. Ojo: <code>c4</code> es un <em>puntero</em> (una variable automática más) y <code>*c4</code> es el objeto al que apunta.</p><p>El objeto apuntado por <code>c4</code> se destruye exactamente al ejecutar <code>delete</code>; después se destruyen <code>c3</code>, <code>c2</code> y <code>c1</code>, <strong>en orden inverso a su creación</strong>, cuando termina <code>main</code>. El compilador puede eliminar objetos temporales asociados a <code>c1 + c2</code>, por lo que el recuento de temporales observado puede variar, pero <strong>todo objeto construido debe tener una destrucción correspondiente</strong>. Tras <code>delete</code> se asigna <code>nullptr</code> al puntero para no conservar una dirección que ya no es válida (un <em>puntero colgante</em>).</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Compilado con clang++ 21 (Apple clang 2100.3.34.2) con <code>-std=c++17 -Wall -Wextra</code>, con la clase completa del tema, el programa escribe:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Salida del programa:</p>",
+          "codigo": "c3 = (2,4)\nc4 = (4,5)",
+          "lenguaje": "texto"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><em>Ampliación (no está en el libro).</em> Si se añade una traza a cada constructor, destructor y operador, la secuencia de llamadas (clang, con la clase completa del tema) es:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": true,
+          "items": [
+            "<code>CComplex c1(0.0, 1.0)</code> → constructor (0,1).",
+            "<code>CComplex c2(2.0, 3.0)</code> → constructor (2,3).",
+            "<code>CComplex c3 = c1 + c2</code> → <code>operator+</code> sobre c1 → constructor de copia de <code>result</code> desde c1 (que llama a <code>operator=</code>) → <code>operator+=</code>. <code>result</code> ocupa ya la memoria de c3 (NRVO), así que no hay más copias.",
+            "Se escribe <code>c3 = (2,4)</code>.",
+            "<code>new CComplex(4.0, 5.0)</code> → constructor (4,5) en el heap; se escribe <code>c4 = (4,5)</code>.",
+            "<code>delete c4</code> → destructor de <code>*c4</code> (4,5).",
+            "Fin de <code>main</code> → destructores de c3 (2,4), c2 (2,3) y c1 (0,1), en ese orden."
+          ]
+        },
+        {
+          "tipo": "nota",
+          "html": "Con <code>-fno-elide-constructors</code> (que desactiva la NRVO) <code>result</code> es un objeto distinto de c3: aparecen un segundo constructor de copia (c3 desde <code>result</code>) y la destrucción de <code>result</code> antes de escribir <code>c3 = (2,4)</code>. Es el «recuento de temporales que puede variar» del que habla el libro; en ambos casos cada construcción tiene su destrucción."
+        }
+      ]
+    },
+    {
+      "titulo": "18.8 Programación orientada a objetos",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>En un programa <strong>procedimental</strong> la solución suele organizarse como un árbol de funciones controlado secuencialmente desde <code>main</code>. En un diseño <strong>orientado a objetos</strong> la solución se expresa mediante objetos que colaboran a través de sus interfaces. Cada objeto oculta su representación interna y ofrece operaciones relacionadas con su responsabilidad. <em>Ampliación (no está en el libro):</em> la tabla resume la comparación.</p><table class=\"tabla-datos\"><thead><tr><th></th><th>Procedimental</th><th>Orientado a objetos</th></tr></thead><tbody><tr><td>Organización</td><td>Árbol de funciones que cuelga de <code>main</code></td><td>Objetos que colaboran a través de interfaces</td></tr><tr><td>Datos</td><td>Estructuras accesibles por las funciones que las reciben</td><td>Privados dentro de cada objeto; solo se tocan a través de sus funciones miembro</td></tr><tr><td><code>main</code></td><td>Controla la secuencia completa</td><td>Crea los objetos y los pone a colaborar, sin conocer sus detalles internos</td></tr></tbody></table><p>Un buen diseño:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "asigna a cada clase <strong>una responsabilidad clara</strong>;",
+            "mantiene <strong>privados</strong> sus datos;",
+            "<strong>minimiza el acoplamiento</strong> entre clases;",
+            "evita que <code>main</code> conozca detalles internos."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La orientación a objetos <strong>no elimina las funciones</strong>: las organiza alrededor de los conceptos del problema (en <code>CComplex</code>, todo lo que se puede hacer con un número complejo está junto a sus datos).</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "18.9 Resumen y ejercicios",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Una clase robusta:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "inicializa siempre sus miembros (constructores con lista de inicialización);",
+            "libera los recursos que posee (destructor);",
+            "controla la copia cuando es necesaria (constructor de copia y <code>operator=</code>, regla de tres);",
+            "usa referencias constantes para evitar copias (<code>const CComplex&amp;</code>);",
+            "marca como <code>const</code> las operaciones de consulta;",
+            "sobrecarga únicamente operadores intuitivos."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Los ejercicios que propone el libro —implementar <code>operator&gt;</code> para comparar el módulo de dos complejos, definir <code>operator+</code> como función amiga y analizar las diferencias entre objetos automáticos, punteros sin propiedad y punteros inteligentes— se plantean resueltos y autocorregidos al final del tema, junto con cuestiones sobre el ciclo de vida de los objetos.</p>"
+        }
+      ]
+    }
+  ],
+  "registros": {},
+  "ejercicios": {
+    "cpp-clases-objetos-1": {
+      "titulo": "Ciclo de vida y copias de CComplex (10.4, 10.5, 10.8)",
+      "enunciado": "<p>Se usa la clase <code>CComplex</code> del tema. Responde sobre cuándo se construye y se destruye cada objeto en los ejemplos de 10.5 y 10.8.</p>",
+      "contexto": "<ul><li>Objetos automáticos: se destruyen al salir de su ámbito, en orden inverso a su creación.</li><li>Objetos creados con <code>new</code>: solo se destruyen con <code>delete</code>.</li><li>Un parámetro por valor es un objeto nuevo, construido con el constructor de copia y destruido al salir de la función.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "En el <code>main</code> de 10.8, ¿en qué orden se ejecutan los destructores de los cuatro objetos con nombre?",
+          "opciones": [
+            "<code>*c4</code> al ejecutar <code>delete c4</code>; después c3, c2 y c1 al terminar <code>main</code>",
+            "c1, c2, c3 y <code>*c4</code> al terminar <code>main</code>, en el orden en que se crearon",
+            "c3, c2 y c1 al terminar <code>main</code>; <code>*c4</code> no se destruye nunca porque es dinámico",
+            "<code>*c4</code>, c3, c2 y c1, todos al llegar a <code>return 0</code>"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>El objeto dinámico <code>*c4</code> se destruye <strong>exactamente</strong> en <code>delete c4</code>, antes de <code>return 0</code>. Los automáticos se destruyen al terminar <code>main</code> en orden inverso a su creación: c3, c2, c1. Compilado con clang y una traza en el destructor sale: <code>dtor (4,5)</code>, <code>dtor (2,4)</code>, <code>dtor (2,3)</code>, <code>dtor (0,1)</code>. Sin el <code>delete</code>, <code>*c4</code> sí quedaría sin destruir (fuga).</p>"
+        },
+        {
+          "texto": "Con el <code>operator=</code> que recibe <code>other</code> <strong>por valor</strong>, ¿cuántos objetos se construyen y cuántos se destruyen en <code>CComplex c1(0.0, 1.0); CComplex c2; c2 = c1;</code> (hasta el final del ámbito)?",
+          "opciones": [
+            "3 construcciones y 3 destrucciones: c1, c2 y el parámetro <code>other</code>, que se destruye al salir de <code>operator=</code>",
+            "2 y 2: <code>other</code> es solo otro nombre de c1",
+            "3 construcciones y 2 destrucciones: <code>other</code> sigue vivo hasta el final del ámbito",
+            "4 y 4: además se crea un temporal para devolver <code>*this</code>"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Pasar por valor crea una copia: <code>other</code> se construye con el constructor de copia a partir de c1 y se destruye al terminar <code>operator=</code>. Traza compilada: ctor (0,1), ctor (), copy ctor, <code>operator=</code>, dtor de <code>other</code>, y al final dtor de c2 y de c1: 3 y 3. <code>*this</code> se devuelve <em>por referencia</em>, sin crear objetos. Con la versión <code>const CComplex&amp;</code> solo hay 2 y 2 (<code>other</code> sí es entonces otro nombre de c1).</p>"
+        },
+        {
+          "texto": "¿Por qué el constructor de copia tiene que recibir <code>const CComplex&amp; other</code> y no <code>CComplex other</code>?",
+          "opciones": [
+            "Porque para pasar <code>other</code> por valor habría que copiarlo, es decir, llamar al propio constructor de copia antes de entrar en él: la definición no es válida",
+            "Solo por eficiencia: por valor compila y funciona, pero hace una copia de más",
+            "Porque el constructor de copia tiene que modificar <code>other</code> para dejarlo vacío",
+            "Porque ningún constructor puede recibir parámetros por valor"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>La copia por valor de <code>other</code> requeriría el constructor de copia, que requeriría otra copia… sin fin. El compilador lo rechaza: clang da <em>copy constructor must pass its first argument by reference</em>. No es solo eficiencia (en <code>operator=</code> sí lo sería), y los demás constructores, como <code>CComplex(double real, double imag)</code>, reciben parámetros por valor sin problema. El <code>const</code> indica que la copia no modifica el original.</p>"
+        },
+        {
+          "texto": "En el <code>main</code> de 10.8 se borra la línea <code>delete c4;</code> pero se deja <code>c4 = nullptr;</code>. ¿Qué ocurre?",
+          "opciones": [
+            "El destructor de <code>*c4</code> no se ejecuta nunca y su memoria queda reservada: hay una fuga, y al poner <code>c4 = nullptr</code> se pierde además la única dirección para liberarla",
+            "El destructor de <code>*c4</code> se ejecuta al terminar <code>main</code>, después del de c1",
+            "<code>c4 = nullptr</code> libera el objeto, igual que <code>delete</code>",
+            "El programa no compila: cada <code>new</code> necesita su <code>delete</code>"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Los objetos creados con <code>new</code> no se destruyen hasta ejecutar <code>delete</code> (10.4.2); al terminar <code>main</code> solo se destruye la variable puntero <code>c4</code>, no el objeto apuntado. Asignar <code>nullptr</code> no libera nada: solo cambia la dirección guardada. El compilador no comprueba el emparejamiento <code>new</code>/<code>delete</code>, por eso es un error fácil de cometer y por eso se prefieren contenedores y punteros inteligentes.</p>"
+        }
+      ]
+    },
+    "cpp-clases-objetos-2": {
+      "titulo": "operator> por módulo (10.10)",
+      "enunciado": "<p>Ejercicio del libro: implementar <code>operator&gt;</code> para que compare el <strong>módulo</strong> de dos números complejos, |z| = √(re² + im²).</p>",
+      "contexto": "<ul><li>Una comparación devuelve <code>bool</code>.</li><li>Las operaciones que solo consultan se marcan <code>const</code> y reciben referencias constantes (10.10).</li><li><code>std::cout &lt;&lt; true</code> escribe <code>1</code> y <code>std::cout &lt;&lt; false</code> escribe <code>0</code>.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "Como función miembro de <code>CComplex</code>, ¿qué declaración es la adecuada?",
+          "opciones": [
+            "<code>bool operator&gt;(const CComplex&amp; other) const;</code>",
+            "<code>CComplex&amp; operator&gt;(const CComplex&amp; other);</code>",
+            "<code>bool operator&gt;(CComplex&amp; other);</code>",
+            "<code>friend bool operator&gt;(const CComplex&amp; other) const;</code>"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Devuelve <code>bool</code> (el resultado de comparar), recibe el operando derecho por <strong>referencia constante</strong> (no lo copia ni lo modifica) y es <code>const</code> porque no cambia <code>*this</code>. Sin el <code>const</code> final no se podría comparar un objeto constante, y sin <code>const</code> en el parámetro no se podría comparar con un temporal como <code>c1 + c2</code>. Una función <code>friend</code> no es miembro: necesitaría dos parámetros y no puede llevar <code>const</code> al final. Propuesta compilada con clang:</p><pre><code class=\"lang-cpp\">// Declaración en CComplex.h, dentro de la clase\nbool operator&gt;(const CComplex&amp; other) const;\n\n// Definición en CComplex.cpp\nbool CComplex::operator&gt;(const CComplex&amp; other) const {\n    return m_d_real * m_d_real + m_d_imag * m_d_imag\n         &gt; other.m_d_real * other.m_d_real + other.m_d_imag * other.m_d_imag;\n}</code></pre>"
+        },
+        {
+          "texto": "La propuesta compara re² + im² de cada número sin llamar a <code>std::sqrt</code>. ¿Es correcto?",
+          "opciones": [
+            "Sí: los dos valores son no negativos y la raíz cuadrada es creciente, así que |a| &gt; |b| equivale a |a|² &gt; |b|²; además se ahorra una operación costosa",
+            "No: para (3,4) y (0,5) daría un resultado distinto que con la raíz",
+            "Sí, pero solo si las partes reales de los dos números son positivas",
+            "No: hay que comparar primero las partes reales y, si son iguales, las imaginarias"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Para x, y ≥ 0, √x &gt; √y ⇔ x &gt; y. Al elevar al cuadrado las partes, el signo deja de importar: (−3,0) tiene módulo 3 igual que (3,0). Con (3,4) y (0,5) los cuadrados son 25 y 25, y las raíces 5 y 5: el resultado (falso en ambos sentidos) es el mismo. Comparar parte real y luego imaginaria sería un orden lexicográfico, no una comparación de módulos.</p>"
+        },
+        {
+          "texto": "Con <code>CComplex c1(0.0, 1.0), c2(2.0, 3.0), a(3.0, 4.0), b(0.0, 5.0), d(-3.0, 0.0), e(2.0, 2.0);</code> ¿qué escribe <code>std::cout &lt;&lt; (c2 &gt; c1) &lt;&lt; (c1 &gt; c2) &lt;&lt; (a &gt; b) &lt;&lt; (b &gt; a) &lt;&lt; (d &gt; e);</code>?",
+          "opciones": [
+            "<code>10001</code>",
+            "<code>10111</code>",
+            "<code>10100</code>",
+            "<code>01110</code>"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Cuadrados de los módulos: c1 → 1, c2 → 13, a → 25, b → 25, d → 9, e → 8. Entonces c2 &gt; c1 → 1; c1 &gt; c2 → 0; a &gt; b → 0 y b &gt; a → 0 (módulos iguales: ninguno es mayor); d &gt; e → 1 (9 &gt; 8, aunque d tenga parte real negativa). Resultado <strong>10001</strong>, comprobado compilando con clang. <code>10111</code> sería el resultado de un <code>&gt;=</code>, y <code>10100</code> el de comparar solo las partes reales.</p>"
+        }
+      ]
+    },
+    "cpp-clases-objetos-3": {
+      "titulo": "operator+ amigo, lectura con >> y propiedad de los objetos (10.6, 10.7.1, 10.10)",
+      "enunciado": "<p>Cuestiones sobre la versión de <code>operator+</code> con dos parámetros (función amiga), el operador de lectura <code>&gt;&gt;</code> y quién es responsable de destruir cada objeto.</p>",
+      "contexto": "<ul><li>Versión amiga: <code>friend CComplex operator+(CComplex left, const CComplex&amp; right);</code> con <code>left += right; return left;</code></li><li><code>operator&gt;&gt;</code> solo modifica el objeto si se leen bien los dos números.</li><li>c1(0.0, 1.0) y c2(2.0, 3.0) como en 10.8.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "Si en <code>CComplex</code> se declaran a la vez el <code>operator+</code> miembro de 10.7 y el <code>operator+</code> amigo de 10.7.1, ¿qué pasa con <code>c1 + c2</code>?",
+          "opciones": [
+            "No compila: la llamada es ambigua, porque las dos funciones encajan igual de bien",
+            "Compila y usa la versión miembro, que tiene prioridad",
+            "Compila y usa la versión amiga, porque <code>friend</code> tiene prioridad",
+            "Compila, pero suma dos veces y c3 vale (4,8)"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Las dos son equivalentes para <code>c1 + c2</code> y ninguna es mejor candidata, así que el compilador no puede elegir. clang: <em>use of overloaded operator '+' is ambiguous (with operand types 'CComplex' and 'CComplex')</em>, con las dos funciones como candidatas. Por eso el libro dice que es una <strong>alternativa</strong> a la versión miembro: se declara una u otra.</p>"
+        },
+        {
+          "texto": "Solo con la versión amiga, tras <code>CComplex c3 = c1 + c2;</code> ¿cuánto valen c1 y c3?",
+          "opciones": [
+            "c1 = (0,1) y c3 = (2,4): <code>left</code> es una copia de c1",
+            "c1 = (2,4) y c3 = (2,4): <code>left += right</code> modifica c1",
+            "c1 = (0,1) y c3 = (0,1): la suma se hace sobre una copia que se pierde",
+            "No compila: <code>left</code> debería ser <code>const</code>"
+          ],
+          "correcta": 0,
+          "explicacion": "<p><code>left</code> se recibe <strong>por valor</strong>: es un objeto nuevo copiado de c1, y <code>left += right</code> modifica esa copia, que se devuelve como resultado. c1 no cambia. Traza compilada con clang: constructor de copia de <code>left</code>, <code>operator+=</code>, constructor de copia de c3 desde <code>left</code> (un parámetro no puede construirse directamente en el destino) y destructor de <code>left</code>. Si <code>left</code> fuera <code>const</code> no se podría aplicar <code>+=</code>.</p>"
+        },
+        {
+          "texto": "Con el código de lectura de 10.6.1 (<code>CComplex c;</code> y después <code>if (std::cin &gt;&gt; c) … else …</code>), el usuario escribe <code>2.5 abc</code>. ¿Qué escribe el programa y cuánto vale c?",
+          "opciones": [
+            "<code>Entrada no válida</code>, y c sigue valiendo (0,0)",
+            "<code>Número leído: (2.5,0)</code>",
+            "<code>Número leído: (0,0)</code>",
+            "<code>Entrada no válida</code>, y c vale (2.5,0)"
+          ],
+          "correcta": 0,
+          "explicacion": "<p><code>in &gt;&gt; real</code> lee 2.5, pero <code>&gt;&gt; imag</code> falla con <code>abc</code>: el flujo queda en estado de error, la condición del <code>if</code> interno es falsa y <code>c</code> <strong>no se modifica</strong> (sigue en (0,0), el valor del constructor por defecto). Como <code>operator&gt;&gt;</code> devuelve el flujo, el <code>if</code> de fuera también ve el error y escribe <code>Entrada no válida</code>. Comprobado con clang; con <code>2.5 -1.0</code> escribe <code>Número leído: (2.5,-1)</code>.</p>"
+        },
+        {
+          "texto": "En el bloque <code>{ CComplex c1(0.0, 1.0); CComplex* p = &amp;c1; std::unique_ptr&lt;CComplex&gt; q = std::make_unique&lt;CComplex&gt;(4.0, 5.0); }</code>, ¿qué afirmación es correcta?",
+          "opciones": [
+            "Al cerrar la llave se destruyen <code>*q</code> (4,5) y después c1; <code>p</code> no posee nada y no debe hacerse <code>delete p</code>",
+            "Hay que escribir <code>delete p</code> antes de la llave para destruir c1",
+            "<code>*q</code> queda como fuga porque está en el heap y nadie hace <code>delete</code>",
+            "c1 se destruye dos veces: una por la variable c1 y otra por el puntero p"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>c1 es un objeto <strong>automático</strong>: se destruye solo al salir del ámbito. <code>p</code> es un <strong>puntero sin propiedad</strong>: solo observa c1, y hacer <code>delete</code> sobre él sería un error grave (c1 no se creó con <code>new</code>). <code>q</code> es un <strong>puntero inteligente</strong>: posee el objeto del heap y lo libera automáticamente al destruirse. Los automáticos se destruyen en orden inverso, así que primero <code>q</code> (y con él <code>*q</code>) y después c1; traza compilada con clang: <code>dtor(4,5)</code>, <code>dtor(0,1)</code>. Los punteros inteligentes se estudian en el tema de C++ moderno.</p>"
+        }
+      ]
+    }
+  },
+  "ejerciciosEnTema": [
+    "cpp-clases-objetos-1",
+    "cpp-clases-objetos-2",
+    "cpp-clases-objetos-3"
+  ],
+  "tituloEjercicios": "Ejercicios y cuestiones",
+  "resumen": [
+    "<code>const</code> se lee mirando el lado del <code>*</code>: <code>const int* pLectura</code> → dato constante (el puntero puede avanzar); <code>int* const pFijo</code> → puntero constante (el dato se puede cambiar); <code>const int* const</code> → ambos.",
+    "<code>new</code>/<code>delete</code> para un objeto y <code>new[]</code>/<code>delete[]</code> para un vector; toda reserva necesita su liberación (si no, fuga). Nunca se devuelve un puntero a una variable local; mejor <code>std::vector</code> y punteros inteligentes.",
+    "La clase se declara en el <code>.h</code> (con <code>#pragma once</code> o guardas, sin <code>using namespace std;</code>) y se define en el <code>.cpp</code> con <code>Clase::</code>; <code>main.cpp</code> incluye el <code>.h</code>, nunca el <code>.cpp</code>, y el enlazador une los <code>.o</code>.",
+    "Clase = tipo (estado en variables miembro <code>m_…</code>, comportamiento en funciones miembro); objeto = instancia. <code>private</code> para los datos, <code>public</code> para la interfaz, <code>protected</code> para las derivadas.",
+    "Constructor: nombre de la clase, sin tipo de retorno, sobrecargable, con lista de inicialización. Destructor <code>~Clase()</code>: sin parámetros, único. Los automáticos se destruyen en orden inverso a su creación; los dinámicos, solo con <code>delete</code>.",
+    "<code>operator=</code> por valor crea un tercer objeto (<code>other</code>); la versión definitiva usa <code>const CComplex&amp;</code>, comprueba <code>this != &amp;other</code> y devuelve <code>*this</code>. El constructor de copia <strong>debe</strong> recibir referencia. Regla de tres (cinco con movimiento).",
+    "Consultas <code>const</code>; <code>operator&lt;&lt;</code> y <code>operator&gt;&gt;</code> como funciones <code>friend</code> que devuelven el flujo por referencia (encadenables); <code>&gt;&gt;</code> solo modifica el objeto si la lectura es correcta.",
+    "<code>operator+=</code> modifica y devuelve <code>*this</code> por referencia; <code>operator+</code> devuelve un objeto nuevo por valor y no modifica operandos. Versión miembro o versión con dos parámetros (<code>left</code> por valor), nunca las dos a la vez (ambigüedad)."
+  ]
+}

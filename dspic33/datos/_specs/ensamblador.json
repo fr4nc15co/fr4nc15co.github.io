@@ -1,0 +1,698 @@
+{
+  "slug": "ensamblador",
+  "titulo": "Ensamblador del dsPIC",
+  "temaNum": 8,
+  "lenguaje": "c",
+  "lead": "Cada instrucción de ensamblador se codifica como un número y se define por sus modos de direccionamiento, los flags que modifica y el tamaño de sus operandos. En este tema recorrerás las principales instrucciones del dsPIC33FJ32MC202 (transferencia, aritméticas, lógicas, desplazamientos, saltos y subrutinas), entenderás los números con y sin signo, el <em>carry</em> y el <em>overflow</em>, cómo se usan los flags del <code class=\"reg\">SR</code> para saltar y cómo se maneja la pila con <code>CALL</code>, <code>PUSH</code> y <code>POP</code>, y aprenderás a mezclar ensamblador con C.",
+  "secciones": [
+    {
+      "titulo": "8.1 Codificación de instrucciones",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Las instrucciones de ensamblador se caracterizan por los <strong>modos de direccionamiento</strong> que soportan (la forma de acceder a cada operando, vista en 7.3.2), los <strong>flags de estado</strong> a los que afectan (información cualitativa del resultado, guardada en el <code class=\"reg\">SR</code>, vista en 7.2) y el <strong>tamaño de los operandos</strong> que usan. El dsPIC maneja estos tamaños:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Byte</strong>: 8 bits (sufijo <code>.B</code> en la instrucción).",
+            "<strong>Word</strong>: 16 bits (tamaño por defecto, sin sufijo).",
+            "<strong>Double word</strong>: 32 bits (no se usa en el curso).",
+            "<strong>Bit</strong>: 1 bit."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La CPU solo entiende de ceros y unos: en memoria de programa las instrucciones están codificadas en binario, en <strong>código máquina</strong>. El programa que traduce de lenguaje ensamblador a código máquina se llama <strong>ensamblador</strong>; si se trabaja en alto nivel, el que traduce de C a código máquina es el <strong>compilador</strong>.</p><p>Cada instrucción se codifica en <strong>24 bits</strong> (una word de instrucción), formados por el <strong>código de operación</strong> y la codificación de los <strong>parámetros</strong>. El código de operación es de longitud variable y el resto de bits codifica los operandos. Por ejemplo, la instrucción <code>MOV #lit16, Wd</code> se codifica así:</p><table class=\"tabla-datos\"><thead><tr><th>Bits 23-20</th><th>Bits 19-4</th><th>Bits 3-0</th></tr></thead><tbody><tr><td><code>0010</code> (0x2): código de instrucción</td><td><code>lit16</code>: literal de 16 bits</td><td><code>d</code>: número del registro de trabajo destino (0-15)</td></tr></tbody></table><p>Así, <code>MOV #0x0A00, W1</code> se codifica como <code>0010 0000 1010 0000 0000 0001</code> = <strong><code>0x20A001</code></strong>: 4 bits de código, 16 bits de dato inmediato y 4 bits de registro (con 4 bits se distinguen los 16 registros W0-W15). Lo puedes comprobar en la ventana <em>Program Memory</em> del MPLAB X (ejercicio 8.12.1).</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>Notación</strong> usada para explicar las instrucciones:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<code>Ws</code>: registro de trabajo <strong>fuente</strong> de datos (<em>source</em>).",
+            "<code>Wd</code>: registro de trabajo <strong>destino</strong> de datos.",
+            "<code>wop</code>: operando con un modo de direccionamiento que use un registro de trabajo: <code>Wx</code>, <code>[Wx]</code>, <code>[--Wx]</code>, <code>[Wx--]</code>, <code>[Wx++]</code>, <code>[++Wx]</code>. Se escribe <code>wops</code> o <code>wopd</code> si es fuente o destino.",
+            "<code>mem</code>: direccionamiento directo a memoria.",
+            "<code>#lit</code>: direccionamiento inmediato; el número indica los bits que ocupa el literal (<code>#lit5</code> = 0-31, <code>#lit10</code> = 0-255 en byte y 0-1023 en word, <code>#lit16</code> = 0-65 535; datasheet, tabla 22-1).",
+            "<code>{.B}</code>: la instrucción puede usarse a nivel de byte."
+          ]
+        }
+      ]
+    },
+    {
+      "titulo": "8.2 Operaciones de transferencia de datos",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Según el datasheet (tabla 22-2), la mayoría de las instrucciones de transferencia (<code>MOV #lit16,Wn</code>, <code>MOV.B #lit8,Wn</code>, <code>MOV f,Wn</code>, <code>MOV Wn,f</code>, <code>PUSH</code>, <code>POP</code>) <strong>no modifican ningún flag</strong>; solo <code>MOV f</code> (de memoria a la misma posición) actualiza <strong>N</strong> y <strong>Z</strong>, y <code>ZE</code>/<code>SE</code> modifican C, N y Z. Por ejemplo, un <code>MOV #0, W0</code> <em>no</em> pone Z a 1 en el dsPIC real: compruébalo en el simulador de MPLAB X.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.2.1 MOV</h3><p>La instrucción más utilizada en transferencia de datos es <code>MOV</code>. Equivale a un <code>=</code> en C:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Sintaxis general:</p>",
+          "codigo": "MOV{.B}  op1, op2      ; op2 = op1 (a nivel de word, o de byte con .B)",
+          "lenguaje": "asm"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Transfiere el contenido del operando fuente <code>op1</code> al operando destino <code>op2</code>. En este ensamblador <strong>el operando fuente siempre está a la izquierda y el destino a la derecha</strong>. Es la instrucción que admite más combinaciones de modos de direccionamiento; las más usadas son:</p><table class=\"tabla-datos\"><thead><tr><th>Sintaxis</th><th>Qué hace</th><th>Flags (datasheet, tabla 22-2)</th></tr></thead><tbody><tr><td><code>MOV{.B} wops, wopd</code></td><td>wops → wopd (registro o memoria apuntada por un registro)</td><td>—</td></tr><tr><td><code>MOV{.B} mem, Wd</code></td><td>(mem) → Wd: lee una posición de memoria (p. ej. un SFR como <code>PORTB</code>)</td><td>Ninguno (<code>MOV f,Wn</code>)</td></tr><tr><td><code>MOV{.B} Ws, mem</code></td><td>Ws → (mem): escribe en una posición de memoria</td><td>Ninguno (<code>MOV Wn,f</code>)</td></tr><tr><td><code>MOV #lit16, Wd</code></td><td>lit16 → Wd: carga una constante de 16 bits</td><td>Ninguno</td></tr><tr><td><code>MOV.B #lit8, Wd</code></td><td>lit8 → byte bajo de Wd (el byte alto no cambia)</td><td>Ninguno</td></tr></tbody></table><p>La fila <code>MOV Ws, Wd</code> no se ha conservado en la tabla convertida del datasheet (de ahí el «—»). Para más información de los modos de direccionamiento, consulta el tema anterior (7.3.2).</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.2.2 PUSH y POP</h3><p>Otras instrucciones de transferencia trabajan con la <strong>pila</strong> (<em>stack</em>, 7.4.3), cuyo puntero es <code>W15</code> (<em>Stack Pointer</em>, SP). La pila crece hacia direcciones altas y se organiza en words, así que el puntero avanza de 2 en 2:</p><table class=\"tabla-datos\"><thead><tr><th>Instrucción</th><th>Paso 1</th><th>Paso 2</th></tr></thead><tbody><tr><td><code>PUSH wop</code></td><td>wop → [W15]: guarda el operando en la posición apuntada por W15</td><td>W15 + 2 → W15: el SP apunta a la siguiente posición libre</td></tr><tr><td><code>POP wop</code></td><td>W15 − 2 → W15: el SP retrocede al último dato guardado</td><td>[W15] → wop: recupera el dato de la pila en el operando</td></tr></tbody></table><p>Por ejemplo, con W15 = 0x0800, <code>PUSH W0</code> escribe W0 en 0x0800 y deja W15 = 0x0802; un <code>POP W0</code> posterior vuelve a dejar W15 = 0x0800 y recupera en W0 el valor guardado (que sigue físicamente en 0x0800: la memoria no se borra).</p><p>Estas instrucciones se suelen usar para <strong>guardar los registros de trabajo (WR) que una función va a usar como variables locales</strong>: si no se guardan al principio y se recuperan al final, la función modificaría su contenido y el programa que la llama dejaría de funcionar correctamente. El orden de los <code>POP</code> es el inverso al de los <code>PUSH</code>.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.2.3 SE y ZE</h3><p>Si un dato de tamaño byte se va a utilizar a continuación como word, hay que tener en cuenta si el número tiene o no signo:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "Si <strong>no tiene signo</strong>, los 8 bits más significativos deben ser <strong>cero</strong> (extensión con ceros).",
+            "Si <strong>tiene signo</strong> (complemento a 2), los 8 bits altos deben valer 0 si el bit 7 vale 0, y 1 si el bit 7 vale 1. Es la <strong>extensión de signo</strong>."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<table class=\"tabla-datos\"><thead><tr><th>Sintaxis</th><th>Qué hace</th><th>Flags (datasheet, tabla 22-2)</th></tr></thead><tbody><tr><td><code>ZE wops, wopd</code></td><td>Carga el byte bajo de wops en la parte baja de wopd y extiende a 16 bits <strong>con ceros</strong> (<em>zero extend</em>)</td><td>C, Z, N</td></tr><tr><td><code>SE wops, wopd</code></td><td>Carga el byte bajo de wops en la parte baja de wopd y extiende a 16 bits <strong>con el bit de signo</strong> (<em>sign extend</em>)</td><td>C, N, Z</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Ejemplos del libro (el de <code>SE</code> se ha completado siguiendo el mismo patrón, porque la línea original se ha perdido):</p>",
+          "codigo": "MOV.B   #0xF3, W0\nZE      W0, W1      ; 0x00F3 -> W1\n\nMOV.B   #-1, W0     ; byte bajo de W0 = 0xFF\nZE      W0, W1      ; 255 (0x00FF) -> W1: no respeta el signo\n\nMOV.B   #-1, W0\nSE      W0, W1      ; -1 (0xFFFF) -> W1: respeta el signo",
+          "lenguaje": "asm"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La tabla siguiente muestra los dos casos típicos:</p><table class=\"tabla-datos\"><thead><tr><th>Byte</th><th>8 bits con signo</th><th>8 bits sin signo</th><th>16 bits sin extender signo (ZE)</th><th>16 bits extendiendo signo (SE)</th></tr></thead><tbody><tr><td><code>0xFF</code></td><td>−1</td><td>255</td><td>255 (<code>0x00FF</code>)</td><td>−1 (<code>0xFFFF</code>)</td></tr><tr><td><code>0x80</code></td><td>−128</td><td>128</td><td>128 (<code>0x0080</code>)</td><td>−128 (<code>0xFF80</code>)</td></tr></tbody></table>"
+        }
+      ]
+    },
+    {
+      "titulo": "8.3 Operaciones aritméticas",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Los flags se actualizan de acuerdo con el resultado de la operación: <strong>N</strong> y <strong>Z</strong> para negativo y cero, <strong>C</strong> para el acarreo y <strong>OV</strong> (V en el libro) para los cambios del bit de signo. En los ejemplos se muestra el valor de los registros y de la memoria <strong>antes y después</strong> de ejecutar la instrucción, con lo que cambia en negrita. El <code class=\"reg\">SR</code> se escribe con sus 4 bits bajos: C = bit 0, Z = bit 1, OV = bit 2, N = bit 3 (SR = 0x5 significa OV = 1 y C = 1).</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.3.1 ADD</h3><p>Suma dos números y guarda el resultado en un tercero. Sus modos de direccionamiento son:</p><table class=\"tabla-datos\"><thead><tr><th>Sintaxis</th><th>Qué hace</th><th>Flags (datasheet, tabla 22-2)</th></tr></thead><tbody><tr><td><code>ADD{.B} #lit10, wop</code></td><td>wop + lit10 → wop</td><td>C, DC, N, OV, Z</td></tr><tr><td><code>ADD{.B} ws, #lit5, wopd</code></td><td>ws + lit5 → wopd</td><td>C, DC, N, OV, Z</td></tr><tr><td><code>ADD{.B} ws, wops, wopd</code></td><td>ws + wops → wopd</td><td>C, DC, N, OV, Z</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>C</strong> se pone a 1 cuando el resultado no cabe en 16 bits (<code>ADD</code>) o en 8 bits (<code>ADD.B</code>).",
+            "<strong>Z</strong> se pone a 1 si el resultado es 0.",
+            "<strong>N</strong> se pone a 1 cuando el bit más significativo del resultado es 1.",
+            "<strong>OV</strong> se pone a 1 cuando se suman dos números del mismo signo y da otro de distinto signo."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><code>ADD.B #0x10, W1</code>: solo cambia el byte bajo de W1. 0xF4 + 0x10 = 0x104 no cabe en 8 bits: queda 0x04 y C = 1. No hay overflow porque se suman un negativo (−12) y un positivo (16).</p><table class=\"tabla-datos\"><thead><tr><th>Registro / dirección</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td><code>W1</code></td><td><code>0x78F4</code></td><td><strong><code>0x7804</code></strong></td></tr><tr><td><code>SR</code></td><td><code>0x0000</code></td><td><strong><code>0x0001 (C)</code></strong></td></tr></tbody></table>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Ejecuta la instrucción y comprueba que W1 y el SR quedan como en el libro:</p><div class=\"mpi-mount\" data-componente=\"sim-asm-dspic\" data-config='{\"titulo\": \"ADD.B #0x10, W1\", \"codigo\": \"ADD.B #0x10, W1\", \"regs\": {\"W1\": \"0x78F4\"}, \"sr\": \"0x0000\", \"mem\": {}, \"esperado\": {\"W1\": \"0x7804\", \"sr\": \"0x0001\"}}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><code>ADD W0, #0x10, [W1++]</code>: el resultado (0xF240) se escribe en la memoria apuntada por W1 y después W1 avanza 2 (operación de word). El bit 15 del resultado es 1, luego N = 1.</p><table class=\"tabla-datos\"><thead><tr><th>Registro / dirección</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td><code>W0</code></td><td><code>0xF230</code></td><td><code>0xF230</code></td></tr><tr><td><code>W1</code></td><td><code>0x0804</code></td><td><strong><code>0x0806</code></strong></td></tr><tr><td><code>SR</code></td><td><code>0x0000</code></td><td><strong><code>0x0008 (N)</code></strong></td></tr><tr><td><code>(0x0804)</code></td><td><code>0xA557</code></td><td><strong><code>0xF240</code></strong></td></tr></tbody></table>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El mismo ejemplo en el simulador (observa la posición 0x0804 de la memoria y el post-incremento de W1):</p><div class=\"mpi-mount\" data-componente=\"sim-asm-dspic\" data-config='{\"titulo\": \"ADD W0, #0x10, [W1++]\", \"codigo\": \"ADD W0, #0x10, [W1++]\", \"regs\": {\"W0\": \"0xF230\", \"W1\": \"0x0804\"}, \"sr\": \"0x0000\", \"mem\": {\"0x0804\": \"0xA557\"}, \"esperado\": {\"W1\": \"0x0806\", \"sr\": \"0x0008\", \"mem\": {\"0x0804\": \"0xF240\"}}}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.3.2 SUB</h3><p>Resta dos números. Admite las mismas variantes que <code>ADD</code>:</p><table class=\"tabla-datos\"><thead><tr><th>Sintaxis</th><th>Qué hace</th><th>Flags (datasheet, tabla 22-2)</th></tr></thead><tbody><tr><td><code>SUB{.B} #lit10, wop</code></td><td>wop − lit10 → wop</td><td>C, DC, N, OV, Z</td></tr><tr><td><code>SUB{.B} ws, #lit5, wopd</code></td><td>ws − lit5 → wopd</td><td>C, DC, N, OV, Z</td></tr><tr><td><code>SUB{.B} ws, wops, wopd</code></td><td>ws − wops → wopd</td><td>C, DC, N, OV, Z</td></tr></tbody></table><p>El flag <strong>C se pone a 1 cuando no hay <em>borrow</em></strong> (préstamo), es decir, cuando el minuendo es mayor que el sustraendo (sin signo); si son iguales tampoco hay préstamo y C también vale 1. El flag Z se pone a 1 si el resultado es 0 y el flag N cuando el bit más significativo es 1. OV indica que el resultado con signo no cabe. Internamente el dsPIC resta sumando el complemento a 2 (a + ~b + 1), y C es el acarreo que sale de esa suma: por eso vale 1 cuando no hay préstamo (datasheet, sección 3.6: en la resta, C y DC funcionan como bits de <em>borrow</em>; el ejemplo siguiente, con C = 1 en una resta sin préstamo, muestra que ese <em>borrow</em> es activo a nivel bajo).</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><code>SUB.B W0, #0x10, W1</code>: byte bajo 0x82 − 0x10 = 0x72, que se escribe en el byte bajo de W1 (el alto, 0x78, no cambia). C = 1 porque 0x82 ≥ 0x10 (no hay préstamo). OV = 1 porque con signo es −126 − 16 = −142, que no cabe en un byte (el resultado 0x72 sale positivo).</p><table class=\"tabla-datos\"><thead><tr><th>Registro / dirección</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td><code>W0</code></td><td><code>0x1782</code></td><td><code>0x1782</code></td></tr><tr><td><code>W1</code></td><td><code>0x7804</code></td><td><strong><code>0x7872</code></strong></td></tr><tr><td><code>SR</code></td><td><code>0x0000</code></td><td><strong><code>0x0005 (OV, C)</code></strong></td></tr></tbody></table>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Comprueba el ejemplo de resta a nivel de byte:</p><div class=\"mpi-mount\" data-componente=\"sim-asm-dspic\" data-config='{\"titulo\": \"SUB.B W0, #0x10, W1\", \"codigo\": \"SUB.B W0, #0x10, W1\", \"regs\": {\"W0\": \"0x1782\", \"W1\": \"0x7804\"}, \"sr\": \"0x0000\", \"mem\": {}, \"esperado\": {\"W1\": \"0x7872\", \"sr\": \"0x0005\"}}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Haz la misma resta columna a columna y observa de dónde sale cada flag (prueba también con sumas y con operandos de 16 bits):</p><div class=\"mpi-mount\" data-componente=\"vis-flags\" data-config='{\"a\": \"0x82\", \"b\": \"0x10\", \"op\": \"SUB\", \"ancho\": 8}'></div><p>Y este es el <code class=\"reg\">SR</code> que queda tras la resta (C y OV a 1). Haz clic en los bits para ver el significado de cada uno:</p>"
+        },
+        {
+          "tipo": "registro",
+          "registro": "SR",
+          "valor": "0x0005"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><code>SUB W0, #0x8, [W1++]</code> (resta a nivel de word): 0xF230 − 0x8 = 0xF228 se guarda en la memoria apuntada por W1, que avanza 2. C = 1 (no hay préstamo) y N = 1 (bit 15 a 1).</p><table class=\"tabla-datos\"><thead><tr><th>Registro / dirección</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td><code>W0</code></td><td><code>0xF230</code></td><td><code>0xF230</code></td></tr><tr><td><code>W1</code></td><td><code>0x0804</code></td><td><strong><code>0x0806</code></strong></td></tr><tr><td><code>SR</code></td><td><code>0x0000</code></td><td><strong><code>0x0009 (N, C)</code></strong></td></tr><tr><td><code>(0x0804)</code></td><td><code>0xA557</code></td><td><strong><code>0xF228</code></strong></td></tr></tbody></table>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Resta de word con destino en memoria y post-incremento:</p><div class=\"mpi-mount\" data-componente=\"sim-asm-dspic\" data-config='{\"titulo\": \"SUB W0, #0x8, [W1++]\", \"codigo\": \"SUB W0, #0x8, [W1++]\", \"regs\": {\"W0\": \"0xF230\", \"W1\": \"0x0804\"}, \"sr\": \"0x0000\", \"mem\": {\"0x0804\": \"0xA557\"}, \"esperado\": {\"W1\": \"0x0806\", \"sr\": \"0x0009\", \"mem\": {\"0x0804\": \"0xF228\"}}}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.3.3 INC y DEC</h3><p><code>INC</code> suma 1 al primer operando y guarda el resultado en el segundo; los flags se actualizan como en <code>ADD</code>. <code>DEC</code> resta 1 y los actualiza como <code>SUB</code>. Las variantes <code>INC2</code> y <code>DEC2</code> suman o restan 2.</p><table class=\"tabla-datos\"><thead><tr><th>Sintaxis</th><th>Qué hace</th><th>Flags (datasheet, tabla 22-2)</th></tr></thead><tbody><tr><td><code>INC{.B} wops, wopd</code></td><td>wops + 1 → wopd</td><td>C, DC, N, OV, Z</td></tr><tr><td><code>INC2{.B} wops, wopd</code></td><td>wops + 2 → wopd</td><td>C, DC, N, OV, Z</td></tr><tr><td><code>DEC{.B} wops, wopd</code></td><td>wops − 1 → wopd</td><td>C, DC, N, OV, Z</td></tr><tr><td><code>DEC2{.B} wops, wopd</code></td><td>wops − 2 → wopd</td><td>C, DC, N, OV, Z</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><code>INC.B W0, [W1++]</code>: el byte bajo de W0 (0xFF) + 1 = 0x100 no cabe en 8 bits: queda 0x00, con Z = 1 y C = 1. Se escribe en el byte 0x0805, que es el byte <em>alto</em> de la word 0x0804 (<em>little endian</em>), y W1 avanza solo 1 por ser operación de byte.</p><table class=\"tabla-datos\"><thead><tr><th>Registro / dirección</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td><code>W0</code></td><td><code>0x78FF</code></td><td><code>0x78FF</code></td></tr><tr><td><code>W1</code></td><td><code>0x0805</code></td><td><strong><code>0x0806</code></strong></td></tr><tr><td><code>SR</code></td><td><code>0x0000</code></td><td><strong><code>0x0003 (Z, C)</code></strong></td></tr><tr><td><code>(0x0804)</code></td><td><code>0x2355</code></td><td><strong><code>0x0055</code></strong></td></tr></tbody></table>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Ejecuta el incremento a nivel de byte con destino en memoria:</p><div class=\"mpi-mount\" data-componente=\"sim-asm-dspic\" data-config='{\"titulo\": \"INC.B W0, [W1++]\", \"codigo\": \"INC.B W0, [W1++]\", \"regs\": {\"W0\": \"0x78FF\", \"W1\": \"0x0805\"}, \"sr\": \"0x0000\", \"mem\": {\"0x0804\": \"0x2355\"}, \"esperado\": {\"W1\": \"0x0806\", \"sr\": \"0x0003\", \"mem\": {\"0x0804\": \"0x0055\"}}}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.3.4 NEG</h3><p><code>NEG</code> obtiene el <strong>complemento a 2</strong> de un número: equivale a restar el primer operando a 0 y guardar el resultado en el segundo. Los flags se actualizan como en <code>SUB</code>.</p><table class=\"tabla-datos\"><thead><tr><th>Sintaxis</th><th>Qué hace</th><th>Flags (datasheet, tabla 22-2)</th></tr></thead><tbody><tr><td><code>NEG{.B} wops, wopd</code></td><td>0 − wops → wopd (complemento a 2)</td><td>C, DC, N, OV, Z</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><code>NEG W0, W1</code>: −1 en complemento a 2 de 16 bits es 0xFFFF; N = 1 y C = 0 (0 − 1 pide préstamo).</p><table class=\"tabla-datos\"><thead><tr><th>Registro / dirección</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td><code>W0</code></td><td><code>0x0001</code></td><td><code>0x0001</code></td></tr><tr><td><code>W1</code></td><td><code>0x7804</code></td><td><strong><code>0xFFFF</code></strong></td></tr><tr><td><code>SR</code></td><td><code>0x0000</code></td><td><strong><code>0x0008 (N)</code></strong></td></tr></tbody></table><p><code>NEG.B W0, [W1++]</code>: −0x39 en un byte es 0xC7, que se escribe en el byte 0x0805 (byte alto de la word 0x0804).</p><table class=\"tabla-datos\"><thead><tr><th>Registro / dirección</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td><code>W0</code></td><td><code>0x7839</code></td><td><code>0x7839</code></td></tr><tr><td><code>W1</code></td><td><code>0x0805</code></td><td><strong><code>0x0806</code></strong></td></tr><tr><td><code>SR</code></td><td><code>0x0000</code></td><td><strong><code>0x0008 (N)</code></strong></td></tr><tr><td><code>(0x0804)</code></td><td><code>0x2355</code></td><td><strong><code>0xC755</code></strong></td></tr></tbody></table>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Prueba la negación a nivel de byte:</p><div class=\"mpi-mount\" data-componente=\"sim-asm-dspic\" data-config='{\"titulo\": \"NEG.B W0, [W1++]\", \"codigo\": \"NEG.B W0, [W1++]\", \"regs\": {\"W0\": \"0x7839\", \"W1\": \"0x0805\"}, \"sr\": \"0x0000\", \"mem\": {\"0x0804\": \"0x2355\"}, \"esperado\": {\"W1\": \"0x0806\", \"sr\": \"0x0008\", \"mem\": {\"0x0804\": \"0xC755\"}}}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.3.5 MUL.SS y MUL.UU</h3><p>Multiplican dos números de 16 bits <strong>con signo</strong> (<code>MUL.SS</code>) o <strong>sin signo</strong> (<code>MUL.UU</code>). <strong>No actualizan los flags</strong> del SR. El resultado ocupa 32 bits y se guarda en el registro Wd y el siguiente:</p><table class=\"tabla-datos\"><thead><tr><th>Sintaxis</th><th>Qué hace</th><th>Flags (datasheet, tabla 22-2)</th></tr></thead><tbody><tr><td><code>MUL.SS Wb, Ws, Wd</code></td><td>{Wd+1, Wd} = Wb · Ws con signo</td><td>Ninguno</td></tr><tr><td><code>MUL.UU Wb, Ws, Wd</code></td><td>{Wd+1, Wd} = Wb · Ws sin signo</td><td>Ninguno</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<code>Wd</code>: parte <strong>baja</strong> del resultado (16 bits); d debe ser par y menor que 14.",
+            "<code>Wd+1</code>: parte <strong>alta</strong> del resultado (16 bits)."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><code>MUL.SS W0, W0, W2</code>: 0x1000 · 0x1000 = 0x0100 0000, así que W3 (parte alta) = 0x0100 y W2 (parte baja) = 0x0000.</p><table class=\"tabla-datos\"><thead><tr><th>Registro / dirección</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td><code>W0</code></td><td><code>0x1000</code></td><td><code>0x1000</code></td></tr><tr><td><code>W2</code></td><td><code>0x0000</code></td><td><code>0x0000</code></td></tr><tr><td><code>W3</code></td><td><code>0x0000</code></td><td><strong><code>0x0100</code></strong></td></tr></tbody></table><p><code>MUL.UU W0, W0, W2</code>: sin signo, 65 535² = 0xFFFE 0001. (Si fuera <code>MUL.SS</code>, 0xFFFF sería −1 y el resultado sería 1: W3 = 0x0000, W2 = 0x0001.)</p><table class=\"tabla-datos\"><thead><tr><th>Registro / dirección</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td><code>W0</code></td><td><code>0xFFFF</code></td><td><code>0xFFFF</code></td></tr><tr><td><code>W2</code></td><td><code>0x0000</code></td><td><strong><code>0x0001</code></strong></td></tr><tr><td><code>W3</code></td><td><code>0x0000</code></td><td><strong><code>0xFFFE</code></strong></td></tr></tbody></table>"
+        },
+        {
+          "tipo": "nota",
+          "html": "La línea de la instrucción del ejemplo de <code>MUL.UU</code> no se ha conservado en el libro; se ha reconstruido como <code>MUL.UU W0, W0, W2</code>, coherente con los registros de su tabla (W0, W2 y W3)."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Multiplica sin signo y observa cómo se reparte el resultado de 32 bits entre W3 y W2:</p><div class=\"mpi-mount\" data-componente=\"sim-asm-dspic\" data-config='{\"titulo\": \"MUL.UU W0, W0, W2\", \"codigo\": \"MUL.UU W0, W0, W2\", \"regs\": {\"W0\": \"0xFFFF\", \"W2\": \"0x0000\", \"W3\": \"0x0000\"}, \"sr\": \"0x0000\", \"mem\": {}, \"esperado\": {\"W2\": \"0x0001\", \"W3\": \"0xFFFE\"}}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.3.6 DIV</h3><p><code>DIV</code> divide el primer operando entre el segundo y deja el resultado así:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<code>W0</code>: el <strong>cociente</strong> de la división (16 bits).",
+            "<code>W1</code>: el <strong>resto</strong> de la división (16 bits)."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<table class=\"tabla-datos\"><thead><tr><th>Sintaxis</th><th>Qué hace</th><th>Ciclos (REPEAT + DIV)</th><th>Flags (datasheet, tabla 22-2)</th></tr></thead><tbody><tr><td><code>REPEAT #17</code><br><code>DIV.S Wm, Wn</code></td><td>Wm / Wn con signo → cociente en W0, resto en W1</td><td>1 + 18</td><td>N, Z, C, OV</td></tr><tr><td><code>REPEAT #17</code><br><code>DIV.U Wm, Wn</code></td><td>Wm / Wn sin signo → cociente en W0, resto en W1</td><td>1 + 18</td><td>N, Z, C, OV</td></tr></tbody></table><p>Según el libro, el flag Z se pone a 1 si el resto es cero; el flag C no se puede usar, aunque se ponga a 1; OV se pone a 1 si al dividir dos números del mismo signo el cociente cambia de signo, y N es siempre 1. La división se hace paso a paso, por lo que la instrucción <code>DIV</code> no se ejecuta una sola vez: se coloca detrás de <code>REPEAT</code>, que ejecuta repetidamente la instrucción siguiente. <code>REPEAT #lit14</code> repite la instrucción siguiente <strong>lit14 + 1</strong> veces, así que <code>REPEAT #17</code> ejecuta <code>DIV</code> <strong>18</strong> veces, que son los 18 ciclos de la tabla.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><code>REPEAT #17 / DIV.S W0, W2</code>: 10 / 3 = 3 (cociente en W0) y resto 1 (en W1). Con <code>DIV.U W0, W2</code> y los mismos datos el resultado es idéntico, porque ambos números son positivos.</p><table class=\"tabla-datos\"><thead><tr><th>Registro / dirección</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td><code>W0</code></td><td><code>0x000A</code></td><td><strong><code>0x0003</code></strong></td></tr><tr><td><code>W1</code></td><td><code>0x0000</code></td><td><strong><code>0x0001</code></strong></td></tr><tr><td><code>W2</code></td><td><code>0x0003</code></td><td><code>0x0003</code></td></tr></tbody></table>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Ejecuta la división (el simulador repite el <code>DIV.S</code> tantas veces como indica <code>REPEAT</code>):</p><div class=\"mpi-mount\" data-componente=\"sim-asm-dspic\" data-config='{\"titulo\": \"REPEAT #17 + DIV.S W0, W2\", \"codigo\": \"REPEAT #17\\nDIV.S W0, W2\", \"regs\": {\"W0\": \"0x000A\", \"W1\": \"0x0000\", \"W2\": \"0x0003\"}, \"sr\": \"0x0000\", \"mem\": {}, \"esperado\": {\"W0\": \"0x0003\", \"W1\": \"0x0001\"}}'></div>"
+        }
+      ]
+    },
+    {
+      "titulo": "8.4 Operaciones lógicas",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Las operaciones lógicas trabajan <strong>bit a bit</strong> dentro de un registro. Se suelen usar para aplicar <strong>máscaras</strong>, una especie de filtro que permite seleccionar ciertos bits de un registro. Según el datasheet, en <code>AND</code>, <code>IOR</code>, <code>XOR</code> y <code>COM</code> los flags Z y N se actualizan con el resultado, mientras que C y OV <strong>conservan el valor que ya tenían</strong> (no se tocan); <code>CLR</code> y <code>SETM</code> no afectan a ningún flag.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.4.1 AND</h3><p>Efectúa el producto lógico de dos operandos, bit a bit:</p><table class=\"tabla-datos\"><thead><tr><th>Sintaxis</th><th>Qué hace</th><th>Flags (datasheet, tabla 22-2)</th></tr></thead><tbody><tr><td><code>AND{.B} #lit10, wop</code></td><td>wop AND lit10 → wop</td><td>N, Z</td></tr><tr><td><code>AND{.B} ws, #lit5, wopd</code></td><td>ws AND lit5 → wopd</td><td>N, Z</td></tr><tr><td><code>AND{.B} ws, wops, wopd</code></td><td>ws AND wops → wopd</td><td>N, Z</td></tr></tbody></table><p><code>AND.B W0, W1, [W2++]</code>: 0x55 AND 0x11 = 0x11, que se escribe en el byte 0x0801 (byte alto de la word 0x0800); W2 avanza 1 (byte).</p><table class=\"tabla-datos\"><thead><tr><th>Registro / dirección</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td><code>W0</code></td><td><code>0xAA55</code></td><td><code>0xAA55</code></td></tr><tr><td><code>W1</code></td><td><code>0x2211</code></td><td><code>0x2211</code></td></tr><tr><td><code>W2</code></td><td><code>0x0801</code></td><td><strong><code>0x0802</code></strong></td></tr><tr><td><code>(0x0800)</code></td><td><code>0xFFFF</code></td><td><strong><code>0x11FF</code></strong></td></tr></tbody></table><p><code>AND W0, W1, W2</code>: la máscara 0x00FF deja pasar solo el byte bajo de W0.</p><table class=\"tabla-datos\"><thead><tr><th>Registro / dirección</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td><code>W0</code></td><td><code>0x1234</code></td><td><code>0x1234</code></td></tr><tr><td><code>W1</code></td><td><code>0x00FF</code></td><td><code>0x00FF</code></td></tr><tr><td><code>W2</code></td><td><code>0x0000</code></td><td><strong><code>0x0034</code></strong></td></tr></tbody></table><p><code>AND</code> sirve como máscara para <strong>seleccionar</strong> únicamente ciertos bits de un registro o para <strong>borrar bits</strong> de forma selectiva.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Prueba el ejemplo a nivel de byte con destino en memoria:</p><div class=\"mpi-mount\" data-componente=\"sim-asm-dspic\" data-config='{\"titulo\": \"AND.B W0, W1, [W2++]\", \"codigo\": \"AND.B W0, W1, [W2++]\", \"regs\": {\"W0\": \"0xAA55\", \"W1\": \"0x2211\", \"W2\": \"0x0801\"}, \"sr\": \"0x0000\", \"mem\": {\"0x0800\": \"0xFFFF\"}, \"esperado\": {\"W2\": \"0x0802\", \"mem\": {\"0x0800\": \"0x11FF\"}}}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.4.2 IOR</h3><p>Efectúa la suma lógica (OR inclusivo) de dos operandos, bit a bit:</p><table class=\"tabla-datos\"><thead><tr><th>Sintaxis</th><th>Qué hace</th><th>Flags (datasheet, tabla 22-2)</th></tr></thead><tbody><tr><td><code>IOR{.B} #lit10, wop</code></td><td>wop OR lit10 → wop</td><td>N, Z</td></tr><tr><td><code>IOR{.B} ws, #lit5, wopd</code></td><td>ws OR lit5 → wopd</td><td>N, Z</td></tr><tr><td><code>IOR{.B} ws, wops, wopd</code></td><td>ws OR wops → wopd</td><td>N, Z</td></tr></tbody></table><p><code>IOR.B W0, W1, [W2++]</code>: 0x55 OR 0xF0 = 0xF5, escrito en el byte 0x0801.</p><table class=\"tabla-datos\"><thead><tr><th>Registro / dirección</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td><code>W0</code></td><td><code>0x0A55</code></td><td><code>0x0A55</code></td></tr><tr><td><code>W1</code></td><td><code>0x00F0</code></td><td><code>0x00F0</code></td></tr><tr><td><code>W2</code></td><td><code>0x0801</code></td><td><strong><code>0x0802</code></strong></td></tr><tr><td><code>(0x0800)</code></td><td><code>0xFFFF</code></td><td><strong><code>0xF5FF</code></strong></td></tr></tbody></table><p><code>IOR W0, W1, W2</code>: la máscara 0x00FF pone a 1 todo el byte bajo.</p><table class=\"tabla-datos\"><thead><tr><th>Registro / dirección</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td><code>W0</code></td><td><code>0x1234</code></td><td><code>0x1234</code></td></tr><tr><td><code>W1</code></td><td><code>0x00FF</code></td><td><code>0x00FF</code></td></tr><tr><td><code>W2</code></td><td><code>0x0000</code></td><td><strong><code>0x12FF</code></strong></td></tr></tbody></table><p><code>IOR</code> sirve como máscara para seleccionar ciertos bits o para <strong>poner a 1</strong> bits de forma selectiva. La combinación de <code>AND</code> con <code>IOR</code> permite <strong>igualar dos bits de dos registros</strong>: por ejemplo, poner el bit 1 de W0 igual que el bit 1 de W1, sin tocar el resto de W0 ni W1:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Copiar el bit 1 de W1 en el bit 1 de W0 con máscaras (W2 y W3 se usan como auxiliares):</p>",
+          "codigo": "MOV     #0xFFFD, W3     ; máscara con el bit 1 a 0\nAND     W0, W3, W0      ; pone a 0 el bit 1 de W0\nAND     W1, #2, W2      ; se selecciona el bit 1 de W1\nIOR     W0, W2, W0      ; W0.1 = W1.1",
+          "lenguaje": "asm"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La máscara 0xFFFD no cabe en un literal de 5 bits, por eso se carga antes en W3 con <code>MOV</code>; en cambio, 2 sí cabe en <code>#lit5</code>. Pruébalo con W0 = 0x1234 (bit 1 a 0) y W1 = 0x0002 (bit 1 a 1): W0 debe acabar en 0x1236.</p><div class=\"mpi-mount\" data-componente=\"sim-asm-dspic\" data-config='{\"titulo\": \"Copiar un bit con AND e IOR\", \"codigo\": \"MOV #0xFFFD, W3   ; mascara con el bit 1 a 0\\nAND W0, W3, W0    ; pone a 0 el bit 1 de W0\\nAND W1, #2, W2    ; selecciona el bit 1 de W1\\nIOR W0, W2, W0    ; W0.1 = W1.1\", \"regs\": {\"W0\": \"0x1234\", \"W1\": \"0x0002\"}, \"sr\": \"0x0000\", \"mem\": {}, \"esperado\": {\"W0\": \"0x1236\", \"W1\": \"0x0002\"}}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.4.3 XOR</h3><p>Realiza un OR exclusivo bit a bit de dos operandos y guarda el resultado en un tercero:</p><table class=\"tabla-datos\"><thead><tr><th>Sintaxis</th><th>Qué hace</th><th>Flags (datasheet, tabla 22-2)</th></tr></thead><tbody><tr><td><code>XOR{.B} #lit10, wop</code></td><td>wop XOR lit10 → wop</td><td>N, Z</td></tr><tr><td><code>XOR{.B} ws, #lit5, wopd</code></td><td>ws XOR lit5 → wopd</td><td>N, Z</td></tr><tr><td><code>XOR{.B} ws, wops, wopd</code></td><td>ws XOR wops → wopd</td><td>N, Z</td></tr></tbody></table><p><code>XOR W0, W1, W2</code>: los bits de W0 donde la máscara vale 1 se invierten (0x34 → 0xCB); el resto no cambia.</p><table class=\"tabla-datos\"><thead><tr><th>Registro / dirección</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td><code>W0</code></td><td><code>0x1234</code></td><td><code>0x1234</code></td></tr><tr><td><code>W1</code></td><td><code>0x00FF</code></td><td><code>0x00FF</code></td></tr><tr><td><code>W2</code></td><td><code>0x0000</code></td><td><strong><code>0x12CB</code></strong></td></tr></tbody></table>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.4.4 COM</h3><p>Realiza el <strong>complemento a 1</strong> del primer operando y guarda el resultado en el segundo:</p><table class=\"tabla-datos\"><thead><tr><th>Sintaxis</th><th>Qué hace</th><th>Flags (datasheet, tabla 22-2)</th></tr></thead><tbody><tr><td><code>COM{.B} wops, wopd</code></td><td>complemento a 1 de wops → wopd</td><td>N, Z</td></tr></tbody></table><p><code>COM W0, W1</code>: cada bit se invierte (0011 → 1100).</p><table class=\"tabla-datos\"><thead><tr><th>Registro / dirección</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td><code>W0</code></td><td><code>0x3333</code></td><td><code>0x3333</code></td></tr><tr><td><code>W1</code></td><td><code>0x0000</code></td><td><strong><code>0xCCCC</code></strong></td></tr></tbody></table>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.4.5 CLR</h3><p>Limpia los bits del operando, es decir, los pone a cero. <strong>No afecta a los flags</strong> de estado.</p><table class=\"tabla-datos\"><thead><tr><th>Sintaxis</th><th>Qué hace</th><th>Flags (datasheet, tabla 22-2)</th></tr></thead><tbody><tr><td><code>CLR{.B} wop</code></td><td>0 → wop</td><td>Ninguno</td></tr><tr><td><code>CLR{.B} mem</code></td><td>0 → mem</td><td>Ninguno</td></tr></tbody></table><p>Ejemplos del libro: <code>CLR.B W0</code> limpia el byte bajo de W0, <code>CLR W1</code> limpia W1 y <code>CLR 0x800</code> limpia la word de memoria 0x0800 (bytes 0x0800 y 0x0801). Con unos valores de partida cualesquiera (elegidos aquí para ilustrarlo):</p><table class=\"tabla-datos\"><thead><tr><th>Instrucción</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td><code>CLR.B W0</code></td><td>W0 = <code>0x1234</code></td><td>W0 = <strong><code>0x1200</code></strong></td></tr><tr><td><code>CLR W1</code></td><td>W1 = <code>0x5678</code></td><td>W1 = <strong><code>0x0000</code></strong></td></tr><tr><td><code>CLR 0x800</code></td><td>(0x0800) = <code>0xABCD</code></td><td>(0x0800) = <strong><code>0x0000</code></strong></td></tr></tbody></table>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.4.6 SETM</h3><p>Pone a uno todos los bits del operando. <strong>No afecta a los flags</strong> de estado.</p><table class=\"tabla-datos\"><thead><tr><th>Sintaxis</th><th>Qué hace</th><th>Flags (datasheet, tabla 22-2)</th></tr></thead><tbody><tr><td><code>SETM{.B} wop</code></td><td>0xFFFF (0xFF en byte) → wop</td><td>Ninguno</td></tr><tr><td><code>SETM{.B} mem</code></td><td>0xFFFF (0xFF en byte) → mem</td><td>Ninguno</td></tr></tbody></table><p>Ejemplos del libro: <code>SETM.B W0</code> pone a unos el byte bajo de W0, <code>SETM W1</code> pone a unos W1 y <code>SETM.B 0x801</code> pone a unos el byte de memoria 0x0801. Partiendo de los valores que dejó el ejemplo de <code>CLR</code>:</p><table class=\"tabla-datos\"><thead><tr><th>Instrucción</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td><code>SETM.B W0</code></td><td>W0 = <code>0x1200</code></td><td>W0 = <strong><code>0x12FF</code></strong></td></tr><tr><td><code>SETM W1</code></td><td>W1 = <code>0x0000</code></td><td>W1 = <strong><code>0xFFFF</code></strong></td></tr><tr><td><code>SETM.B 0x801</code></td><td>(0x0800) = <code>0x0000</code></td><td>(0x0800) = <strong><code>0xFF00</code></strong> (0x0801 es el byte alto)</td></tr></tbody></table>"
+        }
+      ]
+    },
+    {
+      "titulo": "8.5 Instrucciones de desplazamiento de bits",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.5.1 SL y LSR</h3><p><code>SL</code> (<em>shift left</em>) desplaza los bits de un registro hacia la <strong>izquierda</strong>, solo a nivel de word (no admite <code>.B</code>), con el destino en un registro. Las posiciones libres que van quedando a la derecha se rellenan con <strong>ceros</strong>. Desplazar n posiciones a la izquierda equivale a multiplicar por 2<sup>n</sup>.</p><table class=\"tabla-datos\"><thead><tr><th>Sintaxis</th><th>Qué hace</th><th>Flags (datasheet, tabla 22-2)</th></tr></thead><tbody><tr><td><code>SL ws, #lit4, wopd</code></td><td>Desplaza lit4 veces a la izquierda los bits de ws y lo guarda en wopd</td><td>N, Z</td></tr><tr><td><code>SL ws, wops, wopd</code></td><td>Desplaza wops veces a la izquierda los bits de ws y lo guarda en wopd; introduce ceros por la derecha</td><td>N, Z</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Ejemplo del libro: al final W1 vale 0x0004 (1 desplazado dos posiciones = 1 · 2<sup>2</sup>).</p>",
+          "codigo": "MOV     #0x0001, W0\nSL      W0, #2, W1      ; W1 = 0x0004",
+          "lenguaje": "asm"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><code>LSR</code> (<em>logical shift right</em>) desplaza los bits hacia la <strong>derecha</strong>. Las posiciones libres de la izquierda se rellenan con ceros. Sus modos de direccionamiento, flags (N, Z) y restricciones son los mismos que los de <code>SL</code>; desplazar n posiciones a la derecha equivale a dividir entre 2<sup>n</sup> (sin signo).</p><p>Se puede combinar con <code>AND</code> e <code>IOR</code> para igualar bits <em>de distinta posición</em> en dos registros. Por ejemplo, poner el bit 1 de W0 igual que el bit 0 de W1:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Copiar el bit 0 de W1 en el bit 1 de W0 (la máscara 0xFFFD se carga antes en un registro, porque no cabe en el literal de 5 bits de <code>AND</code>):</p>",
+          "codigo": "MOV     #0xFFFD, W3     ; mascara con el bit 1 a 0\nAND     W0, W3, W0      ; se pone a 0 el bit 1 de W0\nAND     W1, #0x1, W2    ; se selecciona el bit 0 de W1\nSL      W2, #1, W2      ; el bit 0 pasa a ser el bit 1\nIOR     W0, W2, W0      ;",
+          "lenguaje": "asm"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.5.2 RLC y RRC</h3><p><code>RLC</code> (<em>rotate left through carry</em>) rota los bits de un registro una posición a la izquierda <strong>pasando por el Carry</strong>: el bit que sale por un lado entra en C, y el valor anterior de C entra por el otro lado.</p><table class=\"tabla-datos\"><thead><tr><th>Sintaxis</th><th>Qué hace</th><th>Flags (datasheet, tabla 22-2)</th></tr></thead><tbody><tr><td><code>RLC{.B} wops, wopd</code></td><td>Rota wops una vez a la izquierda a través de C y guarda en wopd: C ← bit 15 (bit 7 en .B), bit 0 ← C anterior</td><td>C, N, Z</td></tr><tr><td><code>RRC{.B} wops, wopd</code></td><td>Rota a la derecha a través de C: C ← bit 0, bit 15 (bit 7 en .B) ← C anterior</td><td>C, N, Z</td></tr></tbody></table><p><code>RLC.B W0, W1</code>: el byte bajo 0xC0 = 1100 0000 rota a la izquierda; entra por la derecha el C anterior (1) y sale el bit 7 (1) hacia C: 1000 0001 = 0x81. El byte alto de W1 no cambia. N = 1 porque el bit 7 del resultado es 1.</p><table class=\"tabla-datos\"><thead><tr><th>Registro / dirección</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td><code>W0</code></td><td><code>0x80C0</code></td><td><code>0x80C0</code></td></tr><tr><td><code>W1</code></td><td><code>0x1234</code></td><td><strong><code>0x1281</code></strong></td></tr><tr><td><code>SR</code></td><td><code>0x0001 (C)</code></td><td><strong><code>0x0009 (N, C)</code></strong></td></tr></tbody></table>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Rota a través del Carry (el SR empieza con C = 1):</p><div class=\"mpi-mount\" data-componente=\"sim-asm-dspic\" data-config='{\"titulo\": \"RLC.B W0, W1\", \"codigo\": \"RLC.B W0, W1\", \"regs\": {\"W0\": \"0x80C0\", \"W1\": \"0x1234\"}, \"sr\": \"0x0001\", \"mem\": {}, \"esperado\": {\"W1\": \"0x1281\", \"sr\": \"0x0009\"}}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.5.3 RLNC y RRNC</h3><p><code>RLNC</code> funciona igual que <code>RLC</code> pero <strong>sin pasar por el Carry</strong>: el bit 15 (bit 7 en .B) que sale por la izquierda entra directamente por la derecha. <code>RRNC</code> es la versión sin carry de <code>RRC</code>. Los modos de direccionamiento son los mismos.</p><table class=\"tabla-datos\"><thead><tr><th>Sintaxis</th><th>Qué hace</th><th>Flags (datasheet, tabla 22-2)</th></tr></thead><tbody><tr><td><code>RLNC{.B} wops, wopd</code></td><td>Rota a la izquierda sin carry: bit 0 ← bit 15 (bit 7 en .B)</td><td>N, Z</td></tr><tr><td><code>RRNC{.B} wops, wopd</code></td><td>Rota a la derecha sin carry: bit 15 (bit 7 en .B) ← bit 0</td><td>N, Z</td></tr></tbody></table><p><code>RLNC.B W0, W1</code>: 0x40 = 0100 0000 rota a 1000 0000 = 0x80 (el bit 7 que sale, un 0, entra por el bit 0). N = 1. C sigue a 1 porque <code>RLNC</code> no lo modifica: conserva el valor que ya tenía.</p><table class=\"tabla-datos\"><thead><tr><th>Registro / dirección</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td><code>W0</code></td><td><code>0x8040</code></td><td><code>0x8040</code></td></tr><tr><td><code>W1</code></td><td><code>0x1234</code></td><td><strong><code>0x1280</code></strong></td></tr><tr><td><code>SR</code></td><td><code>0x0001 (C)</code></td><td><strong><code>0x0009 (N, C)</code></strong></td></tr></tbody></table>"
+        }
+      ]
+    },
+    {
+      "titulo": "8.6 Control del flujo del programa",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.6.1 Saltos</h3><p>El «estado» en el que queda el procesador después de ejecutar una instrucción (de transferencia, aritmética, lógica o de desplazamiento) queda almacenado en el registro de estado <code class=\"reg\">SR</code> (7.4.4.1). El estado viene definido por los <strong>flags</strong>:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>N</strong>: negativo.",
+            "<strong>Z</strong>: cero (<em>zero</em>).",
+            "<strong>OV</strong> (V en el libro): rebose (<em>overflow</em>).",
+            "<strong>C</strong>: acarreo (<em>carry</em>)."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La información de estos flags es todo lo que se necesita para el <strong>control del flujo del programa</strong>. Por ejemplo, las condiciones de C <code>if (a == b)</code> e <code>if (a != b)</code> se efectúan en ensamblador <strong>comparando</strong> (instrucción <code>CP</code>, que es una resta) el valor de <code>b</code> con el de <code>a</code>: si son iguales, el procesador pone Z = 1; si son distintas, Z queda a 0. Los <strong>saltos condicionales</strong> <code>BRA</code> permiten ejecutar el bloque <code>if</code> o el bloque <code>else</code> según el resultado de la comparación.</p><p>Cuando la condición es una desigualdad, los flags que hay que comprobar tras la comparación son el <strong>Carry</strong> (C) para operandos <strong>sin signo</strong> y el <strong>Overflow</strong> (OV), junto con N, para operandos <strong>con signo</strong> (complemento a 2). Para facilitar la escritura de programas, el ensamblador del dsPIC dispone de estas equivalencias entre alto nivel y ensamblador:</p><table class=\"tabla-datos\"><thead><tr><th>Alto nivel</th><th>Ensamblador</th><th>Flag</th></tr></thead><tbody><tr><td><code>==</code></td><td>Z (<em>equal</em>)</td><td>Z</td></tr><tr><td><code>!=</code></td><td>NZ (<em>not equal</em>)</td><td>¬Z</td></tr></tbody></table><p>Comparaciones de desigualdad (estricta y no estricta), con los mnemónicos y la semántica del datasheet (tabla 22-2): en la resta, <strong>C = 1 cuando no hay préstamo</strong> (sección 3.6).</p><table class=\"tabla-datos\"><thead><tr><th>Alto nivel</th><th>Ensamblador</th><th>Sin signo</th><th>Con signo</th></tr></thead><tbody><tr><td><code>&gt;</code></td><td>GTU (<em>unsigned greater than</em>)</td><td>C ∧ ¬Z</td><td></td></tr><tr><td></td><td>GT (<em>signed greater than</em>)</td><td></td><td>¬Z ∧ (N = OV)</td></tr><tr><td><code>&lt;</code></td><td>LTU (<em>unsigned less than</em>)</td><td>¬C</td><td></td></tr><tr><td></td><td>LT (<em>signed less than</em>)</td><td></td><td>N ≠ OV</td></tr><tr><td><code>&gt;=</code></td><td>GEU (<em>unsigned greater than or equal</em>)</td><td>C</td><td></td></tr><tr><td></td><td>GE (<em>signed greater than or equal</em>)</td><td></td><td>N = OV</td></tr><tr><td><code>&lt;=</code></td><td>LEU (<em>unsigned less than or equal</em>)</td><td>¬C ∨ Z</td><td></td></tr><tr><td></td><td>LE (<em>signed less than or equal</em>)</td><td></td><td>Z ∨ (N ≠ OV)</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Además de estas, el datasheet (tabla 22-2) incluye <code>BRA Expr</code> (salto incondicional, 2 ciclos) y saltos por un solo flag: <code>BRA C</code>, <code>NC</code>, <code>Z</code>, <code>NZ</code>, <code>N</code>, <code>NN</code>, <code>OV</code> y <code>NOV</code>. Un salto condicional tarda 1 ciclo si no salta y 2 si salta.</p><p>La instrucción <strong><code>CP</code></strong> es similar a <code>SUB</code>: resta los dos operandos y actualiza los flags con el resultado, pero <strong>no deja el resultado de la resta en ningún registro</strong>. Es idónea para comparar dos operandos que no se quieren modificar, justo antes de un salto condicional:</p><table class=\"tabla-datos\"><thead><tr><th>Sintaxis</th><th>Qué hace</th><th>Flags (datasheet, tabla 22-2)</th></tr></thead><tbody><tr><td><code>CP{.B} ws, #lit5</code></td><td>Actualiza SR como la resta ws − lit5</td><td>C, DC, N, OV, Z</td></tr><tr><td><code>CP{.B} ws, wops</code></td><td>Actualiza SR como la resta ws − wops</td><td>C, DC, N, OV, Z</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Ejemplo de salto condicional: primero <code>CP</code> actualiza los flags del SR igual que <code>SUB</code>; después <code>BRA</code> salta a <code>next</code> si W0 &gt; W1 en comparación <strong>sin signo</strong>. Ojo: −1 es mayor que 100 si se compara sin signo, ya que −1 es 65 535 sin signo en 16 bits.</p>",
+          "codigo": "        CP      W0, W1\n        BRA     GTU, next   ; si W0 > W1\n        ....\nnext:",
+          "lenguaje": "asm"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Introduce dos valores y observa qué saltos se toman según los flags que deja <code>CP</code> (la tabla usa la semántica del dsPIC real descrita en la nota anterior):</p><div class=\"mpi-mount\" data-componente=\"tabla-bra\" data-config='{\"a\": \"0xFFFF\", \"b\": \"0x0064\"}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El mismo caso en el simulador: si salta, W2 acaba valiendo 1.</p><div class=\"mpi-mount\" data-componente=\"sim-asm-dspic\" data-config='{\"titulo\": \"CP + BRA GTU (-1 frente a 100)\", \"codigo\": \"        CP    W0, W1      ; SR como W0 - W1\\n        BRA   GTU, next   ; si W0 > W1 sin signo\\n        MOV   #0, W2      ; no salta\\n        BRA   fin\\nnext:   MOV   #1, W2      ; salta\\nfin:    NOP\", \"regs\": {\"W0\": \"0xFFFF\", \"W1\": \"0x0064\", \"W2\": \"0x0000\"}, \"sr\": \"0x0000\", \"mem\": {}, \"esperado\": {\"W2\": \"0x0001\"}}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.6.2 Condiciones</h3><p>Así se traduce a ensamblador una condición <code>if</code> completa de C:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>En C:</p>",
+          "codigo": "if (a == b)\n    ...;\nelse\n    ...;",
+          "lenguaje": "c"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>En ensamblador (a en W0, b en W1):</p>",
+          "codigo": "        CP      W0, W1\n        BRA     NZ, else    ; condición negada: si a != b, al else\n        ..                  ; bloque if\n        BRA     endif\nelse:                       ; bloque else\n        ..\nendif:",
+          "lenguaje": "asm"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Nótese que la comparación que se hace en ensamblador es la <strong>negada</strong> de la que se escribe en C: se salta al <code>else</code> cuando <em>no</em> se cumple la condición; si se cumple, se sigue en secuencia por el bloque <code>if</code>, que termina con un salto incondicional al final para no ejecutar también el <code>else</code>.</p><div class=\"mpi-mount\" data-componente=\"sim-asm-dspic\" data-config='{\"titulo\": \"if / else con CP y BRA NZ\", \"codigo\": \"        CP    W0, W1      ; if (a == b)\\n        BRA   NZ, else\\n        MOV   #1, W2      ; bloque if\\n        BRA   endif\\nelse:   MOV   #2, W2      ; bloque else\\nendif:  NOP\", \"regs\": {\"W0\": \"0x0005\", \"W1\": \"0x0005\", \"W2\": \"0x0000\"}, \"sr\": \"0x0000\", \"mem\": {}, \"esperado\": {\"W2\": \"0x0001\"}}'></div><p>Con a = b = 5 se ejecuta el bloque <code>if</code> (W2 = 1); cambia W1 a otro valor y verás que se ejecuta el <code>else</code> (W2 = 2).</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.6.3 Bucles</h3><p>Así se traduce a ensamblador un bucle <code>for</code> de C:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>En C:</p>",
+          "codigo": "for (i = 2; i < 10; i++)\n    a = a + 1;",
+          "lenguaje": "c"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>En ensamblador (i en W0, a en W1):</p>",
+          "codigo": "        MOV     #2, W0      ; W0 es i\nfor:    CP      W0, #10\n        BRA     GEU, fin\n        ADD     #1, W1      ; W1 es a\n        ADD     #1, W0      ; i += 1\n        BRA     for\nfin:    NOP",
+          "lenguaje": "asm"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La condición de permanencia <code>i &lt; 10</code> se traduce en su negada, «salir si i ≥ 10» (<code>BRA GEU, fin</code>). El cuerpo se ejecuta para i = 2, 3, …, 9, es decir, <strong>8 veces</strong>: si a empieza valiendo 0, al terminar W1 = 8 y W0 = 10. En el dsPIC real <code>CP W0, #10</code> deja C = 1 cuando W0 ≥ 10 (no hay préstamo) y <code>GEU</code> salta con C = 1, así que el bucle funciona tal como está escrito.</p><div class=\"mpi-mount\" data-componente=\"sim-asm-dspic\" data-config='{\"titulo\": \"Bucle for (8.8.3)\", \"codigo\": \"        MOV   #2, W0      ; W0 es i\\nfor:    CP    W0, #10\\n        BRA   GEU, fin\\n        ADD   #1, W1      ; W1 es a\\n        ADD   #1, W0      ; i += 1\\n        BRA   for\\nfin:    NOP\", \"regs\": {\"W0\": \"0x0000\", \"W1\": \"0x0000\"}, \"sr\": \"0x0000\", \"mem\": {}, \"esperado\": {\"W0\": \"0x000A\", \"W1\": \"0x0008\"}}'></div>"
+        }
+      ]
+    },
+    {
+      "titulo": "8.7 Subrutinas",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Las subrutinas en ensamblador se llaman con la instrucción <strong><code>CALL</code></strong>, que es una de las pocas instrucciones que ocupa <strong>dos words de instrucción</strong>. Para devolver el control al programa que llamó se usa <strong><code>RETURN</code></strong>. Por ejemplo, dado este programa en C:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Llamada en C:</p>",
+          "codigo": "pot = pow2(n);",
+          "lenguaje": "c"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Su equivalente en ensamblador:</p>",
+          "codigo": "        MOV     #n, W1      ; main\n        CALL    pow2        ; llamada (pow2)\n        .\n        .\npow2:   MOV     #1, W0      ; 2^n\n        SL      W0, W1, W0\n        RETURN              ; vuelta a main",
+          "lenguaje": "asm"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><code>CALL</code> guarda en la pila la dirección de la siguiente instrucción que hay que ejecutar, que está <strong>2 words de instrucción después</strong> (PC + 4), porque el propio <code>CALL</code> ocupa dos. Para ello escribe el PC en la posición apuntada por W15. Como el PC ocupa 1 word de instrucción (3 bytes, 23 bits útiles) y la pila se organiza en words de datos (16 bits), se necesitan <strong>dos posiciones de pila</strong> para guardarlo: al guardar la parte baja (PCL) se incrementa el SP, y al guardar la parte alta (PCH) se incrementa de nuevo. Después, el PC apunta a la dirección de la subrutina. <code>RETURN</code> hace la operación inversa: primero decrementa el SP y después recupera el PC guardado, de modo que la ejecución continúa justo después de la llamada.</p><table class=\"tabla-datos\"><thead><tr><th>Instrucción</th><th>Pasos</th><th>Pila (W15 = 0x0800 al principio)</th></tr></thead><tbody><tr><td><code>CALL pow2</code> (2 words de instrucción, 2 ciclos; el libro dice «ocupa 4 bytes»: son 4 direcciones de programa, porque cada word de 24 bits avanza el PC en 2)</td><td>1) PC + 4 → [W15]: guarda la dirección de vuelta<br>2) W15 + 4 → W15<br>3) PC ← pow2: salta a la primera instrucción de la subrutina</td><td>(0x0800) = PCL, (0x0802) = PCH; W15 = 0x0804</td></tr><tr><td><code>RETURN</code></td><td>1) W15 − 4 → W15<br>2) [W15] → PC: recupera de la pila la dirección de vuelta</td><td>W15 = 0x0800; PCL y PCH siguen escritos en memoria, pero la zona queda libre</td></tr></tbody></table><p>Por eso es imprescindible que, dentro de la subrutina, cada <code>PUSH</code> tenga su <code>POP</code>: si al llegar al <code>RETURN</code> W15 no apunta justo encima de la dirección de vuelta, el PC se cargaría con un dato cualquiera.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Ejecuta paso a paso la llamada a <code>pow2</code> con n = 5 y observa W15 y la pila durante el <code>CALL</code> y el <code>RETURN</code>:</p><div class=\"mpi-mount\" data-componente=\"sim-asm-dspic\" data-config='{\"titulo\": \"Subrutina pow2 (n = 5)\", \"codigo\": \"        MOV   #5, W1      ; main: n = 5\\n        CALL  pow2        ; llamada\\n        MOV   W0, W2      ; pot = pow2(n)\\n        BRA   fin\\npow2:   MOV   #1, W0      ; 2^n\\n        SL    W0, W1, W0\\n        RETURN            ; vuelta a main\\nfin:    NOP\", \"regs\": {}, \"sr\": \"0x0000\", \"mem\": {}, \"w15\": \"0x0800\", \"esperado\": {\"W0\": \"0x0020\", \"W2\": \"0x0020\", \"W15\": \"0x0800\"}}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El programa de la cuestión 10 de 8.11 combina <code>CALL</code>, <code>PUSH</code>, <code>POP</code> y <code>RETURN</code>. En el libro está en las direcciones 0x302 (<code>MOV #0x54, W0</code>), 0x304 (<code>CALL 0x400</code>), 0x308 (<code>MOV #0x32, W1</code>) y la subrutina en 0x400 (<code>PUSH W0</code>), 0x402 (<code>MOV #1, W0</code>), 0x404 (<code>POP W0</code>) y 0x406 (<code>RETURN</code>), con W15 = 0x0800 al empezar. En el simulador el programa empieza en 0x302 y la subrutina va con etiqueta justo detrás del programa principal, así que su dirección no es 0x400; pero la dirección de vuelta que se apila es la misma, <strong>0x0308</strong>. Haz tú la traza antes de ejecutarlo (es el ejercicio «ensamblador-3»):</p><div class=\"mpi-mount\" data-componente=\"sim-asm-dspic\" data-config='{\"titulo\": \"Pila con CALL, PUSH, POP y RETURN (8.11-10)\", \"codigo\": \"        MOV   #0x54, W0   ; 0x302\\n        CALL  sub         ; 0x304 (CALL 0x400 en el libro)\\n        MOV   #0x32, W1   ; 0x308\\n        BRA   fin\\nsub:    PUSH  W0          ; 0x400 en el libro\\n        MOV   #1, W0      ; 0x402\\n        POP   W0          ; 0x404\\n        RETURN            ; 0x406\\nfin:    NOP\", \"regs\": {}, \"sr\": \"0x0000\", \"mem\": {}, \"pc\": \"0x0302\", \"w15\": \"0x0800\", \"esperado\": {\"W0\": \"0x0054\", \"W1\": \"0x0032\", \"W15\": \"0x0800\", \"mem\": {\"0x0800\": \"0x0308\", \"0x0802\": \"0x0000\", \"0x0804\": \"0x0054\"}}}'></div>"
+        }
+      ]
+    },
+    {
+      "titulo": "8.8 Inserción de código ensamblador en C",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>A veces interesa escribir código ensamblador dentro de un programa en C: cuando se quiere tener <strong>controlado perfectamente el código</strong>, por necesidad de <strong>velocidad</strong> o de <strong>recursos</strong>. El código máquina que genera un compilador depende de su calidad y, por muy bueno que sea, generalmente lo hace peor que un programador experto, lo que redunda en una pérdida de eficiencia y en un aumento del espacio que ocupa el programa en FLASH. Hay dos formas de integrar ensamblador en C:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "Introduciendo un conjunto de instrucciones directamente en una función de C (<strong>ensamblador en línea</strong>).",
+            "Haciendo <strong>funciones en ensamblador</strong> que se invocan desde C."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.8.1 Instrucciones con ensamblador en línea</h3><p>Las instrucciones se insertan en el código C con el comando <code>asm</code>. En el ejemplo se sustituye una línea de C por varias de ensamblador:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Programa en C: los LEDs de RB12-RB15 conmutan continuamente.</p>",
+          "codigo": "#include \"config.h\"\n\nint main(void)\n{\n    InicializarReloj();     // F_CY = 40 MHz\n    AD1PCFGL = 0xFFFF;      // todos los pines en digital\n    PORTB = 0x0FFF;\n    TRISB = 0x0FFF;\n    while (1) {\n        PORTB = ~PORTB;\n    }\n    return 0;\n}",
+          "lenguaje": "c"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>El mismo programa con la línea del bucle escrita en ensamblador en línea: se lee <code>PORTB</code> en W0, se complementa y se vuelve a escribir. Cada instrucción es una cadena terminada en <code>\\n\\t</code> y el compilador las concatena:</p>",
+          "codigo": "#include \"config.h\"\n\nint main(void)\n{\n    InicializarReloj();     // F_CY = 40 MHz\n    AD1PCFGL = 0xFFFF;      // todos los pines en digital\n    PORTB = 0x0FFF;\n    TRISB = 0x0FFF;\n    while (1) {\n        asm(\"MOV PORTB, W0 \\n\\t\"\n            \"COM W0, W0 \\n\\t\"\n            \"MOV W0, PORTB \\n\\t\");\n    }\n    return 0;\n}",
+          "lenguaje": "c"
+        },
+        {
+          "tipo": "nota",
+          "html": "Es una sola lectura-modificación-escritura de <code>PORTB</code> por vuelta del bucle, así que no hay problema de RMW. Si en ensamblador se escribiera el puerto y se volviera a leer en la instrucción inmediatamente siguiente (<code>MOV W0, PORTB</code> seguido de <code>MOV PORTB, W0</code>), la lectura podría devolver el valor antiguo del pin, que tarda un ciclo en actualizarse: hay que dejar pasar un ciclo (<code>NOP</code>) o, mejor, trabajar sobre el registro y escribir el puerto una sola vez, igual que en C."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>8.8.2 Funciones en ensamblador</h3><p>Para escribir una función en ensamblador se añade al proyecto un fichero con extensión <code>.s</code> (en MPLAB X: <em>Source Files → New → Assembly File</em>) con esta estructura:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Plantilla de un fichero <code>.s</code>:</p>",
+          "codigo": "        .text\n        .global _nombrefun\n\n_nombrefun:\n        ; aquí se pone el código\n\n        return\n        .end",
+          "lenguaje": "asm"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<code>.text</code>: indica que dentro del fichero hay código (va a la memoria de programa).",
+            "<code>.global</code>: la función es global, es decir, se puede ver desde cualquier fichero; si no, no se podría llamar desde el fichero C.",
+            "<code>_nombrefun</code>: nombre de la función. Tiene que corresponder con el nombre invocado en C <strong>precedido de un guion bajo</strong> (<code>nombrefun()</code> en C → <code>_nombrefun</code> en ensamblador).",
+            "<code>return</code>: retorno de la función.",
+            "<code>.end</code>: final del fichero.",
+            "Los <strong>parámetros</strong> que se pasan en C llegan a la función en los registros de trabajo de forma consecutiva <strong>empezando por W0</strong>: el primero en W0, el segundo en W1, etc.",
+            "El valor que <strong>devuelve</strong> la función se deja en <strong>W0</strong>."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Ejemplo: la función <code>acumula(n, dir)</code> del ejercicio 8.12.2 suma <code>n</code> words de memoria a partir de la dirección <code>dir</code>. Desde C se declara su prototipo y se llama como cualquier otra función:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Fichero C:</p>",
+          "codigo": "int acumula(int n, unsigned int dir);   // prototipo\n\n...\nres = acumula(12, 0x0A00);   // n llega en W0 y dir en W1; res se recoge de W0",
+          "lenguaje": "c"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Fichero <code>acumula.s</code> (basado en el programa del ejercicio 8.12.1): guarda en la pila los registros que usa como variables locales, calcula la suma en W2 y la devuelve en W0.</p>",
+          "codigo": "        .text\n        .global _acumula\n\n_acumula:                   ; W0 = n (número de datos), W1 = dirección base\n        PUSH    W1          ; se guardan los WR que se van a modificar\n        PUSH    W2\n        PUSH    W3\n        PUSH    W4\n        MOV     #0, W2      ; suma = 0\n        MOV     #0, W3      ; contador = 0\nbucle:  CP      W3, W0      ; ¿contador >= n?\n        BRA     GE, fin\n        MOV     [W1++], W4  ; siguiente dato\n        ADD     W4, W2, W2  ; suma += dato\n        INC     W3, W3      ; contador++\n        BRA     bucle\nfin:    MOV     W2, W0      ; el resultado se devuelve en W0\n        POP     W4          ; se recuperan en orden inverso\n        POP     W3\n        POP     W2\n        POP     W1\n        return\n        .end",
+          "lenguaje": "asm"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>W0 <strong>no</strong> se guarda en la pila: llega con el primer parámetro y sale con el resultado, que es justo lo que espera el código C. Los demás registros sí se guardan, porque el código C que llama a la función puede tener datos en ellos y la función los usa como variables locales.</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Nota.</strong> El convenio de llamada del compilador XC16 deja W0-W7 como registros de trabajo que la función llamada puede modificar libremente (los conserva, si le hacen falta, quien llama); solo W8-W14 debe guardarlos y restaurarlos la función que los use."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>Notas de laboratorio (Práctica 4).</strong> Para ver qué ensamblador genera el compilador a partir del C, se elige el simulador como herramienta de depuración (<em>File → Project Properties → Hardware Tool → Simulator</em>), se compila y se abre <em>Window → Debugging → Output → Disassembly Listing</em>: aparece el código C con su traducción a ensamblador. Los datos de memoria se pueden ver e introducir a mano en la ventana <em>File Registers</em>, y la codificación de cada instrucción en <em>Program Memory</em>. Para ejecutar con la tarjeta, se cambia la herramienta de depuración al dispositivo real.</p><p>Este es el programa del ejercicio 8.12.1, que suma 10 words de memoria a partir de 0x0A00 y deja el resultado en W2. En el simulador se han cargado los datos 1, 2, …, 10 (en MPLAB X se introducirían en <em>File Registers</em>); la suma debe dar 55 = 0x0037:</p><div class=\"mpi-mount\" data-componente=\"sim-asm-dspic\" data-config='{\"titulo\": \"Suma de 10 datos desde 0x0A00 (8.12.1)\", \"codigo\": \"        MOV   #0x0A00, W1  ; puntero a los datos\\n        MOV   #0, W2       ; suma = 0\\n        MOV   #0, W3       ; contador = 0\\nbucle:  CP    W3, #10\\n        BRA   GE, fin\\n        MOV   [W1++], W4\\n        ADD   W4, W2, W2\\n        INC   W3, W3\\n        BRA   bucle\\nfin:    NOP\", \"regs\": {}, \"sr\": \"0x0000\", \"mem\": {\"0x0A00\": \"0x0001\", \"0x0A02\": \"0x0002\", \"0x0A04\": \"0x0003\", \"0x0A06\": \"0x0004\", \"0x0A08\": \"0x0005\", \"0x0A0A\": \"0x0006\", \"0x0A0C\": \"0x0007\", \"0x0A0E\": \"0x0008\", \"0x0A10\": \"0x0009\", \"0x0A12\": \"0x000A\"}, \"esperado\": {\"W1\": \"0x0A14\", \"W2\": \"0x0037\", \"W3\": \"0x000A\"}}'></div>"
+        }
+      ]
+    }
+  ],
+  "ejercicios": {
+    "ensamblador-1": {
+      "titulo": "Signo, extensión y flags (cuestiones 8.11, 1-4)",
+      "enunciado": "<p>Cuestiones de comprensión sobre la representación de números con y sin signo, la extensión de signo, el registro de estado y el uso de los registros como punteros.</p>",
+      "contexto": "<ul><li>Complemento a 2 en 8 bits: −x = 0x100 − x.</li><li><code>ZE</code> extiende con ceros; <code>SE</code> extiende con el bit 7.</li><li>SR: C = bit 0, Z = bit 1, OV = bit 2, N = bit 3 (los demás bits se ponen a 0).</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Cómo se codifica el número −16 en hexadecimal usando 8 bits?",
+          "opciones": [
+            "0x90",
+            "0xEF",
+            "0xF0",
+            "0x10"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>En complemento a 2: −16 = 0x100 − 0x10 = <strong>0xF0</strong> (1111 0000). También: 16 = 0001 0000, se invierte (1110 1111 = 0xEF, complemento a 1) y se suma 1 → 1111 0000. 0x90 sería signo-magnitud y 0xEF el complemento a 1.</p>"
+        },
+        {
+          "texto": "Tras <code>MOV #0xFC, W1</code>, ¿qué vale W0 después de <code>ZE W1, W0</code>? ¿Y después de <code>SE W1, W0</code>?",
+          "opciones": [
+            "ZE → 0xFFFC; SE → 0x00FC",
+            "ZE → 0x00FC; SE → 0xFFFC",
+            "ZE → 0x00FC; SE → 0x00FC",
+            "ZE → 0xFC00; SE → 0xFFFC"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>El byte bajo de W1 es 0xFC = 1111 1100. <code>ZE</code> rellena el byte alto con ceros: <strong>0x00FC</strong> (252 sin signo). <code>SE</code> lo rellena con el bit 7, que vale 1: <strong>0xFFFC</strong> (−4 con signo).</p>"
+        },
+        {
+          "texto": "Partiendo de SR = 0, se ejecuta <code>mov #0, W0</code>, <code>mov #0x6500, W1</code> y tres veces <code>add W1, W0, W0</code>. ¿Qué vale el SR después de cada <code>add</code>?",
+          "opciones": [
+            "0x0000, 0x0008, 0x0001",
+            "0x0000, 0x000C, 0x0005",
+            "0x0000, 0x000C, 0x0001",
+            "0x0002, 0x000C, 0x0001"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>1.ª suma: 0 + 0x6500 = 0x6500, positivo, sin acarreo → <strong>SR = 0x0000</strong>.<br>2.ª suma: 0x6500 + 0x6500 = 0xCA00. Dos positivos dan un resultado con el bit 15 a 1: N = 1 y OV = 1 (25 856 + 25 856 = 51 712 no cabe en un entero de 16 bits con signo); no sale acarreo → <strong>SR = 0x000C</strong>.<br>3.ª suma: 0xCA00 + 0x6500 = 0x1 2F00: queda 0x2F00 con C = 1; un negativo más un positivo no puede dar overflow (OV = 0) y el bit 15 es 0 (N = 0) → <strong>SR = 0x0001</strong>. (Sobre el SR tras el <code>mov #0, W0</code>: según el datasheet <code>MOV #lit16</code> no modifica los flags, así que seguiría en 0x0000.)</p>"
+        },
+        {
+          "texto": "En <code>mov #300, W0</code> seguido de <code>mov [W0], W1</code>, ¿qué representa la información que almacena W0?",
+          "opciones": [
+            "Un dato que podría variar",
+            "Una dirección de memoria",
+            "Una constante genérica",
+            "El número de veces que se repite la instrucción"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>En <code>mov [W0], W1</code> el registro W0 va entre corchetes: es direccionamiento <strong>indirecto</strong>, W0 actúa como <strong>puntero</strong> y su contenido (300 = 0x012C) es la <strong>dirección de memoria</strong> de la que se lee el dato que se copia en W1.</p>"
+        }
+      ]
+    },
+    "ensamblador-2": {
+      "titulo": "Operaciones y máscaras (cuestiones 8.11, 5-7 y 9)",
+      "enunciado": "<p>Calcula el resultado de estas secuencias de instrucciones del dsPIC (supón que los registros que no se cargan valen 0 al empezar).</p>",
+      "contexto": "<ul><li><code>NEG.B</code> trabaja solo con el byte bajo.</li><li><code>MUL.SS Wb, Ws, Wd</code>: resultado de 32 bits con signo en {Wd+1, Wd}.</li><li><code>REPEAT #17</code> + <code>DIV.S Wm, Wn</code>: cociente en W0 y resto en W1.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "<code>MOV #0x01FF, W1</code> y <code>NEG.B W1, W0</code>. ¿Cuál es el valor de W0?",
+          "opciones": [
+            "0xFE01",
+            "0x0001",
+            "0x00FF",
+            "0xFF01"
+          ],
+          "correcta": 1,
+          "explicacion": "<p><code>NEG.B</code> toma el byte bajo de W1 (0xFF = −1) y escribe su complemento a 2 en el byte bajo de W0: −(−1) = 1 → 0x01. El byte alto de W0 no se modifica; con W0 = 0 al empezar queda <strong>W0 = 0x0001</strong>. 0xFE01 sería el resultado de <code>NEG</code> a nivel de word (−0x01FF).</p>"
+        },
+        {
+          "texto": "<code>MOV #0x6FFF, W0</code>, <code>MOV #0xFFFF, W1</code> y <code>MUL.SS W0, W1, W2</code>. ¿Cuánto valen W2 y W3?",
+          "opciones": [
+            "W2 = 0x9001, W3 = 0x6FFE",
+            "W2 = 0x9001, W3 = 0xFFFF",
+            "W2 = 0x6FFF, W3 = 0xFFFF",
+            "W2 = 0xFFFF, W3 = 0x9001"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Con signo, 0xFFFF es −1, así que el producto es −0x6FFF = −28 671. En 32 bits, complemento a 2: 0x1 0000 0000 − 0x6FFF = 0xFFFF 9001. La parte baja va a Wd = W2 y la alta a W3: <strong>W2 = 0x9001, W3 = 0xFFFF</strong>. (Sin signo, con <code>MUL.UU</code>, saldría 0x6FFE 9001.)</p>"
+        },
+        {
+          "texto": "<code>MOV #0xFFFF, W2</code>, <code>MOV #0x0001, W3</code>, <code>REPEAT #17</code> y <code>DIV.S W2, W3</code>. ¿Cuánto valen W0 y W1?",
+          "opciones": [
+            "W0 = 0xFFFF, W1 = 0x0000",
+            "W0 = 0x0000, W1 = 0xFFFF",
+            "W0 = 0x0001, W1 = 0x0000",
+            "W0 = 0xFFFF, W1 = 0x0001"
+          ],
+          "correcta": 0,
+          "explicacion": "<p><code>DIV.S W2, W3</code> divide con signo W2 entre W3: −1 / 1 = −1, resto 0. El cociente va a W0 y el resto a W1: <strong>W0 = 0xFFFF (−1), W1 = 0x0000</strong>.</p>"
+        },
+        {
+          "texto": "¿Qué instrucciones hacen que el bit 2 de W0 sea igual que el de W1 sin modificar W1 ni el resto de bits de W0 (usando W2 y W3 como auxiliares)?",
+          "opciones": [
+            "<code>MOV #0xFFFD, W3</code> · <code>AND W0, W3, W0</code> · <code>AND W1, #2, W2</code> · <code>IOR W0, W2, W0</code>",
+            "<code>AND W0, #4, W0</code> · <code>IOR W0, W1, W0</code>",
+            "<code>MOV #0xFFFB, W3</code> · <code>AND W0, W3, W0</code> · <code>AND W1, #4, W2</code> · <code>IOR W0, W2, W0</code>",
+            "<code>IOR W0, #4, W0</code> · <code>AND W1, #4, W2</code> · <code>AND W0, W2, W0</code>"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>Es el mismo esquema que el ejemplo de 8.6.2, pero con el bit 2 (peso 4): 1) <code>MOV #0xFFFB, W3</code> carga la máscara con el bit 2 a 0 (0xFFFB no cabe en <code>#lit5</code>); 2) <code>AND W0, W3, W0</code> pone a 0 el bit 2 de W0 sin tocar los demás; 3) <code>AND W1, #4, W2</code> aísla el bit 2 de W1 en W2; 4) <code>IOR W0, W2, W0</code> lo copia en W0. La secuencia con <code>#0xFFFD</code> y <code>#2</code> es la del libro para el bit 1, no para el bit 2.</p>"
+        }
+      ]
+    },
+    "ensamblador-3": {
+      "titulo": "Pila, subrutinas y funciones en ensamblador (8.11-10 y 8.12)",
+      "enunciado": "<p>Traza del programa de la cuestión 10 (W15 = 0x0800 al empezar) y preguntas del ejercicio 8.12.2 sobre la función <code>acumula</code>, llamada desde C como <code>res = acumula(12, 0x0A00);</code> (primer argumento: número de datos; segundo: dirección base de los datos).</p>",
+      "contexto": "<pre><code class=\"lang-asm\">000302  MOV   #0x54, W0\n000304  CALL  0x400\n000308  MOV   #0x32, W1\n...\n000400  PUSH  W0\n000402  MOV   #1, W0\n000404  POP   W0\n000406  RETURN</code></pre><p>Las direcciones de datos 0x0000, 0x0002, 0x0004 y 0x001E de la tabla del libro son W0, W1, W2 y W15 (los WR están mapeados en memoria).</p>",
+      "preguntas": [
+        {
+          "texto": "Justo después de ejecutar el <code>CALL</code> de la dirección 0x304, ¿qué valen W15 y la pila?",
+          "opciones": [
+            "W15 = 0x0802; (0x0800) = 0x0306",
+            "W15 = 0x0804; (0x0800) = 0x0308, (0x0802) = 0x0000",
+            "W15 = 0x0804; (0x0800) = 0x0304, (0x0802) = 0x0000",
+            "W15 = 0x0800; (0x0800) = 0x0308"
+          ],
+          "correcta": 1,
+          "explicacion": "<p><code>CALL</code> ocupa dos words de instrucción, así que la dirección de vuelta es PC + 4 = 0x304 + 4 = <strong>0x0308</strong>. Se guarda en dos words de pila: PCL = 0x0308 en 0x0800 y PCH = 0x0000 en 0x0802, y W15 avanza 4 → <strong>0x0804</strong>. El PC pasa a 0x400. W0 sigue valiendo 0x0054.</p>"
+        },
+        {
+          "texto": "Justo después de ejecutar el <code>POP W0</code> de la dirección 0x404, ¿qué valen W0 y W15?",
+          "opciones": [
+            "W0 = 0x0001, W15 = 0x0806",
+            "W0 = 0x0054, W15 = 0x0802",
+            "W0 = 0x0054, W15 = 0x0804",
+            "W0 = 0x0308, W15 = 0x0800"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>En 0x400, <code>PUSH W0</code> escribe 0x0054 en 0x0804 y deja W15 = 0x0806. En 0x402, W0 = 0x0001. En 0x404, <code>POP W0</code> hace W15 − 2 = <strong>0x0804</strong> y recupera de esa posición <strong>W0 = 0x0054</strong>. Después, <code>RETURN</code> (0x406) deja W15 = 0x0800 y PC = 0x308, y <code>MOV #0x32, W1</code> pone W1 = 0x0032. La memoria no se borra: al final siguen (0x0800) = 0x0308, (0x0802) = 0x0000 y (0x0804) = 0x0054.</p>"
+        },
+        {
+          "texto": "En <code>res = acumula(12, 0x0A00);</code>, ¿en qué registros recibe la función ensamblador los argumentos y en cuál recoge C el resultado?",
+          "opciones": [
+            "12 en W1, 0x0A00 en W2; resultado en W1",
+            "12 en W0, 0x0A00 en W1; resultado en W0",
+            "Los dos argumentos en la pila (W15); resultado en W0",
+            "12 en W0, 0x0A00 en W1; resultado en W2"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Los parámetros llegan en los WR de forma consecutiva empezando por W0: <strong>W0 = 12</strong> (número de datos) y <strong>W1 = 0x0A00</strong> (dirección base). La función debe dejar el valor devuelto en <strong>W0</strong>, que es donde lo recoge el código C para asignarlo a <code>res</code>. Aunque el programa 8.12.1 acumula en W2, al final hay que copiarlo a W0 (<code>MOV W2, W0</code>).</p>"
+        },
+        {
+          "texto": "¿Por qué se salvan en la pila (PUSH al principio, POP al final) los registros W1-W4 que usa la función, y qué pasa con W0?",
+          "opciones": [
+            "Porque sin PUSH/POP la instrucción RETURN no encuentra la dirección de vuelta; W0 también hay que salvarlo",
+            "Porque el código C que llama puede tener datos en esos registros y la función los usa como variables locales; W0 no se salva porque en él se devuelve el resultado",
+            "Porque el compilador espera recibir el resultado en W1-W4; W0 se salva para no perder el primer parámetro",
+            "No hace falta salvar ningún registro: el compilador lo hace siempre antes de cualquier llamada"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>La función usa W1-W4 como variables locales (puntero, suma, contador y dato). Si no los guarda y recupera, al volver al C esos registros tendrían otros valores y el programa que llama podría fallar. W0 <strong>no</strong> se salva: se sobrescribe con el resultado, que es justo lo que C espera. (Cada PUSH debe tener su POP antes del <code>return</code>, en orden inverso, para que la dirección de vuelta esté en la cima de la pila. Sobre qué registros exige conservar el compilador XC16, ver la nota de 8.10.2.)</p>"
+        }
+      ]
+    }
+  },
+  "ejerciciosEnTema": [
+    "ensamblador-1",
+    "ensamblador-2",
+    "ensamblador-3"
+  ],
+  "tituloEjercicios": "Ejercicios y cuestiones",
+  "resumen": [
+    "Cada instrucción del dsPIC se codifica en <strong>24 bits</strong>: código de operación + operandos (<code>MOV #0x0A00, W1</code> = <code>0x20A001</code>). Operandos de byte (<code>.B</code>) o word; fuente a la izquierda y destino a la derecha.",
+    "<strong>Transferencia</strong>: <code>MOV</code> (= de C), <code>PUSH</code>/<code>POP</code> (pila con W15, avanza de 2 en 2) y <code>ZE</code>/<code>SE</code> para pasar de byte a word sin signo (con ceros) o con signo (con el bit 7): 0xFC → 0x00FC / 0xFFFC.",
+    "<strong>Aritméticas</strong> (<code>ADD</code>, <code>SUB</code>, <code>INC</code>, <code>DEC</code>, <code>NEG</code>) actualizan C, Z, OV y N; en la resta <strong>C = 1 si no hay préstamo</strong> (0x82 − 0x10 → SR = 0x5). <code>MUL.SS</code>/<code>MUL.UU</code> dejan 32 bits en {Wd+1, Wd} sin tocar flags; <code>DIV</code> va tras <code>REPEAT #17</code> y deja cociente en W0 y resto en W1.",
+    "<strong>Lógicas</strong> (<code>AND</code>, <code>IOR</code>, <code>XOR</code>, <code>COM</code>) sirven para máscaras: AND borra/selecciona bits, IOR los pone a 1; AND + IOR (y SL/LSR si cambia la posición) copian un bit de un registro a otro. <code>CLR</code> y <code>SETM</code> no tocan flags.",
+    "<strong>Desplazamientos</strong>: <code>SL</code>/<code>LSR</code> meten ceros (×2<sup>n</sup>, ÷2<sup>n</sup>); <code>RLC</code>/<code>RRC</code> rotan a través de C; <code>RLNC</code>/<code>RRNC</code> rotan sin C (0x80C0 con C = 1 → <code>RLC.B</code> → 0x81).",
+    "<strong>Control de flujo</strong>: <code>CP</code> resta sin guardar y <code>BRA cc</code> salta según los flags (Z/NZ; sin signo con C; con signo con N y OV). En C la condición se escribe negada en ensamblador (<code>if (a == b)</code> → <code>BRA NZ, else</code>). En el dsPIC real GTU = C ∧ ¬Z: −1 &gt; 100 sin signo.",
+    "<strong>Subrutinas</strong>: <code>CALL</code> (2 words) apila PC + 4 en dos words y suma 4 a W15; <code>RETURN</code> resta 4 y recupera el PC. Cada <code>PUSH</code> necesita su <code>POP</code> antes del <code>RETURN</code>.",
+    "<strong>Ensamblador en C</strong>: en línea con <code>asm(\"MOV PORTB, W0 \\n\\t\" …)</code> o en un fichero <code>.s</code> (<code>.text</code>, <code>.global _func</code>, <code>_func:</code>, <code>return</code>, <code>.end</code>); los parámetros llegan en W0, W1…, el resultado se devuelve en W0 y los WR que se usan se guardan con PUSH/POP."
+  ]
+}

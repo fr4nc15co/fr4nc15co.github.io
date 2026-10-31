@@ -1,0 +1,89 @@
+/* ---------- Componente: vis-muestreo-mcd (periodo de muestreo = mcd de las tareas) ---------- */
+.mpi-vis-muestreo-mcd { position: relative; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-vis-muestreo-mcd .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .7rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; }
+.vmm-cab-sub { color: var(--txt-tenue); font-weight: 400; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
+.vmm-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.mpi-vis-muestreo-mcd button:focus-visible, .mpi-vis-muestreo-mcd input:focus-visible, .mpi-vis-muestreo-mcd select:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 2px; }
+.vmm-btn { background: var(--bg-3); border: 1px solid var(--borde); color: var(--txt); padding: .35rem .7rem; border-radius: 5px; cursor: pointer; font-size: .8rem; min-height: 34px; }
+.vmm-btn:hover:not(:disabled) { border-color: var(--acento); }
+.vmm-btn:disabled { opacity: .45; cursor: default; }
+
+.vmm-top { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; }
+.vmm-fcy-l { font-size: .88rem; color: var(--txt-2); display: inline-flex; align-items: center; gap: .4rem; max-width: 100%; min-width: 0; }
+.vmm-fcy { font-family: var(--mono); background: var(--bg); border: 1px solid var(--borde); color: var(--txt); padding: .35rem .5rem; border-radius: 5px; font-size: .84rem; max-width: 100%; min-width: 0; }
+.vmm-presets { display: flex; flex-wrap: wrap; gap: .4rem; }
+
+/* Lista de tareas */
+.vmm-scroll { position: relative; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: .8rem 0 .3rem; }
+.vmm-cab-tareas { display: flex; gap: .5rem; margin: .9rem 0 .25rem; padding-left: 1.15rem; font-size: .72rem; color: var(--txt-tenue); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+.vmm-cab-tareas span:first-child { flex: 1 1 9rem; }
+.vmm-cab-tareas span:last-child { flex: 0 0 auto; width: 15.5rem; }
+.vmm-tareas { display: flex; flex-direction: column; gap: .35rem; margin-bottom: .5rem; }
+.vmm-fila { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .5rem; padding: .3rem 0; border-bottom: 1px solid var(--borde-2); }
+.vmm-nom, .vmm-per { font-family: var(--mono); background: var(--bg); border: 1px solid var(--borde); color: var(--txt); padding: .35rem .45rem; border-radius: 5px; font-size: .84rem; min-width: 0; }
+.vmm-nom { flex: 1 1 9rem; font-family: var(--sans); }
+.vmm-per-caja { display: inline-flex; align-items: center; gap: .3rem; }
+.vmm-per { width: 7rem; color: var(--azul-cl); }
+.vmm-per[aria-invalid="true"] { border-color: var(--rojo); }
+.vmm-uni { font-family: var(--mono); color: var(--txt-2); font-size: .8rem; }
+.vmm-err { flex: 1 1 100%; color: var(--rojo); font-size: .74rem; line-height: 1.3; padding-left: 1.15rem; }
+.vmm-err:empty { display: none; }
+.vmm-ticks { font-family: var(--mono); color: var(--txt-2); white-space: nowrap; font-size: .8rem; min-width: 5.6rem; }
+.vmm-ticks b { color: var(--acento); }
+.vmm-del { min-width: 34px; padding: .3rem .5rem; }
+.vmm-color { display: inline-block; width: .7rem; height: .7rem; border-radius: 2px; flex: 0 0 auto; vertical-align: middle; margin-right: .35rem; }
+.vmm-fila > .vmm-color { margin-right: 0; }
+.vmm-acc { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .7rem; }
+.vmm-ayuda { font-size: .74rem; color: var(--txt-tenue); }
+
+/* Resultados */
+.vmm-res { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: .7rem; margin: .9rem 0 .5rem; }
+.vmm-bloque { background: var(--bg); border: 1px solid var(--borde-2); border-radius: 8px; padding: .65rem .75rem; min-width: 0; }
+.vmm-bloque-tit { font-size: .84rem; color: var(--txt); font-weight: 600; margin-bottom: .4rem; }
+.vmm-mcd-tit { font-family: var(--mono); font-size: .78rem; color: var(--txt-2); margin-top: .2rem; }
+.vmm-pasos { margin: .2rem 0 .45rem; padding-left: 1.2rem; font-family: var(--mono); font-size: .79rem; color: var(--txt-2); line-height: 1.6; overflow-wrap: anywhere; }
+.vmm-pasos b { color: var(--num); }
+.vmm-pasos-txt { font-size: .82rem; color: var(--txt-2); margin: 0 0 .4rem; }
+.vmm-kv { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .5rem; font-size: .84rem; margin-top: .25rem; }
+.vmm-kv > span:first-child { color: var(--txt-2); }
+.vmm-kv b { font-family: var(--mono); color: var(--num); font-size: .95rem; }
+.vmm-kv b.vmm-grande { color: var(--acento); font-size: 1.08rem; }
+.vmm-tenue { color: var(--txt-tenue); font-size: .76rem; }
+.vmm-p { margin: .45rem 0 0; line-height: 1.45; }
+.vmm-lista { list-style: none; margin: 0 0 .4rem; padding: 0; font-family: var(--mono); font-size: .8rem; color: var(--txt-2); line-height: 1.7; }
+.vmm-lista b { color: var(--acento); }
+.vmm-mal { color: var(--rojo); font-size: .82rem; margin: 0; line-height: 1.45; }
+.vmm-vacio { color: var(--txt-tenue); font-size: .85rem; margin: 0; }
+.vmm-avisos:empty { display: none; }
+.vmm-aviso { font-size: .8rem; line-height: 1.5; color: var(--txt); background: rgba(220,220,170,.08); border: 1px solid rgba(220,220,170,.35); border-radius: 6px; padding: .4rem .6rem; margin: .45rem 0 0; }
+.vmm-aviso-mal { background: rgba(244,135,113,.08); border-color: rgba(244,135,113,.45); }
+.vmm-aviso code { font-family: var(--mono); font-size: .9em; }
+
+/* Línea de tiempo */
+.vmm-linea { margin: .8rem 0; }
+.vmm-sub { font-size: .92rem; color: var(--txt); font-weight: 600; margin: .9rem 0 .3rem; }
+.vmm-svg-caja { background: var(--bg); border: 1px solid var(--borde-2); border-radius: 8px; margin-top: .3rem; }
+.vmm-svg { display: block; width: 100%; min-width: 560px; height: auto; }
+.vmm-svg-lab { font-family: var(--sans); font-size: 12px; fill: var(--txt-2); }
+.vmm-svg-ax { font-family: var(--mono); font-size: 11px; fill: var(--txt-tenue); }
+.vmm-svg-mini { font-family: var(--sans); font-size: 10px; fill: var(--txt); }
+.vmm-svg-eje { stroke: var(--borde); stroke-width: 1; }
+.vmm-svg-eje-2 { stroke-dasharray: 2 3; }
+.vmm-svg-tick { stroke: var(--txt-tenue); stroke-width: 1; }
+.vmm-svg-banda { fill: var(--txt-tenue); opacity: .25; }
+.vmm-svg-cur { stroke: var(--rojo); stroke-width: 1.5; }
+.vmm-cursor-fila { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .7rem; margin-top: .5rem; }
+.vmm-cursor-fila label { font-size: .84rem; color: var(--txt-2); }
+.vmm-cur { flex: 1 1 200px; min-width: 0; accent-color: var(--rojo); height: 28px; }
+.vmm-cur-out { flex: 1 1 100%; font-family: var(--mono); font-size: .8rem; color: var(--txt); line-height: 1.45; }
+
+.vmm-codigo { margin: .4rem 0 .6rem; }
+.vmm-codigo code { display: block; font-size: .8rem; }
+.vmm-nota { color: var(--txt-tenue); font-size: .8rem; margin: .5rem 0 0; line-height: 1.5; }
+
+@media (max-width: 480px) {
+  .mpi-vis-muestreo-mcd { padding: .85rem .7rem; }
+  .vmm-cab-tareas { display: none; }
+  .vmm-per { width: 6rem; }
+  .vmm-codigo code { font-size: .72rem; }
+}

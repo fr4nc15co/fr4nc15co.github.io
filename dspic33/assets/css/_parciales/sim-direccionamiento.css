@@ -1,0 +1,82 @@
+/* ---------- Componente: sim-direccionamiento (modos de direccionamiento con MOV) ---------- */
+.mpi-sim-direccionamiento { container-type: inline-size; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-sim-direccionamiento [hidden] { display: none !important; }
+.mpi-sim-direccionamiento .mpi-sim-cab { font-family: var(--mono); font-weight: 700; color: var(--acento); font-size: 1.05rem; margin-bottom: .7rem; }
+.sd-sub { font-family: var(--sans); font-weight: 400; color: var(--txt-2); font-size: .85rem; margin-left: .4rem; }
+.mpi-sim-direccionamiento button { font-family: inherit; }
+.mpi-sim-direccionamiento button:focus-visible, .sd-mem-wrap:focus-visible { outline: 2px solid var(--acento-2); outline-offset: 1px; }
+.mpi-sim-direccionamiento :not(pre) > code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+.sd-oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.sd-tam, .sd-reset, .sd-caso {
+  background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px;
+  padding: .4rem .75rem; cursor: pointer; font-size: .84rem;
+}
+.sd-tam:hover, .sd-reset:hover, .sd-caso:hover { border-color: var(--acento); }
+.sd-tam[aria-pressed="true"] { background: rgba(78,201,176,.15); border-color: var(--acento); color: var(--acento); font-weight: 700; }
+.sd-barra { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .7rem; margin-bottom: .8rem; }
+.sd-lbl { font-size: .85rem; color: var(--txt-2); }
+.sd-seg { display: inline-flex; flex-wrap: wrap; gap: .3rem; }
+.sd-reset { margin-left: auto; }
+
+.sd-casos { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 12.5rem), 1fr)); gap: .4rem; margin-bottom: 1rem; }
+.sd-caso { display: flex; flex-direction: column; align-items: flex-start; gap: .1rem; text-align: left; padding: .45rem .65rem; }
+.sd-caso code { background: none !important; padding: 0 !important; color: var(--azul-cl) !important; font-size: .9rem !important; font-weight: 700; white-space: nowrap; }
+.sd-caso span { font-size: .74rem; color: var(--txt-tenue); }
+.sd-caso.sd-caso-act { background: rgba(78,201,176,.12); border-color: var(--acento); }
+
+.sd-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; align-items: start; }
+@container (min-width: 760px) { .sd-cuerpo { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.sd-izq, .sd-der { min-width: 0; }
+
+.sd-expl { font-size: .87rem; color: var(--txt-2); background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; padding: .6rem .75rem; line-height: 1.5; }
+.sd-expl-cab { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem .7rem; margin-bottom: .35rem; }
+.sd-expl-cab code { font-size: .95rem !important; font-weight: 700; }
+.sd-expl-cab span { font-size: .78rem; color: var(--txt-tenue); }
+.sd-pasos { margin: 0; padding-left: 1.2rem; }
+.sd-pasos li { margin: .25rem 0; }
+.sd-pasos strong { color: var(--txt); font-family: var(--mono); }
+.sd-mal { color: var(--rojo); }
+.sd-tenue { color: var(--txt-tenue); margin: 0; }
+
+.sd-regs { border-collapse: collapse; margin: .8rem 0; font-size: .86rem; min-width: 14rem; }
+.sd-regs caption { text-align: left; color: var(--txt-tenue); font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; padding-bottom: .3rem; }
+.sd-regs th, .sd-regs td { padding: .25rem .7rem .25rem 0; border-bottom: 1px solid var(--borde-2); text-align: left; }
+.sd-regs thead th { color: var(--txt-tenue); font-weight: 600; font-size: .74rem; }
+.sd-regs tbody th { font-family: var(--mono); color: var(--txt); }
+.sd-regs td { font-family: var(--mono); color: var(--num); white-space: nowrap; }
+.sd-regs tr.sd-cambia td:last-child { color: var(--acento); font-weight: 700; }
+.sd-flecha { color: var(--amarillo); font-size: .75rem; }
+
+.sd-hist-tit { color: var(--txt-tenue); font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+.sd-hist pre { margin: .35rem 0 0; }
+
+/* Memoria byte a byte (scroll propio) */
+.sd-mem-wrap { overflow-x: auto; max-width: 100%; border: 1px solid var(--borde-2); border-radius: 6px; }
+.sd-mem { border-collapse: collapse; width: 100%; font-size: .84rem; }
+.sd-mem thead th { text-align: left; color: var(--txt-tenue); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; padding: .35rem .5rem; border-bottom: 1px solid var(--borde); background: var(--bg-3); white-space: nowrap; }
+.sd-mem thead th span { text-transform: none; font-weight: 400; }
+.sd-mem tbody th { font-family: var(--mono); color: var(--txt-2); font-weight: 400; text-align: left; padding: .22rem .5rem; white-space: nowrap; vertical-align: top; }
+.sd-mem td { padding: .22rem .5rem; white-space: nowrap; }
+.sd-mem tr.sd-impar th, .sd-mem tr.sd-impar td { border-bottom: 1px solid var(--borde); }
+.sd-mem tr.sd-par th, .sd-mem tr.sd-par td:not(.sd-w) { border-bottom: 1px dotted var(--borde-2); }
+.sd-mem tr.sd-impar th { color: var(--txt-tenue); }
+.sd-b { font-family: var(--mono); color: var(--azul-cl); text-align: center; }
+.sd-b:nth-of-type(1) { color: var(--txt-tenue); }
+.sd-b.sd-cambio { background: rgba(181,206,168,.2); color: var(--num); font-weight: 700; box-shadow: inset 0 0 0 1px var(--num); border-radius: 3px; }
+.sd-w { font-family: var(--mono); color: var(--num); vertical-align: middle; border-left: 1px solid var(--borde-2); border-bottom: 1px solid var(--borde); }
+.sd-mem tr.sd-ea th { color: var(--amarillo); }
+.sd-mem tr.sd-ea { background: rgba(220,220,170,.08); }
+.sd-marcas { display: flex; flex-wrap: wrap; gap: .2rem; margin-top: .15rem; }
+.sd-m { display: inline-block; font-family: var(--mono); font-size: .68rem; line-height: 1.4; border-radius: 4px; padding: 0 .3rem; border: 1px solid; white-space: nowrap; }
+.sd-m-w0 { color: var(--acento); border-color: rgba(78,201,176,.55); background: rgba(78,201,176,.1); }
+.sd-m-antes { color: var(--txt-tenue); border-color: var(--borde); border-style: dashed; }
+.sd-m-ea { color: var(--amarillo); border-color: rgba(220,220,170,.45); background: rgba(220,220,170,.08); }
+.sd-nota, .sd-fuera { font-size: .8rem; color: var(--txt-tenue); margin: .45rem 0 0; }
+.sd-fuera { color: var(--amarillo); }
+
+@media (max-width: 480px) {
+  .mpi-sim-direccionamiento { padding: .85rem; }
+  .sd-reset { margin-left: 0; }
+  .sd-mem tbody th, .sd-mem td, .sd-mem thead th { padding-left: .35rem; padding-right: .35rem; }
+}

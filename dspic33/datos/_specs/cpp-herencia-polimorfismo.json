@@ -1,0 +1,530 @@
+{
+  "slug": "cpp-herencia-polimorfismo",
+  "titulo": "C++: herencia y polimorfismo",
+  "temaNum": 21,
+  "lenguaje": "cpp",
+  "lead": "La <strong>herencia</strong> permite crear clases especializadas a partir de clases existentes, y el <strong>polimorfismo</strong>, tratar objetos de distintas clases derivadas mediante una interfaz común y seleccionar en tiempo de ejecución el comportamiento apropiado. En este tema aprenderás, con la jerarquía <code>CGeometry</code> → <code>CSegment</code>, <code>CCircle</code>, a definir jerarquías de clases, distinguir miembros <code>private</code>, <code>protected</code> y <code>public</code>, inicializar correctamente la parte base, sobrescribir funciones virtuales, evitar el recorte de objetos y utilizar clases abstractas para construir interfaces polimórficas.",
+  "secciones": [
+    {
+      "titulo": "21.1 Cómo se presentan los ejemplos",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Para mantener la continuidad con las transparencias, cada concepto se muestra primero con la sintaxis del C++ anterior a C++11 (aproximadamente C++98/C++03). A continuación, cuando aporta una mejora relevante, se presenta la <strong>alternativa disponible desde C++11</strong>. Los fundamentos —herencia, funciones virtuales, punteros y referencias— son los mismos en ambas versiones: lo que cambia es la comodidad y la seguridad con que se escriben.</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<p><strong>Cómo se han comprobado los ejemplos.</strong> Todos los listados de este tema se han compilado y ejecutado con Apple clang 21 (<code>clang++ -std=c++17 -Wall -Wextra</code>); los que el libro presenta como C++11 se han compilado también con <code>-std=c++11</code>. Las salidas que aparecen en el texto son las que da ese compilador. Cuando hace falta enseñar el orden en que se ejecutan constructores y destructores se usa una <em>versión instrumentada</em> de las clases: igual que en las prácticas, se añade un <code>std::cout</code> con el nombre de la función dentro de cada constructor, destructor y operador de asignación.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "21.2 Concepto de herencia",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Una <strong>clase derivada</strong> hereda los miembros y funciones accesibles de una <strong>clase base</strong>. Puede añadir información, incorporar nuevas operaciones y redefinir comportamientos virtuales. La clase base representa un concepto más general; las derivadas representan especializaciones.</p><p>La <strong>herencia pública</strong> expresa una relación <strong>«es un»</strong>. Si <code>CSegment</code> y <code>CCircle</code> derivan públicamente de <code>CGeometry</code>, todo segmento y todo círculo pueden utilizarse donde se espera una geometría, siempre que respeten el contrato de la clase base. La jerarquía que se usa en todo el tema es esta:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong><code>CGeometry</code></strong> (base): lo común a todas las geometrías, una opacidad y un mensaje, y la operación <code>whoAmI</code>, que describe el objeto.",
+            "<strong><code>CSegment</code></strong> (derivada, «un segmento <em>es una</em> geometría»): añade dos puntos extremos, su longitud y su pendiente.",
+            "<strong><code>CCircle</code></strong> (derivada, «un círculo <em>es una</em> geometría»): añade el centro y el diámetro."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El nivel de acceso de cada miembro de la base decide quién puede usarlo. Los miembros <code>private</code> de la base <strong>existen dentro del objeto derivado</strong>, pero solo son accesibles mediante la interfaz de la base. Los miembros <code>protected</code> son accesibles desde las clases derivadas, pero no desde fuera. Con los miembros de <code>CGeometry</code> (13.5):</p><table class=\"tabla-datos\"><thead><tr><th>Miembro de <code>CGeometry</code></th><th>Desde funciones de <code>CGeometry</code></th><th>Desde funciones de <code>CSegment</code></th><th>Desde <code>main</code></th></tr></thead><tbody><tr><td><code>public</code>: <code>whoAmI</code>, constructores</td><td>Sí</td><td>Sí</td><td>Sí</td></tr><tr><td><code>protected</code>: <code>m_message</code></td><td>Sí</td><td>Sí</td><td>No: <em>'m_message' is a protected member of 'CGeometry'</em></td></tr><tr><td><code>private</code>: <code>m_opacity</code></td><td>Sí</td><td>No (existe en el objeto, pero no se puede nombrar): <em>'m_opacity' is a private member of 'CGeometry'</em></td><td>No</td></tr></tbody></table><p>(Los mensajes en cursiva son los errores que da clang al intentarlo.) Conviene <strong>mantener los datos privados</strong> y ofrecer operaciones <code>protected</code> únicamente cuando la extensión lo requiera.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "21.3 Organización de una jerarquía en archivos",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Las clases de una jerarquía se organizan con la misma separación introducida en el capítulo 10: cada clase suele disponer de una cabecera y, cuando tiene implementaciones no triviales, de un archivo <code>.cpp</code>.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Archivos del proyecto de geometrías (libro, 13.4):</p>",
+          "codigo": "CGeometry.h    // declaración de la clase base\nCGeometry.cpp  // constructores y funciones de CGeometry\nCSegment.h     // incluye CGeometry.h y declara CSegment\nCSegment.cpp   // implementa CSegment\nCCircle.h      // incluye CGeometry.h y declara CCircle\nCCircle.cpp    // implementa CCircle\nmain.cpp       // incluye las clases concretas que utiliza",
+          "lenguaje": "texto"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La cabecera de una clase derivada <strong>debe incluir la definición completa de su clase base</strong>, porque el compilador necesita conocer su tamaño (la parte base forma parte de cada objeto derivado) y su interfaz. En cambio, cuando una clase solo almacena un puntero o una referencia a otra clase, a veces basta con una <strong>declaración adelantada</strong> (<code>class CGeometry;</code>), porque el tamaño de un puntero no depende de la clase a la que apunta.</p><p>Para que la jerarquía se vea de forma continua, algunos listados siguientes definen constructores o funciones dentro de la declaración. Es una presentación compacta: en las prácticas se recomienda mantener las declaraciones en los <code>.h</code> y trasladar las definiciones a los <code>.cpp</code>, salvo funciones deliberadamente <code>inline</code>. Por ejemplo, la función <code>whoAmI</code> de <code>CSegment</code> quedaría así en su archivo:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p><code>CSegment.cpp</code> (libro, 13.4):</p>",
+          "codigo": "// CSegment.cpp\n#include \"CSegment.h\"\n#include <ostream>\n\nvoid CSegment::whoAmI(std::ostream& out) const {\n    out << \"I am a segment\" << std::endl;\n}"
+        },
+        {
+          "tipo": "nota",
+          "html": "<p>Este <code>CSegment.cpp</code> y el listado de 13.6, que define <code>whoAmI</code> <em>dentro</em> de la clase, son <strong>dos formas alternativas</strong> de escribir lo mismo. Si se usa el <code>.cpp</code>, la cabecera <code>CSegment.h</code> solo declara la función (<code>virtual void whoAmI(std::ostream&amp; out) const;</code>); si se escriben las dos definiciones a la vez, el compilador da un error de redefinición.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "21.4 Clase base de geometrías",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El siguiente ejemplo representa geometrías con una <strong>opacidad común</strong> y una operación que describe el objeto. La opacidad es privada (solo <code>CGeometry</code> la maneja); el mensaje es <code>protected</code>, de modo que una derivada podría cambiarlo; y el constructor con parámetro es <code>explicit</code>, para que un <code>double</code> no se convierta sin querer en una <code>CGeometry</code>.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Cabecera de la clase base (libro, 13.5):</p>",
+          "codigo": "// CGeometry.h\n#pragma once\n#include <iosfwd>\n#include <string>\n\nclass CGeometry {\nprivate:\n    double m_opacity;\nprotected:\n    std::string m_message;\npublic:\n    CGeometry();\n    explicit CGeometry(double opacity);\n    virtual void whoAmI(std::ostream& out) const;\n    virtual ~CGeometry() {};  // versión anterior a C++11\n};"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Desde C++11, si el destructor no necesita código adicional, puede pedirse explícitamente la implementación predeterminada del compilador:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "",
+          "codigo": "virtual ~CGeometry() = default; // alternativa desde C++11"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Implementación (libro, 13.5). Los constructores inicializan los miembros en la lista de inicialización:</p>",
+          "codigo": "// CGeometry.cpp\n#include \"CGeometry.h\"\n#include <ostream>\n\nCGeometry::CGeometry() : m_opacity(0.0), m_message(\"I am a geometry:\") {}\n\nCGeometry::CGeometry(double opacity) : m_opacity(opacity), m_message(\"I am a geometry:\") {}\n\nvoid CGeometry::whoAmI(std::ostream& out) const {\n    out << m_message << std::endl;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La cabecera solo incluye <code>&lt;iosfwd&gt;</code> (la declaración adelantada de <code>std::ostream</code>), porque en ella <code>std::ostream</code> solo aparece como referencia; el <code>.cpp</code>, que sí escribe en el flujo, incluye <code>&lt;ostream&gt;</code>.</p><p>El <strong>destructor es virtual</strong> porque se prevé eliminar objetos derivados mediante un puntero a <code>CGeometry</code>. Sin destructor virtual, la parte derivada podría no destruirse correctamente. Con la versión instrumentada de las clases, <code>delete</code> de un <code>new CSegment()</code> guardado en un <code>CGeometry*</code> hace esto:</p><table class=\"tabla-datos\"><thead><tr><th><code>virtual ~CGeometry()</code> (como en el libro)</th><th><code>~CGeometry()</code> sin <code>virtual</code></th></tr></thead><tbody><tr><td><code>~CSegment()</code><br><code>~CPoint()</code>  (m_p2)<br><code>~CPoint()</code>  (m_p1)<br><code>~CGeometry()</code></td><td><code>~CGeometry()</code><br><br><em>(y nada más)</em></td></tr></tbody></table><p>Sin <code>virtual</code>, <code>delete</code> solo conoce el tipo del puntero (<code>CGeometry*</code>) y llama únicamente a <code>~CGeometry()</code>: ni el destructor de <code>CSegment</code> ni los de sus miembros llegan a ejecutarse. Para el estándar de C++ esto es <strong>comportamiento indefinido</strong>; clang lo advierte al compilar con <code>-Wall</code> (<em>delete called on non-final 'CGeometry' that has virtual functions but non-virtual destructor</em>). La regla práctica: <strong>si una clase tiene funciones virtuales, su destructor debe ser virtual</strong>. El orden completo de construcción y destrucción se ve paso a paso en el interactivo de 13.7.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "21.5 Clases derivadas",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Una clase derivada declara la base después de dos puntos (<code>class CSegment : public CGeometry</code>). El constructor utiliza una <strong>lista de inicialización</strong> para seleccionar el constructor de la base <em>antes</em> de construir sus propios miembros: <code>CSegment()</code> llama a <code>CGeometry()</code> y <code>CSegment(double opacity)</code> pasa la opacidad a <code>CGeometry(double)</code>, que es la única forma de dar valor a <code>m_opacity</code>, privada de la base.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Clase auxiliar <code>CPoint</code> (ampliación: el libro la usa en 13.6 y 13.10, con los miembros <code>m_p1</code>, <code>m_p2</code> y <code>m_center</code>, pero no la define en el capítulo; aquí se incluye una versión mínima):</p>",
+          "codigo": "class CPoint {\nprivate:\n    double m_x;\n    double m_y;\npublic:\n    CPoint() : m_x(0.0), m_y(0.0) {}\n    CPoint(double x, double y) : m_x(x), m_y(y) {}\n    friend std::ostream& operator<<(std::ostream& out, const CPoint& point);\n};\n\nstd::ostream& operator<<(std::ostream& out, const CPoint& point) {\n    out << \"(\" << point.m_x << \", \" << point.m_y << \")\";\n    return out;\n}"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Las dos clases derivadas (libro, 13.6):</p>",
+          "codigo": "class CSegment : public CGeometry {\nprivate:\n    CPoint m_p1;\n    CPoint m_p2;\n    double m_length;\n    double m_slope;\npublic:\n    CSegment() : CGeometry(), m_length(0.0), m_slope(0.0) {}\n    explicit CSegment(double opacity) : CGeometry(opacity), m_length(0.0), m_slope(0.0) {}\n    virtual void whoAmI(std::ostream& out) const {\n        out << \"I am a segment\" << std::endl;\n    }\n};\n\nclass CCircle : public CGeometry {\nprivate:\n    CPoint m_center;\n    double m_diameter;\npublic:\n    CCircle() : CGeometry(), m_diameter(0.0) {}\n    virtual void whoAmI(std::ostream& out) const {\n        out << \"I am a circle\" << std::endl;\n    }\n};"
+        },
+        {
+          "tipo": "nota",
+          "html": "<p><strong>Nota de compilación.</strong> Con esta <code>CPoint</code>, comprobado con Apple clang 21 (<code>clang++ -std=c++17 -Wall -Wextra</code>), los listados de 13.6 y 13.10 compilan y dan las salidas indicadas en el tema.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Cada objeto derivado contiene <strong>su parte base completa</strong> más sus miembros propios:</p><table class=\"tabla-datos\"><thead><tr><th>Objeto</th><th>Parte <code>CGeometry</code> (heredada)</th><th>Miembros propios</th><th><code>whoAmI</code> escribe</th></tr></thead><tbody><tr><td><code>CGeometry</code></td><td><code>m_opacity</code>, <code>m_message</code></td><td>—</td><td><code>I am a geometry:</code></td></tr><tr><td><code>CSegment</code></td><td><code>m_opacity</code>, <code>m_message</code></td><td><code>m_p1</code>, <code>m_p2</code>, <code>m_length</code>, <code>m_slope</code></td><td><code>I am a segment</code></td></tr><tr><td><code>CCircle</code></td><td><code>m_opacity</code>, <code>m_message</code></td><td><code>m_center</code>, <code>m_diameter</code></td><td><code>I am a circle</code></td></tr></tbody></table><p>En C++ anterior a C++11 la función de la clase derivada se declara <strong>con la misma signatura</strong> que la virtual de la base: mismo nombre, mismos parámetros y mismo <code>const</code>. Es responsabilidad del programador comprobar que coinciden exactamente; un error en el nombre, los parámetros o <code>const</code> crearía <strong>otra función</strong> en lugar de sobrescribir la esperada, y el programa compilaría igual. (En la derivada, la palabra <code>virtual</code> es opcional: una función que sobrescribe a una virtual es virtual aunque no lo diga.)</p><h3>21.5.1 Alternativa desde C++11: override</h3><p>C++11 incorpora <code>override</code>. Esta palabra <strong>no cambia el comportamiento</strong>, pero obliga al compilador a comprobar que la función sustituye realmente a una virtual de la clase base. Se escribe al final de la declaración, detrás de <code>const</code>:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p><code>whoAmI</code> de <code>CSegment</code> con <code>override</code> (libro, 13.6.1):</p>",
+          "codigo": "void whoAmI(std::ostream& out) const override {\n    out << \"I am a segment\" << '\\n';\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Lo que ocurre con distintas firmas de <code>whoAmI</code> en <code>CSegment</code>, llamando después a través de un <code>CGeometry*</code> que apunta a un segmento (compilado con Apple clang 21 (<code>clang++ -std=c++17 -Wall -Wextra</code>)):</p><table class=\"tabla-datos\"><thead><tr><th>Declaración en <code>CSegment</code></th><th>Resultado</th><th>Imprime</th></tr></thead><tbody><tr><td><code>void whoAmI(std::ostream&amp; out) const</code></td><td>Sobrescribe (firma idéntica).</td><td><code>I am a segment</code></td></tr><tr><td><code>void whoAmI(std::ostream&amp; out) const override</code></td><td>Sobrescribe, y el compilador lo ha comprobado.</td><td><code>I am a segment</code></td></tr><tr><td><code>void whoAmI(std::ostream&amp; out)</code> (falta <code>const</code>)</td><td>Compila: es <strong>otra función</strong>. Con <code>-Wall</code> clang solo avisa: <em>'CSegment::whoAmI' hides overloaded virtual function</em>.</td><td><code>I am a geometry:</code></td></tr><tr><td><code>virtual void WhoAmI(std::ostream&amp; out) const</code> (W mayúscula)</td><td>Compila <strong>sin ningún aviso</strong>: es otra función virtual nueva.</td><td><code>I am a geometry:</code></td></tr><tr><td><code>void whoAmI(std::ostream&amp; out) override</code></td><td><strong>Error</strong>: <em>non-virtual member function marked 'override' hides virtual member function</em>.</td><td>—</td></tr><tr><td><code>void WhoAmI(std::ostream&amp; out) const override</code></td><td><strong>Error</strong>: <em>only virtual member functions can be marked 'override'</em>.</td><td>—</td></tr></tbody></table><p>Sin <code>override</code>, los errores de firma pasan desapercibidos y el programa ejecuta en silencio la versión de la base; con <code>override</code>, el mismo error se convierte en un error de compilación.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "21.6 Construcción, copia y asignación",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Al construir un objeto derivado, <strong>primero se construye la parte base</strong> y después los miembros de la derivada (en el orden en que están declarados) y, por último, se ejecuta el cuerpo del constructor de la derivada. <strong>La destrucción sigue el orden inverso.</strong> Si no se indica un constructor de la base en la lista de inicialización, se intenta utilizar su constructor por defecto.</p><p>Con la versión instrumentada de las clases (un <code>std::cout</code> en cada constructor y destructor, también en <code>CPoint</code>), el programa de 13.8, que crea <code>CSegment segment;</code> y <code>CCircle circle;</code> como variables automáticas de <code>main</code>, escribe:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Construcción al entrar en <code>main</code> y destrucción al salir (salida real, versión instrumentada):</p>",
+          "codigo": "CGeometry()      <- segment: primero la parte base\nCPoint()         <- m_p1\nCPoint()         <- m_p2\nCSegment()       <- cuerpo del constructor de CSegment\nCGeometry()      <- circle: parte base\nCPoint()         <- m_center\nCCircle()\n...              (bucle de 13.8)\n~CCircle()       <- al salir de main: primero el último objeto creado\n~CPoint()        <- m_center\n~CGeometry()\n~CSegment()      <- después segment, también en orden inverso\n~CPoint()        <- m_p2\n~CPoint()        <- m_p1\n~CGeometry()",
+          "lenguaje": "texto"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Hay dos inversiones: los objetos se destruyen en orden inverso al de su creación (<code>circle</code> antes que <code>segment</code>, como cualquier variable automática) y, dentro de cada objeto, primero se ejecuta el destructor de la derivada, luego se destruyen sus miembros y por último la parte base.</p><p>La <strong>copia y la asignación</strong> de una clase derivada deben considerar tanto la parte base como sus propios miembros. En el estilo anterior a C++11 pueden implementarse manualmente cuando sea necesario. El operador <strong>asigna primero la parte base</strong> (llamando a <code>CGeometry::operator=</code>, que es quien puede copiar <code>m_opacity</code>, privada de la base) <strong>y después los miembros de la derivada</strong>:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Operador de asignación de <code>CSegment</code> (libro, 13.7):</p>",
+          "codigo": "CSegment& CSegment::operator=(const CSegment& other) {\n    if (this != &other) {\n        CGeometry::operator=(other);\n        m_p1 = other.m_p1;\n        m_p2 = other.m_p2;\n        m_length = other.m_length;\n        m_slope = other.m_slope;\n    }\n    return *this;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Desde C++11, si la operación generada por el compilador es correcta (copia miembro a miembro, que ya incluye la parte base), puede declararse con <code>= default</code>:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Alternativa desde C++11, cuando la copia miembro a miembro es correcta (libro, 13.7):</p>",
+          "codigo": "CSegment& operator=(const CSegment& other) = default;"
+        },
+        {
+          "tipo": "nota",
+          "html": "<p><strong>Dónde va este <code>= default</code>.</strong> En el libro esta línea aparece justo detrás de la definición de <code>CSegment::operator=</code>, como si fuera código del <code>.cpp</code>. Escrita así, fuera de la clase y sin <code>CSegment::</code>, no compila (clang: <em>overloaded 'operator=' must be a binary operator</em>): debe ir <strong>dentro de la declaración de la clase <code>CSegment</code></strong>, en su parte <code>public</code>, y sustituye a la versión manual (no pueden estar las dos). Del mismo modo, para usar la versión manual hay que añadir su declaración <code>CSegment&amp; operator=(const CSegment&amp; other);</code> a la clase de 13.6, que no la incluye. Además, con <code>-Wall -Wextra</code> clang avisa al copiar un <code>CSegment</code> (<em>definition of implicit copy constructor for 'CSegment' is deprecated because it has a user-provided copy assignment operator</em>, <code>-Wdeprecated-copy-with-user-provided-copy</code>): si se declara el operador de asignación conviene declarar también el constructor de copia, por ejemplo <code>CSegment(const CSegment&amp; other) = default;</code>.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Con la versión instrumentada, una asignación y una copia de segmentos siguen exactamente este orden, base primero:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Salida real de <code>CSegment s1(0.5); CSegment s2; s2 = s1; CSegment s3(s1);</code> (versión instrumentada):</p>",
+          "codigo": "--- CSegment s1(0.5)\nCGeometry(double)\nCPoint()\nCPoint()\nCSegment(double)\n--- CSegment s2\nCGeometry()\nCPoint()\nCPoint()\nCSegment()\n--- s2 = s1\nCSegment::operator=\nCGeometry::operator=      <- primero la parte base (m_opacity pasa a 0.5)\nCPoint::operator=         <- m_p1\nCPoint::operator=         <- m_p2\n--- CSegment s3(s1)\nCGeometry(const CGeometry&)\nCPoint(const CPoint&)\nCPoint(const CPoint&)\nCSegment(const CSegment&)",
+          "lenguaje": "texto"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>En el interactivo puedes ejecutar paso a paso la construcción y destrucción de un <code>CSegment</code> y un <code>CCircle</code>, la copia y la asignación, y el <code>delete</code> a través de un <code>CGeometry*</code> con el destructor virtual activado o no:</p><div class=\"mpi-mount\" data-componente=\"cpp-herencia\" data-config='{\"modo\":\"construccion\"}'></div>"
+        }
+      ]
+    },
+    {
+      "titulo": "21.7 Funciones virtuales y polimorfismo",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Una función virtual habilita el <strong>enlace dinámico</strong>. Cuando se invoca mediante un <strong>puntero o una referencia a la clase base</strong>, C++ selecciona la versión correspondiente al <strong>tipo real del objeto</strong>, no al tipo del puntero.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Recorrido polimórfico con iteradores y punteros (libro, 13.8):</p>",
+          "codigo": "CSegment segment;\nCCircle circle;\nstd::vector<CGeometry*> geometries;\ngeometries.push_back(&segment);\ngeometries.push_back(&circle);\nfor (std::vector<CGeometry*>::iterator it = geometries.begin(); it != geometries.end(); ++it) {\n    (*it)->whoAmI(std::cout);\n}"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Salida real:</p>",
+          "codigo": "I am a segment\nI am a circle",
+          "lenguaje": "texto"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La salida identifica un segmento y un círculo <strong>porque <code>whoAmI</code> es virtual</strong>, aunque los dos elementos del vector son del mismo tipo, <code>CGeometry*</code>. Si se quita <code>virtual</code> de la declaración de <code>whoAmI</code> en <code>CGeometry</code>, la llamada se resuelve al compilar según el tipo del puntero (<strong>enlace estático</strong>) y el mismo bucle escribe dos veces la versión de la base:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Salida real del mismo programa sin <code>virtual</code> en <code>CGeometry::whoAmI</code>:</p>",
+          "codigo": "I am a geometry:\nI am a geometry:",
+          "lenguaje": "texto"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><em>Ampliación (no está en el libro).</em> ¿Cómo sabe el programa, en tiempo de ejecución, qué versión llamar? El estándar no lo impone, pero los compiladores lo resuelven con una <strong>tabla virtual</strong> (<em>vtable</em>): cada clase con funciones virtuales tiene una tabla con las direcciones de sus versiones de esas funciones, y cada objeto guarda un puntero oculto a la tabla de su clase. <code>(*it)-&gt;whoAmI(...)</code> sigue ese puntero y salta a la entrada de <code>whoAmI</code>: en un <code>CSegment</code> encuentra <code>CSegment::whoAmI</code>; en un <code>CCircle</code>, <code>CCircle::whoAmI</code>. Ese puntero oculto se nota en el tamaño: con clang en un PC de 64 bits, <code>sizeof(CGeometry)</code> = 40 bytes (8 del puntero a la tabla, 8 de <code>m_opacity</code> y 24 de <code>std::string</code>).</p><p>Este primer ejemplo usa iteradores y punteros, como en las transparencias. <strong>Los punteros no poseen los objetos</strong>: <code>segment</code> y <code>circle</code> son variables automáticas y deben seguir existiendo durante el recorrido (y nadie debe hacer <code>delete</code> de esos punteros).</p><p>En el interactivo puedes llamar a <code>whoAmI</code> a través de un <code>CGeometry*</code> con <code>virtual</code> activado o desactivado y ver qué entrada de la tabla virtual se usa:</p><div class=\"mpi-mount\" data-componente=\"cpp-herencia\" data-config='{\"modo\":\"polimorfismo\"}'></div><h3>21.7.1 Alternativa desde C++11: inicialización y bucle de rango</h3>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>El mismo recorrido con lista de inicialización y <code>for</code> de rango (libro, 13.8.1):</p>",
+          "codigo": "std::vector<CGeometry*> geometries { &segment, &circle };\nfor (CGeometry* geometry : geometries) {\n    geometry->whoAmI(std::cout);\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La versión moderna es más breve, pero conserva exactamente el mismo modelo: el vector contiene <strong>punteros sin propiedad</strong> a dos objetos automáticos. La salida es la misma (<code>I am a segment</code>, <code>I am a circle</code>).</p><h3>21.7.2 Recorte de objetos</h3><p>Al almacenar un objeto derivado <strong>por valor</strong> en un contenedor de objetos base, solo se copia la parte base. Este fenómeno se denomina <strong><em>object slicing</em> o recorte de objetos</strong>. Por ello, <code>std::list&lt;CGeometry&gt;</code> no puede conservar la información específica de <code>CSegment</code> y <code>CCircle</code>.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Ejemplo para comprobarlo (no está en el libro; usa las clases de 13.5 y 13.6):</p>",
+          "codigo": "CSegment segment(0.5);\nCCircle circle;\n\nstd::list<CGeometry> shapes;      // contenedor de objetos base, por valor\nshapes.push_back(segment);        // copia solo la parte CGeometry\nshapes.push_back(circle);\nfor (std::list<CGeometry>::iterator it = shapes.begin(); it != shapes.end(); ++it) {\n    it->whoAmI(std::cout);\n}\n\nCGeometry g = segment;            // también se recorta\ng.whoAmI(std::cout);\n\nCGeometry& r = segment;           // una referencia NO recorta\nr.whoAmI(std::cout);"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Salida real:</p>",
+          "codigo": "I am a geometry:\nI am a geometry:\nI am a geometry:\nI am a segment",
+          "lenguaje": "texto"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Al copiar <code>segment</code> en un <code>CGeometry</code> se llama al constructor de copia de <code>CGeometry</code>, que solo sabe copiar <code>m_opacity</code> (que vale 0,5 en la copia) y <code>m_message</code>. Se pierden <code>m_p1</code>, <code>m_p2</code>, <code>m_length</code> y <code>m_slope</code> —con clang, el <code>CSegment</code> ocupa 88 bytes y la copia, 40— y también el <strong>comportamiento</strong>: la copia es un <code>CGeometry</code> auténtico, con la tabla virtual de <code>CGeometry</code>, así que <code>whoAmI</code> ejecuta la versión de la base aunque sea virtual. Con una referencia (o un puntero) no se copia nada: se accede al objeto original y el enlace dinámico funciona.</p><p>Por eso los <strong>contenedores polimórficos almacenan punteros</strong>. En C++ anterior a C++11, si el contenedor es <strong>propietario</strong>, debe ejecutar <code>delete</code> para cada objeto que creó con <code>new</code>.</p><p>En el interactivo puedes guardar un segmento y un círculo en un <code>std::list&lt;CGeometry&gt;</code> o en una lista de punteros y comparar qué queda de cada objeto:</p><div class=\"mpi-mount\" data-componente=\"cpp-herencia\" data-config='{\"modo\":\"recorte\"}'></div><h3>21.7.3 Versión anterior a C++11: propiedad manual</h3>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>El vector es propietario de objetos creados con <code>new</code> y los libera con un segundo recorrido (libro, 13.8.3):</p>",
+          "codigo": "std::vector<CGeometry*> geometries;\ngeometries.push_back(new CSegment());\ngeometries.push_back(new CCircle());\nfor (std::vector<CGeometry*>::iterator it = geometries.begin(); it != geometries.end(); ++it) {\n    (*it)->whoAmI(std::cout);\n}\nfor (std::vector<CGeometry*>::iterator it = geometries.begin(); it != geometries.end(); ++it) {\n    delete *it;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La salida es <code>I am a segment</code>, <code>I am a circle</code>. El segundo bucle es imprescindible: el vector solo destruye sus punteros, no los objetos apuntados, y sin él habría una fuga de memoria. Y como <code>delete</code> se hace a través de un <code>CGeometry*</code>, el destructor virtual de 13.5 es lo que garantiza que se ejecuten <code>~CSegment()</code> y <code>~CCircle()</code>.</p><h3>21.7.4 Alternativa desde C++11: propiedad con unique_ptr</h3>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>El vector guarda <code>std::unique_ptr</code> y ya no hace falta el bucle de <code>delete</code> (libro, 13.8.4):</p>",
+          "codigo": "std::vector<std::unique_ptr<CGeometry>> geometries;\ngeometries.push_back(std::make_unique<CSegment>());\ngeometries.push_back(std::make_unique<CCircle>());\nfor (const auto& geometry : geometries) {\n    geometry->whoAmI(std::cout);\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><code>std::unique_ptr</code> expresa <strong>propiedad exclusiva</strong> y libera automáticamente los objetos al destruir el contenedor. <code>std::make_unique</code> requiere <strong>C++14</strong> (compilado con <code>-std=c++11</code>, clang responde <em>no member named 'make_unique' in namespace 'std'</em>); en C++11 puede construirse el <code>unique_ptr</code> a partir de <code>new</code>, como en 13.11.1. Si varios componentes son propietarios reales del mismo objeto, puede emplearse <code>std::shared_ptr</code>, explicado en el capítulo «Antes vs. ahora».</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "21.8 Clases abstractas",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Una <strong>clase abstracta</strong> contiene al menos una <strong>función virtual pura</strong>, declarada con <code>= 0</code>. No pueden crearse instancias de la clase abstracta; su finalidad es definir una <strong>interfaz común</strong> que las derivadas deben implementar.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p><code>CGeometry</code> como clase abstracta con la función virtual pura <code>print</code> (libro, 13.9):</p>",
+          "codigo": "class CGeometry {\npublic:\n    virtual ~CGeometry() {};  // versión anterior a C++11\n    virtual void print(std::ostream& out) const = 0;\n};\n// Alternativa desde C++11: virtual ~CGeometry() = default;"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Cada clase concreta implementa <code>print</code>. <strong>Si una derivada no lo hace, continúa siendo abstracta.</strong> Intentar crear un objeto de una clase abstracta es un error de compilación; por ejemplo, con <code>CGeometry g;</code> clang responde <em>variable type 'CGeometry' is an abstract class</em>, y lo mismo ocurre con una derivada que no implemente <code>print</code>. Sí se pueden declarar punteros y referencias a <code>CGeometry</code>, que es justo lo que necesita el polimorfismo.</p><p>Las clases abstractas son útiles para representar conceptos generales que no tienen una instancia completa por sí mismos: no existe «una geometría» sin más, sino segmentos, círculos…</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<p>Esta <code>CGeometry</code> es <strong>otra versión</strong> de la clase base, distinta de la de 13.5: solo tiene el destructor virtual y <code>print</code> (no tiene <code>m_opacity</code>, <code>m_message</code> ni <code>whoAmI</code>). Los apartados 21.9 y 21.10 usan esta versión abstracta.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "21.9 Serialización polimórfica",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Un operador de salida puede <strong>delegar en una función virtual</strong>. De este modo, una única operación admite cualquier clase derivada sin conocerla de antemano.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Un solo <code>operator&lt;&lt;</code> para toda la jerarquía (libro, 13.10). Las derivadas tienen además los miembros de 13.6:</p>",
+          "codigo": "std::ostream& operator<<(std::ostream& out, const CGeometry& geometry) {\n    geometry.print(out);\n    return out;\n}\n\nclass CSegment : public CGeometry {\npublic:\n    virtual void print(std::ostream& out) const {\n        out << \"Segment: \" << m_p1 << ' ' << m_p2;\n    }\n};\n\nclass CCircle : public CGeometry {\npublic:\n    virtual void print(std::ostream& out) const {\n        out << \"Circle: \" << m_center << ' ' << m_diameter;\n    }\n};"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Desde C++11 se recomienda añadir <code>override</code> a las dos implementaciones de <code>print</code> (<code>void print(std::ostream&amp; out) const override</code>) para que el compilador verifique su correspondencia con la función virtual pura.</p><p>El operador recibe una <strong>referencia</strong> a <code>CGeometry</code> (no hay recorte) y <code>print</code> selecciona la implementación concreta. No es necesario declarar el operador como <code>friend</code> si <code>print</code> expone todo lo necesario para serializar el objeto: el operador solo usa la interfaz pública de la clase.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "21.10 Ejemplo de uso completo",
+      "bloques": [
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Programa completo con la jerarquía abstracta, versión anterior a C++11 (libro, 13.11):</p>",
+          "codigo": "#include \"CGeometry.h\"\n#include \"CSegment.h\"\n#include \"CCircle.h\"\n#include <iostream>\n#include <vector>\n\n// Versión anterior a C++11\nint main() {\n    std::vector<CGeometry*> geometries;\n    geometries.push_back(new CSegment());\n    geometries.push_back(new CCircle());\n    for (std::vector<CGeometry*>::iterator it = geometries.begin(); it != geometries.end(); ++it) {\n        std::cout << **it << std::endl;\n    }\n    for (std::vector<CGeometry*>::iterator it = geometries.begin(); it != geometries.end(); ++it) {\n        delete *it;\n    }\n    return 0;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El programa clásico trabaja con la interfaz <code>CGeometry</code> y muestra el comportamiento específico de cada objeto: <code>*it</code> es un <code>CGeometry*</code> y <code>**it</code>, la geometría a la que apunta, que se pasa por referencia a <code>operator&lt;&lt;</code>. Como el vector posee objetos creados con <code>new</code>, debe recorrerlo una segunda vez para ejecutar <code>delete</code>. El destructor virtual de <code>CGeometry</code> garantiza que se destruya también la parte derivada.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Salida real (con la <code>CPoint</code> mínima de 13.6):</p>",
+          "codigo": "Segment: (0, 0) (0, 0)\nCircle: (0, 0) 0",
+          "lenguaje": "texto"
+        },
+        {
+          "tipo": "nota",
+          "html": "<p>El libro no da la salida de este programa, y la forma de escribir los puntos depende del <code>operator&lt;&lt;</code> de <code>CPoint</code>, que el libro no define: con otra <code>CPoint</code> cambiaría el formato de los paréntesis, no la estructura (primero el segmento, luego el círculo). Para compilarlo, a las clases de 13.10 se les han dado los miembros de 13.6 con valor inicial 0 (el listado de 13.10 solo muestra <code>print</code>).</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>21.10.1 Alternativa desde C++11</h3>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>El mismo programa con <code>unique_ptr</code>, válido en C++11 (libro, 13.11.1):</p>",
+          "codigo": "#include <memory>\n#include <vector>\n\nstd::vector<std::unique_ptr<CGeometry>> geometries;\ngeometries.push_back(std::unique_ptr<CGeometry>(new CSegment())); // C++11\ngeometries.push_back(std::unique_ptr<CGeometry>(new CCircle()));\nfor (const auto& geometry : geometries) {\n    std::cout << *geometry << '\\n';\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Desde C++14 las dos inserciones pueden escribirse con <code>std::make_unique&lt;CSegment&gt;()</code> y <code>std::make_unique&lt;CCircle&gt;()</code>. <strong>No es necesario ejecutar <code>delete</code></strong>: el vector destruye sus <code>unique_ptr</code> y estos destruyen las geometrías (a través del destructor virtual). La salida es la misma que en la versión clásica.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "21.11 Buenas prácticas",
+      "bloques": [
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "La clase base debe ofrecer una <strong>interfaz estable</strong> y un <strong>destructor virtual</strong> si se utilizará polimórficamente.",
+            "En el estilo clásico deben controlarse cuidadosamente <strong>todos los <code>new</code> y <code>delete</code></strong>.",
+            "Desde C++11 deben declararse <strong><code>override</code></strong> las funciones sobrescritas y preferirse <strong>RAII y punteros inteligentes</strong> (<code>std::unique_ptr</code>).",
+            "Los objetos polimórficos <strong>no deben almacenarse por valor</strong> en colecciones de la base (recorte): se guardan punteros.",
+            "No toda reutilización justifica una herencia. La <strong>composición</strong> es más adecuada cuando un objeto <strong>«tiene un»</strong> componente (un <code>CSegment</code> <em>tiene</em> dos <code>CPoint</code>: son miembros, no bases). La herencia se reserva para relaciones <strong>«es un»</strong> en las que la clase derivada puede sustituir correctamente a la base."
+          ]
+        }
+      ]
+    },
+    {
+      "titulo": "21.12 Resumen y ejercicios",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>La herencia reúne características comunes en una clase base y permite especializarlas. El polimorfismo combina funciones virtuales con punteros o referencias para ejecutar el comportamiento del tipo real. Las clases abstractas definen contratos y evitan instancias incompletas.</p><p>Los ejercicios del libro (añadir geometrías con un cálculo virtual del área, comparar la colección clásica de <code>CGeometry*</code> con la de <code>std::unique_ptr&lt;CGeometry&gt;</code> y analizar qué se pierde al guardar un <code>CSegment</code> en una variable <code>CGeometry</code>) están convertidos en las cuestiones autocorregidas del final del tema.</p>"
+        }
+      ]
+    }
+  ],
+  "registros": {},
+  "ejercicios": {
+    "cpp-herencia-polimorfismo-1": {
+      "titulo": "¿Qué se imprime? Enlace dinámico y destructores (13.5, 13.8)",
+      "enunciado": "<p>Se usan las clases <code>CGeometry</code>, <code>CSegment</code> y <code>CCircle</code> del libro. Responde qué escribe cada fragmento. Todas las salidas se han comprobado con Apple clang 21 (<code>clang++ -std=c++17 -Wall -Wextra</code>).</p>",
+      "contexto": "<pre><code class=\"lang-cpp\">class CGeometry {            // 13.5\nprivate:\n    double m_opacity;\nprotected:\n    std::string m_message;   // \"I am a geometry:\"\npublic:\n    CGeometry();\n    explicit CGeometry(double opacity);\n    virtual void whoAmI(std::ostream&amp; out) const;\n    virtual ~CGeometry() {};\n};\nclass CSegment : public CGeometry {   // 13.6: m_p1, m_p2, m_length, m_slope\n    ...  whoAmI escribe \"I am a segment\"\n};\nclass CCircle : public CGeometry {    // 13.6: m_center, m_diameter\n    ...  whoAmI escribe \"I am a circle\"\n};</code></pre><p>Versión instrumentada para las preguntas 3 y 4: cada constructor y destructor escribe su nombre (<code>CGeometry()</code>, <code>CPoint()</code>, <code>~CSegment()</code>…).</p>",
+      "preguntas": [
+        {
+          "texto": "¿Qué escribe el recorrido de 13.8?<pre><code class=\"lang-cpp\">CSegment segment;\nCCircle circle;\nstd::vector&lt;CGeometry*&gt; geometries;\ngeometries.push_back(&amp;segment);\ngeometries.push_back(&amp;circle);\nfor (std::vector&lt;CGeometry*&gt;::iterator it = geometries.begin(); it != geometries.end(); ++it) {\n    (*it)-&gt;whoAmI(std::cout);\n}</code></pre>",
+          "opciones": [
+            "<code>I am a segment</code> y después <code>I am a circle</code>",
+            "<code>I am a geometry:</code> dos veces, porque el vector es de <code>CGeometry*</code>",
+            "<code>I am a geometry:</code>, <code>I am a segment</code>, <code>I am a geometry:</code>, <code>I am a circle</code>",
+            "No compila: un <code>std::vector&lt;CGeometry*&gt;</code> no admite <code>&amp;segment</code>"
+          ],
+          "correcta": 0,
+          "explicacion": "<p><code>whoAmI</code> es <strong>virtual</strong> y se llama a través de un puntero a la base, así que se ejecuta la versión del <strong>tipo real</strong> de cada objeto (enlace dinámico): <code>I am a segment</code> y <code>I am a circle</code>. El tipo del puntero (<code>CGeometry*</code>) no decide nada; y un <code>CSegment*</code> se convierte implícitamente en <code>CGeometry*</code> porque la herencia es pública («un segmento es una geometría»).</p>"
+        },
+        {
+          "texto": "Se borra la palabra <code>virtual</code> de la declaración de <code>whoAmI</code> en <code>CGeometry</code> (las derivadas se dejan como están). ¿Qué escribe ahora el mismo recorrido?",
+          "opciones": [
+            "Lo mismo: <code>I am a segment</code> y <code>I am a circle</code>, porque las derivadas siguen declarando <code>whoAmI</code> como <code>virtual</code>",
+            "<code>I am a geometry:</code> dos veces",
+            "No compila: las derivadas no pueden declarar <code>virtual</code> una función que no lo es en la base",
+            "Error en ejecución al llamar a <code>whoAmI</code>"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Sin <code>virtual</code> en la base, la llamada <code>(*it)-&gt;whoAmI(...)</code> se resuelve <strong>al compilar</strong> con el tipo del puntero, <code>CGeometry*</code> (enlace estático): se ejecuta <code>CGeometry::whoAmI</code>, que escribe <code>m_message</code> → <code>I am a geometry:</code> dos veces (salida real). El <code>virtual</code> de las derivadas compila, pero solo hace virtual la función a partir de <code>CSegment</code> y <code>CCircle</code>; no afecta a las llamadas hechas con un <code>CGeometry*</code>.</p>"
+        },
+        {
+          "texto": "Con la versión instrumentada y el destructor virtual del libro, ¿qué escribe <code>CGeometry* p = new CSegment(); delete p;</code>?",
+          "opciones": [
+            "<code>CGeometry()</code> <code>CPoint()</code> <code>CPoint()</code> <code>CSegment()</code> y luego <code>~CSegment()</code> <code>~CPoint()</code> <code>~CPoint()</code> <code>~CGeometry()</code>",
+            "<code>CSegment()</code> <code>CPoint()</code> <code>CPoint()</code> <code>CGeometry()</code> y luego <code>~CGeometry()</code> <code>~CPoint()</code> <code>~CPoint()</code> <code>~CSegment()</code>",
+            "<code>CGeometry()</code> <code>CPoint()</code> <code>CPoint()</code> <code>CSegment()</code> y luego <code>~CGeometry()</code> <code>~CPoint()</code> <code>~CPoint()</code> <code>~CSegment()</code>",
+            "<code>CGeometry()</code> <code>CSegment()</code> y luego <code>~CGeometry()</code>"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Construcción (13.7): primero la <strong>parte base</strong> (<code>CGeometry()</code>, elegido en la lista de inicialización), después los <strong>miembros</strong> de la derivada en orden de declaración (<code>m_p1</code>, <code>m_p2</code>: dos <code>CPoint()</code>) y por último el cuerpo de <code>CSegment()</code>. La destrucción es el <strong>orden inverso</strong>: <code>~CSegment()</code>, los dos <code>~CPoint()</code> y <code>~CGeometry()</code>. Aunque <code>p</code> es un <code>CGeometry*</code>, el destructor virtual hace que <code>delete</code> empiece por <code>~CSegment()</code>. Es la salida real de la versión instrumentada.</p>"
+        },
+        {
+          "texto": "Mismo programa, pero el destructor de <code>CGeometry</code> <strong>no</strong> es virtual. ¿Qué ocurre en el <code>delete p;</code>?",
+          "opciones": [
+            "Lo mismo que con destructor virtual: los destructores siempre se encadenan",
+            "No compila: no se puede hacer <code>delete</code> de un <code>CGeometry*</code> que apunta a un <code>CSegment</code>",
+            "Solo se ejecuta <code>~CGeometry()</code>: <code>~CSegment()</code> y los <code>~CPoint()</code> no llegan a ejecutarse (comportamiento indefinido; clang avisa con <code>-Wall</code>)",
+            "Solo se ejecuta <code>~CSegment()</code>, y la parte base queda sin destruir"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>Sin <code>virtual</code>, <code>delete</code> se guía por el tipo del puntero y llama solo a <code>~CGeometry()</code> (salida real con clang: una única línea <code>~CGeometry()</code>). La parte derivada no se destruye «correctamente», como advierte el libro en 13.5; para el estándar es <strong>comportamiento indefinido</strong>. Compila, pero con <code>-Wall</code> clang avisa: <em>delete called on non-final 'CGeometry' that has virtual functions but non-virtual destructor</em>. Por eso la base de una jerarquía polimórfica lleva <code>virtual ~CGeometry()</code>.</p>"
+        }
+      ]
+    },
+    "cpp-herencia-polimorfismo-2": {
+      "titulo": "Recorte de objetos: qué se pierde (13.8.2, 13.13)",
+      "enunciado": "<p>El libro propone analizar qué información se pierde al almacenar un <code>CSegment</code> por valor en una variable <code>CGeometry</code>. Se parte de <code>CSegment segment(0.5);</code> y <code>CCircle circle;</code>, con las clases de 13.5 y 13.6.</p>",
+      "contexto": "<pre><code class=\"lang-cpp\">class CGeometry {            // 13.5\nprivate:\n    double m_opacity;\nprotected:\n    std::string m_message;   // \"I am a geometry:\"\npublic:\n    CGeometry();\n    explicit CGeometry(double opacity);\n    virtual void whoAmI(std::ostream&amp; out) const;\n    virtual ~CGeometry() {};\n};\nclass CSegment : public CGeometry {   // 13.6: m_p1, m_p2, m_length, m_slope\n    ...  whoAmI escribe \"I am a segment\"\n};\nclass CCircle : public CGeometry {    // 13.6: m_center, m_diameter\n    ...  whoAmI escribe \"I am a circle\"\n};</code></pre>",
+      "preguntas": [
+        {
+          "texto": "¿Qué escribe este fragmento?<pre><code class=\"lang-cpp\">std::list&lt;CGeometry&gt; shapes;\nshapes.push_back(segment);\nshapes.push_back(circle);\nfor (std::list&lt;CGeometry&gt;::iterator it = shapes.begin(); it != shapes.end(); ++it) {\n    it-&gt;whoAmI(std::cout);\n}</code></pre>",
+          "opciones": [
+            "<code>I am a segment</code> y <code>I am a circle</code>, porque <code>whoAmI</code> es virtual",
+            "<code>I am a geometry:</code> dos veces",
+            "No compila: no se puede insertar un <code>CSegment</code> en una lista de <code>CGeometry</code>",
+            "<code>I am a segment</code> y <code>I am a geometry:</code>"
+          ],
+          "correcta": 1,
+          "explicacion": "<p><code>push_back</code> guarda <strong>copias por valor</strong> de tipo <code>CGeometry</code>: se usa el constructor de copia de <code>CGeometry</code>, que solo copia la parte base (<strong>recorte</strong>). Los elementos de la lista son <code>CGeometry</code> auténticos, así que aunque <code>whoAmI</code> sea virtual se ejecuta la versión de la base: <code>I am a geometry:</code> dos veces (salida real). Compila sin problemas porque un <code>CSegment</code> <em>es una</em> <code>CGeometry</code> y puede usarse para copiar la base: el error es silencioso.</p>"
+        },
+        {
+          "texto": "Tras <code>CGeometry g = segment;</code>, ¿qué conserva <code>g</code>?",
+          "opciones": [
+            "Todos los datos de <code>segment</code>, pero <code>g.whoAmI</code> escribe <code>I am a geometry:</code>",
+            "Solo <code>m_message</code>: <code>m_opacity</code> es <code>private</code> de <code>CGeometry</code> y no se copia",
+            "<code>m_opacity</code> (0,5) y <code>m_message</code>; se pierden <code>m_p1</code>, <code>m_p2</code>, <code>m_length</code>, <code>m_slope</code> y el comportamiento de segmento",
+            "Nada: <code>g</code> se construye con el constructor por defecto y <code>m_opacity</code> vale 0"
+          ],
+          "correcta": 2,
+          "explicacion": "<p><code>g</code> se construye con el constructor de copia de <code>CGeometry</code>, que copia los miembros de la base: <code>m_opacity</code> (es privado, pero lo copia la propia <code>CGeometry</code>; vale 0,5) y <code>m_message</code>. Los miembros propios de <code>CSegment</code> no caben en un <code>CGeometry</code> (con clang, 40 bytes frente a 88) y se pierden. También se pierde el comportamiento: <code>g</code> es un <code>CGeometry</code> y <code>g.whoAmI(std::cout)</code> escribe <code>I am a geometry:</code>.</p>"
+        },
+        {
+          "texto": "¿Y qué escribe <code>CGeometry&amp; r = segment; r.whoAmI(std::cout);</code>?",
+          "opciones": [
+            "<code>I am a geometry:</code>, igual que con <code>g</code>",
+            "<code>I am a segment</code>",
+            "No compila: una referencia a <code>CGeometry</code> no puede referirse a un <code>CSegment</code>",
+            "<code>I am a geometry:</code> seguido de <code>I am a segment</code>"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Una referencia (como un puntero) <strong>no copia</strong> el objeto: <code>r</code> es otro nombre para <code>segment</code>. Al llamar a una función virtual a través de una referencia a la base se usa el tipo real del objeto (13.8): <code>I am a segment</code> (salida real). Por eso el polimorfismo necesita punteros o referencias, nunca copias por valor.</p>"
+        },
+        {
+          "texto": "¿Qué contenedor guarda un segmento y un círculo <strong>sin recortarlos</strong>, siendo además el propietario que los libera solo?",
+          "opciones": [
+            "<code>std::list&lt;CGeometry&gt;</code>",
+            "<code>std::vector&lt;CSegment&gt;</code>",
+            "<code>std::vector&lt;CGeometry*&gt;</code> con <code>push_back(&amp;segment)</code>",
+            "<code>std::vector&lt;std::unique_ptr&lt;CGeometry&gt;&gt;</code> con <code>push_back(std::make_unique&lt;CSegment&gt;())</code>"
+          ],
+          "correcta": 3,
+          "explicacion": "<p>Los contenedores polimórficos guardan punteros (13.8.2). El vector de <code>unique_ptr</code> (13.8.4) además es <strong>propietario</strong>: al destruirse, cada <code>unique_ptr</code> hace <code>delete</code> de su objeto (a través del destructor virtual), sin bucle de <code>delete</code> (<code>make_unique</code> requiere C++14). <code>std::list&lt;CGeometry&gt;</code> recorta; <code>std::vector&lt;CSegment&gt;</code> no admite círculos; y el vector de <code>CGeometry*</code> con <code>&amp;segment</code> no recorta, pero <strong>no posee</strong> los objetos (13.8): no los libera y los objetos deben seguir existiendo mientras se use.</p>"
+        }
+      ]
+    },
+    "cpp-herencia-polimorfismo-3": {
+      "titulo": "Firma correcta: override y clases abstractas (13.6, 13.9, 13.13)",
+      "enunciado": "<p>Se quiere que <code>CSegment</code> sobrescriba <code>virtual void whoAmI(std::ostream&amp; out) const;</code> de <code>CGeometry</code> (13.5) y, siguiendo el ejercicio del libro, añadir a la jerarquía un cálculo virtual del área. Resultados comprobados con Apple clang 21 (<code>clang++ -std=c++17 -Wall -Wextra</code>).</p>",
+      "contexto": "<pre><code class=\"lang-cpp\">class CGeometry {\npublic:\n    virtual void whoAmI(std::ostream&amp; out) const;\n    virtual ~CGeometry() {};\n    ...\n};</code></pre>",
+      "preguntas": [
+        {
+          "texto": "¿Cuál de estas declaraciones dentro de <code>CSegment</code> compila y sobrescribe <code>whoAmI</code>?",
+          "opciones": [
+            "<code>void whoAmI(std::ostream&amp; out) override;</code>",
+            "<code>void whoAmI(std::ostream&amp; out) const override;</code>",
+            "<code>void WhoAmI(std::ostream&amp; out) const override;</code>",
+            "<code>override void whoAmI(std::ostream&amp; out) const;</code>"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Para sobrescribir, la firma debe coincidir exactamente: mismo nombre, mismos parámetros y mismo <code>const</code>; <code>override</code> va al final, detrás de <code>const</code> (13.6.1). La primera opción no tiene <code>const</code> (clang: <em>non-virtual member function marked 'override' hides virtual member function</em>); la tercera tiene otro nombre, C++ distingue mayúsculas (<em>only virtual member functions can be marked 'override'</em>); en la cuarta <code>override</code> está delante y se toma como un tipo (<em>unknown type name 'override'</em>).</p>"
+        },
+        {
+          "texto": "En estilo anterior a C++11 (sin <code>override</code>) se escribe en <code>CSegment</code> <code>void whoAmI(std::ostream&amp; out) { out &lt;&lt; \"I am a segment\" &lt;&lt; std::endl; }</code>, sin <code>const</code>. ¿Qué pasa con <code>CGeometry* p = &amp;segment; p-&gt;whoAmI(std::cout);</code>?",
+          "opciones": [
+            "Error de compilación: falta <code>const</code>",
+            "Compila y escribe <code>I am a segment</code>: el <code>const</code> no forma parte de la firma",
+            "Compila (clang solo avisa con <code>-Woverloaded-virtual</code>) y escribe <code>I am a geometry:</code>, porque se ha creado otra función",
+            "Compila y escribe <code>I am a segment</code> y después <code>I am a geometry:</code>"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>El <code>const</code> <strong>sí forma parte de la firma</strong>: la función sin <code>const</code> es otra función distinta, que no sobrescribe a la virtual de la base (13.6). El programa compila; con <code>-Wall</code> clang solo avisa (<em>'CSegment::whoAmI' hides overloaded virtual function</em>), y la llamada a través de <code>CGeometry*</code> ejecuta la versión de la base: <code>I am a geometry:</code> (salida real). Es justo el error silencioso que <code>override</code> convierte en error de compilación.</p>"
+        },
+        {
+          "texto": "Para el cálculo virtual del área se añade a la <code>CGeometry</code> abstracta de 13.9 <code>virtual double area() const = 0;</code>. <code>CCircle</code> lo implementa, pero una nueva <code>class CTriangle : public CGeometry</code> todavía no. ¿Qué ocurre?",
+          "opciones": [
+            "<code>CTriangle t;</code> no compila: <code>CTriangle</code> sigue siendo abstracta mientras no implemente <code>area</code> (y <code>print</code>)",
+            "<code>CTriangle t;</code> compila y <code>t.area()</code> devuelve 0",
+            "<code>CTriangle t;</code> compila, pero <code>t.area()</code> provoca un error en ejecución",
+            "No compila ninguna clase derivada, ni siquiera <code>CCircle</code>, hasta que todas implementen <code>area</code>"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Una clase con al menos una función virtual pura es <strong>abstracta</strong> y no se puede instanciar; una derivada que no implementa todas las virtuales puras <strong>continúa siendo abstracta</strong> (13.9). Clang lo rechaza al compilar: <em>variable type 'CTriangle' is an abstract class</em>. Las demás derivadas no se ven afectadas: <code>CCircle</code>, que implementa <code>area</code> y <code>print</code>, se puede instanciar con normalidad. Así la clase abstracta obliga a cada geometría nueva a cumplir el contrato.</p>"
+        }
+      ]
+    }
+  },
+  "ejerciciosEnTema": [
+    "cpp-herencia-polimorfismo-1",
+    "cpp-herencia-polimorfismo-2",
+    "cpp-herencia-polimorfismo-3"
+  ],
+  "tituloEjercicios": "Ejercicios y cuestiones",
+  "resumen": [
+    "La <strong>herencia pública</strong> expresa «es un»: <code>class CSegment : public CGeometry</code>. La derivada hereda la parte base completa; los miembros <code>private</code> de la base existen en el objeto derivado pero solo se usan a través de la interfaz de la base, y los <code>protected</code> son accesibles desde las derivadas.",
+    "La cabecera de una derivada incluye la definición completa de la base (tamaño e interfaz); para guardar solo un puntero o una referencia basta una declaración adelantada.",
+    "El constructor de la derivada elige el de la base en la lista de inicialización. Orden: <strong>base → miembros → cuerpo de la derivada</strong>; la destrucción, al revés. <code>operator=</code> asigna primero la base (<code>CGeometry::operator=(other)</code>) y luego los miembros; desde C++11, <code>= default</code> si basta la copia miembro a miembro.",
+    "Una función <strong>virtual</strong> llamada por puntero o referencia a la base ejecuta la versión del tipo real (enlace dinámico, implementado con una tabla virtual); sin <code>virtual</code>, se ejecuta la de la base: <code>I am a geometry:</code>.",
+    "La firma de la función que sobrescribe debe coincidir exactamente (nombre, parámetros, <code>const</code>); si no, se crea otra función en silencio. Desde C++11, <strong><code>override</code></strong> hace que el compilador lo compruebe.",
+    "La base polimórfica necesita <strong>destructor virtual</strong>: sin él, <code>delete</code> de un <code>CGeometry*</code> que apunta a un <code>CSegment</code> solo ejecuta <code>~CGeometry()</code> (comportamiento indefinido).",
+    "<strong>Recorte de objetos</strong>: guardar un derivado por valor en un <code>CGeometry</code> o en <code>std::list&lt;CGeometry&gt;</code> copia solo la parte base y pierde los miembros y el comportamiento propios. Los contenedores polimórficos guardan punteros: <code>std::vector&lt;CGeometry*&gt;</code> con <code>delete</code> manual (clásico) o <code>std::vector&lt;std::unique_ptr&lt;CGeometry&gt;&gt;</code> (C++11; <code>make_unique</code> desde C++14).",
+    "Una <strong>clase abstracta</strong> tiene al menos una virtual pura (<code>= 0</code>), no se puede instanciar y define un contrato; un <code>operator&lt;&lt;</code> que delega en <code>print</code> virtual serializa cualquier derivada. Composición para «tiene un», herencia para «es un»."
+  ]
+}

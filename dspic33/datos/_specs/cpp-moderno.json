@@ -1,0 +1,391 @@
+{
+  "slug": "cpp-moderno",
+  "titulo": "C++: antes vs. ahora (C++11 y posteriores)",
+  "temaNum": 20,
+  "lenguaje": "cpp",
+  "lead": "El C++ de las transparencias es el anterior a C++11; las versiones modernas no eliminan punteros, constructores ni destructores, pero añaden herramientas que expresan mejor la intención y evitan errores de memoria. En este tema verás las diferencias entre ambos estilos —<code>auto</code>, bucles basados en rango, listas de inicialización y <code>std::to_string</code>— y aprenderás a elegir entre referencias o punteros sin propiedad, <code>std::unique_ptr</code>, <code>std::shared_ptr</code> y <code>std::weak_ptr</code>.",
+  "secciones": [
+    {
+      "titulo": "20.1 ¿Qué versión de C++ es la actual?",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Las transparencias de la asignatura y los capítulos anteriores usan el estilo de C++ <strong>anterior a C++11</strong>, próximo a C++98/C++03. Ese estilo permite aprender con claridad punteros, construcción, destrucción y polimorfismo. Las versiones posteriores <strong>no eliminan esos conceptos</strong>: añaden herramientas que expresan mejor la intención del programador y reducen los errores de gestión de memoria.</p><p>A octubre de 2026, el estándar publicado más reciente es <strong>C++23</strong>, recogido formalmente en la norma <strong>ISO/IEC 14882:2024</strong>. C++26 se encuentra en desarrollo y todavía no es un estándar ISO publicado. Un compilador puede admitir solo una parte de cada estándar, así que el proyecto debe <strong>seleccionar expresamente el nivel</strong> que usa: C++11, C++14, C++17, C++20 o C++23. Con g++ o clang++ se hace con la opción <code>-std</code>, por ejemplo <code>clang++ -std=c++17 main.cpp</code>.</p><p>En este tema se muestra primero la versión compatible con las transparencias (C++ anterior a C++11) y después la alternativa desde C++11. Las herramientas que aparecen y el estándar que las introduce son:</p><table class=\"tabla-datos\"><thead><tr><th>Herramienta</th><th>Desde</th><th>Cabecera</th><th>Apartado</th></tr></thead><tbody><tr><td>Inicialización con llaves, <code>auto</code>, bucle basado en rango</td><td>C++11</td><td>—</td><td>12.3</td></tr><tr><td><code>std::to_string</code></td><td>C++11</td><td><code>&lt;string&gt;</code></td><td>12.4</td></tr><tr><td><code>std::unique_ptr&lt;T&gt;</code> (propiedad exclusiva)</td><td>C++11</td><td><code>&lt;memory&gt;</code></td><td>12.5</td></tr><tr><td><code>std::make_unique</code></td><td><strong>C++14</strong></td><td><code>&lt;memory&gt;</code></td><td>12.5</td></tr><tr><td><code>std::shared_ptr&lt;T&gt;</code>, <code>std::make_shared</code> (propiedad compartida)</td><td>C++11</td><td><code>&lt;memory&gt;</code></td><td>12.6</td></tr><tr><td><code>std::weak_ptr&lt;T&gt;</code> (observador sin propiedad)</td><td>C++11</td><td><code>&lt;memory&gt;</code></td><td>12.6.2</td></tr></tbody></table><p>Cuando se utilice <code>std::make_unique</code> se indicará expresamente que es de C++14: si se compila con <code>-std=c++11</code>, clang++ responde <em>no member named 'make_unique' in namespace 'std'</em>.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "20.2 Inicialización, auto y bucles basados en rango",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Antes de C++11 se escribía el <strong>tipo completo</strong> de cada variable, los elementos se añadían uno a uno con funciones como <code>push_back</code> y los contenedores se recorrían con <strong>iteradores explícitos</strong>, como en el tema de la STL:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "Estilo anterior a C++11: el vector se llena con <code>push_back</code> y se recorre con un <code>const_iterator</code> escrito con su tipo completo. Reconstruido: en la conversión del libro este listado y el siguiente quedaron partidos por un salto de página, con la prosa intermedia dentro del código.",
+          "codigo": "// Antes de C++11\nstd::vector<int> samples;\nsamples.push_back(10);\nsamples.push_back(20);\nsamples.push_back(30);\nfor (std::vector<int>::const_iterator it = samples.begin(); it != samples.end(); ++it) {\n    std::cout << *it << std::endl;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Desde C++11 pueden usarse <strong>llaves para inicializar</strong> (lista de inicialización), <strong><code>auto</code></strong> para deducir el tipo y un <strong>bucle basado en rango</strong>. <code>auto</code> no elimina el tipo: el compilador lo determina durante la compilación a partir de la expresión que inicializa la variable.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "El mismo programa desde C++11. Ambas versiones imprimen 10, 20 y 30, uno por línea (compilado con <code>clang++ -std=c++17</code>).",
+          "codigo": "// Desde C++11\nstd::vector<int> samples {10, 20, 30};\nauto it = samples.begin();             // deduce el tipo del iterador\nfor (const auto& sample : samples) {   // lee cada elemento sin copiar\n    std::cout << sample << '\\n';\n}"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<code>std::vector&lt;int&gt; samples {10, 20, 30};</code> crea el vector con sus tres elementos de una vez, sin llamar tres veces a <code>push_back</code>.",
+            "<code>auto it = samples.begin();</code> deduce el tipo <code>std::vector&lt;int&gt;::iterator</code>. Ojo: como <code>samples</code> no es constante, <code>begin()</code> devuelve un iterador que <em>permite modificar</em>, no el <code>const_iterator</code> de la versión anterior; si se quiere el de solo lectura se escribe <code>auto it = samples.cbegin();</code>. (En el fragmento del libro <code>it</code> solo ilustra la deducción y no se usa después, por lo que <code>-Wall</code> avisa de variable no utilizada.)",
+            "<code>for (const auto&amp; sample : samples)</code> recorre todos los elementos sin escribir iteradores: en cada vuelta <code>sample</code> es una <strong>referencia constante</strong> al elemento, así que se lee sin copiarlo y no se puede modificar. Con <code>auto sample</code> (sin <code>&amp;</code>) se copiaría cada elemento; con <code>auto&amp; sample</code> se podría modificar."
+          ]
+        }
+      ]
+    },
+    {
+      "titulo": "20.3 Conversión con std::to_string",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p><code>std::to_string</code>, disponible desde C++11 y declarada en <code>&lt;string&gt;</code>, convierte un número en <code>std::string</code>. Sustituye en código portable a funciones no estándar como <code>itoa</code>, que no todos los compiladores ofrecen. Es útil, por ejemplo, para construir los nombres o los mensajes que el programa del PC envía o muestra.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "Construcción de una etiqueta a partir de un índice entero.",
+          "codigo": "int index = 7;\nstd::string label = \"sensor-\" + std::to_string(index); // \"sensor-7\""
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><code>\"sensor-\"</code> es una cadena de C, pero al sumarle el <code>std::string</code> que devuelve <code>std::to_string(index)</code> se usa el <code>operator+</code> de <code>std::string</code> (tema de la STL) y el resultado es el <code>std::string</code> <strong>\"sensor-7\"</strong> (comprobado al compilarlo).</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "20.4 Propiedad exclusiva con std::unique_ptr",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>En el estilo clásico, un objeto creado con <code>new</code> debe destruirse con <code>delete</code>, y lo debe hacer el código que sea su <strong>propietario</strong>. Si la función termina antes de ejecutar <code>delete</code> (un <code>return</code> anticipado, una excepción) o se pierde el puntero, aparece una <strong>fuga de memoria</strong>.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "Propiedad manual antes de C++11: crear con <code>new</code>, usar, destruir con <code>delete</code> y anular el puntero. Imprime <code>(1,2)</code> con el <code>operator&lt;&lt;</code> de <code>CComplex</code> del tema de clases.",
+          "codigo": "// Antes de C++11: propiedad manual\nCComplex* value = new CComplex(1.0, 2.0);\nstd::cout << *value << std::endl;\ndelete value;\nvalue = 0;"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Desde C++11, <code>std::unique_ptr&lt;T&gt;</code>, declarado en <code>&lt;memory&gt;</code>, representa la <strong>propiedad exclusiva</strong>: hay un único propietario del objeto. Cuando el <code>unique_ptr</code> sale de su ámbito ejecuta <code>delete</code> automáticamente, aunque la función termine por un camino inesperado. <strong>No puede copiarse</strong>; la propiedad puede <strong>transferirse mediante movimiento</strong>.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "C++11: el <code>unique_ptr</code> toma el objeto creado con <code>new</code>; se usa con <code>*</code> y <code>-&gt;</code> como un puntero normal y no hace falta <code>delete</code>. Reconstruido: en la conversión del libro la primera línea de este bloque apareció desplazada al bloque siguiente.",
+          "codigo": "// C++11\nstd::unique_ptr<CComplex> value(new CComplex(1.0, 2.0));\nstd::cout << *value << '\\n';"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Desde C++14 se prefiere <code>std::make_unique</code>, que construye el objeto y devuelve el <code>unique_ptr</code> en una sola expresión, sin escribir <code>new</code>:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "Desde C++14 (con <code>-std=c++11</code> no compila).",
+          "codigo": "// Desde C++14\nstd::unique_ptr<CComplex> value = std::make_unique<CComplex>(1.0, 2.0);"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Que no se pueda copiar es lo que garantiza que el propietario es único. El siguiente fragmento (añadido para ilustrar la frase del libro; compilado con clang++ 21 y <code>-std=c++17</code>) muestra la diferencia entre copiar y mover:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "Copia prohibida y traslado con <code>std::move</code>. Si se quita el comentario de la segunda línea, clang++ da <em>call to implicitly-deleted copy constructor of 'std::unique_ptr&lt;CComplex&gt;'</em>.",
+          "codigo": "std::unique_ptr<CComplex> value = std::make_unique<CComplex>(1.0, 2.0);\n// std::unique_ptr<CComplex> copia = value;          // ERROR: unique_ptr no se puede copiar\nstd::unique_ptr<CComplex> nuevo = std::move(value);  // se transfiere la propiedad\n// ahora value está vacío (value == nullptr) y nuevo es el único propietario"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>En todos los casos el destructor de <code>CComplex</code> se ejecuta exactamente una vez: con <code>delete</code> en la versión clásica y, en las demás, al salir de su ámbito el <code>unique_ptr</code> que es propietario en ese momento.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "20.5 Propiedad compartida con std::shared_ptr",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p><code>std::shared_ptr&lt;T&gt;</code>, disponible desde C++11 y declarado en <code>&lt;memory&gt;</code>, se utiliza cuando <strong>varios propietarios</strong> deben mantener vivo el mismo objeto. Todos los <code>shared_ptr</code> que comparten el objeto comparten también un <strong>contador de propietarios</strong>, que se consulta con <code>use_count()</code>: cada copia lo incrementa, y cada <code>shared_ptr</code> que se destruye o se libera con <code>reset()</code> lo decrementa. El objeto se destruye automáticamente cuando desaparece el <strong>último</strong> <code>shared_ptr</code> que lo posee (el contador llega a 0). <code>std::make_shared</code> crea el objeto y su contador de una vez, igual que <code>make_unique</code> en 12.5.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "Dos propietarios del mismo <code>CComplex</code>. Compilado con clang++ 21 (<code>-std=c++17</code>), imprime <code>2</code> y después <code>1</code>.",
+          "codigo": "std::shared_ptr<CComplex> first = std::make_shared<CComplex>(3.0, 4.0);\nstd::shared_ptr<CComplex> second = first;  // comparten el mismo objeto\nstd::cout << first.use_count() << '\\n';    // normalmente muestra 2\nsecond.reset();                            // second deja de ser propietario\nstd::cout << first.use_count() << '\\n';    // normalmente muestra 1"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Paso a paso: tras <code>make_shared</code> hay un propietario (<code>first</code>, contador 1); la copia <code>second = first</code> no copia el <code>CComplex</code>, sino el puntero, y el contador sube a <strong>2</strong>; <code>second.reset()</code> deja <code>second</code> vacío (su <code>use_count()</code> pasa a 0) y el contador del objeto baja a <strong>1</strong>. El objeto sigue vivo porque <code>first</code> aún lo posee. El comentario dice «normalmente muestra» porque <code>use_count()</code> solo da un valor orientativo cuando otros hilos pueden estar copiando o liberando el mismo <code>shared_ptr</code> a la vez; en un programa de un solo hilo, como este, el valor es exacto.</p><p>Ejecuta el ejemplo paso a paso y observa las flechas de propiedad y el contador en el heap:</p><div class=\"mpi-mount\" data-componente=\"cpp-shared-ptr\" data-config='{\"escenario\": \"12.6\"}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>20.5.1 Copia y traslado de la propiedad</h3><p>La forma habitual de compartir la propiedad es <strong>copiar</strong> el <code>shared_ptr</code>. Si una función lo recibe <strong>por valor</strong>, el parámetro es un nuevo propietario durante la llamada y el contador aumenta. Al terminar la función, esa copia se destruye y el contador disminuye.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "Paso por valor. Al compilarlo imprime <code>Antes: 1</code>, <code>Dentro: 2</code> y <code>Después: 1</code>.",
+          "codigo": "void mostrarUso(std::shared_ptr<CComplex> value) {\n    std::cout << \"Dentro: \" << value.use_count() << '\\n';   // muestra 2\n}\n\nstd::shared_ptr<CComplex> value = std::make_shared<CComplex>(3.0, 4.0);\nstd::cout << \"Antes: \" << value.use_count() << '\\n';     // muestra 1\nmostrarUso(value);   // se copia: la función comparte la propiedad\nstd::cout << \"Después: \" << value.use_count() << '\\n';   // muestra 1"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Durante <code>mostrarUso(value)</code> existen dos propietarios: <code>value</code> en el código llamante y el parámetro <code>value</code> de la función. Pasarlo por <strong>referencia constante</strong>, <code>const std::shared_ptr&lt;CComplex&gt;&amp;</code>, evita la copia y no aumenta el contador, así que es la opción adecuada cuando la función solo necesita acceder al objeto.</p><p>También puede <strong>moverse</strong> una instancia con <code>mostrarUso(std::move(value))</code>. En ese caso se transfiere esa instancia concreta del <code>shared_ptr</code> y la variable de origen queda <strong>vacía</strong>. Esto no convierte la propiedad en exclusiva: cualquier otra copia existente continúa siendo propietaria. Para expresar una propiedad exclusivamente transferible debe utilizarse <code>std::unique_ptr</code>.</p><p>Las dos variantes que el libro describe en prosa, escritas como código (añadido; compilado con clang++ 21, <code>-std=c++17</code>, en otra función distinta de la del ejemplo anterior, porque vuelve a declarar <code>value</code>, y con la misma <code>mostrarUso</code>):</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "Referencia constante frente a traslado. Salida real: <code>Dentro: 1</code>, <code>Después: 1</code>, <code>Dentro: 1</code> y <code>Después: 0</code>; el destructor del <code>CComplex</code> se ejecuta al terminar la segunda llamada, antes del último <code>Después</code>.",
+          "codigo": "// Acceso sin copia: la referencia no es un propietario más\nvoid mostrarUsoRef(const std::shared_ptr<CComplex>& value) {\n    std::cout << \"Dentro: \" << value.use_count() << '\\n';\n}\n\nstd::shared_ptr<CComplex> value = std::make_shared<CComplex>(3.0, 4.0);\nmostrarUsoRef(value);           // Dentro: 1  (no se copia)\nstd::cout << \"Después: \" << value.use_count() << '\\n';   // Después: 1\n\nmostrarUso(std::move(value));   // Dentro: 1  (se traslada, no se copia)\n// el parámetro era el único propietario: al terminar mostrarUso se destruye el CComplex\nstd::cout << \"Después: \" << value.use_count() << '\\n';   // Después: 0 (value vacío)"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Con <code>std::move</code> el contador no llega a subir: el parámetro <em>sustituye</em> a <code>value</code> como propietario (Dentro: 1). Como en este ejemplo era el único, al terminar la función el contador llega a 0 y el objeto se destruye; si hubiera existido otra copia, el objeto habría seguido vivo con ella. Compáralo en el interactivo (por valor, <code>const&amp;</code> y <code>std::move</code>):</p><div class=\"mpi-mount\" data-componente=\"cpp-shared-ptr\" data-config='{\"escenario\": \"12.6.1\"}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Debe usarse <code>shared_ptr</code> solo cuando la propiedad sea <strong>realmente compartida</strong>. Si existe un único propietario, <code>unique_ptr</code> expresa mejor el diseño y tiene menos coste (no necesita contador). Y <strong>no debe crearse un segundo <code>shared_ptr</code> independiente a partir del mismo puntero sin gestionar</strong>, porque ambos intentarían destruir el mismo objeto:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "Error de diseño que hay que evitar (código añadido: el libro lo describe solo en prosa). Cada <code>shared_ptr</code> lleva su propio contador (los dos valen 1) y al salir de su ámbito ambos hacen <code>delete</code> del mismo objeto: comportamiento indefinido. Con clang++ 21 en macOS el programa aborta en la doble liberación. La forma correcta es <code>std::shared_ptr&lt;CComplex&gt; b = a;</code>.",
+          "codigo": "// NO HACER: dos shared_ptr independientes a partir del mismo puntero\nCComplex* raw = new CComplex(1.0, 2.0);\nstd::shared_ptr<CComplex> a(raw);\nstd::shared_ptr<CComplex> b(raw);   // segundo contador, independiente del primero\n// a.use_count() == 1 y b.use_count() == 1: los dos harán delete del mismo objeto"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>20.5.2 Ciclos de propiedad y std::weak_ptr</h3><p>Dos objetos que se poseen mutuamente mediante <code>shared_ptr</code> pueden formar un <strong>ciclo</strong>: sus contadores nunca llegan a cero y la memoria no se libera. <code>std::weak_ptr&lt;T&gt;</code> <strong>observa</strong> un objeto gestionado por <code>shared_ptr</code> sin convertirse en propietario (no cuenta en <code>use_count()</code>). Se utiliza para romper esos ciclos y, antes de acceder al objeto, debe convertirse temporalmente en <code>shared_ptr</code> mediante <code>lock()</code>, que devuelve un <code>shared_ptr</code> vacío si el objeto ya fue destruido.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "Observador del <code>first</code> de 12.6. Imprime <code>(3,4)</code>. Al compilarlo: <code>first.use_count()</code> vale 1 antes del <code>if</code>, 2 dentro (el <code>current</code> temporal es un propietario más) y otra vez 1 después.",
+          "codigo": "std::weak_ptr<CComplex> observer = first;  // no aumenta use_count()\nif (std::shared_ptr<CComplex> current = observer.lock()) {\n    // entra si el objeto sigue vivo; lock() crea un shared_ptr temporal\n    std::cout << *current << '\\n';         // el objeto continúa vivo\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Para ver el ciclo, el ejemplo siguiente (añadido: el libro lo menciona en 12.7, «si el Motor conoce a la Pantalla y la Pantalla conoce al Motor», pero no da el código) enlaza un <code>Motor</code> y una <code>Pantalla</code> con <code>shared_ptr</code> en los dos sentidos:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "Ciclo con <code>shared_ptr</code> en los dos sentidos. Compilado con clang++ 21 (<code>-std=c++17 -Wall -Wextra</code>) imprime <code>motor: 2, pantalla: 2</code> y <code>Fin del bloque</code>, y <strong>no se llama a ningún destructor</strong>: la herramienta <code>leaks</code> de macOS informa de 2 bloques perdidos (96 bytes).",
+          "codigo": "#include <iostream>\n#include <memory>\n\nclass Pantalla;\n\nclass Motor {\npublic:\n    std::shared_ptr<Pantalla> m_pantalla;   // el Motor conoce a la Pantalla\n    ~Motor() { std::cout << \"Motor destruido\\n\"; }\n};\n\nclass Pantalla {\npublic:\n    std::shared_ptr<Motor> m_motor;         // la Pantalla conoce al Motor: ciclo\n    ~Pantalla() { std::cout << \"Pantalla destruida\\n\"; }\n};\n\nint main() {\n    {\n        std::shared_ptr<Motor> motor = std::make_shared<Motor>();\n        std::shared_ptr<Pantalla> pantalla = std::make_shared<Pantalla>();\n        motor->m_pantalla = pantalla;\n        pantalla->m_motor = motor;\n        std::cout << \"motor: \" << motor.use_count()\n                  << \", pantalla: \" << pantalla.use_count() << '\\n';   // 2 y 2\n    }   // motor y pantalla salen de ámbito: los contadores bajan a 1, no a 0\n    std::cout << \"Fin del bloque\\n\";   // ningún destructor se ha llamado\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Al salir del bloque se destruyen las variables locales <code>motor</code> y <code>pantalla</code>, y cada contador baja de 2 a 1, no a 0: el <code>Motor</code> sigue poseído por <code>pantalla-&gt;m_motor</code> y la <code>Pantalla</code> por <code>motor-&gt;m_pantalla</code>. Ya nadie del programa puede llegar a ellos, pero tampoco se destruyen. La solución es que uno de los dos sentidos <strong>no sea de propiedad</strong>: la <code>Pantalla</code> solo muestra el estado del motor, así que lo observa con un <code>weak_ptr</code>:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "Ciclo roto con <code>weak_ptr</code>. Salida real: <code>motor: 1, pantalla: 2</code>, <code>Motor vivo</code>, <code>Motor destruido</code>, <code>Pantalla destruida</code> y <code>Fin del bloque</code> (0 fugas según <code>leaks</code>).",
+          "codigo": "#include <iostream>\n#include <memory>\n\nclass Pantalla;\n\nclass Motor {\npublic:\n    std::shared_ptr<Pantalla> m_pantalla;   // el Motor conoce a la Pantalla\n    ~Motor() { std::cout << \"Motor destruido\\n\"; }\n};\n\nclass Pantalla {\npublic:\n    std::weak_ptr<Motor> m_motor;           // observa el Motor sin poseerlo\n    void mostrar() const {\n        if (std::shared_ptr<Motor> actual = m_motor.lock()) {\n            std::cout << \"Motor vivo\\n\";\n        } else {\n            std::cout << \"Motor ya destruido\\n\";\n        }\n    }\n    ~Pantalla() { std::cout << \"Pantalla destruida\\n\"; }\n};\n\nint main() {\n    {\n        std::shared_ptr<Motor> motor = std::make_shared<Motor>();\n        std::shared_ptr<Pantalla> pantalla = std::make_shared<Pantalla>();\n        motor->m_pantalla = pantalla;\n        pantalla->m_motor = motor;          // no aumenta use_count() del Motor\n        std::cout << \"motor: \" << motor.use_count()\n                  << \", pantalla: \" << pantalla.use_count() << '\\n';   // 1 y 2\n        pantalla->mostrar();\n    }   // el Motor llega a 0 y se destruye; con él cae la Pantalla\n    std::cout << \"Fin del bloque\\n\";\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Ahora el contador del <code>Motor</code> solo cuenta la variable <code>motor</code> (1). Al salir del bloque se destruye primero <code>pantalla</code> (la Pantalla baja de 2 a 1, porque el Motor aún la posee) y después <code>motor</code>: el Motor llega a 0 y se destruye, y al destruirse su miembro <code>m_pantalla</code> la Pantalla llega también a 0. Mientras <code>mostrar()</code> tiene el <code>shared_ptr</code> temporal <code>actual</code>, el contador del Motor vale 2.</p><p>Compara las dos versiones en el interactivo:</p><div class=\"mpi-mount\" data-componente=\"cpp-shared-ptr\" data-config='{\"escenario\": \"12.6.2\"}'></div>"
+        }
+      ]
+    },
+    {
+      "titulo": "20.6 Resumen de elección",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Imagina el software de una máquina industrial que tiene un objeto <code>Motor</code>. La pregunta clave no es solo <em>quién utiliza</em> el motor, sino <strong>quién es responsable de mantenerlo vivo y de destruirlo</strong>.</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Un único propietario → <code>std::unique_ptr&lt;Motor&gt;</code>.</strong> Si el objeto <code>Maquina</code> crea el <code>Motor</code> y es el único responsable de él, lo guarda en un <code>std::unique_ptr&lt;Motor&gt;</code>. Cuando se destruye la máquina, el motor se destruye automáticamente. Es la opción habitual porque deja claro que hay un único propietario.",
+            "<strong>Acceso temporal → referencia o puntero sin propiedad.</strong> Una función como <code>comprobarTemperatura(Motor&amp; motor)</code>, o un módulo que recibe temporalmente un <code>Motor*</code>, puede consultar o manejar el motor sin ser su propietario. No debe destruirlo ni guardarlo para usarlo cuando la <code>Maquina</code> ya no exista. Se usa una <strong>referencia</strong> si el objeto debe existir y un <strong>puntero sin propiedad</strong> si también puede ser nulo.",
+            "<strong>Propiedad realmente compartida → <code>std::shared_ptr&lt;Motor&gt;</code>.</strong> Si el <code>Motor</code> debe seguir existiendo mientras lo utilice cualquiera de dos componentes independientes, el <code>Controlador</code> y el <code>RegistradorDeDatos</code>, y ninguno puede garantizar por sí solo la vida del objeto, ambos conservan un <code>shared_ptr</code>. El motor se destruye cuando el último propietario libera su copia. No conviene usar <code>shared_ptr</code> solo porque varios componentes <em>accedan</em> al motor: debe existir una propiedad realmente compartida.",
+            "<strong>Observar sin mantener vivo → <code>std::weak_ptr&lt;Motor&gt;</code>.</strong> Una <code>Pantalla</code> que muestra el estado del motor sin mantenerlo vivo conserva un <code>weak_ptr</code> creado a partir del <code>shared_ptr</code>. Antes de acceder intenta obtener un <code>shared_ptr</code> temporal con <code>lock()</code>; si el motor ya fue destruido, no lo usa. El <code>weak_ptr</code> también evita ciclos, por ejemplo si el Motor conoce a la Pantalla y la Pantalla conoce al Motor (12.6.2)."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<table class=\"tabla-datos\"><thead><tr><th>Relación del caso</th><th>¿Quién mantiene vivo el Motor?</th><th>Elección</th></tr></thead><tbody><tr><td><code>Maquina</code> crea y guarda su <code>Motor</code></td><td>Solo la Maquina</td><td><code>std::unique_ptr&lt;Motor&gt;</code> (miembro de Maquina)</td></tr><tr><td><code>comprobarTemperatura</code> o un módulo que lo usa un momento</td><td>Nadie: acceso temporal</td><td><code>Motor&amp;</code> (debe existir) o <code>Motor*</code> sin propiedad (puede ser nulo)</td></tr><tr><td><code>Controlador</code> y <code>RegistradorDeDatos</code></td><td>Los dos, sin que ninguno lo garantice solo</td><td><code>std::shared_ptr&lt;Motor&gt;</code> en cada uno</td></tr><tr><td><code>Pantalla</code> que muestra su estado</td><td>Nadie: solo observa</td><td><code>std::weak_ptr&lt;Motor&gt;</code> + <code>lock()</code></td></tr></tbody></table><p><strong>En resumen:</strong> <code>unique_ptr</code> para un único propietario; referencia o puntero sin propiedad para un acceso temporal; <code>shared_ptr</code> cuando varios componentes son responsables de la vida del objeto; y <code>weak_ptr</code> para observar un objeto compartido sin prolongar su existencia. Practícalo con el asistente de elección de los ejercicios.</p>"
+        }
+      ]
+    }
+  ],
+  "registros": {},
+  "ejercicios": {
+    "cpp-moderno-1": {
+      "titulo": "El contador use_count() paso a paso (12.6)",
+      "enunciado": "<p>Usa la función <code>mostrarUso</code> de 12.6.1, que recibe el <code>shared_ptr</code> <strong>por valor</strong> e imprime <code>\"Dentro: \"</code> seguido de <code>value.use_count()</code>, y el <code>CComplex</code> del tema de clases. Todas las respuestas se han comprobado compilando con <code>clang++ -std=c++17 -Wall -Wextra</code>.</p>",
+      "contexto": "<ul><li>Cada copia de un <code>shared_ptr</code> suma 1 al contador; cada <code>shared_ptr</code> destruido o liberado con <code>reset()</code> resta 1.</li><li>Un <code>weak_ptr</code> y una referencia <code>const std::shared_ptr&lt;T&gt;&amp;</code> no son propietarios.</li><li><code>std::move</code> traslada una instancia: el origen queda vacío.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Qué imprime <code>mostrarUso(b)</code>?<pre><code class=\"lang-cpp\">std::shared_ptr&lt;CComplex&gt; a = std::make_shared&lt;CComplex&gt;(1.0, 1.0);\nstd::shared_ptr&lt;CComplex&gt; b = a;\nstd::weak_ptr&lt;CComplex&gt; w = a;\nmostrarUso(b);</code></pre>",
+          "opciones": [
+            "<code>Dentro: 3</code>",
+            "<code>Dentro: 4</code>",
+            "<code>Dentro: 2</code>",
+            "<code>Dentro: 1</code>"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Propietarios durante la llamada: <code>a</code>, <code>b</code> y el parámetro <code>value</code> (copia de <code>b</code>) → <strong>3</strong>. El <code>weak_ptr</code> <code>w</code> no cuenta. Al volver, <code>a.use_count()</code> vale 2. Con 4 se estaría contando también el <code>weak_ptr</code>.</p>"
+        },
+        {
+          "texto": "Con <code>value</code> recién creado con <code>make_shared</code> (contador 1), se llama a una función que lo recibe como <code>const std::shared_ptr&lt;CComplex&gt;&amp;</code> e imprime su <code>use_count()</code>. ¿Qué se imprime dentro y qué vale el contador después?",
+          "opciones": [
+            "Dentro: 1; después: 1",
+            "Dentro: 2; después: 1",
+            "Dentro: 2; después: 2",
+            "Dentro: 0; después: 1"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>La referencia constante no crea un nuevo <code>shared_ptr</code>: es otro nombre para <code>value</code>, así que no hay copia y el contador no cambia (<strong>1 y 1</strong>). 2 → 1 es lo que ocurre con el paso por valor del libro (1 → 2 → 1).</p>"
+        },
+        {
+          "texto": "Con <code>value</code> único propietario (contador 1), se ejecuta <code>mostrarUso(std::move(value));</code> y después <code>std::cout &lt;&lt; value.use_count();</code>. ¿Qué ocurre?",
+          "opciones": [
+            "Dentro: 1; el <code>CComplex</code> se destruye al terminar <code>mostrarUso</code>; después se imprime 0",
+            "Dentro: 2; después se imprime 1 y el objeto sigue vivo",
+            "Dentro: 1; después se imprime 1 y el objeto sigue vivo",
+            "No compila: un <code>shared_ptr</code> no se puede mover"
+          ],
+          "correcta": 0,
+          "explicacion": "<p><code>std::move</code> traslada la instancia al parámetro, que sustituye a <code>value</code> como propietario (Dentro: 1) y deja <code>value</code> vacío. Como era el único propietario, al terminar la función el contador llega a 0 y el destructor de <code>CComplex</code> se ejecuta allí mismo; después <code>value.use_count()</code> vale <strong>0</strong>. Si existiera otra copia, Dentro valdría 2 y el objeto seguiría vivo con ella.</p>"
+        },
+        {
+          "texto": "En el ejemplo de 12.6.2, <code>Motor</code> guarda un <code>shared_ptr&lt;Pantalla&gt;</code> y <code>Pantalla</code> un <code>shared_ptr&lt;Motor&gt;</code>, y en un bloque se enlazan los dos objetos. ¿Qué pasa al salir del bloque?",
+          "opciones": [
+            "Los contadores bajan de 2 a 1 y no se llama a ningún destructor: los dos objetos quedan en el heap sin que nadie pueda liberarlos",
+            "Los contadores bajan a 0 y se llama a los dos destructores",
+            "Se destruye el Motor pero no la Pantalla",
+            "No compila porque las clases se referencian mutuamente"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Al compilarlo imprime <code>motor: 2, pantalla: 2</code> y ningún destructor: cada objeto mantiene vivo al otro (ciclo) y la memoria se pierde. Con <code>std::weak_ptr&lt;Motor&gt;</code> en la Pantalla imprime <code>motor: 1, pantalla: 2</code> y, al salir del bloque, <code>Motor destruido</code> y <code>Pantalla destruida</code>. Sí compila: basta la declaración adelantada <code>class Pantalla;</code>.</p>"
+        }
+      ]
+    },
+    "cpp-moderno-2": {
+      "titulo": "Asistente de elección: ¿qué puntero para cada relación? (12.7)",
+      "enunciado": "<p>Software de una máquina industrial (caso del apartado 20.6). Para cada relación, elige cómo debe guardar o recibir el <code>Motor</code> cada componente. Pregúntate siempre <strong>quién es responsable de mantenerlo vivo y destruirlo</strong>, no solo quién lo usa.</p>",
+      "contexto": "<ul><li><code>unique_ptr</code>: un único propietario.</li><li>Referencia o puntero sin propiedad: acceso temporal (referencia si debe existir; puntero si puede ser nulo).</li><li><code>shared_ptr</code>: varios responsables de la vida del objeto.</li><li><code>weak_ptr</code>: observar un objeto compartido sin prolongar su existencia.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "El objeto <code>Maquina</code> crea su <code>Motor</code> y es el único responsable de él. ¿Qué miembro debe tener <code>Maquina</code>?",
+          "opciones": [
+            "<code>std::unique_ptr&lt;Motor&gt;</code>",
+            "<code>std::shared_ptr&lt;Motor&gt;</code>",
+            "<code>std::weak_ptr&lt;Motor&gt;</code>",
+            "Referencia <code>Motor&amp;</code> (sin propiedad)"
+          ],
+          "correcta": 0,
+          "fijas": true,
+          "explicacion": "<p>Hay un único propietario: <strong><code>std::unique_ptr&lt;Motor&gt;</code></strong>. Al destruirse la máquina, el motor se destruye automáticamente. Un <code>shared_ptr</code> también funcionaría, pero ocultaría que el propietario es único y tiene más coste; una referencia no puede ser propietaria.</p>"
+        },
+        {
+          "texto": "La función <code>comprobarTemperatura</code> consulta el motor durante la llamada; el motor existe seguro mientras dura y la función no lo guarda. ¿Cómo debe recibirlo?",
+          "opciones": [
+            "<code>std::unique_ptr&lt;Motor&gt;</code>",
+            "<code>std::shared_ptr&lt;Motor&gt;</code>",
+            "<code>std::weak_ptr&lt;Motor&gt;</code>",
+            "Referencia <code>Motor&amp;</code> (sin propiedad)"
+          ],
+          "correcta": 3,
+          "fijas": true,
+          "explicacion": "<p>Es un acceso temporal sin propiedad: <strong><code>comprobarTemperatura(Motor&amp; motor)</code></strong>. Si el motor pudiera no existir se usaría un <code>Motor*</code> sin propiedad (que puede ser nulo). Recibir un <code>shared_ptr</code> por valor la convertiría en propietaria sin motivo, y un <code>unique_ptr</code> le quitaría el motor a la <code>Maquina</code>.</p>"
+        },
+        {
+          "texto": "El <code>Controlador</code> y el <code>RegistradorDeDatos</code> son independientes; el motor debe seguir existiendo mientras lo use cualquiera de los dos y ninguno puede garantizar por sí solo su vida. ¿Qué guarda cada uno?",
+          "opciones": [
+            "<code>std::unique_ptr&lt;Motor&gt;</code>",
+            "<code>std::shared_ptr&lt;Motor&gt;</code>",
+            "<code>std::weak_ptr&lt;Motor&gt;</code>",
+            "Referencia <code>Motor&amp;</code> (sin propiedad)"
+          ],
+          "correcta": 1,
+          "fijas": true,
+          "explicacion": "<p>La propiedad es realmente compartida: cada uno guarda un <strong><code>std::shared_ptr&lt;Motor&gt;</code></strong> y el motor se destruye cuando el último libera su copia. Con <code>unique_ptr</code> solo uno podría ser propietario; con <code>weak_ptr</code> ninguno lo mantendría vivo.</p>"
+        },
+        {
+          "texto": "La <code>Pantalla</code> muestra el estado del motor pero no debe mantenerlo vivo; además el <code>Motor</code> conoce a la <code>Pantalla</code>. ¿Qué guarda la Pantalla?",
+          "opciones": [
+            "<code>std::unique_ptr&lt;Motor&gt;</code>",
+            "<code>std::shared_ptr&lt;Motor&gt;</code>",
+            "<code>std::weak_ptr&lt;Motor&gt;</code>",
+            "Referencia <code>Motor&amp;</code> (sin propiedad)"
+          ],
+          "correcta": 2,
+          "fijas": true,
+          "explicacion": "<p><strong><code>std::weak_ptr&lt;Motor&gt;</code></strong>, creado a partir del <code>shared_ptr</code>; antes de usarlo llama a <code>lock()</code> y, si el motor ya fue destruido, no lo usa. Con un <code>shared_ptr</code> la Pantalla prolongaría la vida del motor y, como el Motor también la conoce, se formaría un ciclo que nunca se libera (12.6.2). Una referencia guardada quedaría colgante si el motor se destruye.</p>"
+        }
+      ]
+    },
+    "cpp-moderno-3": {
+      "titulo": "Antes vs. ahora: unique_ptr, auto y errores típicos (12.2-12.6)",
+      "enunciado": "<p>Cuestiones sobre las herramientas de C++11/14 del capítulo. Los resultados se han comprobado con <code>clang++</code> (Apple clang 21) y las opciones <code>-Wall -Wextra</code>.</p>",
+      "contexto": "<ul><li><code>std::unique_ptr</code> y <code>std::shared_ptr</code>: C++11; <code>std::make_unique</code>: C++14.</li><li><code>auto</code> deduce el tipo en compilación a partir de la expresión de inicialización.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Qué ocurre con este código?<pre><code class=\"lang-cpp\">std::unique_ptr&lt;CComplex&gt; value = std::make_unique&lt;CComplex&gt;(1.0, 2.0);\nstd::unique_ptr&lt;CComplex&gt; copia = value;</code></pre>",
+          "opciones": [
+            "No compila: el constructor de copia de <code>unique_ptr</code> está eliminado; hay que escribir <code>std::move(value)</code>, y <code>value</code> queda vacío",
+            "Compila y los dos apuntan al mismo objeto, que se destruye dos veces",
+            "Compila y <code>copia</code> apunta a un nuevo <code>CComplex</code> copiado de <code>*value</code>",
+            "Compila y <code>value</code> queda vacío automáticamente"
+          ],
+          "correcta": 0,
+          "explicacion": "<p><code>unique_ptr</code> representa la propiedad exclusiva y no puede copiarse: clang++ da <em>call to implicitly-deleted copy constructor of 'std::unique_ptr&lt;CComplex&gt;'</em>. La propiedad se transfiere con <code>std::unique_ptr&lt;CComplex&gt; copia = std::move(value);</code>, tras lo cual <code>value == nullptr</code>.</p>"
+        },
+        {
+          "texto": "Un proyecto se compila con <code>-std=c++11</code> y usa <code>std::make_unique&lt;CComplex&gt;(1.0, 2.0)</code>. ¿Qué pasa?",
+          "opciones": [
+            "Error de compilación: <code>make_unique</code> es de C++14; en C++11 se escribe <code>std::unique_ptr&lt;CComplex&gt; value(new CComplex(1.0, 2.0));</code>",
+            "Compila igual, porque <code>unique_ptr</code> es de C++11",
+            "Compila, pero el objeto no se destruye nunca",
+            "Error: hay que incluir <code>&lt;make_unique&gt;</code>"
+          ],
+          "correcta": 0,
+          "explicacion": "<p><code>std::unique_ptr</code> existe desde C++11, pero <code>std::make_unique</code> se incorporó en <strong>C++14</strong> (12.2 y 12.5). Con <code>-std=c++11</code> clang++ responde <em>no member named 'make_unique' in namespace 'std'</em>. Por eso el proyecto debe seleccionar expresamente el nivel del estándar.</p>"
+        },
+        {
+          "texto": "En <code>std::vector&lt;int&gt; samples {10, 20, 30}; auto it = samples.begin();</code>, ¿qué tipo deduce <code>auto</code> para <code>it</code>?",
+          "opciones": [
+            "<code>std::vector&lt;int&gt;::iterator</code>",
+            "<code>std::vector&lt;int&gt;::const_iterator</code>, como en la versión anterior a C++11",
+            "<code>int</code>, el tipo de los elementos",
+            "Ninguno: <code>auto</code> hace que el tipo se decida al ejecutar"
+          ],
+          "correcta": 0,
+          "explicacion": "<p><code>samples</code> no es constante, así que <code>begin()</code> devuelve <code>std::vector&lt;int&gt;::iterator</code> (comprobado con <code>static_assert</code>); con él se podría modificar el elemento. Para el <code>const_iterator</code> se usa <code>samples.cbegin()</code>. <code>auto</code> no elimina el tipo: lo fija el compilador durante la compilación.</p>"
+        },
+        {
+          "texto": "¿Qué ocurre con este código?<pre><code class=\"lang-cpp\">CComplex* raw = new CComplex(1.0, 2.0);\nstd::shared_ptr&lt;CComplex&gt; a(raw);\nstd::shared_ptr&lt;CComplex&gt; b(raw);</code></pre>",
+          "opciones": [
+            "Cada uno tiene su propio contador (los dos <code>use_count()</code> valen 1) y ambos hacen <code>delete</code> del mismo objeto: comportamiento indefinido",
+            "Comparten el contador, que vale 2, y el objeto se destruye una vez",
+            "No compila: no se puede crear un <code>shared_ptr</code> desde un puntero",
+            "<code>b</code> toma la propiedad y <code>a</code> queda vacío"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Construir dos <code>shared_ptr</code> independientes a partir del mismo puntero sin gestionar crea <strong>dos contadores</strong>: al compilarlo, <code>a.use_count()</code> y <code>b.use_count()</code> valen 1, y al salir de <code>main</code> los dos destruyen el mismo objeto (con clang++ 21 en macOS el programa aborta en la doble liberación). La segunda línea debe ser <code>std::shared_ptr&lt;CComplex&gt; b = a;</code>, o mejor crear el objeto con <code>std::make_shared</code>.</p>"
+        }
+      ]
+    }
+  },
+  "ejerciciosEnTema": [
+    "cpp-moderno-1",
+    "cpp-moderno-2",
+    "cpp-moderno-3"
+  ],
+  "tituloEjercicios": "Ejercicios y cuestiones",
+  "resumen": [
+    "Las transparencias usan C++ anterior a C++11. El estándar publicado más reciente es <strong>C++23</strong> (ISO/IEC 14882:2024); el proyecto debe elegir el nivel con <code>-std=</code>. <code>std::make_unique</code> es de C++14; el resto del tema, de C++11.",
+    "Desde C++11: inicialización con llaves (<code>std::vector&lt;int&gt; samples {10, 20, 30};</code>), <code>auto</code> (el compilador deduce el tipo, no lo elimina) y bucle basado en rango <code>for (const auto&amp; sample : samples)</code>, que lee sin copiar.",
+    "<code>std::to_string</code> (<code>&lt;string&gt;</code>) convierte números en <code>std::string</code> de forma portable, en lugar de <code>itoa</code>: <code>\"sensor-\" + std::to_string(7)</code> → \"sensor-7\".",
+    "<code>std::unique_ptr</code>: propiedad <strong>exclusiva</strong>; hace <code>delete</code> al salir de ámbito, no se copia y la propiedad se transfiere con <code>std::move</code>. Se crea con <code>std::make_unique</code> (C++14).",
+    "<code>std::shared_ptr</code>: propiedad <strong>compartida</strong> con contador <code>use_count()</code>: copiar suma 1, <code>reset()</code> o destruir resta 1 y el objeto muere al llegar a 0 (12.6: 2 → 1). Por valor a una función: 1 → 2 → 1; por <code>const&amp;</code>: no cambia; con <code>std::move</code>: el origen queda vacío.",
+    "Nunca dos <code>shared_ptr</code> independientes desde el mismo puntero (doble <code>delete</code>). Dos objetos que se poseen mutuamente con <code>shared_ptr</code> forman un <strong>ciclo</strong> que nunca se libera; <code>std::weak_ptr</code> observa sin poseer, lo rompe y se usa a través de <code>lock()</code>.",
+    "Elección (12.7): <code>unique_ptr</code> para un único propietario (Maquina → Motor); referencia o puntero sin propiedad para un acceso temporal; <code>shared_ptr</code> si varios son responsables de la vida (Controlador y RegistradorDeDatos); <code>weak_ptr</code> para observar sin prolongar la vida (Pantalla)."
+  ]
+}

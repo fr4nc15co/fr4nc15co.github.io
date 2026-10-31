@@ -1,0 +1,135 @@
+/* ---------- Componente: cola-circular (colas del driver uart.c y FIFO de U1TXREG) ---------- */
+.mpi-cola-circular { position: relative; container-type: inline-size; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-cola-circular .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .5rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; }
+.ccu-cab-sub { color: var(--txt-tenue); font-weight: 400; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
+.mpi-cola-circular :not(pre) > code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+.mpi-cola-circular button { font-family: inherit; background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .4rem .7rem; cursor: pointer; font-size: .84rem; text-align: left; }
+.mpi-cola-circular button:hover:not(:disabled) { border-color: var(--acento); }
+.mpi-cola-circular button:disabled { opacity: .4; cursor: default; }
+.mpi-cola-circular button[aria-pressed="true"] { background: rgba(78,201,176,.15); border-color: var(--acento); color: var(--acento); font-weight: 700; }
+.mpi-cola-circular button:focus-visible, .mpi-cola-circular input:focus-visible, .mpi-cola-circular select:focus-visible, .ccu-fila-wrap:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 2px; }
+.mpi-cola-circular input, .mpi-cola-circular select { font-family: var(--mono); background: var(--bg); border: 1px solid var(--borde); color: var(--azul-cl); padding: .3rem .4rem; border-radius: 5px; font-size: .86rem; }
+.mpi-cola-circular input { width: 3.6rem; }
+.mpi-cola-circular input[aria-invalid="true"] { border-color: var(--rojo); }
+
+.ccu-intro { font-size: .86rem; color: var(--txt-2); margin: 0 0 .7rem; line-height: 1.55; }
+.ccu-ley { font-family: var(--mono); font-weight: 700; padding: 0 .35rem; border-radius: 4px; }
+.ccu-ley-cab { color: var(--acento); background: rgba(78,201,176,.13); }
+.ccu-ley-col { color: var(--amarillo); background: rgba(220,220,170,.13); }
+.ccu-ctl-sup { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between; margin-bottom: .8rem; }
+.ccu-vista { display: inline-flex; gap: .3rem; }
+
+.ccu-paneles { display: grid; grid-template-columns: minmax(0, 1fr); gap: .9rem; }
+@container (min-width: 780px) { .ccu-paneles.ccu-modo-uart { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.ccu-panel { background: var(--bg); border: 1px solid var(--borde-2); border-radius: 8px; padding: .75rem; min-width: 0; display: flex; flex-direction: column; gap: .55rem; }
+.ccu-panel-tit { margin: 0; font-size: .92rem; color: var(--txt); font-weight: 600; }
+.ccu-panel-tit code { font-weight: 400; }
+
+/* Anillo */
+.ccu-dibujo { display: flex; justify-content: center; }
+.ccu-svg { width: 100%; max-width: 360px; height: auto; display: block; }
+.ccu-guia { fill: none; stroke: var(--borde); stroke-width: 1; stroke-dasharray: 3 4; }
+.ccu-celda { stroke-width: 1.5; }
+.ccu-celda.ccu-vacio { fill: var(--bg-2); stroke: var(--borde); }
+.ccu-celda.ccu-viejo { fill: var(--bg-2); stroke: var(--borde); }
+.ccu-celda.ccu-pend { fill: rgba(86,156,214,.20); stroke: var(--acento-2); }
+.ccu-celda.ccu-nuevo { stroke: var(--acento); stroke-width: 2.5; }
+.ccu-celda.ccu-leido { stroke: var(--amarillo); stroke-width: 2.5; stroke-dasharray: 4 2; }
+.ccu-celda-txt { font-family: var(--mono); font-weight: 700; text-anchor: middle; fill: var(--txt); }
+.ccu-celda-txt.ccu-vacio { fill: var(--txt-tenue); font-weight: 400; }
+.ccu-celda-txt.ccu-viejo { fill: var(--txt-tenue); font-weight: 400; }
+.ccu-idx { font-family: var(--mono); font-size: 11px; fill: var(--txt-tenue); text-anchor: middle; }
+.ccu-p-cab { stroke: var(--acento); stroke-width: 2.5; }
+.ccu-p-col { stroke: var(--amarillo); stroke-width: 2.5; }
+.ccu-mk-cab { fill: var(--acento); }
+.ccu-mk-col { fill: var(--amarillo); }
+.ccu-p-cab-txt, .ccu-p-col-txt { font-family: var(--mono); font-size: 12px; font-weight: 700; }
+.ccu-p-cab-txt { fill: var(--acento); }
+.ccu-p-col-txt { fill: var(--amarillo); }
+.ccu-centro { font-family: var(--sans); font-size: 15px; font-weight: 600; fill: var(--txt); text-anchor: middle; }
+.ccu-centro-sub { font-family: var(--mono); font-size: 11px; fill: var(--txt-tenue); text-anchor: middle; }
+
+/* Fila */
+.ccu-dibujo.ccu-es-fila { display: block; }
+.ccu-fila-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: .2rem; }
+.ccu-fila { display: flex; gap: .25rem; width: max-content; }
+.ccu-f-col { display: flex; flex-direction: column; align-items: center; width: 2.4rem; }
+.ccu-f-idx { font-family: var(--mono); font-size: .7rem; color: var(--txt-tenue); }
+.ccu-f-celda { width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-weight: 700; border: 1.5px solid var(--borde); border-radius: 6px; background: var(--bg-2); color: var(--txt); font-size: .9rem; }
+.ccu-f-celda.ccu-vacio, .ccu-f-celda.ccu-viejo { color: var(--txt-tenue); font-weight: 400; }
+.ccu-f-celda.ccu-pend { background: rgba(86,156,214,.20); border-color: var(--acento-2); }
+.ccu-f-celda.ccu-nuevo { border-color: var(--acento); border-width: 2.5px; }
+.ccu-f-celda.ccu-leido { border-color: var(--amarillo); border-style: dashed; border-width: 2.5px; }
+.ccu-f-marcas { display: flex; flex-direction: column; align-items: center; min-height: 2.2rem; font-family: var(--mono); font-size: .62rem; font-weight: 700; line-height: 1.25; margin-top: .15rem; white-space: nowrap; }
+.ccu-f-cab { color: var(--acento); }
+.ccu-f-col-m { color: var(--amarillo); }
+
+.ccu-indices { display: flex; flex-wrap: wrap; gap: .25rem .9rem; font-size: .82rem; color: var(--txt-2); }
+.ccu-indices b { font-family: var(--mono); font-size: .95rem; }
+.ccu-v-cab { color: var(--acento); }
+.ccu-v-col { color: var(--amarillo); }
+.ccu-v-si { color: var(--acento); }
+.ccu-v-no { color: var(--txt-tenue); }
+.ccu-botones { display: flex; flex-direction: column; gap: .35rem; }
+.ccu-bot-fila { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+.ccu-car { font-size: .8rem; color: var(--txt-2); display: inline-flex; align-items: center; gap: .3rem; }
+.ccu-aviso { font-size: .82rem; line-height: 1.45; border-radius: 6px; }
+.ccu-aviso:empty { display: none; }
+.ccu-aviso-ojo { color: var(--amarillo); background: rgba(220,220,170,.08); border: 1px solid rgba(220,220,170,.35); padding: .45rem .6rem; }
+.ccu-aviso-mal { color: var(--rojo); background: rgba(244,135,113,.08); border: 1px solid rgba(244,135,113,.4); padding: .45rem .6rem; }
+.ccu-mal { color: var(--rojo); }
+.ccu-tenue { color: var(--txt-tenue); font-size: .78rem; }
+.ccu-hw-rx { font-size: .78rem; color: var(--txt-tenue); margin: 0; line-height: 1.5; }
+
+/* Hardware de transmisión */
+.ccu-hw { border-top: 1px solid var(--borde-2); padding-top: .55rem; }
+.ccu-hw-tit { font-size: .78rem; color: var(--txt-tenue); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; margin-bottom: .45rem; }
+.ccu-hw-cadena { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .45rem; }
+.ccu-hw-bloque { display: flex; flex-direction: column; gap: .25rem; min-width: 0; }
+.ccu-hw-nom { font-size: .7rem; color: var(--txt-2); font-family: var(--mono); }
+.ccu-flecha { color: var(--txt-tenue); font-size: 1rem; }
+.ccu-fifo { display: flex; gap: .2rem; }
+.ccu-fifo-c { width: 1.9rem; height: 1.9rem; border: 1.5px dashed var(--borde); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-weight: 700; font-size: .85rem; color: var(--txt); }
+.ccu-fifo-c.ccu-lleno { border-style: solid; border-color: var(--morado); background: rgba(197,134,192,.16); }
+.ccu-tsr { display: flex; align-items: center; gap: .3rem; min-height: 1.9rem; }
+.ccu-tsr-car { font-family: var(--mono); font-weight: 700; color: var(--naranja); font-size: .85rem; }
+.ccu-tsr-bits { display: inline-flex; gap: 1px; }
+.ccu-bit { width: 1.05rem; height: 1.6rem; display: inline-flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: .72rem; color: var(--txt-2); background: var(--bg-2); border: 1px solid var(--borde-2); border-radius: 3px; }
+.ccu-bit.ccu-bit-ido { opacity: .35; }
+.ccu-bit.ccu-bit-act { background: rgba(220,220,170,.2); border-color: var(--amarillo); color: var(--amarillo); font-weight: 700; }
+.ccu-linea { display: flex; align-items: center; gap: .35rem; min-height: 1.9rem; }
+.ccu-nivel { font-family: var(--mono); font-weight: 700; width: 1.6rem; height: 1.6rem; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 1.5px solid; }
+.ccu-nivel-1 { color: var(--acento); border-color: var(--acento); }
+.ccu-nivel-0 { color: var(--rojo); border-color: var(--rojo); }
+.ccu-flags { display: flex; flex-wrap: wrap; gap: .2rem 1rem; font-family: var(--mono); font-size: .8rem; color: var(--txt-2); margin-top: .5rem; }
+.ccu-flags b { color: var(--num); }
+.ccu-flags b.ccu-on { color: var(--rojo); }
+.ccu-anim-ctl { display: flex; flex-wrap: wrap; gap: .4rem .6rem; align-items: center; margin-top: .5rem; }
+.ccu-anim-ctl label { font-size: .8rem; color: var(--txt-2); display: inline-flex; align-items: center; gap: .3rem; }
+.ccu-reloj { font-family: var(--mono); font-size: .74rem; color: var(--amarillo); }
+
+/* Explicación, código y registro */
+.ccu-expl { font-size: .88rem; color: var(--txt-2); background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; padding: .55rem .7rem; margin: .9rem 0 .6rem; line-height: 1.55; min-height: 3rem; }
+.ccu-expl b { color: var(--txt); }
+.ccu-expl b.ccu-mal { color: var(--rojo); }
+.ccu-cod-tit { font-size: .8rem; color: var(--txt-tenue); margin-bottom: .3rem; }
+.ccu-cod-tit b { color: var(--txt); font-family: var(--mono); font-weight: 600; }
+.mpi-cola-circular pre.ccu-pre { position: relative; margin: 0; padding: .5rem 0; overflow-x: auto; }
+.ccu-ln { display: flex; align-items: baseline; padding: 0 .6rem 0 .3rem; border-left: 3px solid transparent; }
+.mpi-cola-circular .ccu-ln code { white-space: pre; background: none; padding: 0; border-radius: 0; color: var(--txt); font-size: .82rem; opacity: .6; }
+.ccu-ln-num { width: 1.6rem; flex: 0 0 1.6rem; color: var(--txt-tenue); font-family: var(--mono); font-size: .72rem; text-align: right; margin-right: .7rem; user-select: none; }
+.ccu-ln.ccu-ln-def code { opacity: .85; }
+.ccu-ln.ccu-ln-ej code { opacity: 1; }
+.ccu-ln.ccu-ln-no code { opacity: .35; text-decoration: line-through; text-decoration-color: var(--txt-tenue); }
+.ccu-ln.ccu-ln-clave { background: rgba(78,201,176,.14); border-left-color: var(--acento); }
+.ccu-oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.ccu-log-wrap { margin-top: .7rem; font-size: .82rem; color: var(--txt-2); }
+.ccu-log-wrap summary { cursor: pointer; color: var(--txt-2); }
+.ccu-log { margin: .4rem 0 0; padding-left: 1.4rem; max-height: 12rem; overflow-y: auto; font-family: var(--mono); font-size: .74rem; line-height: 1.5; color: var(--txt-2); }
+
+@media (max-width: 480px) {
+  .mpi-cola-circular { padding: .85rem .7rem; }
+  .ccu-panel { padding: .6rem; }
+  .mpi-cola-circular button { font-size: .8rem; padding: .4rem .55rem; }
+  .ccu-bit { width: .95rem; }
+}

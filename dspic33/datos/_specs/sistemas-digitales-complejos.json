@@ -1,0 +1,480 @@
+{
+  "slug": "sistemas-digitales-complejos",
+  "titulo": "Sistemas digitales complejos: muestreo, fechado y máquinas de estados",
+  "temaNum": 13,
+  "lenguaje": "c",
+  "lead": "Metodologías para resolver sistemas digitales complejos con un estilo que favorece la <strong>mantenibilidad, flexibilidad y escalabilidad</strong>: los <strong>sistemas muestreados</strong> (cómo elegir el periodo de muestreo), el <strong>fechado</strong> con contadores de tiempo en la ISR de un timer y la <strong>programación basada en estados</strong>. Se aplican a cuatro ejemplos resueltos: una calculadora, una melodía, un espantador con servos y un espantapájaros.",
+  "secciones": [
+    {
+      "titulo": "13.1 Sistemas muestreados",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Un <strong>sistema muestreado</strong> realiza determinadas <strong>tareas síncronas</strong> cada cierto intervalo de tiempo, llamado <strong>periodo de muestreo</strong>. Tiene dos ventajas:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "Se sabe con bastante precisión <strong>en qué momento se ejecuta cada tarea</strong>, lo que lo hace ideal para llevar un control de tiempo o realizar mediciones.",
+            "Deja <strong>más tiempo libre de CPU</strong>: entre dos instantes de muestreo la CPU queda libre para otras cosas."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>Ejemplo: medir el ancho de un pulso</h3><p>Se quiere medir el ancho de un pulso que entra por la línea <strong>RB2</strong> con una resolución de <strong>6,4 µs</strong>. La solución <strong>sin muestrear</strong> mira continuamente, de forma asíncrona, el estado del pin. Como la propia ejecución de las líneas de código no permite estimar el tiempo, usa el <strong>Timer 1</strong> como cronómetro: lo arranca cuando RB2 baja a 0 y lo para cuando vuelve a 1. Con <code>T1CON = 0x30</code> (TCKPS = 3, pre-escalado 1:256, timer parado) y <code>PR1 = 0xFFFF</code>, la cuenta avanza cada 6,4 µs:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Resolución de la medida por <em>polling</em> con pre-escalado 1:256 (F<sub>CY</sub> = 40 MHz) y ancho máximo antes de que <code class=\"reg\">TMR1</code> dé la vuelta:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>t</mi><mi>res</mi></msub><mo>=</mo><mfrac><mi>presc</mi><msub><mi>F</mi><mi>CY</mi></msub></mfrac><mo>=</mo><mfrac><mn>256</mn><mrow><mn>40</mn><mo>·</mo><msup><mn>10</mn><mn>6</mn></msup><mtext>&#160;Hz</mtext></mrow></mfrac><mo>=</mo><mn>6,4</mn><mtext>&#160;µs</mtext><mspace width=\"2em\"/><msub><mi>t</mi><mi>máx</mi></msub><mo>=</mo><mn>65535</mn><mo>·</mo><mn>6,4</mn><mtext>&#160;µs</mtext><mo>≈</mo><mn>0,42</mn><mtext>&#160;s</mtext></mrow></math>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p><strong>Medida de ancho de pulso sin muestrear</strong> (Figura 110 del libro). <em>Listado reconstruido a partir del texto dañado por el OCR: se han restituido los saltos de línea, los <code>//</code> de los comentarios y los ceros (<code>OxFFFF</code> → <code>0xFFFF</code>, <code>T1C0N</code> → <code>T1CON</code>); el comentario «prescalado 255» se conserva como está en el libro, pero <code>0x30</code> es TCKPS = 3, es decir, un pre-escalado de 1:256 (datasheet, registro T1CON, sección 11.0). Los comentarios de los dos <code>while</code> y de <code>T1CON</code> se han añadido, y el <code>T1CON &amp;= 0x7FFF;</code> del libro se escribe con el estilo de máscaras del curso, <code>T1CON &amp;= ~0x8000;</code> (mismo efecto).</em></p>",
+          "codigo": "#include \"config.h\"\n\nint main(void)\n{\n    InicializarReloj();     // F_CY = 40 MHz\n    AD1PCFGL = 0xFFFF;      // todos los pines en digital\n    PORTB = 0xFFFF;\n    TRISB = 0x0FFF;                     // LEDs como salida\n    PR1 = 0xFFFF;\n    IFS0bits.T1IF = 0;\n    T1CON = 0x30;                       // prescalado 255 y OFF\n    while (1) {\n        while ((PORTB & 0x4) == 0x4);   // espera a que RB2 baje a 0\n        TMR1 = 0;\n        IFS0bits.T1IF = 0;\n        T1CON |= 0x8000;                // arranca el timer\n        while ((PORTB & 0x4) == 0);     // espera a que RB2 vuelva a 1\n        T1CON &= ~0x8000;               // para el timer (TON = 0)\n        PORTB = ~TMR1;\n    }\n    return 0;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Fíjate en lo que mide: el primer <code>while</code> espera mientras RB2 vale 1 y el segundo mientras vale 0, así que el programa mide cuánto dura RB2 <strong>a nivel bajo</strong>. En la PicTrainer, RB2 es el pulsador <strong>SW2 (pulsado = 0)</strong>: el programa mide cuánto tiempo se mantiene pulsado. <code>PORTB = ~TMR1</code> escribe en todo el puerto el valor negado; como los LEDs D6-D9 (RB15-RB12) son <strong>activos a nivel bajo</strong>, el doble negado hace que cada LED encendido sea un 1 de los cuatro bits altos de <code class=\"reg\">TMR1</code> (D6 = bit 15). Cada unidad de esos cuatro bits son 4096 cuentas · 6,4 µs ≈ 26,2 ms. La CPU, mientras tanto, no hace otra cosa que esperar en los <code>while</code>.</p><p>En cambio, en un <strong>sistema muestreado</strong> se usa un reloj que lleva la cuenta del periodo de muestreo y <strong>solo se mira el estado de la línea una vez en cada periodo</strong>. El chequeo de la línea apenas consume CPU y se hace a intervalos regulares, de modo que <strong>contando el número de intervalos</strong> se tiene una medida del ancho del pulso. En el ejemplo, el Timer 1 interrumpe cada milisegundo:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Periodo de muestreo con <code>PR1 = 40000</code> y pre-escalado 1:1 (<code>T1CON = 0x8000</code>):</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>T</mi><mi>m</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>PR</mi><mn>1</mn></msub><mo>·</mo><mi>presc</mi></mrow><msub><mi>F</mi><mi>CY</mi></msub></mfrac><mo>=</mo><mfrac><mrow><mn>40000</mn><mo>·</mo><mn>1</mn></mrow><mrow><mn>40</mn><mo>·</mo><msup><mn>10</mn><mn>6</mn></msup><mtext>&#160;Hz</mtext></mrow></mfrac><mo>=</mo><mn>1</mn><mtext>&#160;ms</mtext></mrow></math>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p><strong>Medida de ancho de pulso muestreado</strong> (Figura 111 del libro). <em>Listado reconstruido a partir del texto dañado por el OCR (<code>/71</code> → <code>//</code>, <code>TlIF</code> → <code>T1IF</code>, <code>attribute__</code> → <code>__attribute__</code>, y se ha añadido el <code>;</code> que faltaba tras <code>PORTB = ~(tick &lt;&lt; 12)</code>).</em></p>",
+          "codigo": "#include \"config.h\"\n\nint act;\n\nint main(void)\n{\n    InicializarReloj();     // F_CY = 40 MHz\n    AD1PCFGL = 0xFFFF;      // todos los pines en digital\n    PORTB = 0xFFFF;\n    TRISB = 0x0FFF;                     // LEDs como salida\n    PR1 = 40000;\n    IFS0bits.T1IF = 0;\n    IEC0bits.T1IE = 1;\n    T1CON = 0x8000;                     // prescalado 0 y ON\n    act = PORTB & 4;\n    while (1);\n    return 0;\n}\n\nint ant, tick = 0;\n\nvoid __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)\n{\n    IFS0bits.T1IF = 0;\n    ant = act;\n    act = PORTB & 4;\n    if (act == 0)\n        tick++;\n    else if (act != ant && act == 0x4) {\n        PORTB = ~(tick << 12);\n        tick = 0;\n    }\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La ISR guarda la muestra anterior (<code>ant</code>) y toma la actual (<code>act</code>). Mientras la línea está a 0 suma un <code>tick</code> por milisegundo; cuando detecta el <strong>flanco de subida</strong> (la muestra anterior era 0 y la actual 1) muestra <code>tick</code> en los LEDs y lo pone a cero. <code>~(tick &lt;&lt; 12)</code> lleva los cuatro bits bajos de <code>tick</code> a RB15-RB12 y los niega por ser los LEDs activos a nivel bajo: D9 (RB12) es el bit de 1 ms. La medida tiene una <strong>resolución de 1 ms</strong>: un pulso de 7,3 ms puede contener 7 u 8 instantes de muestreo, según dónde caiga respecto a ellos.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>Cómo elegir el periodo de muestreo</h3><p>La clave para un buen funcionamiento es <strong>estimar correctamente el periodo de muestreo</strong>: si es demasiado pequeño, la CPU no queda libre (se pasa el tiempo entrando en la ISR); si es demasiado grande, puede haber problemas de <strong>resolución</strong> y de <strong>sensibilidad</strong>. La regla óptima es:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": true,
+          "items": [
+            "Determinar el periodo de muestreo que necesita <strong>cada una de las tareas</strong> que tenga que realizar la CPU.",
+            "Escoger el <strong>máximo común divisor</strong> de todos ellos."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>En el ejemplo anterior hay una sola tarea y el periodo de muestreo lo da la resolución de la medida: <strong>1 ms</strong>. En un sistema con varias tareas, por ejemplo uno que tiene que medir el ancho de un pulso con una resolución de 1 ms y además generar un pulso de 350 µs en algún momento, el periodo de muestreo es el máximo común divisor de 350 µs y 1 ms:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Periodo de muestreo para dos tareas (1 ms y 350 µs) y valor de <code class=\"reg\">PR1</code> con pre-escalado 1:1 y F<sub>CY</sub> = 40 MHz:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mtable><mtr><mtd><msub><mi>T</mi><mi>m</mi></msub><mo>=</mo><mi>mcd</mi><mo>(</mo><mn>350</mn><mtext>&#160;µs</mtext><mo>,</mo><mn>1000</mn><mtext>&#160;µs</mtext><mo>)</mo><mo>=</mo><mn>50</mn><mtext>&#160;µs</mtext></mtd></mtr><mtr><mtd><msub><mi>PR</mi><mn>1</mn></msub><mo>=</mo><mfrac><mrow><msub><mi>T</mi><mi>m</mi></msub><mo>·</mo><msub><mi>F</mi><mi>CY</mi></msub></mrow><mi>presc</mi></mfrac><mo>=</mo><mfrac><mrow><mn>50</mn><mo>·</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>6</mn></mrow></msup><mtext>&#160;s</mtext><mo>·</mo><mn>40</mn><mo>·</mo><msup><mn>10</mn><mn>6</mn></msup><mtext>&#160;Hz</mtext></mrow><mn>1</mn></mfrac><mo>=</mo><mn>2000</mn></mtd></mtr></mtable></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Con un tick de 50 µs, la medida de 1 ms se obtiene contando 20 ticks y el pulso de 350 µs dura 7 ticks. Cada 50 µs la CPU entra en la ISR (2000 ciclos de instrucción entre interrupciones), así que la ISR debe ser corta para que quede CPU libre.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Cambia los periodos de las tareas y observa el máximo común divisor, en qué ticks se ejecuta cada tarea y el <code class=\"reg\">PR1</code> que sale a 40 MHz:</p><div class=\"mpi-mount\" data-componente=\"vis-muestreo-mcd\" data-config='{\"tareas\":[{\"nombre\":\"Resolución de la medida\",\"periodoUs\":1000},{\"nombre\":\"Pulso de salida\",\"periodoUs\":350}],\"fcy\":40000000}'></div>"
+        }
+      ]
+    },
+    {
+      "titulo": "13.2 Fechado",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Cuando el funcionamiento de un sistema depende del tiempo, que suele ser casi siempre, es necesario llevar un <strong>reloj calendario</strong>. Se puede hacer de muchas maneras; aquí se da una metodología sencilla para escribir programas que dependen del tiempo:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": true,
+          "items": [
+            "Primero hay que saber la <strong>medida mínima</strong> de tiempo que se quiere contabilizar, es decir, la <strong>resolución</strong> de la medida de tiempo. En un sistema muestreado, esta resolución coincide con el <strong>periodo de muestreo</strong>.",
+            "Cada medida de tiempo que se quiere tener supone <strong>un contador de tiempo nuevo</strong>, que la ISR del timer incrementa en cada periodo de muestreo y que el programa compara con el número de periodos que debe durar."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Por ejemplo, si se quiere ejecutar el <strong>evento 1 cada segundo</strong> y el <strong>evento 2 cada 350 milisegundos</strong>, con un periodo de muestreo de 1 ms (<code>PR1 = 40000</code>, pre-escalado 1:1), hacen falta dos contadores: <code>mseg_evento1</code> llega a 1000 cada segundo y <code>mseg_evento2</code> llega a 350 cada 350 ms. Cuando un contador llega a su valor, el <code>main</code> lo pone a cero y ejecuta el evento.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p><strong>Ejemplo de fechado usando interrupciones</strong> (Figura 112 del libro). <em>Listado reconstruido a partir del texto dañado por el OCR (<code>mseg_eventol</code> → <code>mseg_evento1</code>, <code>/ /programar</code> → <code>// programar</code>, <code>return( 0</code> → <code>return 0</code>, llaves de cierre restituidas).</em></p>",
+          "codigo": "#include \"config.h\"\n\nvolatile int mseg_evento1 = 0, mseg_evento2 = 0;\n\nint main(void)\n{\n    InicializarReloj();     // F_CY = 40 MHz\n    AD1PCFGL = 0xFFFF;      // todos los pines en digital\n    PR1 = 40000;\n    TMR1 = 0;\n    IFS0bits.T1IF = 0;\n    IEC0bits.T1IE = 1;\n    T1CON = 0x8000;                     // prescalado 0 y ON\n    while (1) {\n        if (mseg_evento1 >= 1000) {\n            mseg_evento1 = 0;\n            // programar aquí el evento 1\n        }\n        if (mseg_evento2 >= 350) {\n            mseg_evento2 = 0;\n            // programar aquí el evento 2\n        }\n    }\n    return 0;\n}\n\nvoid __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)\n{\n    IFS0bits.T1IF = 0;\n    mseg_evento1++;\n    mseg_evento2++;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Si la medida de tiempo es <strong>asíncrona</strong>, es decir, parte de un evento que no se puede predecir cuándo sucede (por ejemplo, que alguien pulse un botón), es <strong>el propio evento el que pone a cero el contador</strong>. En el ejemplo siguiente, el evento 2 debe ocurrir 1 s después del evento 1:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p><strong>Ejemplo de fechado con eventos asíncronos</strong> (Figura 113 del libro). <em>Listado reconstruido a partir del texto dañado por el OCR; la condición del evento 1 es genérica en el libro y aquí se escribe <code>...</code>.</em></p>",
+          "codigo": "#include \"config.h\"\n\nvolatile int mseg_evento1 = 0;\nint evento2_hecho = 0;\n\nint main(void)\n{\n    InicializarReloj();     // F_CY = 40 MHz\n    AD1PCFGL = 0xFFFF;      // todos los pines en digital\n    PR1 = 40000;\n    TMR1 = 0;\n    IFS0bits.T1IF = 0;\n    IEC0bits.T1IE = 1;\n    T1CON = 0x8000;                     // prescalado 0 y ON\n    while (1) {\n        if (...) {                      // sucede el evento 1\n            mseg_evento1 = 0;\n            evento2_hecho = 0;\n        }\n        if (mseg_evento1 >= 1000 && !evento2_hecho) {\n            // programar aquí el evento 2\n            evento2_hecho = 1;\n        }\n    }\n    return 0;\n}\n\nvoid __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)\n{\n    IFS0bits.T1IF = 0;\n    mseg_evento1++;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Este mecanismo de fechado es la base de las <strong>transiciones por tiempo</strong> de las máquinas de estados de la sección siguiente: al entrar en un estado se pone a cero un contador, y el estado cambia cuando el contador llega al número de periodos que debe durar. Es exactamente lo que hacen el espantador (19.6.2), con <code>cont[servo]</code>, y el espantapájaros (19.6.3), con <code>cuenta[sensor]</code>.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "13.3 Programación basada en estados",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Ante un problema complejo siempre se debe aplicar el principio de <strong>«divide y vencerás»</strong>. Hay muchas maneras de hacerlo: la modularización en funciones, el diseño <strong>top-down</strong> (diseñar primero a alto nivel con grandes bloques y luego ir diseñando los detalles dentro de cada bloque), etc. Aquí se explica cómo abordar un problema complejo usando <strong>estados</strong>: es un diseño top-down con gran modularización que consiste en modelar cada uno de los procesos del sistema como una <strong>máquina de estados</strong>. No se pretende dar una teoría rigurosa de las máquinas de estados, sino una forma de resolver problemas software que se le puede ocurrir a cualquiera.</p><p>Los pasos de un diseño top-down y modular, y su equivalente con estados, son:</p><table class=\"tabla-datos\"><thead><tr><th>Paso</th><th>Diseño top-down y modular</th><th>Metodología basada en estados</th></tr></thead><tbody><tr><td>1</td><td>Determinar qué <strong>procesos independientes</strong> existen en el sistema.</td><td>Determinar las <strong>máquinas de estados</strong> que tiene el sistema.</td></tr><tr><td>2</td><td>Para cada proceso, determinar las <strong>etapas</strong> de las que consta y cuál es la inicial.</td><td>Para cada máquina, determinar los <strong>estados</strong> de los que consta (y el inicial).</td></tr><tr><td>3</td><td>Definir las <strong>variables</strong> que hacen que el proceso pase de una etapa a otra.</td><td>Definir las variables que provocan los <strong>cambios de estado</strong> (transiciones).</td></tr></tbody></table><h3>Cómo se traduce a C</h3><p><strong>1.</strong> Se define <strong>una función por cada máquina de estados</strong> y una <strong>variable global</strong> que indica el estado actual en que se encuentra la máquina:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Variable de estado y función de la máquina. <em>Reconstruido: tras la declaración de <code>estado_actual</code> el libro tiene una línea perdida en la conversión; por el contexto («definir una función por cada máquina de estados») se interpreta que es el prototipo de esa función.</em></p>",
+          "codigo": "int estado_actual = 0;\n\nvoid maquina();"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>2.</strong> Se define una <strong>función de estado por cada estado</strong> de cada máquina. La función de la máquina las invoca según el valor de <code>estado_actual</code>:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Función de una máquina con dos estados (libro, 19.4):</p>",
+          "codigo": "void maquina()\n{\n    if (estado_actual == 0)\n        estado0();\n    else if (estado_actual == 1)\n        estado1();\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>3.</strong> Dentro de cada función de estado se programan las <strong>condiciones de paso</strong> de un estado a otro en función de variables:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Función de estado con una transición (libro, 19.4; se ha añadido el <code>;</code> que falta tras <code>estado_actual = 1</code>):</p>",
+          "codigo": "void estado0()\n{\n    if (var > 0)\n        estado_actual = 1;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Las transiciones también pueden producirse por el <strong>paso del tiempo</strong>: en ese caso la variable de la comparación es un <strong>contador de tiempo asíncrono</strong> como los de 19.3, que se pone a cero al entrar en el estado. Si el sistema tiene varias máquinas, el <code>main</code> llama a todas en su bucle (o se usa un array <code>estado[n]</code> con una entrada por máquina, como en el espantador y el espantapájaros).</p><p>El ejemplo siguiente, que no es del libro, junta las tres piezas en la PicTrainer: una máquina de dos estados que enciende D9 al pulsar SW2 y la apaga a los 2 s. La transición 0 → 1 la provoca una entrada (SW2) y la 1 → 0 el tiempo, medido con el contador asíncrono <code>mseg</code>. Cada rama modifica <code>PORTB</code> una sola vez, así que no hay riesgo de lectura-modificación-escritura.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Ejemplo completo (no es del libro): máquina de estados con transición por entrada y por tiempo.</p>",
+          "codigo": "#include \"config.h\"\n\nvolatile unsigned int mseg = 0;     // contador de tiempo asíncrono: +1 cada 1 ms en la ISR\nint estado_actual = 0;              // estado de la única máquina del sistema\n\nvoid estado0(void)                  // reposo: D9 apagado, espera a que se pulse SW2\n{\n    if ((PORTB & 0x0004) == 0) {    // SW2 (RB2) pulsado = 0\n        PORTB &= ~0x1000;           // enciende D9 (RB12, activo a nivel bajo)\n        mseg = 0;                   // el evento pone a cero el contador (19.3)\n        estado_actual = 1;\n    }\n}\n\nvoid estado1(void)                  // D9 encendido durante 2 s\n{\n    if (mseg >= 2000) {\n        PORTB |= 0x1000;            // apaga D9\n        estado_actual = 0;\n    }\n}\n\nvoid maquina(void)                  // una función por máquina de estados\n{\n    if (estado_actual == 0)\n        estado0();\n    else if (estado_actual == 1)\n        estado1();\n}\n\nint main(void)\n{\n    InicializarReloj();\n    AD1PCFGL = 0xFFFF;\n    PORTB = 0xFFFF;                 // LEDs apagados\n    TRISB = 0x0FFF;                 // RB12-RB15 (LEDs) como salidas\n    PR1 = 40000;                    // 1 ms con pre-escalado 1:1\n    TMR1 = 0;\n    IFS0bits.T1IF = 0;\n    IEC0bits.T1IE = 1;\n    T1CON = 0x8000;\n    while (1)\n        maquina();\n    return 0;\n}\n\nvoid __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)\n{\n    IFS0bits.T1IF = 0;\n    mseg++;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Mientras SW2 siga pulsado al acabar los 2 s, el estado 0 vuelve a ver el pulsador a 0 y enciende otra vez el LED: la entrada se lee <strong>por nivel</strong>. Si se quisiera una sola actuación por pulsación habría que detectar el <strong>flanco</strong>, como hace la función <code>pulsado()</code> de la calculadora (19.5.1).</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "13.4 Ejercicios",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<h3>13.4.1 Calculadora. Resuelto</h3><p>Escribir un programa en C que implemente una <strong>calculadora</strong> que opera con datos de <strong>3 bits sin signo</strong> y devuelve un resultado de <strong>4 bits</strong>. El conexionado es:</p><table class=\"tabla-datos\"><thead><tr><th>Pines</th><th>Elemento</th><th>Función</th></tr></thead><tbody><tr><td>RB2, RB1, RB0</td><td>3 interruptores</td><td>Entrada de datos (3 bits)</td></tr><tr><td>RB3</td><td>Interruptor</td><td>Operación: suma si RB3 = 1, resta si RB3 = 0</td></tr><tr><td>RB4</td><td>Interruptor</td><td>Validación: un dato u operación se valida cuando RB4 pasa de 0 a 1</td></tr><tr><td>RA0, RA1, RA2, RA3</td><td>4 LEDs con resistencias de pull-up</td><td>Resultado de la operación (activos a nivel bajo)</td></tr></tbody></table><p>El proceso de funcionamiento es:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": true,
+          "items": [
+            "Los tres bits bajos de <code class=\"reg\">PORTB</code> proporcionan el <strong>primer dato</strong>, que se valida cuando <strong>RB4 pasa de 0 a 1</strong>.",
+            "A continuación se introduce el <strong>segundo dato</strong>, siguiendo el mismo procedimiento.",
+            "Por último se introduce la <strong>operación</strong> (suma si RB3 = 1, resta si RB3 = 0), que se valida de la misma forma que los datos. Si no se ha seleccionado una operación no se calcula el resultado.",
+            "El proceso se repite indefinidamente, manteniéndose en <code class=\"reg\">PORTA</code> el resultado de la última operación realizada."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>Planteamiento como máquina de estados.</strong> Hay una sola máquina con cuatro estados, y todas las transiciones salvo la última las provoca un <strong>flanco de subida de RB4</strong>, que detecta la función <code>pulsado()</code> comparando el valor actual de RB4 con el de la llamada anterior (variable global <code>actual</code>):</p><table class=\"tabla-datos\"><thead><tr><th>Estado</th><th>Qué hace</th><th>Transición</th></tr></thead><tbody><tr><td>0</td><td>Lee el primer operando: <code>Operando1 = PORTB &amp; 7</code></td><td>Flanco de subida de RB4 → 1</td></tr><tr><td>1</td><td>Lee el segundo operando: <code>Operando2 = PORTB &amp; 7</code></td><td>Flanco de subida de RB4 → 2</td></tr><tr><td>2</td><td>Lee la operación en RB3 (<code>PORTB &amp; 8</code>) y calcula <code>Resultado</code></td><td>Flanco de subida de RB4 → 3</td></tr><tr><td>3</td><td>Muestra el resultado: <code>PORTA = ~Resultado</code></td><td>Incondicional → 0</td></tr></tbody></table><p><code>TRISB = 0x1F</code> deja RB0-RB4 como entradas y <code>TRISA = 0</code> el puerto A como salida. Como los LEDs tienen resistencias de pull-up, se encienden con un 0: por eso se escribe el resultado <strong>negado</strong>. Por ejemplo, con <code>Resultado = 5</code> (<code>0101</code>) se escribe <code>~5</code>, cuyos cuatro bits bajos son <code>1010</code>: se encienden los LEDs de RA2 y RA0, y el alumno lee 0101 en los LEDs encendidos.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>Simulación.</strong> Mueve los interruptores RB0-RB3, da flancos en RB4 y sigue, sobre el propio listado, el estado de la máquina y los LEDs del puerto A. Una resta puede dar un resultado negativo: con 2 − 5 = −3, <code>~Resultado</code> deja <code>0010</code> en RA3-RA0 y se encienden RA3, RA2 y RA0, es decir, se lee <code>1101</code>, que es −3 en complemento a 2 con 4 bits.</p><div class=\"mpi-mount\" data-componente=\"sim-fsm-dspic\" data-config='{\"maquina\":\"calculadora\"}'></div>"
+        }
+      ]
+    },
+    {
+      "titulo": "13.5 Problema: sinfonía",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<h3>Enunciado</h3><p>Se quiere tocar una pequeña melodía con un dsPIC33FJ32MC202. Para ello se conecta un <strong>altavoz con amplificador al pin RB0</strong>. Para reproducir una nota hay que mandar una <strong>señal cuadrada con un factor de servicio del 50 %</strong>. La melodía consiste en tocar las notas en el orden de la tabla y, al terminar, volver a empezar:</p><table class=\"tabla-datos\"><thead><tr><th></th><th>Duración de la nota (ms)</th><th>Frecuencia (Hz)</th></tr></thead><tbody><tr><td>Nota 1</td><td>500</td><td>1000</td></tr><tr><td>Nota 2</td><td>1000</td><td>1500</td></tr><tr><td>Nota 3</td><td>400</td><td>500</td></tr><tr><td>Nota 4</td><td>2000</td><td>2000</td></tr><tr><td>Nota 5</td><td>200</td><td>1000</td></tr><tr><td>Nota 6</td><td>3000</td><td>200</td></tr></tbody></table><p>Restricciones (si no se cumplen, el problema tiene un 0):</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "El control de las señales se hace en la <strong>subrutina de interrupción</strong>: en el <code>main</code> solo deben estar las inicializaciones.",
+            "No se admiten más de <strong>30 líneas</strong> de código en la subrutina de interrupción, ni puntos suspensivos.",
+            "No se puede usar el periférico <strong>PWM</strong>."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>Configuración del timer</h3><p>Es un sistema muestreado: la ISR del Timer 1 es la que genera la señal, y en cada tick decide si RB0 está a 1 o a 0. Los periodos de las notas son 1 ms, 0,65 ms, 2 ms, 0,5 ms, 1 ms y 5 ms. Se toma un tick de <strong>50 µs</strong> (pre-escalado 1:1, <code>T1CON = 0x8000</code>, <code>PR1 = 2000</code>; véase la fórmula de 19.2), con el que cada periodo y cada duración se expresan como un número de ticks:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Ticks por periodo de nota (<code>PER</code>) y ticks por duración de nota (<code>duracion</code>) con T<sub>tick</sub> = 2000 · 25 ns = 50 µs:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mi>PER</mi><mo>=</mo><mfrac><mn>1</mn><mrow><mi>f</mi><mo>·</mo><msub><mi>T</mi><mi>tick</mi></msub></mrow></mfrac><mspace width=\"2em\"/><mi>duracion</mi><mo>=</mo><mfrac><msub><mi>t</mi><mi>nota</mi></msub><msub><mi>T</mi><mi>tick</mi></msub></mfrac><mspace width=\"2em\"/><mtext>p. ej. nota 1:&#160;</mtext><mfrac><mn>1</mn><mrow><mn>1000</mn><mtext>&#160;Hz</mtext><mo>·</mo><mn>50</mn><mtext>&#160;µs</mtext></mrow></mfrac><mo>=</mo><mn>20</mn><mo>,</mo><mspace width=\"0.5em\"/><mfrac><mrow><mn>500</mn><mtext>&#160;ms</mtext></mrow><mrow><mn>50</mn><mtext>&#160;µs</mtext></mrow></mfrac><mo>=</mo><mn>10000</mn></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<table class=\"tabla-datos\"><thead><tr><th></th><th><code>PER</code> (ticks)</th><th>Periodo</th><th>Frecuencia que sale</th><th>Frecuencia pedida</th><th><code>duracion</code> (ticks)</th><th>Duración que sale</th></tr></thead><tbody><tr><td>Nota 1</td><td>20</td><td>1 ms</td><td>1000 Hz</td><td>1000 Hz</td><td>10 000</td><td>500 ms</td></tr><tr><td>Nota 2</td><td>13</td><td>0,65 ms</td><td>1538,5 Hz</td><td>1500 Hz</td><td>20 000</td><td>1000 ms</td></tr><tr><td>Nota 3</td><td>40</td><td>2 ms</td><td>500 Hz</td><td>500 Hz</td><td>8000</td><td>400 ms</td></tr><tr><td>Nota 4</td><td>10</td><td>0,5 ms</td><td>2000 Hz</td><td>2000 Hz</td><td>40 000</td><td>2000 ms</td></tr><tr><td>Nota 5</td><td>20</td><td>1 ms</td><td>1000 Hz</td><td>1000 Hz</td><td>4000</td><td>200 ms</td></tr><tr><td>Nota 6</td><td>100</td><td>5 ms</td><td>200 Hz</td><td>200 Hz</td><td>60 000</td><td>3000 ms</td></tr></tbody></table><p>Ningún <code class=\"reg\">PR1</code> entero da exactamente 1500 Hz (harían falta 13,3 ticks); <code>PER = 13</code> es el más cercano (+2,6 %, frente al +11 % de <code>PER = 12</code>). En la ISR, <code>cont</code> recorre el periodo de la nota de 0 a <code>PER − 1</code>: RB0 vale 1 mientras <code>cont &lt; PER/2</code> y 0 el resto, lo que da el 50 % de factor de servicio exacto con los <code>PER</code> pares (con el 13, impar, sale el 46,2 %). <code>periodos</code> cuenta los ticks que lleva sonando la nota y, al llegar a <code>duracion</code>, se pasa a la siguiente y <code>cont</code> vuelve a 0 para que el primer periodo de cada nota sea regular. Las duraciones llegan a 60 000, que no cabe en un <code>int</code> de 16 bits (máximo 32 767): por eso los arrays son <code>unsigned int</code> (máximo 65 535). Cada rama de la ISR modifica <code>PORTB</code> una sola vez, así que no hay problema de lectura-modificación-escritura. Con el reloj exacto de 39 613 750 Hz, el tick dura 50,49 µs y todas las notas salen un 1 % más graves y más largas.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Código:</p>",
+          "codigo": "#include \"config.h\"\n\nvoid init_timer1(void);\n\nunsigned int PER[6] = {20, 13, 40, 10, 20, 100};\nunsigned int duracion[6] = {10000, 20000, 8000, 40000, 4000, 60000};\nunsigned int cont = 0, periodos = 0, nota = 0;\n\nint main(void)\n{\n    InicializarReloj();     // F_CY = 40 MHz\n    AD1PCFGL = 0xFFFF;      // todos los pines en digital\n    init_timer1();\n    TRISB = 0;\n    while (1);\n    return 0;\n}\n\nvoid init_timer1(void)\n{\n    T1CON = 0x8000;\n    PR1 = 2000;\n    TMR1 = 0;\n    IFS0bits.T1IF = 0;\n    IEC0bits.T1IE = 1;\n}\n\nvoid __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)\n{\n    IFS0bits.T1IF = 0;                  // limpia el flag\n    if (cont < PER[nota] / 2)\n        PORTB |= 1;\n    else\n        PORTB &= ~1;\n    cont++;\n    if (cont >= PER[nota])\n        cont = 0;\n    periodos++;\n    if (periodos >= duracion[nota]) {\n        periodos = 0;\n        cont = 0;\n        nota++;\n        if (nota > 5)\n            nota = 0;\n    }\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Escucha la melodía con los valores de <code>PER</code> y <code>duracion</code> de la tabla y compara la frecuencia de cada nota con la pedida:</p><div class=\"mpi-mount\" data-componente=\"sinfonia-player\" data-config='{\"per\":[20,13,40,10,20,100],\"duracion\":[10000,20000,8000,40000,4000,60000],\"tickUs\":50}'></div>"
+        }
+      ]
+    },
+    {
+      "titulo": "13.6 Problema: espantador",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<h3>Enunciado</h3><p>Se tienen <strong>3 servos</strong> como los del laboratorio conectados a un dsPIC33FJ32MC202. Los servos funcionan así:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "Se controlan con una señal de <strong>50 Hz</strong> (periodo de 20 ms) formada por un pulso por periodo. La señal debe enviarse de forma continuada mientras el servo esté activo; si no, pierde par y no funciona correctamente.",
+            "La <strong>posición</strong> depende del <strong>ancho del pulso</strong>: con 500 µs (ancho mínimo) el servo está en −90° y con 2,5 ms (ancho máximo) en +90°. La escala es lineal: cada 0,5 ms de ancho son 45°."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El <strong>servo 1</strong> se conecta a <strong>RB1</strong>, el <strong>servo 2</strong> a <strong>RB2</strong> y el <strong>servo 3</strong> a <strong>RB3</strong>. Los servos mueven unos banderines que sirven para espantar pájaros, con esta secuencia:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": true,
+          "items": [
+            "Servo a 90° durante medio segundo.",
+            "Servo a −90° durante medio segundo.",
+            "Servo a 0° durante medio segundo.",
+            "Servo a 45° durante un cuarto de segundo.",
+            "Servo a −45° durante un cuarto de segundo.",
+            "Servo a 0° durante un cuarto de segundo."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Se pide hacer un <strong>driver de control del espantador</strong> en C con las funciones <code>inicializa_driver_espantador()</code>, <code>actua_servo(int servo)</code> y <code>para_servo(int servo)</code>. Cada servo funciona de forma <strong>independiente</strong>: uno puede estar en el paso 4 y otro en el paso 1.</p><h3>Planteamiento</h3><p>Es un <strong>PWM por software</strong> dentro de un sistema muestreado. Todos los anchos de pulso (0,5; 1; 1,5; 2 y 2,5 ms) son múltiplos de 0,5 ms, y el periodo de 20 ms también: el periodo de muestreo es <strong>0,5 ms</strong> (<code>T1CON = 0x8000</code>, 1:1, y <code>PR1 = 20000</code>: 20 000 · 25 ns = 0,5 ms). La ISR lleva un contador común <code>tick</code> que recorre los <strong>40 ticks</strong> del periodo (40 · 0,5 ms = 20 ms) y pone cada salida a 1 mientras <code>tick &lt; DC[servo]</code>, donde <code>DC</code> es el ancho del pulso en ticks:</p><table class=\"tabla-datos\"><thead><tr><th><code>DC</code> (ticks)</th><th>Ancho del pulso</th><th>Posición</th></tr></thead><tbody><tr><td>1</td><td>0,5 ms</td><td>−90°</td></tr><tr><td>2</td><td>1 ms</td><td>−45°</td></tr><tr><td>3</td><td>1,5 ms</td><td>0°</td></tr><tr><td>4</td><td>2 ms</td><td>45°</td></tr><tr><td>5</td><td>2,5 ms</td><td>90°</td></tr></tbody></table><p>Cada servo es una <strong>máquina de estados</strong> (array <code>estado[3]</code>) con un contador de tiempo asíncrono (<code>cont[3]</code>, en ticks de 0,5 ms) que se pone a cero en cada transición, como en 19.3. Medio segundo son 1000 ticks y un cuarto de segundo, 500:</p><table class=\"tabla-datos\"><thead><tr><th>Estado</th><th><code>DC</code></th><th>Posición</th><th>Pasa al estado…</th></tr></thead><tbody><tr><td>0 (reposo)</td><td>3</td><td>0°</td><td>1, cuando se llama a <code>actua_servo</code></td></tr><tr><td>1</td><td>5</td><td>90°</td><td>2, con <code>cont &gt; 1000</code> (0,5 s)</td></tr><tr><td>2</td><td>1</td><td>−90°</td><td>3, con <code>cont &gt; 1000</code> (0,5 s)</td></tr><tr><td>3</td><td>3</td><td>0°</td><td>4, con <code>cont &gt; 1000</code> (0,5 s)</td></tr><tr><td>4</td><td>4</td><td>45°</td><td>5, con <code>cont &gt; 500</code> (0,25 s)</td></tr><tr><td>5</td><td>2</td><td>−45°</td><td>6, con <code>cont &gt; 500</code> (0,25 s)</td></tr><tr><td>6</td><td>3</td><td>0°</td><td>1, con <code>cont &gt; 500</code> (0,25 s): la secuencia se repite</td></tr></tbody></table><p><code>para_servo</code> devuelve el servo al estado 0, en el que se sigue mandando el pulso de 1,5 ms: el servo se queda quieto en 0° pero con par.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>Solución</strong>: interfaz, <code>main</code> de ejemplo, variables e inicialización del driver, y la ISR del Timer 1 que lleva las tres máquinas de estados y genera las tres señales. Activa y para cada servo y observa su estado, la señal de 50 Hz que genera la ISR y la posición del banderín:</p><div class=\"mpi-mount\" data-componente=\"sim-fsm-dspic\" data-config='{\"maquina\":\"espantador\"}'></div>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Lectura-modificación-escritura y pines analógicos.</strong> Si RB1-RB3 fueran analógicos, cada lectura de <code class=\"reg\">PORTB</code> devolvería 0 en esos pines y una escritura directa (<code>PORTB |=</code> o <code>PORTB &amp;=</code>) borraría las salidas de los otros servos: por eso el <code>main</code> pone <code>AD1PCFGL = 0xFFFF</code> y la ISR sigue la solución 2 de la regla RMW, trabajando sobre una copia (<code>salida</code>) que fija los tres bits y escribe el puerto una sola vez. El <code>main</code> de ejemplo llama a <code>actua_servo(1)</code> y <code>para_servo(1)</code> en bucle solo para ilustrar la interfaz: así el servo no avanza nunca de estado."
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Driver del espantador: interfaz, inicialización y la ISR del Timer 1, con la máquina de estados de cada servo en una función aparte (<code>maquina_servo</code>), como propone 19.4. <code>estado</code> y <code>cont</code> se declaran <code>volatile</code> porque los modifican el <code>main</code> (a través de <code>actua_servo</code>) y la ISR, y las variables del driver son <code>static</code> para que sus nombres no choquen con los del programa que lo use (véase 19.6.3).</p>",
+          "codigo": "static volatile int estado[3];          // static: no chocan con nombres del programa\nstatic volatile int cont[3];\nstatic int DC[3];                       // ancho del pulso en ticks de 0,5 ms\nstatic int tick = 0;\n\nvoid inicializa_driver_espantador()\n{\n    int servo;\n    TRISB &= ~0x000E;                   // RB1-RB3 como salidas (servos 1-3)\n    T1CON = 0x8000;                     // pre-escalado 1:1\n    PR1 = 20000;                        // 20 000 · 25 ns = 0,5 ms\n    TMR1 = 0;\n    IFS0bits.T1IF = 0;\n    IEC0bits.T1IE = 1;\n    for (servo = 0; servo < 3; servo++)\n        estado[servo] = 0;\n}\n\nvoid actua_servo(int servo)             // servo = 1, 2 o 3\n{\n    estado[servo - 1] = 1;\n    cont[servo - 1] = 0;\n}\n\nvoid para_servo(int servo)              // servo = 1, 2 o 3\n{\n    estado[servo - 1] = 0;\n}\n\nstatic void maquina_servo(int servo)    // servo = 0, 1 o 2 (índice del array)\n{\n    cont[servo]++;\n    if (estado[servo] == 0) {           // reposo: 0°\n        DC[servo] = 3;\n    } else if (estado[servo] == 1) {    // 90° durante 0,5 s\n        DC[servo] = 5;\n        if (cont[servo] > 1000) {\n            estado[servo] = 2;\n            cont[servo] = 0;\n        }\n    } else if (estado[servo] == 2) {    // −90° durante 0,5 s\n        DC[servo] = 1;\n        if (cont[servo] > 1000) {\n            estado[servo] = 3;\n            cont[servo] = 0;\n        }\n    } else if (estado[servo] == 3) {    // 0° durante 0,5 s\n        DC[servo] = 3;\n        if (cont[servo] > 1000) {\n            estado[servo] = 4;\n            cont[servo] = 0;\n        }\n    } else if (estado[servo] == 4) {    // 45° durante 0,25 s\n        DC[servo] = 4;\n        if (cont[servo] > 500) {\n            estado[servo] = 5;\n            cont[servo] = 0;\n        }\n    } else if (estado[servo] == 5) {    // −45° durante 0,25 s\n        DC[servo] = 2;\n        if (cont[servo] > 500) {\n            estado[servo] = 6;\n            cont[servo] = 0;\n        }\n    } else if (estado[servo] == 6) {    // 0° durante 0,25 s\n        DC[servo] = 3;\n        if (cont[servo] > 500) {\n            estado[servo] = 1;          // la secuencia se repite\n            cont[servo] = 0;\n        }\n    }\n}\n\nvoid __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)\n{\n    int servo;\n    unsigned int salida;\n\n    IFS0bits.T1IF = 0;                  // el flag del timer 1\n    tick++;\n    if (tick >= 40)                     // 40 · 0,5 ms = 20 ms (50 Hz)\n        tick = 0;                       // tick recorre 0..39\n    salida = PORTB;                     // regla RMW: se trabaja sobre una copia\n    for (servo = 0; servo < 3; servo++) {\n        maquina_servo(servo);\n        if (tick < DC[servo])\n            salida |= (1 << (servo + 1));       // servo 1 → RB1, 2 → RB2, 3 → RB3\n        else\n            salida &= ~(1 << (servo + 1));\n    }\n    PORTB = salida;                     // una sola escritura del puerto\n}"
+        }
+      ]
+    },
+    {
+      "titulo": "13.7 Problema: espantapájaros",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<h3>Enunciado</h3><p>Se quiere hacer un sistema para espantar pájaros formado por <strong>tres detectores de pájaros</strong>, exactamente como los del problema 15.4.1 del tema <em>Drivers</em> (función <code>get_medida(n)</code>, que devuelve 1 si el detector <code>n</code> = 1, 2 o 3 presenta un <strong>flanco de subida</strong>), y <strong>tres espantadores</strong>, exactamente como los del problema 19.6.2. El sistema funciona así:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "Si el <strong>detector 1</strong> detecta un pájaro, se actúan los <strong>espantadores 1 y 3</strong> durante 5 segundos. Después se esperan 10 segundos <em>desde que se inició la actuación</em>, y aunque el detector 1 detecte un pájaro no se actúa.",
+            "Si el <strong>detector 2</strong> detecta un pájaro, se actúan los <strong>espantadores 2 y 1</strong> durante 5 segundos, con la misma espera de 10 segundos.",
+            "Si el <strong>detector 3</strong> detecta un pájaro, se actúan los <strong>espantadores 3 y 2</strong> durante 5 segundos, con la misma espera de 10 segundos.",
+            "Si no se activan los detectores, los espantadores no actúan (no se mueven).",
+            "Si se activan varios detectores, se actúa de forma simultánea, <strong>priorizando el último</strong> que se ha activado."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Se puede suponer que se tienen los drivers de los problemas anteriores y que el micro está conectado como en ellos. Restricción adicional: el tiempo desde la detección hasta la actuación <strong>no debe superar 10 ms</strong>.</p><h3>Ejemplo (cronograma)</h3><p>El cronograma siguiente, de 0 a 20 s, muestra las señales de los detectores 1 y 2 y la actividad de los espantadores 1, 2 y 3:</p><table class=\"tabla-datos\"><thead><tr><th>Instante</th><th>Suceso</th><th>Efecto</th></tr></thead><tbody><tr><td>5 s</td><td>Flanco del detector 1 (la señal vuelve a 0 hacia los 6 s)</td><td>Arrancan los espantadores 1 y 3. El detector 1 queda bloqueado hasta los 15 s.</td></tr><tr><td>7 s</td><td>Flanco del detector 2 (vuelve a 0 hacia los 8 s)</td><td>Arranca el espantador 2 y el 1 <strong>vuelve a empezar</strong> su secuencia. El detector 2 queda bloqueado hasta los 17 s.</td></tr><tr><td>10 s</td><td>—</td><td>Para el espantador 3 (5 s desde los 5 s).</td></tr><tr><td>12 s</td><td>—</td><td>Paran los espantadores 1 y 2 (5 s desde los 7 s).</td></tr><tr><td>13 s</td><td>Flanco del detector 1 (la señal sigue a 1 hasta unos 15,5 s)</td><td>No se actúa: solo han pasado 8 s desde la actuación de los 5 s.</td></tr><tr><td>15 s</td><td>Termina el bloqueo del detector 1, con su señal todavía a 1</td><td>No se actúa: la detección es <strong>por flanco</strong> y no hay flanco nuevo.</td></tr></tbody></table><p>Es decir, el espantador 3 hace su secuencia de 5 s a 10 s; el 1, de 5 s a 7 s y de nuevo de 7 s a 12 s; y el 2, de 7 s a 12 s.</p><h3>Planteamiento</h3><p>Una <strong>máquina de estados por detector</strong>, con <code>bloqueado[3]</code> y el instante de su última detección (<code>t_det</code>): al ver un flanco se bloquea el detector durante <strong>10 s</strong> y se (re)arrancan sus dos espantadores asociados, que da <code>servo_asoc1</code> y <code>servo_asoc2</code>. Cada espantador lleva además su propia máquina (<code>activo[3]</code> y el instante de su último arranque, <code>t_esp</code>) y se para a los <strong>5 s</strong> de haberse (re)activado. El tiempo lo mide un reloj de décimas de segundo con el <strong>Timer 2</strong>, independiente del Timer 1 que usa el driver del espantador: <code>T2CON = 0x8030</code> (1:256) y <code>PR2 = 15625</code> dan 15 625 · 6,4 µs = <strong>0,1 s</strong> exactos (como en el problema 9.5.1), con lo que 50 periodos son 5 s y 100, 10 s. La detección por <em>polling</em> en el <code>main</code> cumple holgadamente los 10 ms de respuesta.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>Solución.</strong> Provoca detecciones en los instantes del cronograma (5 s, 7 s, 13 s) y sigue el estado de cada detector y de cada espantador:</p><div class=\"mpi-mount\" data-componente=\"sim-fsm-dspic\" data-config='{\"maquina\":\"espantapajaros\"}'></div>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Usa <code>get_medida</code> del driver de detectores (15.4.1) y el driver del espantador (19.6.2). <code>get_medida</code> se llama en cada vuelta, en los tres estados, para que el flanco se detecte siempre bien. Las restas <code>ahora - t</code> son de <code>unsigned int</code> y dan el tiempo transcurrido aunque <code>decimas</code> dé la vuelta (cada 109 min). El código no escribe directamente en ningún puerto, solo llama a las funciones de los dos drivers; supone que el conflicto de pines entre los detectores (RB0-RB2) y los servos (RB1-RB3) ya está resuelto moviendo uno de los dos grupos a otros pines, con su driver adaptado en consecuencia, y que los nombres internos de cada driver (como <code>estado</code>) son <code>static</code> para no chocar entre sí (véase 19.6.2).</p>",
+          "codigo": "#include \"config.h\"\n#include \"detectores.h\"                 // get_medida() e inicializa_driver_detectores() (15.4.1)\nvoid inicializa_driver_espantador(void);    // driver del espantador (19.6.2)\nvoid actua_servo(int servo);\nvoid para_servo(int servo);\n\n#define DEC_ACTUA     50                // 50 · 0,1 s = 5 s\n#define DEC_BLOQUEO  100                // 100 · 0,1 s = 10 s\n\nvolatile unsigned int decimas = 0;      // reloj del sistema: +1 cada 0,1 s\n\nint servo_asoc1[3] = {1, 2, 3};\nint servo_asoc2[3] = {3, 1, 2};\nint bloqueado[3];                       // máquina de cada detector: 0 reposo, 1 bloqueado\nunsigned int t_det[3];                  // instante de su última actuación\nint activo[3];                          // máquina de cada espantador: 0 parado, 1 actuando\nunsigned int t_esp[3];                  // instante en que se (re)arrancó\n\nvoid arranca_espantador(int n, unsigned int ahora)     // n = 1, 2 o 3\n{\n    actua_servo(n);                     // (re)empieza la secuencia desde el paso 1\n    activo[n - 1] = 1;\n    t_esp[n - 1] = ahora;\n}\n\nint main(void)\n{\n    int det, esp, flanco;\n    unsigned int ahora;\n\n    InicializarReloj();\n    AD1PCFGL = 0xFFFF;\n    inicializa_driver_detectores();\n    inicializa_driver_espantador();\n    T2CON = 0x8030;                     // pre-escalado 1:256 (6,4 µs)\n    PR2 = 15625;                        // 15 625 · 6,4 µs = 0,1 s\n    TMR2 = 0;\n    IFS0bits.T2IF = 0;\n    IEC0bits.T2IE = 1;\n    while (1) {\n        ahora = decimas;                // 16 bits: se lee en una sola instrucción\n        for (det = 0; det < 3; det++) {\n            flanco = get_medida(det + 1);   // siempre: el driver guarda el valor anterior\n            if (bloqueado[det] && ahora - t_det[det] >= DEC_BLOQUEO)\n                bloqueado[det] = 0;\n            if (!bloqueado[det] && flanco) {\n                bloqueado[det] = 1;\n                t_det[det] = ahora;\n                arranca_espantador(servo_asoc1[det], ahora);\n                arranca_espantador(servo_asoc2[det], ahora);\n            }\n        }\n        for (esp = 0; esp < 3; esp++) {\n            if (activo[esp] && ahora - t_esp[esp] >= DEC_ACTUA) {\n                para_servo(esp + 1);\n                activo[esp] = 0;\n            }\n        }\n    }\n}\n\nvoid __attribute__((interrupt, no_auto_psv)) _T2Interrupt(void)\n{\n    IFS0bits.T2IF = 0;\n    decimas++;\n}"
+        }
+      ]
+    }
+  ],
+  "ejercicios": {
+    "sistemas-digitales-complejos-1": {
+      "titulo": "Sistemas muestreados: periodo de muestreo y resolución",
+      "enunciado": "<p>Varias cuestiones sobre la elección del periodo de muestreo (19.2) y sobre los programas de medida de ancho de pulso de las Figuras 110 y 111, supuesto que la interrupción del Timer 1 está habilitada.</p>",
+      "contexto": "<ul><li>F<sub>CY</sub> = 40 MHz, T<sub>CY</sub> = 25 ns. Periodo del timer: t = PR1 · presc / F<sub>CY</sub>.</li><li>Regla del periodo de muestreo: el máximo común divisor de los periodos de todas las tareas.</li><li>LEDs D6 = RB15, D7 = RB14, D8 = RB13, D9 = RB12, activos a nivel bajo (0 = encendido).</li></ul>",
+      "preguntas": [
+        {
+          "texto": "Un sistema tiene tres tareas: generar una señal que cambia cada <strong>300 µs</strong>, muestrear una entrada cada <strong>1,2 ms</strong> y refrescar un display cada <strong>5 ms</strong>. ¿Qué periodo de muestreo y qué <code>PR1</code> (pre-escalado 1:1) hay que usar?",
+          "opciones": [
+            "100 µs, con PR1 = 4000",
+            "300 µs, con PR1 = 12 000",
+            "100 µs, con PR1 = 400",
+            "5 ms, con PR1 = 200 000"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>mcd(300, 1200, 5000) µs: mcd(300, 1200) = 300 y mcd(300, 5000) = 100, así que T<sub>m</sub> = <strong>100 µs</strong>. Con pre-escalado 1:1, PR1 = T<sub>m</sub> · F<sub>CY</sub> = 100 · 10<sup>−6</sup> s · 40 · 10<sup>6</sup> Hz = <strong>4000</strong>. 300 µs es el mcd de solo las dos primeras tareas (5 ms no es múltiplo de 300 µs); 400 sería el PR1 para 10 µs; y 5 ms (el mayor periodo) no permite hacer las tareas rápidas, además de que 200 000 no cabe en 16 bits.</p>"
+        },
+        {
+          "texto": "Con la solución <strong>sin muestrear</strong> de la Figura 110 (<code>T1CON = 0x30</code> y luego TON = 1, <code>PR1 = 0xFFFF</code>), ¿cuál es la resolución de la medida y el ancho máximo que se puede medir sin que <code class=\"reg\">TMR1</code> dé la vuelta?",
+          "opciones": [
+            "25 ns y 1,64 ms",
+            "6,4 µs y unos 0,42 s",
+            "6,4 µs y 1 ms",
+            "1 ms y unos 65,5 s"
+          ],
+          "correcta": 1,
+          "explicacion": "<p><code>0x30</code> pone TCKPS = 3 (1:256): la cuenta avanza cada 256 · 25 ns = <strong>6,4 µs</strong>, que es la resolución. <code class=\"reg\">TMR1</code> llega como mucho a 65 535, es decir, 65 535 · 6,4 µs ≈ <strong>0,42 s</strong>. 25 ns y 1,64 ms corresponden al pre-escalado 1:1; 1 ms es el periodo de muestreo de la versión muestreada (Figura 111).</p>"
+        },
+        {
+          "texto": "Con la versión <strong>muestreada</strong> de la Figura 111 (<code>PR1 = 40000</code>), por RB2 llega un pulso a nivel bajo de <strong>7,3 ms</strong>. ¿Qué valores puede tener <code>tick</code> al detectar el flanco de subida?",
+          "opciones": [
+            "Siempre 7, porque la parte fraccionaria se descarta",
+            "7300, uno por microsegundo",
+            "7 u 8, según dónde caiga el pulso respecto a los instantes de muestreo",
+            "1140, uno cada 6,4 µs"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>La ISR mira RB2 una vez cada 1 ms (40 000 · 25 ns) y suma un tick por cada muestra que encuentra a 0. En un intervalo de 7,3 ms caben 7 u 8 instantes de muestreo según la fase: la resolución es de <strong>1 ms</strong> y el error, menor de 1 ms. Ese es el precio de liberar la CPU respecto a la solución por <em>polling</em> (6,4 µs).</p>"
+        },
+        {
+          "texto": "Al detectar el flanco, la ISR de la Figura 111 ejecuta <code>PORTB = ~(tick &lt;&lt; 12)</code> con <code>tick = 7</code>. ¿Qué LEDs de la PicTrainer quedan encendidos?",
+          "opciones": [
+            "D7, D8 y D9",
+            "Solo D6",
+            "D6, D7 y D8",
+            "Ninguno, porque se escribe el valor negado"
+          ],
+          "correcta": 0,
+          "explicacion": "<p><code>7 &lt;&lt; 12</code> = 0x7000 y <code>~0x7000</code> = 0x8FFF: RB15 = 1 y RB14 = RB13 = RB12 = 0. Como los LEDs son <strong>activos a nivel bajo</strong>, se encienden los de los pines a 0: <strong>D7 (RB14), D8 (RB13) y D9 (RB12)</strong>, y D6 (RB15) queda apagado. Leyendo los LEDs encendidos como unos, de D6 a D9 se ve 0111 = 7: la negación compensa la lógica inversa de los LEDs.</p>"
+        }
+      ]
+    },
+    "sistemas-digitales-complejos-2": {
+      "titulo": "La calculadora como máquina de estados",
+      "enunciado": "<p>Se usa la calculadora de 3 bits (13.4.1): datos en RB2-RB0, operación en RB3 (1 = suma, 0 = resta), validación por flanco de subida de RB4 y resultado en RA3-RA0 con <code>PORTA = ~Resultado</code>.</p>",
+      "contexto": "<ul><li>Los LEDs de RA0-RA3 tienen resistencias de pull-up: se encienden con un 0.</li><li>Suponer los pines configurados como digitales.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Qué descripción de los estados y transiciones de la máquina es correcta?",
+          "opciones": [
+            "0: lee el operando 1; 1: lee el operando 2; 2: lee RB3 y calcula; 3: escribe <code>~Resultado</code> en <code>PORTA</code>. Las transiciones 0→1, 1→2 y 2→3 las provoca un flanco de subida de RB4, y la 3→0 es incondicional.",
+            "Igual, pero las transiciones se producen mientras RB4 vale 1 (por nivel), de modo que con RB4 a 1 la máquina recorre todos los estados seguidos.",
+            "Igual, pero el estado 3 espera otro flanco de RB4 antes de volver al 0, para que el resultado se vea.",
+            "Las transiciones las provoca RB3: un 1 en RB3 avanza de estado y un 0 lo mantiene."
+          ],
+          "correcta": 0,
+          "explicacion": "<p><code>pulsado()</code> compara el valor actual de RB4 con el de la llamada anterior y devuelve 1 solo si antes era 0 y ahora no: es una detección de <strong>flanco de subida</strong>, así que mantener RB4 a 1 no hace avanzar más de un estado. El estado 3 escribe el resultado y vuelve al 0 sin condición; el resultado se mantiene en <code class=\"reg\">PORTA</code> hasta la siguiente operación. RB3 solo elige la operación.</p>"
+        },
+        {
+          "texto": "Se introducen los operandos <strong>6</strong> y <strong>3</strong> y, con <strong>RB3 = 0</strong>, se valida la operación. ¿Qué LEDs del puerto A se encienden?",
+          "opciones": [
+            "RA1 y RA2",
+            "RA3 y RA0",
+            "RA0 y RA1",
+            "Todos menos RA0"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>RB3 = 0 hace la <strong>resta</strong>: 6 − 3 = 3 = <code>0011</code>. Se escribe <code>~3</code>, cuyos cuatro bits bajos son <code>1100</code>: RA1 = 0 y RA0 = 0 → esos LEDs <strong>se encienden</strong> (pull-up, activos a nivel bajo), y RA3 = RA2 = 1 quedan apagados. Se lee 0011 = 3 en los LEDs encendidos.</p>"
+        },
+        {
+          "texto": "Ahora los operandos son <strong>2</strong> y <strong>5</strong> y se valida con <strong>RB3 = 0</strong>. ¿Qué se ve en los LEDs?",
+          "opciones": [
+            "Nada: un resultado negativo no se muestra",
+            "RA0 y RA1 encendidos (se lee 0011 = 3, el valor absoluto)",
+            "RA3, RA2 y RA0 encendidos (se lee 1101, −3 en complemento a 2 con 4 bits)",
+            "Solo RA1 encendido"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>Con RB3 = 0 se resta: 2 − 5 = −3, que en 16 bits es 0xFFFD. <code>~0xFFFD</code> = 0x0002: RA1 = 1 (apagado) y RA0 = RA2 = RA3 = 0 (encendidos). Leyendo los encendidos como unos se ve <strong>1101</strong>, que es −3 en complemento a 2 con 4 bits. La opción «solo RA1» confunde el único pin que queda a 1 (LED apagado) con los LEDs encendidos.</p>"
+        }
+      ]
+    },
+    "sistemas-digitales-complejos-3": {
+      "titulo": "Sinfonía y espantapájaros",
+      "enunciado": "<p>Cuestiones sobre la generación de notas de la sinfonía (19.6.1) y sobre el comportamiento que pide el enunciado del espantapájaros (19.6.3).</p>",
+      "contexto": "<ul><li>Sinfonía: tick de 50 µs (<code>PR1 = 2000</code>, 1:1); la ISR genera en RB0 una señal de periodo <code>PER</code> ticks; cada nota dura <code>duracion</code> ticks.</li><li>Espantapájaros: detector 1 → espantadores 1 y 3; detector 2 → espantadores 2 y 1; actuación de 5 s; bloqueo de 10 s desde que se inició la actuación; detección por flanco; se prioriza el último detector activado (su espantador vuelve a empezar).</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Qué frecuencia genera la sinfonía para la nota con <code>PER = 13</code>?",
+          "opciones": [
+            "1500 Hz, la de la tabla",
+            "1538,5 Hz; es el PER entero más cercano a los 1500 Hz pedidos",
+            "769,2 Hz, porque 13 ticks son solo el semiperiodo",
+            "20 kHz, la frecuencia del tick"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>El periodo es PER · 50 µs = 13 · 50 µs = 650 µs, así que f = 1 / 650 µs = <strong>1538,5 Hz</strong>. Para 1500 Hz exactos el periodo sería 666,7 µs = 13,3 ticks, que no es un número entero de ticks. 13 ticks son el periodo completo, no el semiperiodo; 20 kHz es la frecuencia de las interrupciones.</p>"
+        },
+        {
+          "texto": "¿Cuánto dura la nota 6 (<code>duracion = 60000</code>) y por qué los arrays se declaran <code>unsigned int</code>?",
+          "opciones": [
+            "3 s; porque 60 000 no cabe en un <code>int</code> de 16 bits (máximo 32 767) y sí en un <code>unsigned int</code> (máximo 65 535)",
+            "60 s; porque una duración no puede ser negativa",
+            "3 s; porque el compilador XC16 no admite arrays de <code>int</code>",
+            "0,3 s; porque así cabe en 8 bits"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>60 000 ticks · 50 µs = <strong>3 s</strong>, la duración de la tabla. En XC16 un <code>int</code> tiene 16 bits con signo (−32 768 a 32 767), así que 60 000 (y también 40 000 de la nota 4) no cabe; un <code>unsigned int</code> llega a 65 535.</p>"
+        },
+        {
+          "texto": "Espantapájaros: el detector 1 da un flanco en <strong>t = 5 s</strong> y el detector 2 en <strong>t = 7 s</strong>. ¿Qué espantadores están actuando en <strong>t = 11 s</strong>?",
+          "opciones": [
+            "Los tres: el 3 sigue hasta los 12 s",
+            "El 1 y el 2",
+            "Solo el 2: el 1 paró a los 10 s",
+            "Ninguno: a los 10 s se bloquea el detector 1"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>A los 5 s arrancan el 1 y el 3. A los 7 s el detector 2 arranca el 2 y <strong>reinicia el 1</strong> (se prioriza el último). El 3 actúa de 5 a 10 s; el 1 y el 2, de 7 a 12 s. En t = 11 s actúan <strong>el 1 y el 2</strong>, como en el cronograma anterior.</p>"
+        },
+        {
+          "texto": "En <strong>t = 13 s</strong> el detector 1 da otro flanco y su señal se mantiene a 1 hasta unos 15,5 s. ¿Qué debe ocurrir según el enunciado?",
+          "opciones": [
+            "Se actúan los espantadores 1 y 3 en t = 13 s",
+            "No se actúa en t = 13 s, pero sí en t = 15 s, al acabar el bloqueo, porque la señal sigue a 1",
+            "No se actúa ni en t = 13 s (solo han pasado 8 s desde la actuación de los 5 s) ni en t = 15 s (no hay flanco nuevo)",
+            "Se reinicia solo el espantador 1"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>El bloqueo del detector 1 dura 10 s desde que se inició su actuación (5 s), es decir, hasta los 15 s: en t = 13 s está bloqueado. En t = 15 s ya podría actuar, pero la detección es <strong>por flanco</strong> y la señal ya estaba a 1, así que no hay flanco nuevo.</p>"
+        }
+      ]
+    }
+  },
+  "ejerciciosEnTema": [
+    "sistemas-digitales-complejos-1",
+    "sistemas-digitales-complejos-2",
+    "sistemas-digitales-complejos-3"
+  ],
+  "tituloEjercicios": "Ejercicios y cuestiones",
+  "resumen": [
+    "Un <strong>sistema muestreado</strong> ejecuta sus tareas síncronas cada <strong>periodo de muestreo</strong>, normalmente en la ISR de un timer: se sabe cuándo se ejecuta cada tarea y la CPU queda libre entre muestras. Medir un pulso por <em>polling</em> con 1:256 da 6,4 µs de resolución pero ocupa la CPU; muestreando cada 1 ms (<code>PR1 = 40000</code>) la resolución es 1 ms.",
+    "El periodo de muestreo es el <strong>máximo común divisor</strong> de los periodos de todas las tareas: mcd(350 µs, 1 ms) = <strong>50 µs</strong> → <code>PR1 = 2000</code> a 40 MHz con 1:1. Muy pequeño no deja CPU libre; muy grande pierde resolución.",
+    "<strong>Fechado</strong>: cada medida de tiempo es un contador que la ISR incrementa en cada periodo de muestreo y que el programa compara con su número de periodos (1000 para 1 s, 350 para 350 ms con ticks de 1 ms). Si la medida es <strong>asíncrona</strong>, el propio evento pone a cero el contador.",
+    "<strong>Programación basada en estados</strong>: se identifican las máquinas del sistema, sus estados (y el inicial) y las variables que provocan las transiciones. En C, una función por máquina, una variable global <code>estado_actual</code> por máquina y una función por estado con sus condiciones de paso; las transiciones por tiempo usan contadores asíncronos.",
+    "<strong>Calculadora</strong> (19.5.1): una máquina de 4 estados (operando 1, operando 2, operación, mostrar) cuyas transiciones las da el <strong>flanco de subida</strong> de RB4; el resultado se escribe negado en <code class=\"reg\">PORTA</code> porque los LEDs son activos a nivel bajo.",
+    "<strong>Sinfonía</strong> (19.6.1): una señal cuadrada (al 50 % según el enunciado) generada en la ISR con un tick de 50 µs; <code>PER</code> es el periodo de cada nota en ticks y <code>duracion</code> su duración (60 000 ticks = 3 s, por eso <code>unsigned int</code>).",
+    "<strong>Espantador</strong> (19.6.2): PWM por software a 50 Hz con tick de 0,5 ms (40 ticks = 20 ms, ancho de 1 a 5 ticks = −90° a +90°) y una máquina de 7 estados por servo. <strong>Espantapájaros</strong> (19.6.3): una máquina por detector (reposo, actuando 5 s, bloqueado hasta 10 s) que usa los drivers de detectores y espantadores, con el Timer 2 como reloj."
+  ]
+}

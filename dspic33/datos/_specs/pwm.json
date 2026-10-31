@@ -1,0 +1,587 @@
+{
+  "slug": "pwm",
+  "titulo": "Módulo PWM",
+  "temaNum": 14,
+  "lenguaje": "c",
+  "lead": "El <strong>módulo PWM</strong> (<em>pulse width modulation</em>, modulación de ancho de pulso) configura, genera y controla señales PWM sin consumir tiempo de CPU. En este tema entenderás para qué sirve una señal PWM (velocidad de un motor, posición de un servo, brillo de un LED) y cómo se maneja el módulo con sus registros <code class=\"reg\">PTCON</code>, <code class=\"reg\">PWMCON1</code>, <code class=\"reg\">PTPER</code> y <code class=\"reg\">PDC</code> para hacer programas con él.",
+  "secciones": [
+    {
+      "titulo": "14.1 Principios básicos sobre PWM",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>La <strong>modulación por ancho de pulsos</strong> (PWM, <em>pulse width modulation</em>) de una señal es una técnica en la que se modifica el <strong>ciclo de trabajo</strong> de una señal periódica, típicamente una onda cuadrada, ya sea para transmitir información a través de un canal de comunicaciones o para controlar la cantidad de energía que se envía a una carga.</p><p>En cualquier señal PWM hay que controlar dos parámetros fundamentales:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>T</strong>: <strong>período</strong> de la señal (el tiempo entre dos flancos de subida consecutivos).",
+            "<strong>DC</strong>: <em>duty cycle</em> o <strong>ciclo de trabajo</strong>, el tiempo que la onda permanece en nivel alto dentro de cada período. Suele expresarse también en tanto por ciento del período (DC/T · 100 %)."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Con estos dos valores la señal queda perfectamente determinada: una onda cuadrada que está en alto durante DC y en bajo durante T − DC, y que se repite cada T. A <strong>mayor ciclo de trabajo, mayor es el valor medio</strong> de la onda. La consecuencia es que con una señal digital (que solo vale 0 o V<sub>DD</sub>) se pueden conseguir <strong>valores medios analógicos</strong>, como si fuese un convertidor digital/analógico. Variando únicamente el ciclo de trabajo se pueden controlar de forma continua actuadores que no son digitales: modificar la <strong>velocidad de un motor</strong>, la <strong>posición de un servo</strong>, regular la <strong>intensidad luminosa</strong> de una bombilla o de un LED, etc.</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p><strong>Ampliación (no está en el libro como ecuación).</strong> Valor medio de una señal PWM que vale V<sub>DD</sub> en alto y 0 V en bajo (3,3 V en el dsPIC33FJ32MC202). Por ejemplo, con DC/T = 25 % el valor medio es 0,25 · 3,3 V = 0,825 V:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>V</mi><mi>med</mi></msub><mo>=</mo><mfrac><mi>DC</mi><mi>T</mi></mfrac><mo>·</mo><msub><mi>V</mi><mi>DD</mi></msub></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El motor de continua con puente en H (L293D) y el servo, que son las dos aplicaciones típicas, se estudiaron en el tema 12 (<em>Organización de un sistema digital</em>, 17.5.2 y 17.5.3): con un puente en H el 50 % deja el motor parado, y un servo se posiciona con un pulso de 0,5-2,5 ms repetido cada 20 ms (50 Hz).</p><p>El dsPIC33FJ32MC202 tiene un periférico PWM con <strong>dos módulos</strong> que, usando recursos propios, generan señales PWM <strong>sin consumir tiempo de CPU</strong>: <strong>PWM1</strong>, con tres generadores de ciclo de trabajo y <strong>6 pines</strong> (3 pares H/L), y <strong>PWM2</strong>, con un generador y <strong>2 pines</strong> (1 par H/L); en total, <strong>8 pines</strong> y hasta <strong>4 señales independientes</strong>, una por generador, ya que cada par H/L es complementario. Los pines no son exclusivos: son RB8-RB15, que vuelven a ser E/S normales con su bit PENxx de <code class=\"reg\">PWMCON1</code> a 0.</p><p>Una consideración importante es que las señales <strong>no son totalmente independientes</strong>: pueden tener un ciclo de trabajo diferente cada una, pero las tres de PWM1 comparten el <strong>mismo período</strong>, porque se comparan con una única base de tiempos (<code class=\"reg\">P1TCON</code>, <code class=\"reg\">P1TPER</code>); PWM2 tiene su propia base de tiempos (<code class=\"reg\">P2TCON</code>, <code class=\"reg\">P2TPER</code>) y puede llevar un período distinto. El driver de este tema solo maneja PWM1.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "14.2 Puertos asociados",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Las señales PWM salen por pines fijos del micro (no son remapeables). Cada módulo tiene un par de pines: el <strong>L</strong> (<em>low</em>) y el <strong>H</strong> (<em>high</em>). En el dsPIC33FJ32MC202 de 28 pines son los pines 17-18 y 21-26 del <strong>puerto B</strong> (datasheet, diagrama de pines):</p><table class=\"tabla-datos\"><thead><tr><th>Módulo (libro)</th><th>Señal</th><th>Pin</th><th>Puerto en el dsPIC33FJ32MC202</th><th>Nombre en el libro</th><th>En la PicTrainer</th></tr></thead><tbody><tr><td>1</td><td>PWM1L1</td><td>26</td><td>RB15</td><td>RE0</td><td>LED D6</td></tr><tr><td>1</td><td>PWM1H1</td><td>25</td><td>RB14</td><td>RE1</td><td>LED D7</td></tr><tr><td>2</td><td>PWM1L2</td><td>24</td><td>RB13</td><td>RE2</td><td>LED D8</td></tr><tr><td>2</td><td>PWM1H2</td><td>23</td><td>RB12</td><td>RE3</td><td>LED D9</td></tr><tr><td>3</td><td>PWM1L3</td><td>22</td><td>RB11</td><td>RE4</td><td>— (también PGEC2/TMS)</td></tr><tr><td>3</td><td>PWM1H3</td><td>21</td><td>RB10</td><td>RE5</td><td>— (también PGED2/TDI)</td></tr><tr><td>4 (PWM2)</td><td>PWM2L1</td><td>18</td><td>RB9</td><td>RE4</td><td>— (también TDO/SDA1)</td></tr><tr><td>4 (PWM2)</td><td>PWM2H1</td><td>17</td><td>RB8</td><td>RE5</td><td>— (también TCK/SCL1)</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "nota",
+          "html": "En modo complementario la señal de referencia es la <strong>H</strong> y la <strong>L</strong> es su complemento (datasheet, 15.1: «the low PWM pins are always the complement of the corresponding high I/O pin»). Además, RB8-RB11 comparten pin con el JTAG (TCK, TDO, TMS, TDI) y RB10/RB11 con el canal 2 de programación (PGED2/PGEC2): hay que comprobar en el <code>config.h</code> del curso que el JTAG está deshabilitado antes de usar PWM1H3/L3 o PWM2."
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>En la PicTrainer.</strong> RB12-RB15 son a la vez salidas PWM y los LEDs <strong>D9, D8, D7 y D6</strong>, que son <strong>activos a nivel bajo</strong> (0 = encendido, con el puente JP3 puesto). Por tanto, si se saca un PWM por esos pines, el LED luce mientras la señal está en <em>bajo</em>: <strong>a más ciclo de trabajo, menos luz</strong> (con un 80 % en alto el LED está encendido el 20 % del tiempo). Con frecuencias de PWM de cientos de hercios o más el ojo no ve el parpadeo y percibe un brillo intermedio; por debajo de unos 50 Hz se ve parpadear. Para usar esos pines con un L293D (tema 12) conviene quitar JP3 y llevarlos por el conector de expansión P7."
+        }
+      ]
+    },
+    {
+      "titulo": "14.3 Registros del módulo PWM",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El módulo PWM lleva asociados cuatro registros (entre paréntesis, el nombre que les da el datasheet del dsPIC33FJ32MC202):</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<code class=\"reg\">PTPER</code> (<code class=\"reg\">P1TPER</code>): registro de 16 bits (15 útiles) que contiene el <strong>período</strong> de las señales PWM, equivalente a <code class=\"reg\">PRx</code> en un timer.",
+            "<code class=\"reg\">PDC1</code>, <code class=\"reg\">PDC2</code>, <code class=\"reg\">PDC3</code> (<code class=\"reg\">P1DC1</code>-<code class=\"reg\">P1DC3</code>): registros de 16 bits con el <strong>ciclo de trabajo</strong> de cada módulo.",
+            "<code class=\"reg\">PTCON</code> (<code class=\"reg\">P1TCON</code>): registro de <strong>control del timer</strong> (base de tiempos) del módulo.",
+            "<code class=\"reg\">PWMCON1</code> (<code class=\"reg\">PWM1CON1</code>): registro de <strong>configuración de los pines</strong>: qué pines controla el PWM y si cada par es independiente o complementario."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<table class=\"tabla-datos\"><thead><tr><th>Tipo de registro</th><th>Registros del módulo PWM</th><th>Nombre y dirección en el datasheet (tabla 4-8)</th></tr></thead><tbody><tr><td>Registros de datos</td><td><code class=\"reg\">PTPER</code>, <code class=\"reg\">PDC1</code>-<code class=\"reg\">PDC3</code></td><td>P1TPER = 0x01C4; P1DC1 = 0x01D6, P1DC2 = 0x01D8, P1DC3 = 0x01DA</td></tr><tr><td>Registros de control</td><td><code class=\"reg\">PTCON</code>, <code class=\"reg\">PWMCON1</code></td><td>P1TCON = 0x01C0, PWM1CON1 = 0x01C8</td></tr><tr><td>Registros de control de interrupciones</td><td>Los tiene, pero no se usan en el curso</td><td>—</td></tr></tbody></table><p>A continuación se detalla el funcionamiento de cada uno de ellos.</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Nombres de los registros.</strong> Esta web usa <code class=\"reg\">PTCON</code>, <code class=\"reg\">PTPER</code>, <code class=\"reg\">PWMCON1</code> y <code class=\"reg\">PDC1</code>-<code class=\"reg\">PDC3</code>; el datasheet del dsPIC33FJ32MC202, que tiene dos módulos, los llama <code class=\"reg\">P1TCON</code>, <code class=\"reg\">P1TPER</code>, <code class=\"reg\">PWM1CON1</code> y <code class=\"reg\">P1DC1</code>-<code class=\"reg\">P1DC3</code> (tabla 4-8, direcciones 0x01C0-0x01DA). Si al compilar aparece «PTCON undeclared», hay que usar los nombres con el prefijo <code>P1</code>."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>14.3.1 PTCON</h3><p>La gestión del tiempo de la señal PWM se hace a través de un <strong>timer interno</strong> que tiene este periférico. <code class=\"reg\">PTCON</code> (<code class=\"reg\">P1TCON</code> en el datasheet) es el registro de control de ese timer. Contiene el bit de <strong>encendido/apagado</strong> (bit 15) y el <strong>pre-escalado</strong> (bits 3 y 2), igual que los registros de control de un timer. El timer cuenta con el reloj de instrucción F<sub>CY</sub> dividido por el pre-escalado: en el curso, 40 MHz (T<sub>CY</sub> = 25 ns).</p><table class=\"tabla-datos\"><thead><tr><th></th><th>Bit 15</th><th>…</th><th>Bit 3</th><th>Bit 2</th><th>…</th></tr></thead><tbody><tr><td><code class=\"reg\">PTCON</code></td><td>PTEN</td><td></td><td>PTCKPS1</td><td>PTCKPS0</td><td></td></tr></tbody></table>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>PTEN</strong> (bit 15) = estado de la base de tiempos: 0 = deshabilitada; 1 = habilitada.",
+            "<strong>PTCKPS</strong> (bits 3-2) = pre-escalado: 0 = 1:1; 1 = 1:4; 2 = 1:16; 3 = 1:64. Ojo: no son los mismos valores que el TCKPS de los timers (1:1, 1:8, 1:64, 1:256)."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El valor que se usa en los ejemplos de este tema es <code>PTCON = 0x800C</code>: PTEN = 1 (en marcha) y PTCKPS = <code>11</code> (1:64); el resto de bits a 0, en particular PTMOD = <code>00</code>, el modo <em>free-running</em> (la cuenta sube de 0 a PTPER y vuelve a 0), que es el único que se usa en el curso. Haz clic en los bits para ver el resto de campos del datasheet:</p>"
+        },
+        {
+          "tipo": "registro",
+          "registro": "PTCON",
+          "valor": "0x800C"
+        },
+        {
+          "tipo": "nota",
+          "html": "<code class=\"reg\">PTCON</code> tiene además los campos <strong>PTSIDL</strong>, <strong>PTOPS</strong> (post-escalado, que solo afecta a la interrupción del PWM) y <strong>PTMOD</strong> (modo de la base de tiempos); con <code>0x800C</code> los tres quedan a 0."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>14.3.2 PWMCON1</h3><p>Este registro (<code class=\"reg\">PWM1CON1</code> en el datasheet) configura el <strong>modo de funcionamiento</strong> del módulo. Permite independizar los pines de sus complementarios para que puedan ser autónomos, y habilita o deshabilita el control de dichos pines por el módulo PWM. Su estructura es:</p><table class=\"tabla-datos\"><thead><tr><th>Bits</th><th>15-11</th><th>10-8</th><th>7</th><th>6-4</th><th>3</th><th>2-0</th></tr></thead><tbody><tr><td><code class=\"reg\">PWMCON1</code></td><td>—</td><td>PMOD3-PMOD1</td><td>—</td><td>PEN_H (PEN3H-PEN1H)</td><td>—</td><td>PEN_L (PEN3L-PEN1L)</td></tr></tbody></table><p>Los 3 bits <strong>PMOD</strong> (PMOD1, PMOD2, PMOD3) controlan la <strong>independencia de los pares de pines</strong>. Así, si PMOD1 está a 1, los pines PWM1L1 y PWM1H1 son independientes y llevan la misma señal del generador de ciclo de trabajo. Si los pines no son independientes (modo complementario), la L es la inversa de la H, con ciertos retardos (tiempos muertos) entre ambas, lo que es muy útil para controlar <strong>puentes en H</strong>.</p><p>Por otro lado, los bits <strong>PEN_H</strong> (PEN3H, PEN2H, PEN1H) y <strong>PEN_L</strong> (PEN3L, PEN2L, PEN1L) hacen que los pines dedicados a PWM sean <strong>controlados por el módulo</strong> (si están a 1) o que funcionen como <strong>pines de E/S</strong> normales (si están a 0).</p><p>El valor del ejemplo es <code>PWMCON1 = 0x777</code>: los tres pares en modo independiente (bits 10-8 = <code>111</code>) y los seis pines PWM1H1-PWM1H3 y PWM1L1-PWM1L3 controlados por el PWM (bits 6-4 y 2-0 = <code>111</code>):</p>"
+        },
+        {
+          "tipo": "registro",
+          "registro": "PWMCON1",
+          "valor": "0x0777"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>14.3.3 PTPER</h3><p>Registro de 16 bits (<code class=\"reg\">P1TPER</code> en el datasheet) donde se almacena el valor del <strong>período</strong> de las señales PWM. Solo son útiles <strong>15 bits</strong> (el bit 15 no está implementado), por tanto el máximo valor permitido es <strong>32 767</strong>. Es equivalente a <code class=\"reg\">PRx</code> en los timers: la base de tiempos cuenta de 0 a PTPER y vuelve a empezar.</p><p>Este valor depende del oscilador elegido y del pre-escalado configurado. Para obtener el valor de PTPER se procede como indica la ecuación E.7:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p><strong>E.7</strong> (la misma fórmula que usa el driver de 14.4). Valor de PTPER para una frecuencia F<sub>PWM</sub> = 1/T:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mi>PTPER</mi><mo>=</mo><mfrac><msub><mi>F</mi><mi>CY</mi></msub><mrow><msub><mi>F</mi><mi>PWM</mi></msub><mo>·</mo><mi>presc</mi></mrow></mfrac><mspace width=\"2em\"/><mo>⇔</mo><mspace width=\"2em\"/><mi>T</mi><mo>=</mo><mfrac><mrow><mi>PTPER</mi><mo>·</mo><mi>presc</mi></mrow><msub><mi>F</mi><mi>CY</mi></msub></mfrac></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Como en los timers, se elige el <strong>pre-escalado mínimo</strong> con el que PTPER cabe en 15 bits (≤ 32 767), porque así la resolución es la mejor posible. Por ejemplo, para <strong>50 Hz</strong> (el período de 20 ms de un servo) con F<sub>CY</sub> = 40 MHz: F<sub>CY</sub>/F<sub>PWM</sub> = 800 000; con 1:1, 1:4 y 1:16 salen 800 000, 200 000 y 50 000, que no caben; con <strong>1:64 sale PTPER = 12 500</strong> (12 500 · 1,6 µs = 20 ms). Con el valor exacto F<sub>CY</sub> = 39 613 750 Hz saldría 12 379. La tabla da, para cada pre-escalado, el paso de la base de tiempos y la frecuencia más baja que se puede generar:</p><table class=\"tabla-datos\"><thead><tr><th>PTCKPS</th><th>Pre-escalado</th><th>La base de tiempos avanza cada…</th><th>Resolución de PDC (media cuenta)</th><th>F<sub>PWM</sub> mínima (PTPER = 32 767)</th></tr></thead><tbody><tr><td>0 (<code>00</code>)</td><td>1:1</td><td>25 ns</td><td>12,5 ns</td><td>1 220,7 Hz</td></tr><tr><td>1 (<code>01</code>)</td><td>1:4</td><td>100 ns</td><td>50 ns</td><td>305,2 Hz</td></tr><tr><td>2 (<code>10</code>)</td><td>1:16</td><td>400 ns</td><td>200 ns</td><td>76,3 Hz</td></tr><tr><td>3 (<code>11</code>)</td><td>1:64</td><td>1,6 µs</td><td>0,8 µs</td><td>19,07 Hz</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "nota",
+          "html": "Como en modo <em>free-running</em> la base de tiempos recorre 0, 1, …, PTPER, cada período tiene en realidad PTPER + 1 cuentas, y la fórmula exacta es <strong>PTPER = F<sub>CY</sub>/(F<sub>PWM</sub> · presc) − 1</strong>: para 50 Hz, 12 499 en lugar de 12 500, una diferencia de una cuenta (0,008 %). Para cálculos rápidos vale la fórmula aproximada de arriba, sin el −1."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>14.3.4 PDC</h3><p>Son tres registros de 16 bits (<code class=\"reg\">PDC1</code>, <code class=\"reg\">PDC2</code>, <code class=\"reg\">PDC3</code>; <code class=\"reg\">P1DC1</code>-<code class=\"reg\">P1DC3</code> en el datasheet) que contienen el valor del <strong>ciclo de trabajo</strong> de cada uno de los pares de pines del módulo PWM (PDC1 → PWM1H1/L1, PDC2 → PWM1H2/L2, PDC3 → PWM1H3/L3).</p><p>El valor de PDC va en función del período, de forma que un <strong>PDC igual a PTPER produce una señal al 50 %</strong>, y un PDC igual a 2 · PTPER, al 100 %. El máximo valor permitido es 2<sup>16</sup> − 1 = 65 535.</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Valor de PDC para un ciclo de trabajo DC/T (en tanto por uno). Ejemplo con PTPER = 12 500 (50 Hz): 50 % → PDC = 12 500; 100 % → 25 000; un pulso de 1,5 ms (7,5 %) → 1 875:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mi>PDC</mi><mo>=</mo><mn>2</mn><mo>·</mo><mi>PTPER</mi><mo>·</mo><mfrac><mi>DC</mi><mi>T</mi></mfrac><mspace width=\"2em\"/><mo>⇔</mo><mspace width=\"2em\"/><mi>DC</mi><mo>=</mo><mi>PDC</mi><mo>·</mo><mfrac><mrow><mi>presc</mi><mo>·</mo><msub><mi>T</mi><mi>CY</mi></msub></mrow><mn>2</mn></mfrac></mrow></math>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>¿Por qué el factor 2?</strong> La base de tiempos y PTPER tienen 15 bits, pero PDC tiene 16: el ciclo de trabajo se compara con la cuenta con <strong>media cuenta de resolución</strong> (T<sub>CY</sub>/2 = 12,5 ns con pre-escalado 1:1, que es la «12.5 ns PWM resolution» que anuncia la portada del datasheet). Por eso una unidad de PDC vale presc · T<sub>CY</sub>/2 (0,8 µs con 1:64), PDC = PTPER es medio período y PDC = 2 · PTPER el período completo. El detalle de la comparación está en el manual de referencia DS70187, que no forma parte del material; con la fórmula exacta del período (PTPER + 1 cuentas), el 100 % sería 2 · (PTPER + 1). Tampoco se puede comprobar con el datasheet si la media cuenta se conserva con un pre-escalado distinto de 1:1 (la portada solo garantiza los 12,5 ns, que son los de 1:1); la columna «Resolución de PDC» de la tabla de 14.3.3 para 1:4, 1:16 y 1:64 es, por tanto, la que da la fórmula, no un dato del datasheet."
+        }
+      ]
+    },
+    {
+      "titulo": "14.4 Funcionamiento",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Para poner en marcha el módulo basta con definir el <strong>período</strong> de la señal (PTPER), los <strong>pines activos</strong> (PWMCON1), el <strong>ciclo de trabajo</strong> de cada módulo (PDC1-PDC3) y <strong>arrancar</strong> la base de tiempos (PTCON, que conviene escribir la última). Por ejemplo, para una señal a 50 Hz con los 6 pines activos y el módulo 2 al 51 %:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Funcionamiento del módulo PWM:</p>",
+          "codigo": "PTPER = 12500;      // período para 50 Hz con 1:64 (12500 · 1,6 µs = 20 ms)\nPWMCON1 = 0x777;    // tres pares independientes, los 6 pines controlados por el PWM\nPDC1 = 0;           // módulo 1: 0 %\nPDC2 = 12750;       // módulo 2: 51 %\nPDC3 = 0;           // módulo 3: 0 %\nPTCON = 0x800C;     // PTEN = 1, pre-escalado 1:64: arranca el módulo"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Con <code>PTCON = 0x800C</code> el pre-escalado es 1:64 y la base de tiempos avanza cada 64 · 25 ns = 1,6 µs a 40 MHz. Con PTPER = 12 500 el período es 12 500 · 1,6 µs = 20 ms (<strong>50 Hz</strong>), y el ciclo de trabajo del módulo 2 es PDC2/(2 · PTPER) = 12 750/25 000 = <strong>51 %</strong>.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>A continuación se describe un posible <strong>driver</strong> del módulo PWM (tema 10). La función de inicialización requiere dos parámetros: la <strong>frecuencia</strong> de la señal y los <strong>pines activos</strong> del micro por donde van a salir las señales PWM. Como se puede observar, hay bastantes cálculos dentro de las funciones para pasar de los parámetros de la función a los valores de los registros. Si se quiere hacer más eficiente, se pueden omitir los cálculos pidiendo directamente los valores de los registros, pero la función sería menos intuitiva.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Driver del módulo PWM:</p>",
+          "codigo": "#define Fcy 40000000\n\nint init_pwm(int frec, int pines)\n{\n    if (frec < 20)\n        return 1;\n    int preesc = Fcy/frec/32767;\n    if (preesc < 1)\n        preesc = 0;\n    else if (preesc < 4)\n        preesc = 1;\n    else if (preesc < 16)\n        preesc = 2;\n    else\n        preesc = 3;\n    PTPER = Fcy/frec/(1 << (preesc*2));\n    int maskL = ((pines & 0x10) >> 2) | ((pines & 0x4) >> 1) | (pines & 1);\n    int maskH = ((pines & 0x20) >> 3) | ((pines & 0x8) >> 2) | ((pines & 2) >> 1);\n    PWMCON1 = 0x700 | (maskH << 4) | maskL;\n    PTCON = 0x8000 | (preesc << 2);\n    return 0;\n}\n\nvoid set_dc(int pin, int dc)\n{\n    volatile unsigned int *pdc = &PDC1;\n    *(pdc+pin) = dc*(2*PTPER/100);\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Cómo funciona <code>init_pwm(frec, pines)</code>:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Pre-escalado.</strong> <code>Fcy/frec/32767</code> dice cuántas veces «no cabe» el período en 15 bits sin pre-escalado. Si es 0 basta 1:1 (<code>preesc = 0</code>); si es menor que 4, 1:4; si es menor que 16, 1:16; si no, 1:64. Es el pre-escalado mínimo con el que PTPER ≤ 32 767, salvo en los casos límite en que Fcy/frec es un múltiplo exacto de 32 767 (por ejemplo, Fcy/frec = 32 767 cabría con 1:1, pero el driver elige 1:4).",
+            "<strong>Período.</strong> <code>1 &lt;&lt; (preesc*2)</code> vale 1, 4, 16 o 64 (4<sup>preesc</sup>), así que <code>PTPER = Fcy/frec/presc</code>, la ecuación E.7.",
+            "<strong>Pines.</strong> El parámetro <code>pines</code> tiene un bit por pin, en el orden de 14.2 (tabla siguiente). <code>maskL</code> reúne los bits pares (0, 2, 4: pines L) y <code>maskH</code> los impares (1, 3, 5: pines H), y se colocan en los bits 2-0 y 6-4 de PWMCON1. El <code>0x700</code> pone los tres pares en modo independiente. Con <code>pines = 0x3F</code> sale <code>PWMCON1 = 0x777</code>.",
+            "<strong>Arranque.</strong> <code>PTCON = 0x8000 | (preesc &lt;&lt; 2)</code>: PTEN = 1 y PTCKPS = preesc (<code>0x800C</code> con 1:64).",
+            "<strong>Frecuencia mínima.</strong> Con F<sub>CY</sub> = 40 MHz, la frecuencia más baja que cabe en 15 bits con el pre-escalado máximo (1:64) es F<sub>CY</sub>/(64 · 32 767) ≈ 19,07 Hz; por eso <code>init_pwm</code> rechaza <code>frec &lt; 20</code>."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<table class=\"tabla-datos\"><thead><tr><th>Bit de <code>pines</code></th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th></tr></thead><tbody><tr><td>Señal</td><td>PWM1H3</td><td>PWM1L3</td><td>PWM1H2</td><td>PWM1L2</td><td>PWM1H1</td><td>PWM1L1</td></tr><tr><td>Pin (puerto)</td><td>21 (RB10)</td><td>22 (RB11)</td><td>23 (RB12)</td><td>24 (RB13)</td><td>25 (RB14)</td><td>26 (RB15)</td></tr><tr><td>Bit de PWMCON1</td><td>PEN3H (6)</td><td>PEN3L (2)</td><td>PEN2H (5)</td><td>PEN2L (1)</td><td>PEN1H (4)</td><td>PEN1L (0)</td></tr></tbody></table><p><code>set_dc(pin, dc)</code> recibe el número de módulo (0, 1 o 2) y el ciclo de trabajo en <strong>tanto por ciento entero</strong>. El puntero <code>pdc</code> apunta a <code class=\"reg\">PDC1</code> (P1DC1 en la tabla 4-8 del datasheet); como es un puntero a <code>unsigned int</code> (2 bytes), <code>pdc+1</code> es PDC2 (0x01D8) y <code>pdc+2</code>, PDC3 (0x01DA). El valor escrito es <code>dc · (2 · PTPER/100)</code>, la fórmula de 14.3.4. Por ejemplo, con PTPER = 12 500, <code>init_pwm(50, 0x3F)</code> y <code>set_dc(1, 51)</code> dan PTCON = 0x800C, PWMCON1 = 0x0777 y PDC2 = 51 · (2 · 12 500/100) = 51 · 250 = <strong>12 750</strong> (51 %).</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Limitación del driver (servos).</strong> <code>set_dc</code> toma el ciclo de trabajo en <strong>tanto por ciento entero</strong>. A 50 Hz (20 ms), 1 % son 0,2 ms: para un servo, cuyo pulso va de 0,5 ms a 2,5 ms para 180°, eso son saltos de 18°, demasiado gruesos. Además <code>2*PTPER/100</code> trunca (con PTPER = 9 375 da 187 en lugar de 187,5). Para un servo es mejor escribir PDC directamente: a 50 Hz con 1:64 cada unidad de PDC vale 0,8 µs, así que 1,5 ms → <code>PDC1 = 1875</code>, 0,5 ms → 625 y 2,5 ms → 3 125."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Y así se usa el driver, para el dsPIC33FJ32MC202 y la PicTrainer:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Manejo del driver del módulo PWM:</p>",
+          "codigo": "#include \"config.h\"\n#include \"pwm.h\"\n\nint main(void)\n{\n    InicializarReloj();\n    AD1PCFGL = 0xFFFF;\n    TRISB = 0x03FF;         // RB10-RB15 (PWM1H3 ... PWM1L1) como salidas\n    init_pwm(50, 0x3F);     // 50 Hz, los 6 pines -> 1:64, PTPER = 12500, PTCON = 0x800C\n    set_dc(0, 0);           // módulo 1 (RB14/RB15, D7/D6): 0 %\n    set_dc(1, 51);          // módulo 2 (RB12/RB13, D9/D8): 51 % -> PDC2 = 12750\n    set_dc(2, 0);           // módulo 3 (RB10/RB11): 0 %\n    while (1) {\n    }\n    return 0;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Prueba el driver en el simulador: cambia la frecuencia, la máscara de pines y el ciclo de trabajo de cada módulo y observa el pre-escalado elegido, PTPER, PDC, los valores de PTCON y PWMCON1 en hexadecimal y la forma de onda. Arranca con <code>init_pwm(50, 0x3F)</code> y 0 %, 51 % y 0 % a 40 MHz:</p><div class=\"mpi-mount\" data-componente=\"sim-pwm-dspic\" data-config='{\"fcy\":40000000,\"frec\":50,\"pines\":\"0x3F\",\"dc\":[0,51,0]}'></div>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>En la PicTrainer.</strong> Con el código anterior, el módulo 2 sale por RB12 (PWM1H2, LED D9) y RB13 (PWM1L2, LED D8), y el módulo 1 por RB14 (PWM1H1, D7) y RB15 (PWM1L1, D6). Como los LEDs son <strong>activos a nivel bajo</strong>, D9 está encendido mientras PWM1H2 está en bajo: el 49 % del tiempo con el 51 %. Con un 0 % la salida PWM1H1 está siempre a 0 y <strong>D7 luce al máximo</strong>; con un 100 % estaría siempre apagado. A 50 Hz el parpadeo apenas se nota; por debajo de unos 25 Hz se vería claramente."
+        }
+      ]
+    },
+    {
+      "titulo": "14.5 Ejercicios",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<h3>14.5.1 Ejercicio 1</h3><p>Hacer un programa que genere una señal PWM con <strong>ciclo de trabajo del 30 %</strong>, que cambie del módulo 1 al 2, de ahí al 3 y vuelva a comenzar en el 1. Cada cambio de canal se producirá al detectar que se ha activado un <strong>interruptor en el pin 14</strong> (poniéndolo a 1).</p><p><strong>Planteamiento.</strong> La frecuencia no la fija el enunciado; se elige 1 kHz, que con 40 MHz da pre-escalado 1:4 y PTPER = 40 000 000/1 000/4 = 10 000 (PTCON = 0x8004), y set_dc(m, 30) escribe 30 · (2 · 10 000/100) = 6 000. Se habilitan los seis pines de PWM1 (<code>0x3F</code>) y en cada momento solo uno de los tres módulos tiene el 30 %; los otros dos, el 0 %. Como en la PicTrainer el pin 14 no es un interruptor (nota siguiente), la propuesta usa el pulsador <strong>SW2</strong> (RB2, con pull-up: <strong>pulsado = 0</strong>), de modo que «activado» es leer un 0. El cambio se hace en el <strong>flanco</strong> de activación (no estaba pulsado y ahora sí), no mientras sigue pulsado: si no, el programa cambiaría de módulo miles de veces mientras se mantenga el dedo en el pulsador. El programa solo <em>lee</em> PORTB, así que no hay riesgo de lectura-modificación-escritura.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Propuesta de solución del ejercicio 1, con el driver de 14.4 y el pulsador SW2 de la PicTrainer en lugar del interruptor del pin 14:</p>",
+          "codigo": "#include \"config.h\"\n#include <p33FJ32MC202.h>\n#include \"pwm.h\"                // driver de 14.4\n\n#define SW2 0x0004              // pulsador SW2 en RB2 (pull-up: pulsado = 0)\n\nint main(void)\n{\n    int modulo = 0;             // 0 -> módulo 1, 1 -> módulo 2, 2 -> módulo 3\n    int anterior = 0;           // 1 si SW2 estaba pulsado en la vuelta anterior\n    int actual;\n\n    InicializarReloj();\n    AD1PCFGL = 0xFFFF;          // todos los pines digitales (RB2 es también AN4)\n    TRISB = 0x03FF;             // RB10-RB15 (PWM1) salidas; RB2 entrada\n    init_pwm(1000, 0x3F);       // 1 kHz, los 6 pines -> 1:4, PTPER = 10000\n    set_dc(0, 30);              // empieza en el módulo 1 con el 30 % (PDC1 = 6000)\n    set_dc(1, 0);\n    set_dc(2, 0);\n    while (1) {\n        actual = (PORTB & SW2) == 0;            // 1 = pulsado (activo a nivel bajo)\n        if (actual == 1 && anterior == 0) {     // se acaba de pulsar\n            set_dc(modulo, 0);                  // quita el PWM del módulo actual\n            modulo++;\n            if (modulo == 3)\n                modulo = 0;                     // del 3 se vuelve al 1\n            set_dc(modulo, 30);                 // 30 % en el siguiente módulo\n        }\n        anterior = actual;\n    }\n    return 0;\n}"
+        },
+        {
+          "tipo": "nota",
+          "html": "El pin 14 del enunciado es <strong>RB5</strong> (datasheet, diagrama de pines), que en la PicTrainer es la línea U1RX de la UART (selector K2). Si no se usa la UART, ese pin queda libre y se puede llevar por el conector de expansión a un interruptor externo, con <code>#define SW2 0x0020</code> y <code>actual = (PORTB &amp; SW2) != 0;</code> (activo a 1, como pide el enunciado), en vez del pulsador SW2 de la propuesta. Un pulsador mecánico rebota: si se observan saltos de varios módulos por pulsación, hay que añadir un retardo de unos milisegundos tras detectar el flanco. <strong>En la PicTrainer</strong>, con <code>pines = 0x3F</code> los módulos al 0 % tienen sus salidas siempre a 0 y sus LEDs (activos a nivel bajo) lucen al máximo, mientras que el módulo al 30 % deja su par de LEDs encendido el 70 % del tiempo: la diferencia de brillo es pequeña y se aprecia mejor con un osciloscopio en los pines 21-26."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>14.5.2 Ejercicio 2</h3><p>Generar una señal PWM que cambie <strong>cada 2 segundos</strong> de ciclo de trabajo en la secuencia <strong>20 %, 40 %, 60 %, 80 %, 60 %, 40 %</strong> y de nuevo desde el 20 %.</p><p><strong>Planteamiento.</strong> La secuencia se guarda en un vector de 6 elementos y se recorre circularmente (la secuencia completa dura 6 · 2 s = 12 s). Para medir los 2 s se usa el timer 1 por polling (tema 4): 2 s no caben en un solo final de cuenta (el máximo es 0,42 s con 1:256), así que se programa 0,2 s (1:256, PR1 = 31 250) y se cuentan <strong>10 finales de cuenta</strong>. El PWM va a 1 kHz (1:4, PTPER = 10 000) y solo por PWM1H1 (<code>pines = 0x02</code>, RB14), de modo que set_dc escribe 4 000, 8 000, 12 000 y 16 000 en PDC1.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Propuesta de solución del ejercicio 2, con el driver de 14.4 y el timer 1 por polling:</p>",
+          "codigo": "#include \"config.h\"\n#include <p33FJ32MC202.h>\n#include \"pwm.h\"                // driver de 14.4\n\n#define N_PASOS 6\n\nint main(void)\n{\n    int secuencia[N_PASOS] = {20, 40, 60, 80, 60, 40};    // ciclos de trabajo en %\n    int paso = 0;\n    int ticks = 0;              // finales de cuenta del timer 1 (0,2 s cada uno)\n\n    InicializarReloj();\n    AD1PCFGL = 0xFFFF;\n    PORTB = 0xFFFF;             // D6, D8 y D9 (RB15, RB13, RB12, E/S normales) apagados\n    TRISB = 0x0FFF;             // RB12-RB15 salidas\n    init_pwm(1000, 0x02);       // 1 kHz, solo PWM1H1 (RB14, LED D7) -> PWMCON1 = 0x0710\n    set_dc(0, secuencia[0]);    // 20 %: PDC1 = 4000\n\n    TMR1 = 0;\n    PR1 = 31250;                // 31 250 · 6,4 µs = 0,2 s\n    IFS0bits.T1IF = 0;\n    T1CON = 0x8030;             // timer 1 en marcha, pre-escalado 1:256\n\n    while (1) {\n        if (IFS0bits.T1IF == 1) {\n            IFS0bits.T1IF = 0;\n            ticks++;\n            if (ticks == 10) {              // 10 · 0,2 s = 2 s\n                ticks = 0;\n                paso++;\n                if (paso == N_PASOS)\n                    paso = 0;               // tras el 40 % se vuelve al 20 %\n                set_dc(0, secuencia[paso]);\n            }\n        }\n    }\n    return 0;\n}"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>En la PicTrainer.</strong> RB14 es el LED D7, activo a nivel bajo: con la secuencia 20, 40, 60, 80, 60, 40 % en alto, D7 está encendido el 80, 60, 40, 20, 40 y 60 % del tiempo, así que se le ve <strong>bajar y subir de brillo</strong> cada 2 s (a 1 kHz no se aprecia el parpadeo). Con un osciloscopio en el pin 25 se ve el ciclo de trabajo real."
+        }
+      ]
+    }
+  ],
+  "registros": {
+    "PTCON": {
+      "nombre": "PTCON",
+      "titulo": "PTCON — control de la base de tiempos del PWM (P1TCON en el datasheet)",
+      "ancho": 16,
+      "nota": "PTEN y PTCKPS, y el resto de campos según el datasheet, registro 15-1 (P1TCON, dirección 0x01C0, reset 0x0000). Los bits 14 y 12-8 no están implementados. La base de tiempos cuenta con FCY = 40 MHz dividido por el pre-escalado. Valor de los ejemplos: 0x800C (en marcha, 1:64, free-running).",
+      "campos": [
+        {
+          "bit": 15,
+          "nombre": "PTEN",
+          "desc": "Enciende (1) o apaga (0) la base de tiempos del PWM: el módulo genera señales solo con PTEN = 1.",
+          "valores": {
+            "0": "Base de tiempos parada",
+            "1": "Base de tiempos en marcha"
+          }
+        },
+        {
+          "bit": 13,
+          "nombre": "PTSIDL",
+          "desc": "Parar la base de tiempos en modo Idle de la CPU. No se usa en el curso.",
+          "valores": {
+            "0": "Sigue en Idle",
+            "1": "Se para en Idle"
+          }
+        },
+        {
+          "bits": [
+            7,
+            4
+          ],
+          "nombre": "PTOPS",
+          "desc": "Post-escalado de la interrupción del PWM (cada cuántos períodos salta). No afecta a la señal. No se usa en el curso.",
+          "valores": {
+            "0": "1:1",
+            "1": "1:2",
+            "2": "1:3",
+            "3": "1:4",
+            "4": "1:5",
+            "5": "1:6",
+            "6": "1:7",
+            "7": "1:8",
+            "8": "1:9",
+            "9": "1:10",
+            "10": "1:11",
+            "11": "1:12",
+            "12": "1:13",
+            "13": "1:14",
+            "14": "1:15",
+            "15": "1:16"
+          }
+        },
+        {
+          "bits": [
+            3,
+            2
+          ],
+          "nombre": "PTCKPS",
+          "desc": "Pre-escalado del reloj de la base de tiempos (FCY / presc).",
+          "valores": {
+            "0": "1:1 (25 ns)",
+            "1": "1:4 (100 ns)",
+            "2": "1:16 (400 ns)",
+            "3": "1:64 (1,6 µs)"
+          }
+        },
+        {
+          "bits": [
+            1,
+            0
+          ],
+          "nombre": "PTMOD",
+          "desc": "Modo de la base de tiempos. En el curso siempre 00 (free-running: cuenta de 0 a PTPER y vuelve a 0). No confundir con los PMOD de PWMCON1 (independencia de los pares de pines).",
+          "valores": {
+            "0": "Free-running",
+            "1": "Pulso único",
+            "2": "Cuenta arriba/abajo (centrado)",
+            "3": "Arriba/abajo con doble actualización"
+          }
+        }
+      ]
+    },
+    "PWMCON1": {
+      "nombre": "PWMCON1",
+      "titulo": "PWMCON1 — modo y habilitación de los pines del PWM (PWM1CON1 en el datasheet)",
+      "ancho": 16,
+      "nota": "PMOD3-PMOD1 (bits 10-8), PEN_H (bits 6-4) y PEN_L (bits 2-0). Datasheet, registro 15-5 (PWM1CON1, dirección 0x01C8). Los bits 15-11, 7 y 3 no están implementados. Valor de reset 0x00FF (todos los PENxx a 1), que depende del bit de configuración PWMPIN. Valor del ejemplo: 0x777 (tres pares independientes, seis pines).",
+      "campos": [
+        {
+          "bit": 10,
+          "nombre": "PMOD3",
+          "desc": "Modo del par 3 (PWM1H3/PWM1L3, RB10/RB11).",
+          "valores": {
+            "0": "Complementario (L = inversa de H)",
+            "1": "Independiente"
+          }
+        },
+        {
+          "bit": 9,
+          "nombre": "PMOD2",
+          "desc": "Modo del par 2 (PWM1H2/PWM1L2, RB12/RB13).",
+          "valores": {
+            "0": "Complementario (L = inversa de H)",
+            "1": "Independiente"
+          }
+        },
+        {
+          "bit": 8,
+          "nombre": "PMOD1",
+          "desc": "Modo del par 1 (PWM1H1/PWM1L1, RB14/RB15).",
+          "valores": {
+            "0": "Complementario (L = inversa de H)",
+            "1": "Independiente"
+          }
+        },
+        {
+          "bit": 6,
+          "nombre": "PEN3H",
+          "desc": "Pin PWM1H3 = RB10 (pin 21) controlado por el PWM.",
+          "valores": {
+            "0": "RB10 es E/S normal",
+            "1": "RB10 es salida PWM1H3"
+          }
+        },
+        {
+          "bit": 5,
+          "nombre": "PEN2H",
+          "desc": "Pin PWM1H2 = RB12 (pin 23, LED D9) controlado por el PWM.",
+          "valores": {
+            "0": "RB12 es E/S normal",
+            "1": "RB12 es salida PWM1H2"
+          }
+        },
+        {
+          "bit": 4,
+          "nombre": "PEN1H",
+          "desc": "Pin PWM1H1 = RB14 (pin 25, LED D7) controlado por el PWM.",
+          "valores": {
+            "0": "RB14 es E/S normal",
+            "1": "RB14 es salida PWM1H1"
+          }
+        },
+        {
+          "bit": 2,
+          "nombre": "PEN3L",
+          "desc": "Pin PWM1L3 = RB11 (pin 22) controlado por el PWM.",
+          "valores": {
+            "0": "RB11 es E/S normal",
+            "1": "RB11 es salida PWM1L3"
+          }
+        },
+        {
+          "bit": 1,
+          "nombre": "PEN2L",
+          "desc": "Pin PWM1L2 = RB13 (pin 24, LED D8) controlado por el PWM.",
+          "valores": {
+            "0": "RB13 es E/S normal",
+            "1": "RB13 es salida PWM1L2"
+          }
+        },
+        {
+          "bit": 0,
+          "nombre": "PEN1L",
+          "desc": "Pin PWM1L1 = RB15 (pin 26, LED D6) controlado por el PWM.",
+          "valores": {
+            "0": "RB15 es E/S normal",
+            "1": "RB15 es salida PWM1L1"
+          }
+        }
+      ]
+    }
+  },
+  "ejercicios": {
+    "pwm-1": {
+      "titulo": "Período, ciclo de trabajo y límites (PTPER y PDC a 40 MHz)",
+      "enunciado": "<p>Se usa el módulo PWM1 del dsPIC33FJ32MC202 con F<sub>CY</sub> = 40 MHz (T<sub>CY</sub> = 25 ns) y la fórmula aproximada: PTPER = F<sub>CY</sub>/(F<sub>PWM</sub> · presc) y PDC = 2 · PTPER · DC/T.</p>",
+      "contexto": "<ul><li>PTCKPS: 0 → 1:1; 1 → 1:4; 2 → 1:16; 3 → 1:64.</li><li>PTPER tiene 15 bits útiles (máximo 32 767); PDC tiene 16 bits.</li><li>Se elige el pre-escalado mínimo con el que PTPER cabe.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "Se quiere un PWM de 1 kHz. ¿Qué pre-escalado y qué PTPER hay que programar?",
+          "opciones": [
+            "1:1 y PTPER = 40 000",
+            "1:4 y PTPER = 10 000",
+            "1:16 y PTPER = 2 500",
+            "1:64 y PTPER = 625"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>F<sub>CY</sub>/F<sub>PWM</sub> = 40 · 10<sup>6</sup>/1 000 = 40 000. Con 1:1 sale 40 000, que <strong>no cabe</strong> en 15 bits (&gt; 32 767). El mínimo pre-escalado válido es <strong>1:4 → PTPER = 10 000</strong> (PTCON = 0x8004). 1:16 y 1:64 también caben, pero dan peor resolución (2 500 y 625 pasos). El driver llega a lo mismo: 40 000 000/1 000/32 767 = 1 → <code>preesc = 1</code>. Con la fórmula exacta del período (PTPER + 1 cuentas) saldría 9 999.</p>"
+        },
+        {
+          "texto": "Con PTPER = 10 000, ¿qué valor hay que escribir en PDC1 para un ciclo de trabajo del 30 %?",
+          "opciones": [
+            "3 000",
+            "6 000",
+            "10 000",
+            "20 000"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>PDC = 2 · PTPER · 0,30 = 2 · 10 000 · 0,30 = <strong>6 000</strong>. El factor 2 se debe a que PDC se compara con media cuenta de resolución: PDC = PTPER (10 000) sería el 50 % y 2 · PTPER (20 000) el 100 %. 3 000 sería el 15 %. Es lo que escribe <code>set_dc(0, 30)</code>: 30 · (2 · 10 000/100) = 30 · 200 = 6 000.</p>"
+        },
+        {
+          "texto": "¿Cuál es la frecuencia PWM más baja que se puede generar con F<sub>CY</sub> = 40 MHz?",
+          "opciones": [
+            "14,3 Hz",
+            "15 Hz",
+            "19,07 Hz",
+            "1 220,7 Hz"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>La frecuencia mínima se obtiene con el pre-escalado máximo (1:64) y el PTPER máximo: 40 · 10<sup>6</sup>/(64 · 32 768) ≈ <strong>19,07 Hz</strong> (con 32 767 sale lo mismo). 14,3 Hz sería con F<sub>CY</sub> = 30 MHz y 1 220,7 Hz es el mínimo con 1:1. Por eso <code>init_pwm</code> rechaza <code>frec &lt; 20</code>: con 15 Hz, PTPER saldría 41 666, que no cabe en 15 bits (el bit 15 se pierde y quedarían 8 898, unos 70 Hz).</p>"
+        },
+        {
+          "texto": "Un servo necesita un pulso de 1,5 ms cada 20 ms (50 Hz). Con 1:64 y PTPER = 12 500, ¿cuánto debe valer PDC?",
+          "opciones": [
+            "937",
+            "1 875",
+            "3 750",
+            "12 750"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>A 50 Hz el período es 20 ms y el ciclo de trabajo es 1,5/20 = 7,5 %: PDC = 2 · 12 500 · 0,075 = <strong>1 875</strong>. Equivalente: cada unidad de PDC vale presc · T<sub>CY</sub>/2 = 64 · 25 ns/2 = 0,8 µs, y 1,5 ms/0,8 µs = 1 875. 937 sería contar en pasos de 1,6 µs (pasos de PTPER, sin el factor 2) y 12 750 es el 51 %. Con <code>set_dc</code> no se puede: solo admite % enteros (7 % = 1,4 ms u 8 % = 1,6 ms); 1 % son 0,2 ms, 18° de servo.</p>"
+        }
+      ]
+    },
+    "pwm-2": {
+      "titulo": "Registros PTCON y PWMCON1 y pines del PWM",
+      "enunciado": "<p>Se analiza la configuración de los registros del módulo PWM del dsPIC33FJ32MC202 y el driver <code>init_pwm(frec, pines)</code> de 14.4.</p>",
+      "contexto": "<ul><li>PTCON: PTEN = bit 15; PTOPS = bits 7-4; PTCKPS = bits 3-2; PTMOD = bits 1-0.</li><li>PWMCON1: PMOD3-1 = bits 10-8; PEN3H-PEN1H = bits 6-4; PEN3L-PEN1L = bits 2-0.</li><li>Bits de <code>pines</code>: 0 = PWM1L1, 1 = PWM1H1, 2 = PWM1L2, 3 = PWM1H2, 4 = PWM1L3, 5 = PWM1H3. <code>PWMCON1 = 0x700 | (maskH &lt;&lt; 4) | maskL</code>.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Qué configura <code>PTCON = 0x800C;</code>?",
+          "opciones": [
+            "Base de tiempos parada, pre-escalado 1:64.",
+            "Base de tiempos en marcha, pre-escalado 1:64, modo free-running.",
+            "Base de tiempos en marcha, pre-escalado 1:16, modo arriba/abajo.",
+            "Base de tiempos en marcha, pre-escalado 1:256."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>0x800C = <code>1000 0000 0000 1100</code>: bit 15 (PTEN) = 1 → en marcha; bits 3-2 (PTCKPS) = <code>11</code> → <strong>1:64</strong>; bits 1-0 (PTMOD) = <code>00</code> → <strong>free-running</strong>; PTOPS y PTSIDL a 0. El PWM no tiene pre-escalado 1:256 (sus valores son 1:1, 1:4, 1:16 y 1:64).</p>"
+        },
+        {
+          "texto": "¿Qué valor escribe <code>init_pwm(50, 0x0F)</code> en PWMCON1 y qué pines quedan controlados por el PWM?",
+          "opciones": [
+            "0x070F: RB12-RB15",
+            "0x0733: RB12-RB15 (LEDs D9-D6)",
+            "0x0777: RB10-RB15",
+            "0x07F0: RB8-RB11"
+          ],
+          "correcta": 1,
+          "explicacion": "<p><code>pines = 0x0F</code> activa los bits 0-3: PWM1L1, PWM1H1, PWM1L2 y PWM1H2. maskL junta los bits 0, 2, 4 → <code>011</code> = 3 (PEN1L, PEN2L); maskH junta los bits 1, 3, 5 → <code>011</code> = 3 (PEN1H, PEN2H). PWMCON1 = 0x700 | (3 &lt;&lt; 4) | 3 = <strong>0x0733</strong>. Esos pines son RB15, RB14, RB13 y RB12, es decir, los LEDs D6, D7, D8 y D9 de la PicTrainer. 0x0777 sería con <code>0x3F</code> (los seis pines, RB10-RB15).</p>"
+        },
+        {
+          "texto": "¿Por qué pin sale la señal PWM1H1 en el dsPIC33FJ32MC202?",
+          "opciones": [
+            "RE1 (pin 25)",
+            "RB14 (pin 25)",
+            "RB15 (pin 26)",
+            "RB12 (pin 23)"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Según el diagrama de pines del datasheet, PWM1H1 está en <strong>RB14 (pin 25)</strong>, que en la PicTrainer es el LED D7. El dsPIC33FJ32MC202 no tiene puerto E (ese nombre, RE1, viene de un dsPIC30F), aunque el número de pin, 25, sí coincide. RB15 (pin 26) es PWM1L1 y RB12 (pin 23) es PWM1H2.</p>"
+        },
+        {
+          "texto": "Con PTPER = 12 500, ¿qué ciclo de trabajo tiene el módulo 2 si PDC2 = 11 000?",
+          "opciones": [
+            "44 %",
+            "88 %",
+            "22 %",
+            "56 %"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>DC = PDC2/(2 · PTPER) = 11 000/25 000 = <strong>44 %</strong>. 88 % sería olvidar el factor 2 (11 000/12 500) y 22 % es la mitad de la correcta.</p>"
+        }
+      ]
+    },
+    "pwm-3": {
+      "titulo": "Valor medio, LEDs de la PicTrainer y ejercicio 14.5.2",
+      "enunciado": "<p>Se genera un PWM de 1 kHz entre 0 V y 3,3 V con el driver de 14.4 a 40 MHz. En la PicTrainer, RB12-RB15 son los LEDs D9-D6, <strong>activos a nivel bajo</strong> (0 = encendido); D9 = RB12 = PWM1H2 (módulo 2) y D7 = RB14 = PWM1H1 (módulo 1).</p>",
+      "contexto": "<ul><li>V<sub>med</sub> = (DC/T) · V<sub>DD</sub>.</li><li><code>set_dc(m, dc)</code>: módulo m = 0, 1, 2; dc en % entero.</li><li>Timer 1: t = PR1 · presc/F<sub>CY</sub>; máximo 0,42 s con 1:256.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Qué valor medio tiene una señal PWM de 0-3,3 V con un ciclo de trabajo del 25 %?",
+          "opciones": [
+            "0,825 V",
+            "1,65 V",
+            "2,475 V",
+            "3,3 V"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>V<sub>med</sub> = 0,25 · 3,3 V = <strong>0,825 V</strong>. 1,65 V sería el 50 % y 2,475 V el 75 % (el valor medio del complemento, que es lo que «ve» un LED activo a nivel bajo). El valor medio es independiente de la frecuencia: solo depende de DC/T.</p>"
+        },
+        {
+          "texto": "Se ejecuta <code>set_dc(1, 80)</code> con PWM1H2 habilitado. ¿Cómo se ve el LED D9?",
+          "opciones": [
+            "Luce con mucho brillo: encendido el 80 % del tiempo.",
+            "Luce débilmente: encendido solo el 20 % del tiempo.",
+            "Siempre apagado: el PWM no puede manejar un LED.",
+            "Parpadea visiblemente una vez por segundo."
+          ],
+          "correcta": 1,
+          "explicacion": "<p><code>set_dc(1, 80)</code> pone el módulo 2 (PDC2) al 80 %: PWM1H2 = RB12 está en alto el 80 % del período. Como D9 es <strong>activo a nivel bajo</strong>, solo luce mientras RB12 está a 0, es decir, el <strong>20 %</strong> del tiempo, y a 1 kHz el ojo no ve el parpadeo sino un brillo bajo. En los LEDs de la PicTrainer, a más ciclo de trabajo, menos luz.</p>"
+        },
+        {
+          "texto": "Con el código de 14.4 (<code>set_dc(0, 0)</code>), ¿qué hace el LED D7 (RB14 = PWM1H1)?",
+          "opciones": [
+            "Está siempre apagado.",
+            "Está siempre encendido al máximo.",
+            "Luce el 51 % del tiempo.",
+            "Luce el 49 % del tiempo."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Con PDC1 = 0 el ciclo de trabajo del módulo 1 es 0 %: la salida PWM1H1 está <strong>siempre a 0</strong>, y como D7 es activo a nivel bajo, está <strong>siempre encendido</strong> al máximo. El 49 % (100 − 51) sería D9, en el módulo 2.</p>"
+        },
+        {
+          "texto": "En el ejercicio 14.5.2 hay que cambiar el ciclo de trabajo cada 2 s usando el timer 1 a 40 MHz. ¿Qué configuración sirve?",
+          "opciones": [
+            "PR1 = 312 500 con 1:256 y un solo final de cuenta.",
+            "PR1 = 31 250 con 1:256 y contar 10 finales de cuenta.",
+            "PR1 = 31 250 con 1:64 y contar 10 finales de cuenta.",
+            "PR1 = 50 000 con 1:8 y contar 10 finales de cuenta."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>2 s no caben en un solo período del timer (máximo 65 535 · 6,4 µs = 0,42 s): 312 500 no cabe en 16 bits. Con 1:256, PR1 = 31 250 da 31 250 · 6,4 µs = <strong>0,2 s</strong>, y 10 finales de cuenta son <strong>2 s</strong>. Con 1:64 serían 31 250 · 1,6 µs = 50 ms (0,5 s en 10 cuentas) y con 1:8, 50 000 · 0,2 µs = 10 ms (0,1 s).</p>"
+        }
+      ]
+    }
+  },
+  "ejerciciosEnTema": [
+    "pwm-1",
+    "pwm-2",
+    "pwm-3"
+  ],
+  "tituloEjercicios": "Ejercicios y cuestiones",
+  "resumen": [
+    "Una señal PWM queda definida por su <strong>período T</strong> y su <strong>ciclo de trabajo DC</strong> (tiempo en alto); su valor medio es V<sub>med</sub> = (DC/T) · V<sub>DD</sub>, lo que permite controlar de forma continua motores, servos o el brillo de un LED con una salida digital.",
+    "En el dsPIC33FJ32MC202 el PWM1 tiene tres generadores (PDC1-PDC3) con una sola base de tiempos (mismo período) y seis pines: PWM1L1 = RB15 (26), PWM1H1 = RB14 (25), PWM1L2 = RB13 (24), PWM1H2 = RB12 (23), PWM1L3 = RB11 (22), PWM1H3 = RB10 (21); PWM2 sale por RB9/RB8 (18/17).",
+    "<code class=\"reg\">PTCON</code> (P1TCON): PTEN en el bit 15 y PTCKPS en los bits 3-2 (1:1, 1:4, 1:16, 1:64). <code>0x800C</code> = en marcha, 1:64, free-running.",
+    "<code class=\"reg\">PWMCON1</code> (PWM1CON1): bits 10-8 modo independiente/complementario de cada par, bits 6-4 PEN_H y 2-0 PEN_L (pin controlado por el PWM o E/S normal). <code>0x777</code> = tres pares independientes, seis pines.",
+    "<strong>PTPER = F<sub>CY</sub>/(F<sub>PWM</sub> · presc)</strong>, con 15 bits (≤ 32 767): se elige el pre-escalado mínimo que cabe. A 40 MHz, 50 Hz → 1:64 y PTPER = 12 500; 1 kHz → 1:4 y 10 000; la frecuencia mínima es ≈ 19,07 Hz, así que <code>init_pwm</code> rechaza frecuencias por debajo de 20 Hz.",
+    "<strong>PDC = 2 · PTPER · DC/T</strong>: PDC = PTPER es el 50 % y 2 · PTPER el 100 % (una unidad de PDC = presc · T<sub>CY</sub>/2). Un pulso de servo de 1,5 ms a 50 Hz es PDC = 1 875.",
+    "El driver <code>init_pwm(frec, pines)</code> calcula pre-escalado, PTPER, PWMCON1 y PTCON (escrito el último para arrancar), y <code>set_dc(m, dc)</code> escribe PDC1-PDC3 (dirección 0x01D6) con el ciclo de trabajo en % entero, demasiado grueso para un servo (1 % = 0,2 ms a 50 Hz).",
+    "En la PicTrainer, RB12-RB15 son a la vez salidas PWM y los LEDs D9-D6, <strong>activos a nivel bajo</strong>: a más ciclo de trabajo, menos luz (0 % = encendido al máximo)."
+  ]
+}

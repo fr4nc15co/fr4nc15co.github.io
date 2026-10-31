@@ -1,0 +1,105 @@
+/* ---------- Componente: cpp-shared-ptr (shared_ptr / weak_ptr y use_count paso a paso) ---------- */
+.mpi-cpp-shared-ptr { container-type: inline-size; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-cpp-shared-ptr .mpi-sim-cab { font-family: var(--mono); font-weight: 700; color: var(--acento); font-size: 1.05rem; margin-bottom: .7rem; }
+.csp-sub { font-family: var(--sans); font-weight: 400; color: var(--txt-2); font-size: .82rem; margin-left: .4rem; }
+.mpi-cpp-shared-ptr button { font-family: inherit; background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .4rem .8rem; cursor: pointer; font-size: .86rem; }
+.mpi-cpp-shared-ptr button:hover:not(:disabled) { border-color: var(--acento); }
+.mpi-cpp-shared-ptr button:disabled { opacity: .4; cursor: default; }
+.mpi-cpp-shared-ptr button:focus-visible, .csp-codigo:focus-visible { outline: 2px solid var(--acento-2); outline-offset: 1px; }
+.mpi-cpp-shared-ptr .csp-var-btn[aria-pressed="true"] { background: rgba(78,201,176,.15); border-color: var(--acento); color: var(--acento); font-weight: 700; }
+.mpi-cpp-shared-ptr .csp-paso { background: var(--acento); color: #06231d; border-color: var(--acento); font-weight: 700; }
+.mpi-cpp-shared-ptr :not(pre) > code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+
+.csp-variantes { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .9rem; }
+.csp-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.1rem; align-items: start; }
+@container (min-width: 860px) { .csp-cuerpo { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); } }
+.csp-izq, .csp-der { min-width: 0; }
+
+/* Código con la línea ejecutada resaltada (scroll propio, nunca el de la página) */
+.csp-codigo { max-height: 24rem; overflow: auto; border: 1px solid var(--borde-2); border-radius: 6px; background: var(--bg); margin-bottom: .7rem; }
+.mpi-cpp-shared-ptr pre.csp-pre { margin: 0; padding: .45rem 0; background: none; border: 0; width: max-content; min-width: 100%; }
+.csp-linea { display: flex; align-items: baseline; padding: .03rem .6rem .03rem .2rem; }
+.mpi-cpp-shared-ptr .csp-linea code { white-space: pre; background: none; padding: 0; border-radius: 0; color: var(--txt); font-size: .8rem; }
+.csp-marca { width: 1rem; flex: 0 0 1rem; color: var(--amarillo); font-size: .72rem; }
+.csp-num { width: 1.5rem; flex: 0 0 1.5rem; color: var(--txt-tenue); font-family: var(--mono); font-size: .72rem; text-align: right; margin-right: .6rem; user-select: none; }
+.csp-linea.csp-actual { background: rgba(78,201,176,.16); box-shadow: inset 0 0 0 1px rgba(78,201,176,.35); }
+
+.csp-controles { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: .7rem; }
+.csp-contador { font-family: var(--mono); font-size: .8rem; color: var(--txt-tenue); margin-left: .3rem; }
+.csp-expl { font-size: .88rem; color: var(--txt-2); background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; padding: .55rem .7rem; min-height: 5rem; line-height: 1.5; }
+.csp-expl strong { color: var(--txt); }
+
+/* Escena: pila | heap, con las flechas en una capa SVG encima */
+.csp-escena { position: relative; display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); column-gap: 2.1rem; padding: .6rem 1.7rem .6rem .6rem; background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; min-height: 9rem; overflow-x: auto; }
+.csp-col { min-width: 0; position: relative; z-index: 1; }
+.csp-col-tit { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; color: var(--txt-tenue); margin-bottom: .4rem; }
+.csp-flechas { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; z-index: 2; }
+.csp-flechas path { fill: none; stroke-width: 2; }
+.csp-flechas path.csp-fs { stroke: var(--acento); }
+.csp-flechas path.csp-fw { stroke: var(--amarillo); stroke-dasharray: 5 4; }
+.csp-mk-s path { fill: var(--acento); }
+.csp-mk-w path { fill: var(--amarillo); }
+
+.csp-marco { border: 1px solid var(--borde); border-radius: 6px; padding: .35rem; margin-bottom: .5rem; background: var(--bg-2); }
+.csp-marco-tit { font-size: .74rem; color: var(--txt-2); margin-bottom: .3rem; }
+.csp-marco-tit span { color: var(--txt-tenue); font-style: italic; }
+.csp-marco.csp-sale { opacity: .7; border-style: dashed; }
+.csp-vacio, .csp-tenue { color: var(--txt-tenue); font-size: .78rem; font-style: italic; }
+
+/* Cajas de puntero (en la pila) y miembros puntero (dentro de un objeto) */
+.csp-ptr, .csp-miembro { display: block; border: 1px solid var(--acento); background: rgba(78,201,176,.08); border-radius: 5px; padding: .25rem .4rem; margin-bottom: .35rem; font-size: .74rem; line-height: 1.35; overflow-wrap: anywhere; }
+.csp-ptr.csp-debil, .csp-miembro.csp-debil { border-color: var(--amarillo); border-style: dashed; background: rgba(220,220,170,.07); }
+.csp-ptr.csp-nulo, .csp-ptr.csp-ref { border-color: var(--borde); background: var(--bg-3); }
+.csp-ptr.csp-ref { border-style: dotted; }
+.csp-ptr.csp-sale { opacity: .45; text-decoration: line-through; }
+.csp-toca { box-shadow: 0 0 0 2px rgba(86,156,214,.55); }
+.mpi-cpp-shared-ptr .csp-ptr-n { font-weight: 700; color: var(--azul-cl); background: none; padding: 0; font-size: .8rem; }
+.csp-amb { color: var(--txt-tenue); font-size: .7rem; }
+.csp-ptr-t { display: block; font-family: var(--mono); font-size: .68rem; color: var(--acento); }
+.csp-debil .csp-ptr-t { color: var(--amarillo); }
+.csp-ptr-e { display: block; color: var(--txt-2); font-size: .72rem; }
+
+/* Objeto en el heap con su bloque de control */
+.csp-obj { border: 1px solid var(--borde); border-radius: 6px; background: var(--bg-2); margin-bottom: .8rem; overflow: hidden; transition: opacity .2s; }
+.csp-cb { display: flex; flex-wrap: wrap; align-items: baseline; gap: .15rem .6rem; padding: .3rem .45rem; background: var(--bg-3); border-bottom: 1px solid var(--borde); font-size: .72rem; }
+.csp-cb-tit { flex: 1 0 100%; color: var(--txt-tenue); font-size: .66rem; text-transform: uppercase; letter-spacing: .04em; }
+.csp-cnt { font-family: var(--mono); color: var(--txt-2); white-space: nowrap; }
+.csp-cnt b { display: inline-block; min-width: 1.3em; text-align: center; color: var(--num); font-size: .9rem; border-radius: 4px; }
+.csp-cnt b.csp-cambio { background: rgba(181,206,168,.22); box-shadow: inset 0 0 0 1px var(--num); }
+.csp-cnt b.csp-cero { color: var(--rojo); }
+.csp-dato { padding: .35rem .45rem; font-size: .8rem; }
+.mpi-cpp-shared-ptr .csp-dato code { font-weight: 700; color: var(--acento); }
+.csp-valor { font-family: var(--mono); color: var(--num); }
+.csp-etq { display: block; font-size: .72rem; margin-top: .15rem; color: var(--txt-2); }
+.csp-obj .csp-miembro { margin: 0 .45rem .45rem; }
+.csp-obj.csp-destruyendo { border-color: var(--rojo); background: rgba(244,135,113,.07); }
+.csp-obj.csp-destruyendo .csp-etq, .csp-obj.csp-destruido .csp-etq, .csp-obj.csp-fuga .csp-etq { color: var(--rojo); font-weight: 600; }
+.csp-obj.csp-destruido .csp-dato { background: repeating-linear-gradient(135deg, transparent 0 6px, rgba(244,135,113,.08) 6px 12px); }
+.csp-obj.csp-destruido .csp-dato code { text-decoration: line-through; color: var(--txt-tenue); }
+.csp-obj.csp-liberado { opacity: .4; border-style: dashed; }
+.csp-obj.csp-liberado .csp-dato code { text-decoration: line-through; }
+.csp-obj.csp-fuga { border-color: var(--rojo); background: rgba(244,135,113,.1); }
+
+.csp-leyenda { display: flex; flex-wrap: wrap; gap: .3rem 1rem; font-size: .74rem; color: var(--txt-tenue); margin: .45rem 0 .7rem; }
+.csp-leyenda i { display: inline-block; width: 1.6rem; height: 0; vertical-align: middle; margin-right: .35rem; }
+.csp-ley-s { border-top: 2px solid var(--acento); }
+.csp-ley-w { border-top: 2px dashed var(--amarillo); }
+
+.csp-panel { margin-bottom: .6rem; }
+.csp-panel-tit { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; color: var(--txt-tenue); margin-bottom: .25rem; }
+.mpi-cpp-shared-ptr pre.csp-salida { margin: 0; padding: .45rem .6rem; background: #111; border: 1px solid var(--borde-2); border-radius: 6px; font-family: var(--mono); font-size: .8rem; color: var(--txt); min-height: 2.2rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.csp-registro { margin: 0; padding: .4rem .6rem .4rem 1.8rem; background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; font-family: var(--mono); font-size: .74rem; color: var(--txt-2); max-height: 11rem; overflow-y: auto; overflow-wrap: anywhere; }
+.csp-registro li { margin: .1rem 0; }
+.csp-registro li.csp-reg-dtor { color: var(--rojo); }
+.csp-registro li.csp-tenue { list-style: none; margin-left: -1.2rem; font-family: var(--sans); }
+.csp-nota { font-size: .8rem; color: var(--txt-tenue); margin: .7rem 0 0; }
+
+@container (max-width: 420px) {
+  .csp-escena { column-gap: 1.6rem; padding-right: 1.4rem; padding-left: .45rem; }
+  .csp-ptr, .csp-miembro { font-size: .7rem; padding: .2rem .3rem; }
+  .csp-ptr-t { font-size: .64rem; }
+}
+@media (max-width: 480px) {
+  .mpi-cpp-shared-ptr { padding: .8rem; }
+  .csp-sub { display: block; margin-left: 0; }
+}

@@ -1,0 +1,148 @@
+/* ---------- Componente: cpp-herencia (CGeometry → CSegment / CCircle: polimorfismo, recorte, construcción) ---------- */
+.mpi-cpp-herencia { container-type: inline-size; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-cpp-herencia .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .6rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem .6rem; }
+.chr-sub { color: var(--txt-tenue); font-weight: 400; font-size: .78rem; font-family: var(--mono); }
+.mpi-cpp-herencia :not(pre) > code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; overflow-wrap: anywhere; }
+.mpi-cpp-herencia button { font-family: inherit; background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .4rem .75rem; cursor: pointer; font-size: .84rem; min-height: 34px; }
+.mpi-cpp-herencia button:hover:not(:disabled) { border-color: var(--acento); }
+.mpi-cpp-herencia button:disabled { opacity: .4; cursor: default; }
+.mpi-cpp-herencia button:focus-visible, .mpi-cpp-herencia input:focus-visible + .chr-pista, .chr-consola:focus-visible, .chr-detalles summary:focus-visible { outline: 2px solid var(--acento-2); outline-offset: 2px; }
+.mpi-cpp-herencia button.chr-prim { background: var(--acento); border-color: var(--acento); color: #06231d; font-weight: 700; }
+.mpi-cpp-herencia ul, .mpi-cpp-herencia ol.chr-orden { padding-left: 0; }
+.mpi-cpp-herencia ol.chr-ruta { margin: .2rem 0; padding-left: 1.3rem; }
+.chr-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Pestañas */
+.chr-tabs { display: flex; flex-wrap: wrap; gap: .3rem; border-bottom: 1px solid var(--borde); margin-bottom: .9rem; }
+.mpi-cpp-herencia .chr-tab { background: transparent; border: 1px solid transparent; border-bottom: none; color: var(--txt-2); border-radius: 6px 6px 0 0; margin-bottom: -1px; min-height: 36px; }
+.mpi-cpp-herencia .chr-tab[aria-selected="true"] { background: var(--bg); border-color: var(--borde); color: var(--acento); font-weight: 600; }
+
+/* Interruptor */
+.chr-sw-fila { margin: .3rem 0 .4rem; }
+.chr-switch { display: inline-flex; align-items: center; gap: .55rem; cursor: pointer; font-size: .9rem; color: var(--txt); }
+.chr-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.chr-pista { flex: 0 0 auto; width: 40px; height: 22px; border-radius: 11px; background: var(--bg-3); border: 1px solid var(--borde); position: relative; transition: background .15s; }
+.chr-pista::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--txt-2); transition: transform .15s; }
+.chr-switch input:checked + .chr-pista { background: rgba(78,201,176,.35); border-color: var(--acento); }
+.chr-switch input:checked + .chr-pista::after { transform: translateX(18px); background: var(--acento); }
+.chr-ovr { font-size: .84rem; color: var(--txt-2); margin: .2rem 0 .8rem; line-height: 1.5; }
+
+/* Diagrama de la jerarquía */
+.chr-jer { margin: 0 0 .8rem; }
+.chr-caja { background: var(--bg); border: 1px solid var(--borde); border-radius: 8px; padding: .45rem .6rem; min-width: 0; }
+.chr-caja-base { max-width: 26rem; margin: 0 auto; }
+.chr-caja-tit { font-family: var(--mono); font-weight: 700; color: var(--acento); font-size: .9rem; border-bottom: 1px solid var(--borde-2); padding-bottom: .25rem; margin-bottom: .3rem; }
+.chr-caja ul { list-style: none; margin: 0; padding: 0; }
+.chr-caja li { margin: 0; font-size: .8rem; padding: .1rem .3rem; border-radius: 4px; border: 1px solid transparent; line-height: 1.45; }
+.chr-caja li code { font-size: .78rem; }
+.chr-vis { display: inline-block; width: 1rem; color: var(--txt-tenue); font-family: var(--mono); }
+.chr-virt { color: var(--acento-2); font-family: var(--mono); font-size: .78rem; }
+.chr-virt-no { color: var(--txt-tenue); font-family: var(--mono); font-size: .78rem; }
+.chr-caja li.chr-sw { background: rgba(86,156,214,.08); }
+.chr-caja li.chr-ejec { border-color: var(--amarillo); background: rgba(220,220,170,.12); }
+.chr-nota-f { display: block; color: var(--txt-tenue); font-size: .72rem; margin-left: 1rem; }
+.chr-hijos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: .6rem; margin-top: .3rem; }
+.chr-hijo { min-width: 0; }
+.chr-hereda { text-align: center; color: var(--txt-tenue); font-family: var(--mono); font-size: .72rem; padding: .15rem 0; }
+.chr-leyenda { color: var(--txt-tenue); font-size: .72rem; margin-top: .35rem; text-align: center; }
+
+/* Columnas código | objetos */
+.chr-cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: .9rem; align-items: start; }
+@container (min-width: 760px) { .chr-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.chr-cols > * { min-width: 0; }
+
+/* Listados */
+.mpi-cpp-herencia pre.chr-pre { margin: 0 0 .6rem; padding: .45rem 0; overflow-x: auto; }
+.chr-ln { display: block; padding: 0 .7rem; border: 1px solid transparent; }
+.mpi-cpp-herencia .chr-ln code { white-space: pre; background: none; padding: 0; color: var(--txt); font-size: .82rem; }
+.chr-ln.chr-ln-sw { background: rgba(86,156,214,.10); }
+.chr-ln.chr-ln-act { background: rgba(78,201,176,.16); border-color: rgba(78,201,176,.55); }
+.chr-ln.chr-ln-sig:not(.chr-ln-act) { border-style: dashed; border-color: var(--borde); }
+
+/* Objetos y tabla virtual (polimorfismo) */
+.chr-zona-tit { color: var(--txt-tenue); font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; margin-bottom: .35rem; }
+.chr-zona-tit code { text-transform: none; letter-spacing: 0; }
+.chr-obj { background: var(--bg); border: 1px solid var(--borde); border-radius: 8px; padding: .55rem .6rem; margin-bottom: .6rem; }
+.chr-obj-cab { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .45rem; font-size: .82rem; margin-bottom: .4rem; }
+.chr-obj-cab small { color: var(--txt-tenue); font-size: .72rem; }
+.chr-ptr, .chr-real { padding: .1rem .3rem; border-radius: 5px; border: 1px solid transparent; }
+.chr-ptr.chr-on { border-color: var(--acento); }
+.chr-flecha { color: var(--txt-tenue); }
+.chr-capas { display: grid; gap: .3rem; }
+.chr-capa { border: 1px solid var(--borde-2); border-radius: 6px; padding: .25rem .4rem; font-size: .78rem; }
+.chr-capa-base { background: rgba(86,156,214,.07); }
+.chr-capa-der { background: rgba(197,134,192,.08); }
+.chr-capa-tit { display: block; color: var(--txt-tenue); font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; }
+.chr-campo { padding: .1rem .2rem; border-radius: 4px; border: 1px solid transparent; }
+.chr-campo.chr-on { border-color: var(--amarillo); background: rgba(220,220,170,.12); }
+.chr-vt { margin-top: .4rem; border: 1px dashed var(--borde); border-radius: 6px; padding: .25rem .45rem; font-size: .78rem; }
+.chr-vt-tit { color: var(--txt-tenue); font-size: .7rem; text-transform: uppercase; letter-spacing: .04em; }
+.chr-vt ul { list-style: none; margin: 0; padding: 0; }
+.chr-vt li { margin: 0; padding: .1rem .2rem; border-radius: 4px; border: 1px solid transparent; }
+.chr-vt li.chr-on { border-color: var(--amarillo); background: rgba(220,220,170,.12); }
+.chr-vt li small { display: block; color: var(--txt-tenue); font-size: .7rem; }
+.chr-tenue { opacity: .75; }
+.chr-obj-btns { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .5rem; }
+.mpi-cpp-herencia .chr-obj-btns button { font-family: var(--mono); font-size: .72rem; padding: .35rem .5rem; overflow-wrap: anywhere; text-align: left; }
+
+/* Controles, explicación, consola */
+.chr-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin: .4rem 0 .6rem; }
+.chr-cont { font-family: var(--mono); font-size: .78rem; color: var(--txt-tenue); margin-left: .2rem; }
+.chr-expl { font-size: .87rem; color: var(--txt-2); background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; padding: .55rem .75rem; min-height: 4rem; line-height: 1.5; }
+.chr-expl p { margin: .2rem 0; }
+.chr-expl b { color: var(--txt); }
+.chr-ruta li { margin: .2rem 0; font-size: inherit; }
+.chr-consola-wrap { margin-top: .8rem; }
+.mpi-cpp-herencia pre.chr-consola { margin: 0; padding: .5rem .75rem; max-height: 14rem; overflow: auto; font-family: var(--mono); font-size: .82rem; line-height: 1.5; color: var(--num); white-space: pre; }
+.chr-consola.chr-vacia, .chr-traza { color: var(--txt-tenue); }
+.chr-traza.chr-ultima { color: var(--txt); }
+.chr-out { color: var(--num); font-weight: 700; }
+.chr-nota { font-size: .8rem; color: var(--txt-tenue); margin: .7rem 0 0; line-height: 1.5; }
+
+/* Recorte y construcción: zonas de memoria y bloques */
+.chr-ops { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .8rem; }
+.mpi-cpp-herencia .chr-op { font-family: var(--mono); font-size: .78rem; overflow-wrap: anywhere; text-align: left; }
+.mpi-cpp-herencia .chr-op[aria-pressed="true"] { background: rgba(78,201,176,.15); border-color: var(--acento); color: var(--acento); font-weight: 700; }
+.chr-mem { display: grid; gap: .6rem; }
+.chr-zona { background: var(--bg); border: 1px solid var(--borde); border-radius: 8px; padding: .5rem .6rem; min-width: 0; }
+.chr-vacio { color: var(--txt-tenue); font-size: .8rem; margin: .2rem 0; }
+.chr-bloque { border: 1px solid var(--borde-2); border-radius: 6px; padding: .35rem .45rem; margin-top: .35rem; background: var(--bg-2); }
+.chr-bloque-tit { font-size: .82rem; margin-bottom: .25rem; }
+.chr-bloque-tit small { color: var(--txt-tenue); font-family: var(--mono); font-size: .72rem; }
+.chr-campos { list-style: none; margin: 0; padding: 0; }
+.chr-parte { margin: .25rem 0 0; color: var(--txt-tenue); font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; margin-top: .25rem; }
+.chr-f { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .4rem; font-size: .78rem; padding: .12rem .3rem; border-radius: 4px; border: 1px solid transparent; }
+.chr-f-base { background: rgba(86,156,214,.07); }
+.chr-f-der { background: rgba(197,134,192,.08); }
+.chr-f-perdido { border: 1px dashed rgba(244,135,113,.6); color: var(--rojo); }
+.chr-f-perdido code { text-decoration: line-through; }
+.chr-f.chr-on { border-color: var(--amarillo); background: rgba(220,220,170,.12); }
+.chr-fv { font-family: var(--mono); color: var(--txt-2); font-size: .74rem; overflow-wrap: anywhere; }
+.chr-fb { margin-left: auto; font-family: var(--mono); color: var(--txt-tenue); font-size: .7rem; }
+.chr-apunta { margin: .1rem 0; font-size: .8rem; color: var(--txt-2); }
+.chr-tag { display: inline-block; font-size: .68rem; font-family: var(--sans); padding: 0 .4rem; border-radius: 9px; border: 1px solid var(--borde); color: var(--txt-tenue); margin-left: .3rem; white-space: nowrap; }
+.chr-muerto { opacity: .55; }
+.chr-muerto .chr-f code { text-decoration: line-through; }
+
+.chr-orden { list-style: none; margin: 0; padding: 0; display: grid; gap: .25rem; }
+.chr-c { margin: 0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .2rem .5rem; font-size: .8rem; padding: .25rem .4rem; border-radius: 5px; border: 1px solid var(--borde-2); }
+.chr-c-pend { border-style: dashed; color: var(--txt-tenue); }
+.chr-c-vivo { background: rgba(78,201,176,.12); border-color: rgba(78,201,176,.55); color: var(--txt); }
+.chr-c-vivo .chr-tag { color: var(--acento); border-color: var(--acento); }
+.chr-c-muerto { color: var(--txt-tenue); }
+.chr-c-muerto > span:first-child { text-decoration: line-through; }
+.chr-c-ub { background: rgba(244,135,113,.10); border-color: rgba(244,135,113,.6); color: var(--txt); }
+.chr-c-ub .chr-tag { color: var(--rojo); border-color: var(--rojo); }
+
+.chr-ub { margin-top: .8rem; background: rgba(244,135,113,.10); border: 1px solid rgba(244,135,113,.55); border-radius: 8px; padding: .55rem .8rem; font-size: .84rem; line-height: 1.5; color: var(--txt); }
+.chr-ub p { margin: .25rem 0; }
+.chr-ub b { color: var(--rojo); }
+
+.chr-detalles { margin-top: 1rem; font-size: .84rem; color: var(--txt-2); }
+.chr-detalles summary { cursor: pointer; color: var(--txt-2); }
+.chr-detalles p { line-height: 1.5; }
+
+@media (max-width: 480px) {
+  .mpi-cpp-herencia { padding: .8rem; }
+  .mpi-cpp-herencia .chr-tab { padding: .35rem .5rem; font-size: .8rem; }
+}

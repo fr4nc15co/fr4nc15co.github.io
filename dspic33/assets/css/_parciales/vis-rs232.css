@@ -1,0 +1,103 @@
+/* ---------- Componente: vis-rs232 (trama 8N1 en TTL y en RS232, MAX233 y DB9) ---------- */
+.mpi-vis-rs232 { container-type: inline-size; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-vis-rs232 .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .7rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem; }
+.rs2-sub { color: var(--txt-tenue); font-weight: 400; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
+.mpi-vis-rs232 button { font-family: var(--mono); background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .3rem .6rem; cursor: pointer; font-size: .8rem; }
+.mpi-vis-rs232 button:hover { border-color: var(--acento); }
+.mpi-vis-rs232 button:focus-visible, .mpi-vis-rs232 input:focus-visible, .mpi-vis-rs232 select:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 2px; }
+.mpi-vis-rs232 .rs2-rapidos button[aria-pressed="true"] { background: var(--acento); border-color: var(--acento); color: #06231d; font-weight: 700; }
+
+.rs2-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .8rem; font-size: .88rem; color: var(--txt-2); }
+.rs2-ctl label { display: inline-flex; align-items: center; gap: .4rem; }
+.rs2-dato { font-family: var(--mono); width: 7.5rem; background: var(--bg); border: 1px solid var(--borde); color: var(--azul-cl); padding: .3rem .45rem; border-radius: 5px; font-size: .9rem; }
+.rs2-dato[aria-invalid="true"] { border-color: var(--rojo); }
+.mpi-vis-rs232 select { font-family: var(--mono); background: var(--bg); border: 1px solid var(--borde); color: var(--txt); padding: .3rem .4rem; border-radius: 5px; max-width: 100%; font-size: .84rem; }
+.rs2-rapidos { display: flex; flex-wrap: wrap; gap: .35rem; }
+.rs2-ayuda { color: var(--txt-tenue); font-size: .78rem; margin: .35rem 0 0; }
+.rs2-err { color: var(--rojo); font-size: .82rem; margin: .25rem 0 0; }
+.rs2-err:empty { display: none; }
+
+.rs2-bits { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; margin: .7rem 0; }
+.rs2-bits-t { font-size: .84rem; color: var(--txt-2); }
+.rs2-bits-b { display: inline-flex; flex-wrap: wrap; gap: .25rem; }
+.mpi-vis-rs232 .rs2-bits-b button { display: inline-flex; flex-direction: column; align-items: center; min-width: 2.3rem; padding: .2rem .3rem; font-size: .7rem; color: var(--txt-tenue); line-height: 1.2; }
+.rs2-bits-b button span { font-size: 1rem; font-weight: 700; color: var(--txt-2); }
+.mpi-vis-rs232 .rs2-bits-b button[aria-pressed="true"] { background: color-mix(in srgb, var(--acento) 18%, var(--bg-3)); border-color: var(--acento); }
+.rs2-bits-b button[aria-pressed="true"] span { color: var(--acento); }
+
+.rs2-panel { background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; padding: .55rem .75rem; margin-bottom: .8rem; font-size: .88rem; color: var(--txt-2); }
+.rs2-res b, .rs2-orden b { font-family: var(--mono); color: var(--num); }
+.rs2-orden { margin: .35rem 0 0; font-size: .84rem; line-height: 1.5; }
+
+.rs2-fig { margin: 0; min-width: 0; background: var(--bg); border: 1px solid var(--borde-2); border-radius: 8px; padding: .5rem; }
+.rs2-fig figcaption { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--txt-tenue); margin-top: .3rem; text-align: center; }
+.rs2-svg { display: block; width: 100%; height: auto; max-width: 640px; margin: 0 auto; font-family: var(--sans); }
+
+.rs2-s-idle { fill: transparent; }
+.rs2-s-ctl { fill: color-mix(in srgb, var(--morado) 10%, transparent); }
+.rs2-s-dato { fill: color-mix(in srgb, var(--acento-2) 8%, transparent); }
+.rs2-s-n { fill: var(--txt-tenue); font-family: var(--mono); font-size: 9px; text-anchor: middle; }
+.rs2-s-v { fill: var(--txt-2); font-family: var(--mono); font-size: 11px; font-weight: 700; text-anchor: middle; }
+.rs2-s-v.rs2-s-v1 { fill: var(--acento); }
+.rs2-rej { stroke: var(--borde); stroke-width: 1; stroke-dasharray: 2 3; }
+.rs2-ax { fill: var(--txt-2); font-family: var(--mono); font-size: 9px; }
+.rs2-ax.rs2-ax-t { fill: var(--txt-tenue); }
+.rs2-ax.rs2-ax-z { fill: var(--rojo); }
+.rs2-base { stroke: var(--borde); stroke-width: 1; }
+.rs2-cero { stroke: var(--txt-tenue); stroke-width: 1; stroke-dasharray: 1 3; }
+.rs2-tit { fill: var(--txt-tenue); font-size: 9.5px; }
+.rs2-onda-ttl { fill: none; stroke: var(--acento); stroke-width: 2.2; stroke-linejoin: round; }
+.rs2-onda-232 { fill: none; stroke: var(--naranja); stroke-width: 2.2; stroke-linejoin: round; }
+.rs2-banda { fill: color-mix(in srgb, var(--rojo) 14%, transparent); }
+.rs2-valida { fill: color-mix(in srgb, var(--naranja) 5%, transparent); }
+.rs2-flecha { stroke: var(--txt-tenue); stroke-width: 1.4; }
+.rs2-mk, .rs2-mk-c { fill: var(--txt-tenue); }
+.rs2-max { fill: var(--bg-3); stroke: var(--txt-2); stroke-width: 1.2; }
+.rs2-inv { fill: none; stroke: var(--amarillo); stroke-width: 1.4; }
+.rs2-max-t { fill: var(--txt); font-family: var(--mono); font-size: 11px; font-weight: 700; }
+.rs2-max-s { fill: var(--txt-tenue); font-family: var(--mono); font-size: 8.5px; }
+.rs2-max-n { fill: var(--amarillo); font-size: 9px; text-anchor: end; }
+.rs2-cota { stroke: var(--txt-2); stroke-width: 1; }
+.rs2-cota-t { fill: var(--amarillo); font-family: var(--mono); font-size: 9.5px; text-anchor: middle; }
+.rs2-cota-t.rs2-cota-t-i { text-anchor: start; }
+
+.rs2-bajo { display: grid; grid-template-columns: minmax(0, 1fr); gap: .8rem; margin-top: .8rem; }
+@container (min-width: 680px) { .rs2-bajo { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); } }
+.rs2-fig-db9 { display: flex; flex-direction: column; align-items: center; }
+.rs2-fig-db9 .rs2-svg { max-width: 320px; }
+.mpi-vis-rs232 .rs2-mh { margin-top: .35rem; font-family: var(--sans); }
+.rs2-db9-c { fill: #3b4148; stroke: #8b949e; stroke-width: 2; }
+.rs2-pin { stroke-width: 1.5; }
+.rs2-pin.rs2-pin-m { fill: #c9a94a; stroke: #8a7330; }
+.rs2-pin.rs2-pin-h { fill: #15181b; stroke: #8b949e; }
+.rs2-pin.rs2-pin-rx { stroke: var(--azul-cl); stroke-width: 3; }
+.rs2-pin.rs2-pin-tx { stroke: var(--acento); stroke-width: 3; }
+.rs2-pin.rs2-pin-gnd { stroke: var(--txt); stroke-width: 3; }
+.rs2-pin-n { fill: #111; font-family: var(--mono); font-size: 9px; font-weight: 700; text-anchor: middle; }
+.rs2-pin-h + .rs2-pin-n { fill: var(--txt-2); }
+.rs2-pin-f { font-family: var(--mono); font-size: 10px; font-weight: 700; text-anchor: middle; }
+.rs2-pin-f-rx { fill: var(--azul-cl); }
+.rs2-pin-f-tx { fill: var(--acento); }
+.rs2-pin-f-gnd { fill: var(--txt); }
+
+.rs2-tabla-w { min-width: 0; overflow-x: auto; }
+.rs2-tabla { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.rs2-tabla caption { text-align: left; font-size: .76rem; text-transform: uppercase; letter-spacing: .04em; color: var(--txt-tenue); padding-bottom: .3rem; }
+.rs2-tabla th { text-align: left; color: var(--txt-tenue); font-weight: 600; font-size: .74rem; padding: .25rem .45rem; border-bottom: 1px solid var(--borde); }
+.rs2-tabla td { padding: .3rem .45rem; border-bottom: 1px solid var(--borde-2); color: var(--txt-2); vertical-align: top; line-height: 1.45; }
+.rs2-tabla td:first-child { font-family: var(--mono); font-weight: 700; }
+.rs2-f-rx td:first-child { color: var(--azul-cl); }
+.rs2-f-tx td:first-child { color: var(--acento); }
+.rs2-f-gnd td:first-child { color: var(--txt); }
+.rs2-nota { font-size: .8rem; color: var(--txt-tenue); margin: .5rem 0 0; line-height: 1.5; }
+
+.rs2-notas { margin-top: .8rem; display: grid; gap: .5rem; }
+.rs2-notas p { margin: 0; font-size: .83rem; color: var(--txt-2); line-height: 1.55; background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; padding: .5rem .7rem; }
+.rs2-notas b { color: var(--txt); }
+
+@media (max-width: 480px) {
+  .mpi-vis-rs232 { padding: .85rem; }
+  .rs2-sub { display: block; }
+}
+.rs2-ctl label { max-width: 100%; }
+.rs2-ctl select { min-width: 0; flex: 0 1 auto; }

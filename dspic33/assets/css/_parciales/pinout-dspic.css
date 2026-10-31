@@ -1,0 +1,72 @@
+/* ---------- Componente: pinout-dspic (patillaje SPDIP-28 clicable) ---------- */
+.mpi-pinout-dspic { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1rem 1.1rem; margin: 1.2rem 0; }
+.mpi-pinout-dspic .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .3rem; }
+.pd-ayuda { color: var(--txt-tenue); font-size: .82rem; margin: 0 0 .7rem; }
+
+.pd-filtros { display: flex; flex-wrap: wrap; gap: .4rem; }
+.pd-filtro { background: var(--bg-3); border: 1px solid var(--borde); color: var(--txt-2); padding: .3rem .65rem; border-radius: 999px; cursor: pointer; font-size: .8rem; font-family: inherit; }
+.pd-filtro:hover { border-color: var(--acento); color: var(--txt); }
+.pd-filtro[aria-pressed="true"] { background: var(--acento); border-color: var(--acento); color: #06231d; font-weight: 600; }
+.pd-filtro:focus-visible, .pd-pin:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 2px; }
+.pd-filtro-desc { color: var(--txt-2); font-size: .84rem; margin: .6rem 0 .9rem; min-height: 1.4em; }
+.pd-filtro-desc strong { color: var(--txt); }
+
+.pd-cuerpo { display: flex; flex-wrap: wrap; gap: 1.2rem; align-items: flex-start; }
+
+/* Encapsulado: rejilla de 3 columnas (pines izq. | cuerpo | pines der.) y 14 filas */
+.pd-chip { flex: 0 1 330px; min-width: 0; max-width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 46px minmax(0, 1fr); grid-template-rows: repeat(14, auto); column-gap: 0; row-gap: 4px; }
+.pd-encap { grid-column: 2; grid-row: 1 / span 14; position: relative; background: #141414; border: 1px solid #4a4a4a; border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.pd-muesca { position: absolute; top: -12px; left: 50%; width: 22px; height: 22px; margin-left: -11px; border-radius: 50%; background: var(--bg-2); border: 1px solid #4a4a4a; }
+.pd-punto { position: absolute; top: 9px; left: 6px; width: 6px; height: 6px; border-radius: 50%; background: #3a3a3a; }
+.pd-rotulo { writing-mode: vertical-rl; font-family: var(--mono); font-size: .66rem; letter-spacing: .08em; color: var(--txt-tenue); white-space: nowrap; }
+
+.pd-pin { display: flex; align-items: center; gap: .3rem; min-width: 0; min-height: 28px; padding: 0; background: transparent; border: 0; color: var(--txt-2); cursor: pointer; font-family: var(--mono); font-size: .72rem; line-height: 1.1; transition: opacity .15s; }
+.pd-izq { grid-column: 1; flex-direction: row-reverse; text-align: right; }
+.pd-der { grid-column: 3; flex-direction: row; text-align: left; }
+.pd-num { flex: 0 0 auto; width: 26px; height: 24px; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(#5a5a5a, #3d3d3d); border: 1px solid #6a6a6a; color: var(--txt); font-size: .7rem; }
+.pd-izq .pd-num { border-radius: 3px 0 0 3px; border-right: 0; }
+.pd-der .pd-num { border-radius: 0 3px 3px 0; border-left: 0; }
+.pd-lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: .15rem .3rem; border-radius: 4px; }
+.pd-pt { display: none; flex: 0 0 auto; font-size: .6rem; font-family: var(--sans); font-weight: 700; padding: .05rem .3rem; border-radius: 3px; background: var(--amarillo); color: #222; }
+.pd-modo-pt .pd-pt { display: inline-block; }
+
+.pd-pin:hover .pd-lbl { color: var(--txt); background: var(--bg-3); }
+.pd-filtrando .pd-pin { opacity: .38; }
+.pd-filtrando .pd-pin.pd-on, .pd-filtrando .pd-pin.pd-sel, .pd-filtrando .pd-pin:hover, .pd-filtrando .pd-pin:focus-visible { opacity: 1; }
+.pd-pin.pd-on .pd-num { background: var(--acento); border-color: var(--acento); color: #06231d; font-weight: 700; }
+.pd-pin.pd-on .pd-lbl { color: var(--acento); }
+.pd-pin.pd-sel .pd-lbl { background: var(--acento-2); color: #0b1a2b; font-weight: 700; }
+.pd-pin.pd-sel .pd-num { box-shadow: 0 0 0 2px var(--acento-2); }
+
+/* Panel de detalle */
+.pd-panel { flex: 1 1 260px; min-width: 0; background: var(--bg); border: 1px solid var(--borde); border-radius: 8px; padding: .8rem .9rem; font-size: .88rem; }
+.pd-vacio { color: var(--txt-tenue); margin: 0; }
+.pd-p-cab { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem; margin-bottom: .45rem; }
+.pd-p-num { font-weight: 700; color: var(--acento); font-size: 1.05rem; }
+.pd-p-nombre { font-family: var(--mono); color: var(--azul-cl); font-size: .85rem; overflow-wrap: anywhere; }
+.pd-tags { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: .6rem; }
+.pd-tag { font-size: .7rem; padding: .1rem .45rem; border-radius: 999px; border: 1px solid var(--borde); color: var(--txt-2); background: var(--bg-3); }
+.pd-tag-digital { border-color: var(--acento-2); color: var(--acento-2); }
+.pd-tag-analogico { border-color: var(--num); color: var(--num); }
+.pd-tag-alimentacion { border-color: var(--rojo); color: var(--rojo); }
+.pd-tag-oscilador { border-color: var(--morado, #c586c0); color: var(--morado, #c586c0); }
+.pd-tag-programacion, .pd-tag-reset { border-color: var(--amarillo); color: var(--amarillo); }
+.pd-tag-pwm { border-color: var(--acento); color: var(--acento); }
+.pd-tag-5v { border-style: dashed; }
+.pd-funcs { margin: 0 0 .6rem; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .25rem .7rem; }
+.pd-funcs dt { font-family: var(--mono); color: var(--azul-cl); font-size: .8rem; padding-top: .1rem; }
+.pd-funcs dd { margin: 0; color: var(--txt); line-height: 1.4; }
+.pd-extra { font-size: .82rem; color: var(--txt-2); margin: 0 0 .6rem; }
+.pd-placa { border: 1px solid rgba(220,220,170,.28); background: rgba(220,220,170,.06); padding: .45rem .6rem; border-radius: 6px; line-height: 1.45; }
+.pd-placa-tit { display: block; font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--amarillo); margin-bottom: .15rem; }
+.pd-nota { font-size: .8rem; color: var(--txt-2); margin: .6rem 0 0; }
+.pd-nota strong { color: var(--amarillo); }
+
+@media (max-width: 520px) {
+  .mpi-pinout-dspic { padding: .9rem .75rem; }
+  .pd-chip { flex-basis: 100%; grid-template-columns: minmax(0, 1fr) 38px minmax(0, 1fr); }
+  .pd-pin { font-size: .68rem; }
+  .pd-num { width: 22px; }
+  .pd-funcs { grid-template-columns: 1fr; gap: 0; }
+  .pd-funcs dd { margin-bottom: .35rem; }
+}

@@ -1,0 +1,550 @@
+{
+  "slug": "arquitectura-dspic",
+  "titulo": "Arquitectura y mapa de memoria del dsPIC",
+  "temaNum": 7,
+  "lenguaje": "c",
+  "lead": "Cómo se almacenan los datos y los programas en el dsPIC33FJ32MC202 y cómo los relaciona la ejecución de las instrucciones. Verás el <strong>modelo del programador</strong> (W0-W15, PC, SR, SPLIM) como caso concreto de la arquitectura general de un micro, los primeros pasos en <strong>ensamblador</strong> y su equivalencia con C, los <strong>modos de direccionamiento</strong> (punteros), los números con y sin signo, el <strong>mapa de memoria</strong> de datos y de programa y el <em>stack</em>.",
+  "secciones": [
+    {
+      "titulo": "7.1 Modelo del programador del dsPIC",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El <strong>modelo del programador</strong> es lo que el programador «ve» del micro: los registros de la CPU, la memoria de datos, la memoria de programa y los registros de entrada/salida. Es el mismo esquema general de micro del tema anterior (CPU + memoria + E/S), concretado para el dsPIC33FJ32MC202. La CPU tiene los siguientes registros:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Registros de trabajo</strong> <code class=\"reg\">W0</code>…<code class=\"reg\">W15</code> (<em>working registers</em>, WRs), de 16 bits. Se pueden usar para cualquier cosa (dato, dirección o puntero), <strong>excepto <code class=\"reg\">W15</code></strong>, que es el <em>stack pointer</em> (SP). Son los equivalentes a los registros de propósito general de la arquitectura general de un micro (sección 6.3).",
+            "<strong><code class=\"reg\">PC</code></strong> (<em>program counter</em>, contador de programa), de 23 bits: almacena la dirección de la <strong>próxima instrucción</strong> a ejecutar.",
+            "<strong><code class=\"reg\">SR</code></strong> (<em>status register</em>, registro de estado): indica el estado en que queda la CPU después de ejecutar una instrucción (acarreo, cero, rebose, negativo…).",
+            "<strong><code class=\"reg\">SPLIM</code></strong> (<em>stack pointer limit</em>): límite máximo que puede ocupar el <em>stack</em>."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<table class=\"tabla-datos\"><thead><tr><th>Bloque</th><th>Contenido</th><th>Direcciones / tamaño</th></tr></thead><tbody><tr><td>CPU</td><td>W0-W15 (W15 = SP), PC, SR, SPLIM</td><td>WRs de 16 bits; PC de 23 bits</td></tr><tr><td>Memoria de datos</td><td>Celdas de 1 byte</td><td>Direcciones de 16 bits: 0x0000-0xFFFF</td></tr><tr><td>Memoria de programa</td><td>Words de instrucción de 24 bits</td><td>Direcciones de 23-24 bits: 0x000000-0xFFFFFF</td></tr><tr><td>Entrada/salida</td><td>Registros de los periféricos, <strong>mapeados en memoria de datos</strong></td><td>Por ejemplo, <code class=\"reg\">TRISB</code> = 0x02C8, <code class=\"reg\">PORTB</code> = 0x02CA</td></tr></tbody></table><p>El libro dibuja este modelo del programador como un esquema de bloques: a la izquierda la memoria de datos (de 0x0000 a 0xFFFF) y la de programa (de 0x00 0000 a 0xFF FFFF); a la derecha la CPU con los dieciséis WRs (W0-W7 y W8-W15), PC, SR y SPLIM; y debajo la unidad de E/S con sus registros en direcciones de la memoria de datos (0x02C8…).</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h4>Memoria de datos</h4><p>La memoria de datos está organizada en <strong>celdas de 1 byte</strong> (8 bits). Cada byte tiene una dirección asociada. Las direcciones podrían ir desde la 0 hasta la 0xFFFF; es decir, se puede direccionar con <strong>16 bits</strong>. Para acceder a una celda de memoria se usa su dirección:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Lectura:</strong> la CPU pone en el <em>bus de direcciones</em> la dirección cuyo dato quiere, mientras indica por el <em>bus de control</em> que la operación es de lectura. La memoria devuelve el dato almacenado en esa celda por el <em>bus de datos</em>: <code>dato ← (dirección)</code>.",
+            "<strong>Escritura:</strong> la CPU pone el dato en el bus de datos y la dirección en el bus de direcciones, mientras indica por el bus de control que la operación es de escritura. La memoria escribe en la celda direccionada el dato suministrado por la CPU: <code>(dirección) ← dato</code>."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h4>Memoria de programa y E/S</h4><p>La memoria de programa también se organiza en celdas de 1 byte, pero se agrupa en <strong>words de instrucción de 24 bits</strong>, porque casi todas las instrucciones ocupan 24 bits. Cada instrucción lleva asociada una dirección de memoria de <strong>23 bits</strong>.</p><p>La unidad de entrada y salida se controla a través de sus registros (tema de puertos paralelo). El acceso a estos registros es igual que el acceso a memoria: los registros están <strong>mapeados en memoria</strong>. Por eso <code>TRISB = 0x0FFF;</code> en C no es más que escribir 0x0FFF en la dirección 0x02C8.</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "La notación <code>(dirección)</code>, con paréntesis, significa «el <strong>contenido</strong> de la posición de memoria <em>dirección</em>». Así, <code>(0x84) = (0x80) + (0x82)</code> se lee: «guarda en la posición 0x84 la suma de los contenidos de las posiciones 0x80 y 0x82». En ensamblador del dsPIC los corchetes <code>[W0]</code> desempeñan ese mismo papel."
+        }
+      ]
+    },
+    {
+      "titulo": "7.2 El ensamblador del dsPIC",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>En esta sección se introduce el ensamblador del dsPIC, que se estudia en detalle en el tema siguiente. Como se vio en la sección 6.8, el <strong>lenguaje ensamblador</strong> es el lenguaje de más bajo nivel que entienden las personas: cada instrucción de ensamblador se corresponde con <strong>una</strong> instrucción de código máquina que entiende el micro. Hay una correspondencia <strong>biunívoca</strong> entre el ensamblador (lo que entienden las personas) y el código máquina (lo que entienden las máquinas).</p><p>El programa sencillo del tema anterior para una máquina de propósito general, <code>(0x84) = (0x80) + (0x82)</code>, se escribe en ensamblador del dsPIC con los datos en 0x800, 0x802 y 0x804:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Suma de dos datos de memoria en ensamblador del dsPIC:</p>",
+          "codigo": "    MOV     0x800, W1       ; READ\n    MOV     0x802, W2       ; READ\n    ADD     W1, W2, W3      ; W3 = W1 + W2\n    MOV     W3, 0x804       ; WRITE",
+          "lenguaje": "asm"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El tamaño del registro <code class=\"reg\">W1</code> es de 2 bytes (16 bits). Como cada dirección de memoria almacena únicamente 8 bits (1 byte), hacen falta <strong>dos bytes en direcciones consecutivas</strong> para llenar el registro. Por eso el primer dato está en la posición 0x800 y el segundo dos direcciones más allá, en la 0x802. El dsPIC es <strong><em>little endian</em></strong>: almacena el byte menos significativo del dato (la parte baja del registro) en la dirección <strong>par</strong> y el byte más significativo en la dirección <strong>impar</strong> siguiente (sección 7.3.1).</p><p>Este programa estará cargado en la memoria de programa del micro para poder ejecutarse (primera tabla), y la memoria de datos queda antes y después de ejecutarlo como en la segunda:</p><table class=\"tabla-datos\"><thead><tr><th>Dirección</th><th>Código máquina (24 bits)</th><th>Ensamblador</th><th>Qué hace</th></tr></thead><tbody><tr><td>0x100</td><td>0x804001</td><td><code>MOV 0x800, W1</code></td><td>W1 ← (0x800) (lectura)</td></tr><tr><td>0x102</td><td>0x804012</td><td><code>MOV 0x802, W2</code></td><td>W2 ← (0x802) (lectura)</td></tr><tr><td>0x104</td><td>0x408182</td><td><code>ADD W1, W2, W3</code></td><td>W3 ← W1 + W2</td></tr><tr><td>0x106</td><td>0x884023</td><td><code>MOV W3, 0x804</code></td><td>(0x804) ← W3 (escritura)</td></tr></tbody></table><p></p><table class=\"tabla-datos\"><thead><tr><th>Dirección</th><th>Antes</th><th>Después</th></tr></thead><tbody><tr><td>0x800</td><td>0x1234</td><td>0x1234</td></tr><tr><td>0x802</td><td>0x5678</td><td>0x5678</td></tr><tr><td>0x804</td><td>0x0000</td><td><strong>0x68AC</strong></td></tr></tbody></table><p>Comprobación: 0x1234 + 0x5678 = <strong>0x68AC</strong> (4660 + 22136 = 26796). A la vista del ejemplo se puede observar:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "Las instrucciones se almacenan en memoria en formato <strong>binario</strong> (unos y ceros), aunque se muestren en hexadecimal para simplificar la notación.",
+            "Cada instrucción ocupa <strong>3 bytes</strong> (1 word de instrucción de 24 bits).",
+            "Las instrucciones se almacenan en posiciones de memoria <strong>consecutivas</strong> (0x100, 0x102, 0x104, 0x106: las direcciones de programa avanzan de 2 en 2) y se ejecutan de forma <strong>secuencial</strong>, salvo en los saltos.",
+            "El programa en ensamblador es más largo que en C: la línea <code>c = a + b;</code> se ha convertido en cuatro instrucciones.",
+            "Una línea de ensamblador se corresponde con una instrucción en código máquina, que se almacena en una dirección de memoria.",
+            "Cada instrucción de ensamblador es una <strong>operación elemental</strong>, en la que casi siempre intervienen los WRs."
+          ]
+        },
+        {
+          "tipo": "nota",
+          "html": "El código máquina no es arbitrario: los campos de cada instrucción se leen en sus bits. En <code>0x804001</code> = <code>1000 0<strong>000 0100 0000 0000</strong> <strong>0001</strong></code>, el campo central vale 0x400 (la dirección 0x800 dividida entre 2, porque los datos de 16 bits están en direcciones pares) y los 4 últimos bits (0001) indican el registro destino W1. En <code>0x804012</code> el campo vale 0x401 (dirección 0x802) y el destino es W2 (0010). La codificación detallada de las instrucciones se ve en el tema de ensamblador."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>7.2.1 Resumen de las instrucciones en ensamblador del dsPIC</h3><p>Las instrucciones de ensamblador se pueden clasificar en los siguientes tipos:</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<table class=\"tabla-datos\"><thead><tr><th>Tipo</th><th>Para qué sirven</th><th>Instrucciones más importantes</th></tr></thead><tbody><tr><td>Transferencia de datos</td><td>Mover datos de un lugar a otro</td><td><code>mov</code></td></tr><tr><td>Aritméticas</td><td>Operaciones aritméticas</td><td><code>add</code> (suma), <code>sub</code> (resta), <code>cp</code> (comparación: resta los operandos y compara con 0), <code>neg</code> (complemento a 2), <code>mul</code> (multiplica), <code>div</code> (divide)</td></tr><tr><td>Lógicas</td><td>Operaciones lógicas bit a bit</td><td><code>and</code> (multiplicación lógica), <code>ior</code> (suma lógica), <code>com</code> (complemento a 1)</td></tr><tr><td>Desplazamientos de bits</td><td>Desplazar los bits de un registro a la derecha o a la izquierda</td><td><code>lsr</code> (<em>shift right</em>, derecha), <code>sl</code> (<em>shift left</em>, izquierda)</td></tr><tr><td>Saltos en la ejecución</td><td>Saltar según una condición</td><td><code>bra</code> con condición: <code>Z</code> (igual), <code>NZ</code> (no igual), <code>GTU</code> (mayor que, sin signo), <code>GTS</code> (mayor que, con signo)… (sección 8.6)</td></tr></tbody></table><p>Los números en ensamblador se usan o bien como <strong>literales</strong> o bien para referirse a <strong>direcciones de memoria</strong>. Por defecto un número se considera <strong>decimal</strong>; si se pone <code>0x</code> delante, está en <strong>hexadecimal</strong>.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>7.2.2 Modos de direccionamiento</h3><p>El <strong>modo de direccionamiento</strong> es la forma en que una instrucción indica dónde está su operando: en la propia instrucción, en un registro, en una dirección de memoria fija o en la dirección contenida en un registro (<strong>puntero</strong>). El dsPIC dispone de los siguientes modos:</p><table class=\"tabla-datos\"><thead><tr><th>Direccionamiento</th><th>Símbolo</th><th>Ejemplo</th><th>Efecto (W0 = 0x0800)</th><th>Equivalente en C</th></tr></thead><tbody><tr><td>Inmediato</td><td><code>#lit</code></td><td><code>MOV #5, W0</code></td><td>W0 ← 5 (el número 5)</td><td><code>a = 5;</code></td></tr><tr><td>Directo a WR</td><td><code>Wx</code></td><td><code>MOV W1, W0</code></td><td>W0 ← W1</td><td><code>a = b;</code></td></tr><tr><td>Directo a memoria</td><td><code>mem</code></td><td><code>MOV 0x800, W1</code></td><td>W1 ← (0x800)</td><td><code>a = variable;</code></td></tr><tr><td>Indirecto</td><td><code>[Wx]</code></td><td><code>MOV [W0], W1</code></td><td>W1 ← (0x800); W0 no cambia</td><td><code>a = *p;</code></td></tr><tr><td>Indirecto con pre-decremento</td><td><code>[--Wx]</code></td><td><code>MOV W1, [--W0]</code></td><td>W0 = 0x07FE; después (0x07FE) ← W1</td><td><code>*--p = a;</code></td></tr><tr><td>Indirecto con post-incremento</td><td><code>[Wx++]</code></td><td><code>MOV W1, [W0++]</code></td><td>(0x0800) ← W1; después W0 = 0x0802</td><td><code>*p++ = a;</code></td></tr><tr><td>Indirecto con post-decremento</td><td><code>[Wx--]</code></td><td><code>MOV W1, [W0--]</code></td><td>(0x0800) ← W1; después W0 = 0x07FE</td><td><code>*p-- = a;</code></td></tr><tr><td>Indirecto con pre-incremento</td><td><code>[++Wx]</code></td><td><code>MOV W1, [++W0]</code></td><td>W0 = 0x0802; después (0x0802) ← W1</td><td><code>*++p = a;</code></td></tr></tbody></table><p>La última columna es la equivalencia con C que el libro recomienda empezar a apuntar en un esquema propio: los modos indirectos son los <strong>punteros</strong> de C, y los modos con incremento/decremento son los operadores <code>++</code> y <code>--</code> aplicados al puntero. A continuación se describen los ejemplos del libro con la instrucción <code>MOV</code>:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Ejemplos de modos de direccionamiento con <code>MOV</code> (operando fuente, operando destino):</p>",
+          "codigo": "    MOV     W1, W0          ; Directo a WR (W1 -> W0)\n    MOV     #4, W0          ; Inmediato (4 -> W0)\n    MOV.B   #0, W0          ; Inmediato al byte bajo (0 -> W0)\n    MOV     0x800, W1       ; Directo desde memoria\n    MOV     [W0], W1        ; Indirecto ((W0) -> W1)\n    MOV     W1, [--W0]      ; Indirecto con pre-decremento\n    MOV     W1, [W0++]      ; Indirecto con post-incremento",
+          "lenguaje": "asm"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<code>MOV W1, W0</code> usa direccionamiento <strong>directo a registro</strong> en ambos operandos: carga el contenido de W1 en W0, a nivel de word (16 bits).",
+            "<code>MOV #4, W0</code> usa direccionamiento <strong>inmediato</strong> (símbolo <code>#</code>): carga el número 4 en W0.",
+            "<code>MOV.B #0, W0</code> carga 0 solo en el <strong>byte bajo</strong> de W0 (el sufijo <code>.B</code> indica operación de byte).",
+            "<code>MOV 0x800, W1</code> carga en W1 el valor almacenado en la posición de memoria 0x800, con direccionamiento <strong>directo a memoria</strong> (16 bits para la dirección). Si en la segunda instrucción olvidáramos el <code>#</code>, en W0 se cargaría el <em>contenido</em> de la posición 4 de memoria en lugar del número 4.",
+            "<code>MOV [W0], W1</code> carga en W1 el contenido de la posición de memoria <strong>apuntada por W0</strong>: es el direccionamiento <strong>indirecto</strong> (los corchetes indican «contenido de la posición»). Si W0 vale 0x800, se carga en W1 el contenido de la posición 0x800.",
+            "<code>MOV W1, [--W0]</code> y <code>MOV W1, [W0++]</code> son variantes del indirecto que, además de acceder al operando, <strong>actualizan el puntero</strong>. Con <strong>pre-decremento</strong> el puntero se decrementa <em>antes</em> de acceder: si W0 = 0x800, primero W0 = 0x7FE y después se escribe W1 (2 bytes) en 0x7FE. Con <strong>post-incremento</strong> el puntero se incrementa <em>después</em>: si W0 = 0x800, se escribe W1 en 0x800 y luego W0 = 0x802."
+          ]
+        },
+        {
+          "tipo": "nota",
+          "html": "El puntero se actualiza <strong>según el tamaño del operando</strong>: con operaciones de byte (<code>MOV.B</code>) se suma o resta <strong>1</strong>; con operaciones de word (<code>MOV</code>) se suma o resta <strong>2</strong> (dos bytes). Es una forma rudimentaria de manejo automático de tamaños; los operadores <code>++</code> y <code>--</code> de C hacen lo mismo con cualquier tipo (un <code>int *p</code> avanza 2 bytes con <code>p++</code>; un <code>char *p</code>, 1 byte). Según el datasheet (4.2.2), una carga de byte en un registro W escribe solo su byte bajo y <strong>no modifica</strong> el byte alto."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Prueba los modos de direccionamiento sobre un trozo de memoria: parte de W0 = 0x0800 y W1 = 0x1234, ejecuta cada <code>MOV</code> (en word o en byte) y observa el puntero antes y después y la celda que se lee o se escribe:</p><div class=\"mpi-mount\" data-componente=\"sim-direccionamiento\" data-config='{\"w0\": \"0x0800\", \"w1\": \"0x1234\", \"mem\": {\"0x07FE\": \"0x0000\", \"0x0800\": \"0xA557\", \"0x0802\": \"0x0000\"}}'></div>"
+        },
+        {
+          "tipo": "nota",
+          "html": "En el ejemplo del libro, <code>MOV W1, [--W0]</code> con W0 = 0x800 escribe en 0x7FE, que en el mapa real del dsPIC33FJ32MC202 ya pertenece a la zona de SFR (0x0000-0x07FF, sección 7.3.1). El ejemplo sirve para ver cómo se calcula el puntero; en un programa real los punteros a datos de usuario deben quedarse dentro de la RAM (0x0800-0x0FFF)."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>7.2.3 Números con signo y sin signo</h3><p>Un número negativo es aquel que, sumado al mismo número positivo, da cero. Por ejemplo, si se suman en 16 bits 0xFFFF y 0x0001, el resultado es 0x10000, que en 16 bits es 0x0000: 0xFFFF se comporta como −1. Esta aritmética se llama aritmética en <strong>coma fija complemento a 2</strong> y permite deducir el negativo de un número con la ecuación:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Negativo de x en complemento a 2 con 16 bits (en general, 2<sup>n</sup> − x con n bits):</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mo>−</mo><mi>x</mi><mo>=</mo><msup><mn>2</mn><mn>16</mn></msup><mo>−</mo><mi>x</mi></mrow></math>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Por ejemplo, en 16 bits el negativo de 2 es 0xFFFE en hexadecimal, o 65534 en decimal:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mo>−</mo><mn>2</mn><mo>→</mo><msup><mn>2</mn><mn>16</mn></msup><mo>−</mo><mn>2</mn><mo>=</mo><mn>65536</mn><mo>−</mo><mn>2</mn><mo>=</mo><mn>65534</mn><mo>=</mo><mn>0xFFFE</mn></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>En definitiva, los números que tienen un <strong>1 en el bit más significativo son negativos</strong> y los que tienen un 0 son positivos. Con n bits, en complemento a 2 se representan los números del intervalo:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Rango de un número con signo de n bits (16 bits: de −32768 a 32767; 8 bits: de −128 a 127):</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mo>−</mo><msup><mn>2</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></msup><mo>≤</mo><mi>x</mi><mo>≤</mo><msup><mn>2</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></msup><mo>−</mo><mn>1</mn></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Por lo tanto, si se mira una dirección de memoria del micro y se ve almacenado el número 0xFFFE, ¿qué significa? Puede tener muchos significados:</p><ul><li>Puede representar el número <strong>65534</strong> (sin signo).</li><li>Puede representar el número <strong>−2</strong> (con signo).</li><li>Puede representar cualquier otra codificación que el usuario quiera.</li></ul><p>Es decir, <strong>la interpretación del contenido de una posición de memoria depende del programador</strong>, y se concreta en el <strong>tipo de instrucciones</strong> que use para tratarla. Si accede a esa dirección con una instrucción que tiene en cuenta el signo (<code>MUL.SS</code>, <code>DIV.S</code>, <code>BRA GTS</code>…), la está interpretando como número con signo; si usa una instrucción que no tiene en cuenta el signo (<code>MUL.UU</code>, <code>DIV.U</code>, <code>BRA GTU</code>…), la interpreta como número sin signo. En C ocurre lo mismo con <code>int</code> frente a <code>unsigned int</code>.</p><p>Escribe un valor y mira sus dos lecturas, con y sin signo:</p><div class=\"mpi-mount\" data-componente=\"conv-signo\" data-config='{\"valor\": \"0xFFFE\", \"bits\": 16}'></div>"
+        }
+      ]
+    },
+    {
+      "titulo": "7.3 Mapa de memoria del dsPIC33FJ32MC202",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>La memoria del dsPIC33FJ32MC202 se separa en <strong>memoria de datos</strong> y <strong>memoria de programa</strong>, con espacios de direcciones y buses distintos (arquitectura Harvard modificada, datasheet 3.0 y 4.0). Una dirección como 0x0800 significa cosas distintas según la memoria a la que se refiera.</p><h3>7.3.1 Memoria de datos</h3><p>En la memoria de datos se almacenan los resultados y los operandos de las instrucciones. Está organizada en <strong>celdas de 1 byte</strong>, cada una con su dirección. Las direcciones van desde la 0 hasta la 0x0FFE (direcciones de word; el último byte es el 0x0FFF):</p><table class=\"tabla-datos\"><thead><tr><th>Direcciones</th><th>Zona</th><th>Tamaño</th></tr></thead><tbody><tr><td>0x0000-0x001E</td><td>Registros de trabajo W0-W15 (cada uno ocupa 2 bytes; W15 en 0x001E-0x001F)</td><td>32 bytes</td></tr><tr><td>0x0020-0x07FE</td><td>Resto de SFR: <code class=\"reg\">SPLIM</code> (0x0020), <code class=\"reg\">PC</code>, <code class=\"reg\">SR</code>, periféricos (<code class=\"reg\">TMR1</code> = 0x0100, <code class=\"reg\">TRISB</code> = 0x02C8…)</td><td>2016 bytes (2 KB con los WRs)</td></tr><tr><td>0x0800-0x0FFE</td><td><strong>RAM de usuario</strong>: variables, <em>stack</em>…</td><td>2 KB</td></tr><tr><td>0x1000-0xFFFE</td><td>No implementada (se lee como 0). La mitad alta (0x8000-0xFFFF) puede mapear opcionalmente parte de la memoria de programa (<em>Program Space Visibility</em>, el uso avanzado del que habla 7.4.2; fuera del curso)</td><td>—</td></tr></tbody></table><p>En la zona más baja (desde 0x0000 hasta 0x07FE) están mapeados los WRs y el resto de registros del micro (SFR, <em>special function registers</em>): <strong>2 KB de registros</strong>. En la zona más alta (desde 0x0800 hasta 0x0FFE) está la <strong>memoria RAM</strong> que pueden usar los programas: <strong>2 KB</strong>. Aunque el dsPIC puede direccionar con 16 bits (64 KB), el dsPIC33FJ32MC202 solo tiene 2 KB de RAM; según el datasheet (4.2), si una dirección apunta fuera de la zona implementada se devuelve un 0.</p><p>Como el micro es de 16 bits, el <strong>word de datos es de 16 bits</strong>. Si la memoria se agrupa en words, las direcciones aumentan de <strong>dos en dos</strong>, que es como se representa la memoria en adelante. Con los datos del programa de la sección 7.2, la misma memoria vista por bytes y por words queda así:</p><table class=\"tabla-datos\"><thead><tr><th>Dirección (byte)</th><th>Contenido</th></tr></thead><tbody><tr><td>0x800</td><td>0x34</td></tr><tr><td>0x801</td><td>0x12</td></tr><tr><td>0x802</td><td>0x78</td></tr><tr><td>0x803</td><td>0x56</td></tr><tr><td>0x804</td><td>0x00</td></tr><tr><td>0x805</td><td>0x00</td></tr></tbody></table><p></p><table class=\"tabla-datos\"><thead><tr><th>Dirección (word)</th><th>Contenido</th></tr></thead><tbody><tr><td>0x800</td><td>0x1234</td></tr><tr><td>0x802</td><td>0x5678</td></tr><tr><td>0x804</td><td>0x0000</td></tr></tbody></table><p>Es la regla <strong><em>little endian</em></strong>: el word 0x1234 en la dirección 0x800 guarda su byte bajo <strong>0x34 en 0x800</strong> (dirección par) y su byte alto <strong>0x12 en 0x801</strong> (impar). Para cargar en W0 el valor 0x1234 basta con leer el word de 0x800:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Lectura del word 0x1234 almacenado en 0x800:</p>",
+          "codigo": "    mov     0x800, W0       ; W0 = 0x1234",
+          "lenguaje": "asm"
+        },
+        {
+          "tipo": "nota",
+          "html": "Según el datasheet (4.2.2), todo acceso de <strong>word</strong> debe hacerse en una dirección <strong>par</strong> (alineada); un acceso de word a una dirección impar provoca una trampa de error de dirección. Los accesos de byte (<code>.B</code>) pueden usar cualquier dirección: el bit 0 de la dirección elige el byte bajo (par) o el alto (impar)."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>7.3.2 Memoria de programa</h3><p>La memoria de programa también se organiza en celdas de 1 byte, pero <strong>no</strong> se asigna una dirección a cada celda. Se agrupa en <strong>words de instrucción de 24 bits</strong>, ya que casi todas las instrucciones ocupan 24 bits, y cada instrucción sí lleva asociada una dirección de memoria de 23 bits.</p><p>Las direcciones de programa se incrementan de <strong>dos en dos</strong> entre una instrucción y la siguiente. El motivo (uso avanzado, fuera del objetivo del curso, pero útil para entender el ensamblador de la Práctica 4) es la compatibilidad con la memoria de datos: hay un mecanismo que permite ver la memoria de programa desde la memoria de datos, y desde ahí solo se ven los dos primeros bytes de cada instrucción (sus 16 bits bajos); el byte más alto solo es accesible con registros especiales. Por eso una instrucción de 3 bytes solo hace avanzar dos direcciones. Las dos primeras instrucciones del programa de 7.3 (<code>804001</code> = <code>MOV 0x800, W1</code> y <code>804012</code> = <code>MOV 0x802, W2</code>) quedan así por bytes y por words de instrucción, que es como se verán siempre en ensamblador:</p><table class=\"tabla-datos\"><thead><tr><th>Dirección</th><th>Byte</th></tr></thead><tbody><tr><td>0x100</td><td>0x01</td></tr><tr><td>0x101</td><td>0x40</td></tr><tr><td>(sin dirección)</td><td>0x80</td></tr><tr><td>0x102</td><td>0x12</td></tr><tr><td>0x103</td><td>0x40</td></tr><tr><td>(sin dirección)</td><td>0x80</td></tr></tbody></table><p></p><table class=\"tabla-datos\"><thead><tr><th>Dirección</th><th>Word de instrucción</th></tr></thead><tbody><tr><td>0x100</td><td>0x804001</td></tr><tr><td>0x102</td><td>0x804012</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El mapa de la memoria de programa (Figura 4-1 del datasheet) consta de tres zonas:</p><table class=\"tabla-datos\"><thead><tr><th>Direcciones</th><th>Zona</th><th>Comentario</th></tr></thead><tbody><tr><td>0x000000-0x0001FE</td><td>Vectores de interrupción</td><td>En 0x000000 un <code>GOTO</code> al inicio del programa (vector de <em>reset</em>); tablas de vectores 0x000004-0x0000FE y alternativa 0x000104-0x0001FE</td></tr><tr><td>0x000200-0x0057FE</td><td><strong>FLASH</strong> (no volátil) de usuario</td><td>Código de los programas: las instrucciones</td></tr><tr><td>0x005800-0xFFFFFE</td><td>No se puede usar</td><td>Según el datasheet: no implementada hasta 0x7FFFFE (se lee 0) y, por encima, espacio de configuración (bits de configuración, DEVID)</td></tr></tbody></table><p>En la zona FLASH se pueden llegar a almacenar unos <strong>11 K words de instrucción</strong>; es decir, unos <strong>32 KB de FLASH</strong>. Los vectores de interrupción se estudian en el tema de interrupciones.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Explora los dos mapas: pulsa en cada zona para ver sus límites y prueba la vista byte/word con el dato 0x1234 en 0x0800:</p><div class=\"mpi-mount\" data-componente=\"visor-mapa-memoria\" data-config='{\"datos\": [{\"ini\": \"0x0000\", \"fin\": \"0x001F\", \"nombre\": \"W0-W15\"}, {\"ini\": \"0x0020\", \"fin\": \"0x07FF\", \"nombre\": \"SFR\"}, {\"ini\": \"0x0800\", \"fin\": \"0x0FFF\", \"nombre\": \"RAM de usuario (2 KB)\"}], \"programa\": [{\"ini\": \"0x000000\", \"fin\": \"0x0001FF\", \"nombre\": \"Vectores de interrupción\"}, {\"ini\": \"0x000200\", \"fin\": \"0x0057FF\", \"nombre\": \"FLASH de usuario\"}], \"ejemploLittleEndian\": {\"dir\": \"0x0800\", \"valor\": \"0x1234\"}}'></div>"
+        },
+        {
+          "tipo": "nota",
+          "html": "Los límites del visor son los del datasheet expresados como primer y último <strong>byte</strong> de cada zona: datos según la Figura 4-3 y la tabla 4-1 (W15 = WREG15 en 0x001E-0x001F, SPLIM en 0x0020, SFR hasta 0x07FF, RAM 0x0800-0x0FFF); programa según la Figura 4-1 (vectores hasta 0x0001FE y FLASH hasta 0x0057FE como última dirección de instrucción, que el visor cierra en 0x0001FF y 0x0057FF). Coinciden con las direcciones de word del libro (0x07FE, 0x0FFE, 0x0001FE, 0x0057FE)."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>7.3.3 Registros de trabajo (WRs)</h3><p>Los registros de trabajo son <strong>16</strong>, de <code class=\"reg\">W0</code> a <code class=\"reg\">W15</code>, todos de 16 bits. <code class=\"reg\">W15</code> se usa como <strong><em>stack pointer</em></strong> (sección 7.3.5). Están ubicados al principio de la memoria de datos: W0 en 0x0000, W1 en 0x0002… y W15 en 0x001E (datasheet, tabla 4-1). Por eso un WR puede leerse también como una posición de memoria.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>7.3.4 Otros registros</h3><p>En las siguientes subsecciones se describen los principales registros de la CPU. En temas posteriores se verán los registros que gestionan los periféricos del dsPIC.</p><h4>7.4.4.1 Status register (SR)</h4><p>El registro de estado <code class=\"reg\">SR</code> almacena el estado en el que ha quedado el micro después de ejecutar una instrucción. Es un registro de <strong>16 bits</strong>, del que por ahora solo se ven los <strong>flags de estado</strong> de los bits 3-0:</p><table class=\"tabla-datos\"><thead><tr><th>Bit</th><th>15 … 4</th><th>3</th><th>2</th><th>1</th><th>0</th></tr></thead><tbody><tr><td>SR</td><td>…</td><td>N</td><td>OV (V)</td><td>Z</td><td>C</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>C (bit 0, flag de acarreo, <em>carry</em>).</strong> Para números <strong>sin signo</strong>: indica si ha habido rebose al sumar (acarreo que sale del bit más significativo). También indica el acarreo «negativo» (<em>borrow</em>) en una resta, cuando el sustraendo es mayor que el minuendo.",
+            "<strong>Z (bit 1, flag de cero).</strong> Indica si una operación ha dado como resultado cero.",
+            "<strong>OV (bit 2, flag de rebose, <em>overflow</em>; el libro lo llama V).</strong> Para números <strong>con signo</strong>: se pone a 1 si al sumar dos números positivos se obtiene uno negativo (bit más significativo a 1), y viceversa. Al sumar dos números de distinto signo nunca hay rebose.",
+            "<strong>N (bit 3, flag de número negativo).</strong> Indica que una operación ha generado un resultado negativo: en 8 bits, que el bit 7 es 1; en 16 bits, que el bit 15 es 1."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El resto de campos del registro, según el datasheet (registro 3-1), son <strong>IPL&lt;2:0&gt;</strong> (bits 7-5, nivel de prioridad de la CPU, que se usará en el tema de interrupciones), <strong>RA</strong> (bit 4, bucle <code>REPEAT</code> activo), <strong>DC</strong> (bit 8, acarreo intermedio) y los bits del núcleo DSP (OA, OB, SA, SB, OAB, SAB) y de bucle <code>DO</code> (DA), que no se usan en el curso. Pulsa en los bits para ver cada campo; el valor de ejemplo 0x0009 tiene a 1 N y C (resultado negativo con acarreo; por ejemplo, 0xC000 + 0xC000 = 0x18000 → 0x8000 en 16 bits: C = 1, N = 1, Z = 0 y OV = 0, porque −16384 + (−16384) = −32768 sí cabe en 16 bits):</p>"
+        },
+        {
+          "tipo": "registro",
+          "registro": "SR",
+          "valor": "0x0009"
+        },
+        {
+          "tipo": "nota",
+          "html": "Ejemplo: tras <code>ADD W1, W2, W3</code> del programa de 7.3 (0x1234 + 0x5678 = 0x68AC) el SR queda con los cuatro flags a 0: no hay acarreo, el resultado no es cero, su bit 15 es 0 (positivo) y al sumar dos positivos se obtiene un positivo (no hay rebose). Si en cambio W0 = 0x8000 y se ejecuta <code>add W0, W0, W0</code>, el resultado es 0x10000 → 0x0000 en 16 bits: C = 1, Z = 1 y OV = 1 (dos negativos dan un no negativo), N = 0: SR = 0x0007."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h4>7.4.4.2 Program counter (PC)</h4><p>El <code class=\"reg\">PC</code> almacena la dirección de la <strong>siguiente instrucción</strong> que va a ejecutar la CPU. Tiene <strong>23 bits</strong>, de los cuales el primero (el bit 0) siempre es 0, porque las direcciones de instrucción son pares; por ello puede direccionar hasta 4 M words de instrucción (2<sup>22</sup> = 4 194 304). Al ejecutar una instrucción que no es un salto, el PC avanza 2 (0x100 → 0x102 → 0x104…). En el caso del dsPIC33FJ32MC202 le sobran bits, porque no tiene tanta memoria de programa (la última instrucción está en 0x0057FE, que cabe en 15 bits).</p><h4>7.4.4.3 Stack Pointer Limit (SPLIM)</h4><p>El <code class=\"reg\">SPLIM</code> indica el valor máximo al que puede llegar el <em>stack pointer</em>, que es <code class=\"reg\">W15</code>. Está en la dirección 0x0020 de la memoria de datos, no se inicializa en el reset y su bit 0 es siempre 0, porque las operaciones de pila son de word (datasheet 4.4.1). Se explica con más detalle en la sección 7.4.5.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>7.3.5 El stack</h3><p>El <strong><em>stack</em></strong> (pila) es una zona de la memoria de datos donde los programas almacenan información de forma <strong>temporal</strong>:</p><ul><li>Se guardan el <strong>PC y el SR cuando hay una interrupción</strong>, para que al volver de ella la CPU esté en el mismo estado y siga ejecutando la instrucción en la que estaba.</li><li>Se guarda el <strong>PC en las llamadas a subrutinas</strong> (<code>CALL</code>), para saber dónde hay que volver al terminar.</li><li>Se guardan <strong>WRs en las subrutinas</strong>, que actúan como variables locales, para no sobrescribir la información de los WRs del código que llamó a la subrutina.</li></ul><p>El stack comprende la zona de la memoria de datos entre la dirección <strong>0x800</strong> y <strong>SPLIM</strong>. SPLIM es la cota superior (<em>stack overflow</em>) y 0x800 la cota inferior (<em>stack underflow</em>). Es una memoria <strong>LIFO</strong> (<em>last in, first out</em>): el último dato que entra es el primero en salir. Para llevar este control los micros tienen un <strong>SP</strong> (<em>stack pointer</em>), que indica lo lleno que está el stack y el <strong>siguiente lugar libre</strong>. En este micro el SP es <code class=\"reg\">W15</code>. El valor inicial de W15 depende del programador, así que el stack puede estar en cualquier lugar de la RAM entre 0x800 y SPLIM. Las instrucciones que usan el stack se ven en el tema de ensamblador (secciones 8.2.2 y 8.7).</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<table class=\"tabla-datos\"><thead><tr><th>Operación</th><th>Modo de direccionamiento sobre W15</th><th>Qué pasa</th></tr></thead><tbody><tr><td>Meter un dato (<em>push</em>)</td><td><code>[W15++]</code> (post-incremento)</td><td>Se escribe en la posición libre a la que apunta W15 y después W15 avanza 2</td></tr><tr><td>Sacar un dato (<em>pop</em>)</td><td><code>[--W15]</code> (pre-decremento)</td><td>W15 retrocede 2 hasta el último dato metido y después se lee</td></tr></tbody></table><p>Es decir, la pila del dsPIC <strong>crece hacia direcciones altas</strong> (de 0x800 hacia SPLIM) y W15 apunta siempre al primer word libre (datasheet 4.4.1, Figura 4-4). Las instrucciones <code>PUSH Wn</code> y <code>POP Wn</code> del tema siguiente equivalen a <code>MOV Wn, [W15++]</code> y <code>MOV [--W15], Wn</code>. Al guardar el PC (23 bits) hacen falta <strong>dos words</strong> de pila; en una interrupción, junto con la parte alta del PC se guardan también los 8 bits bajos del SR. Según el datasheet, tras el reset W15 vale 0x0800, y si W15 baja de 0x0800 o supera SPLIM se produce una trampa de error de pila (<em>stack error trap</em>).</p>"
+        }
+      ]
+    }
+  ],
+  "registros": {
+    "SR": {
+      "nombre": "SR",
+      "titulo": "SR — registro de estado de la CPU",
+      "ancho": 16,
+      "nota": "En el curso se usan los flags C, Z, OV y N (libro 7.4.4.1; el libro llama V al flag OV) y, en interrupciones, IPL<2:0>. Posiciones según el datasheet, registro 3-1 (sección 3.5). Valor tras reset: 0x0000.",
+      "campos": [
+        {
+          "bit": 15,
+          "nombre": "OA",
+          "desc": "Rebose del acumulador A del núcleo DSP. No se usa en el curso (DSP).",
+          "valores": {
+            "0": "Sin rebose",
+            "1": "Acumulador A desbordado"
+          }
+        },
+        {
+          "bit": 14,
+          "nombre": "OB",
+          "desc": "Rebose del acumulador B del núcleo DSP. No se usa en el curso (DSP).",
+          "valores": {
+            "0": "Sin rebose",
+            "1": "Acumulador B desbordado"
+          }
+        },
+        {
+          "bit": 13,
+          "nombre": "SA",
+          "desc": "Saturación (persistente) del acumulador A. No se usa en el curso (DSP).",
+          "valores": {
+            "0": "No saturado",
+            "1": "Saturado"
+          }
+        },
+        {
+          "bit": 12,
+          "nombre": "SB",
+          "desc": "Saturación (persistente) del acumulador B. No se usa en el curso (DSP).",
+          "valores": {
+            "0": "No saturado",
+            "1": "Saturado"
+          }
+        },
+        {
+          "bit": 11,
+          "nombre": "OAB",
+          "desc": "OA o OB: rebose de algún acumulador. No se usa en el curso (DSP).",
+          "valores": {
+            "0": "Ninguno desbordado",
+            "1": "A o B desbordado"
+          }
+        },
+        {
+          "bit": 10,
+          "nombre": "SAB",
+          "desc": "SA o SB: saturación de algún acumulador. No se usa en el curso (DSP).",
+          "valores": {
+            "0": "Ninguno saturado",
+            "1": "A o B saturado"
+          }
+        },
+        {
+          "bit": 9,
+          "nombre": "DA",
+          "desc": "Bucle DO en curso. No se usa en el curso (DSP).",
+          "valores": {
+            "0": "Sin bucle DO",
+            "1": "Bucle DO en curso"
+          }
+        },
+        {
+          "bit": 8,
+          "nombre": "DC",
+          "desc": "Acarreo intermedio (half carry): acarreo que sale del bit 3 (operación de byte) o del bit 7 (operación de word).",
+          "valores": {
+            "0": "Sin acarreo intermedio",
+            "1": "Acarreo intermedio"
+          }
+        },
+        {
+          "bits": [
+            7,
+            5
+          ],
+          "nombre": "IPL",
+          "desc": "Nivel de prioridad de la CPU (IPL<2:0>). Solo se atienden las interrupciones de prioridad mayor que este nivel; con 7 se inhiben las interrupciones de usuario. Se verá en el tema de interrupciones.",
+          "valores": {
+            "0": "Prioridad 0",
+            "1": "Prioridad 1",
+            "2": "Prioridad 2",
+            "3": "Prioridad 3",
+            "4": "Prioridad 4",
+            "5": "Prioridad 5",
+            "6": "Prioridad 6",
+            "7": "Prioridad 7 (interrupciones de usuario inhibidas)"
+          }
+        },
+        {
+          "bit": 4,
+          "nombre": "RA",
+          "desc": "Bucle REPEAT en curso (solo lectura).",
+          "valores": {
+            "0": "Sin bucle REPEAT",
+            "1": "Bucle REPEAT en curso"
+          }
+        },
+        {
+          "bit": 3,
+          "nombre": "N",
+          "desc": "Resultado negativo: copia del bit más significativo del resultado (bit 15 en word, bit 7 en byte).",
+          "valores": {
+            "0": "Resultado ≥ 0",
+            "1": "Resultado negativo"
+          }
+        },
+        {
+          "bit": 2,
+          "nombre": "OV",
+          "desc": "Rebose en aritmética con signo (el libro lo llama V): el signo del resultado es incorrecto (p. ej. positivo + positivo = negativo).",
+          "valores": {
+            "0": "Sin rebose",
+            "1": "Rebose con signo"
+          }
+        },
+        {
+          "bit": 1,
+          "nombre": "Z",
+          "desc": "Resultado cero.",
+          "valores": {
+            "0": "Resultado distinto de 0",
+            "1": "Resultado 0"
+          }
+        },
+        {
+          "bit": 0,
+          "nombre": "C",
+          "desc": "Acarreo/préstamo (carry/borrow) que sale del bit más significativo: rebose en aritmética sin signo.",
+          "valores": {
+            "0": "Sin acarreo",
+            "1": "Acarreo"
+          }
+        }
+      ]
+    }
+  },
+  "ejercicios": {
+    "arquitectura-dspic-1": {
+      "titulo": "Modos de direccionamiento y pila (cuestiones 7.5.1 y 7.5.2)",
+      "enunciado": "<p>Se parte del estado W0 = 0x0800, W1 = 0x1234 y la memoria de datos (0x07FE) = 0x0000, (0x0800) = 0xA557, (0x0802) = 0x0000. Cada pregunta parte de nuevo de este estado.</p>",
+      "contexto": "<ul><li>Pre-decremento <code>[--Wx]</code> / pre-incremento <code>[++Wx]</code>: el puntero cambia <em>antes</em> del acceso.</li><li>Post-incremento <code>[Wx++]</code> / post-decremento <code>[Wx--]</code>: el puntero cambia <em>después</em>.</li><li>Word (<code>MOV</code>): ±2. Byte (<code>MOV.B</code>): ±1. Little endian: byte bajo en la dirección par.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Qué hace <code>MOV W1, [--W0]</code>?",
+          "opciones": [
+            "W0 = 0x07FE y se escribe 0x1234 en la posición 0x07FE.",
+            "Se escribe 0x1234 en 0x0800 y después W0 = 0x07FE.",
+            "W0 = 0x07FF y se escribe 0x1234 en la posición 0x07FF.",
+            "W0 = 0x07FE y se escribe 0x1234 en la posición 0x0800."
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Es indirecto con <strong>pre-decremento</strong> de word: primero W0 = 0x0800 − 2 = <strong>0x07FE</strong> y después se escribe W1 (2 bytes) en la posición apuntada, 0x07FE. Es el ejemplo de 7.3.2. Restar 1 solo sería correcto con <code>MOV.B</code>; escribir en 0x0800 sería un post-decremento (<code>[W0--]</code>).</p>"
+        },
+        {
+          "texto": "¿Cómo quedan W1 y W0 tras <code>MOV.B [W0++], W1</code>?",
+          "opciones": [
+            "W1 = 0x0057, W0 = 0x0801",
+            "W1 = 0x1257, W0 = 0x0801",
+            "W1 = 0x12A5, W0 = 0x0801",
+            "W1 = 0x1257, W0 = 0x0802"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Es una lectura de <strong>byte</strong> en la dirección 0x0800. Por ser <em>little endian</em>, el word 0xA557 guarda 0x57 en 0x0800 (par) y 0xA5 en 0x0801, así que se lee <strong>0x57</strong>. Una carga de byte en un registro W solo escribe su byte bajo y deja intacto el alto (datasheet 4.2.2): W1 = 0x12<strong>57</strong>. El post-incremento de byte suma 1: <strong>W0 = 0x0801</strong>.</p>"
+        },
+        {
+          "texto": "Para copiar vectores de <code>int</code> con <code>*pd++ = *ps++;</code>, con <code>ps</code> en W1 y <code>pd</code> en W2, ¿qué instrucción la traduce?",
+          "opciones": [
+            "<code>MOV [W1++], [W2++]</code>",
+            "<code>MOV [++W1], [++W2]</code>",
+            "<code>MOV W1, W2</code>",
+            "<code>MOV [W1], [W2]</code>"
+          ],
+          "correcta": 0,
+          "explicacion": "<p><code>*ps++</code> lee el dato apuntado por ps y <em>después</em> incrementa el puntero: es el indirecto con <strong>post-incremento</strong> <code>[W1++]</code>. Lo mismo para el destino <code>*pd++</code> → <code>[W2++]</code>. Con <code>MOV</code> (word) cada puntero avanza 2 bytes, igual que un <code>int *</code> en C; para un vector de <code>char</code> sería <code>MOV.B [W1++], [W2++]</code> (avance de 1). El pre-incremento se saltaría el primer elemento; <code>MOV W1, W2</code> copia el puntero, no el dato; y <code>[W1], [W2]</code> copia un elemento pero no avanza los punteros.</p>"
+        },
+        {
+          "texto": "Se quiere hacer en memoria una pila LIFO con W15 apuntando al primer hueco libre y creciendo hacia direcciones altas (como la del dsPIC). ¿Qué modos se usan para meter y sacar datos? ¿Hay en el dsPIC más de una combinación posible?",
+          "opciones": [
+            "Meter con <code>[W15++]</code> y sacar con <code>[--W15]</code>; con otras convenciones hay más combinaciones válidas (p. ej. una pila que crece hacia abajo: meter con <code>[--Wx]</code> y sacar con <code>[Wx++]</code>).",
+            "Meter con <code>[W15++]</code> y sacar con <code>[W15--]</code>; es la única combinación posible.",
+            "Meter con <code>[--W15]</code> y sacar con <code>[--W15]</code>.",
+            "Meter con <code>[++W15]</code> y sacar con <code>[--W15]</code>."
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Si W15 apunta al hueco libre, para <strong>meter</strong> se escribe ahí y después se avanza: <code>[W15++]</code>; para <strong>sacar</strong> primero se retrocede al último dato y después se lee: <code>[--W15]</code>. Así funciona la pila del dsPIC (datasheet 4.4.1). <code>[W15--]</code> leería el hueco libre, no el último dato; <code>[++W15]</code> para meter dejaría un hueco. Sí hay <strong>más de una combinación</strong>: una pila que crece hacia abajo usa <code>[--Wx]</code> para meter y <code>[Wx++]</code> para sacar, y si el puntero apunta al último dato ocupado se usan <code>[++Wx]</code> / <code>[Wx--]</code>.</p>"
+        }
+      ]
+    },
+    "arquitectura-dspic-2": {
+      "titulo": "Números con signo y flags del SR (cuestiones 7.5.3 y 7.5.6)",
+      "enunciado": "<p>Aritmética en complemento a 2 y flags del registro de estado <code class=\"reg\">SR</code> del dsPIC: C (bit 0), Z (bit 1), OV (bit 2), N (bit 3).</p>",
+      "contexto": "<ul><li>Negativo en n bits: −x = 2<sup>n</sup> − x.</li><li>Rango con signo de n bits: de −2<sup>n−1</sup> a 2<sup>n−1</sup> − 1.</li><li>C: acarreo del bit más significativo. OV: rebose con signo. N: bit más significativo del resultado. Z: resultado cero.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "Codifica −23 en 7 bits en complemento a 2. ¿Se podría codificar en 5 bits?",
+          "opciones": [
+            "1101001b; no cabe en 5 bits (rango de −16 a 15).",
+            "1010111b; sí cabe en 5 bits.",
+            "1101000b; no cabe en 5 bits.",
+            "1101001b; sí, en 5 bits es 01001b."
+          ],
+          "correcta": 0,
+          "explicacion": "<p>−23 = 2<sup>7</sup> − 23 = 128 − 23 = 105 = 64 + 32 + 8 + 1 = <strong>1101001b</strong> (comprobación: 1101001b + 0010111b = 10000000b → 0000000 en 7 bits). En 5 bits el rango con signo es de −2<sup>4</sup> = −16 a 2<sup>4</sup> − 1 = 15, así que <strong>−23 no cabe</strong> (hacen falta al menos 6 bits: 101001b). 1010111b es signo-magnitud, 1101000b es complemento a 1, y 01001b vale +9.</p>"
+        },
+        {
+          "texto": "En la posición 0x0800 se lee el word 0xFFFE. ¿Qué número representa?",
+          "opciones": [
+            "65534 si se interpreta sin signo y −2 si se interpreta con signo; lo decide el programador con las instrucciones que use.",
+            "Siempre −2, porque su bit 15 vale 1.",
+            "Siempre 65534, porque la memoria no guarda signo.",
+            "−65534 con signo y 65534 sin signo."
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Sin signo, 0xFFFE = <strong>65534</strong>. Con signo, como el bit 15 es 1 es negativo: −x = 2<sup>16</sup> − 0xFFFE = 65536 − 65534 = 2 → <strong>−2</strong>. La memoria solo guarda bits: la interpretación la hace el programador al elegir instrucciones con signo (<code>MUL.SS</code>, <code>DIV.S</code>, <code>BRA GTS</code>) o sin signo (<code>MUL.UU</code>, <code>DIV.U</code>, <code>BRA GTU</code>).</p>"
+        },
+        {
+          "texto": "Si W0 = 0x8000, ¿cómo queda el SR (bits 3-0) tras <code>add W0, W0, W0</code>?",
+          "opciones": [
+            "SR = 0x0007: C, Z y OV a 1 (tres bits a 1).",
+            "SR = 0x0009: N y C a 1.",
+            "SR = 0x0005: C y OV a 1.",
+            "SR = 0x000D: N, OV y C a 1."
+          ],
+          "correcta": 0,
+          "explicacion": "<p>0x8000 + 0x8000 = 0x10000, que en 16 bits es <strong>0x0000</strong> con un acarreo que sale del bit 15: <strong>C = 1</strong>. El resultado es cero: <strong>Z = 1</strong>. Con signo, 0x8000 es −32768; sumar dos negativos y obtener un no negativo es rebose: <strong>OV = 1</strong>. El bit 15 del resultado es 0: <strong>N = 0</strong>. DC tampoco se activa (no hay acarreo del bit 7). SR = 0111b = <strong>0x0007</strong>: quedan <strong>3 bits</strong> a 1.</p>"
+        },
+        {
+          "texto": "Tras ejecutar el programa de 7.3 (<code>ADD W1, W2, W3</code> con W1 = 0x1234 y W2 = 0x5678), ¿cuánto vale W3 y qué flags quedan a 1?",
+          "opciones": [
+            "W3 = 0x68AC y ningún flag a 1.",
+            "W3 = 0x68AC y N = 1.",
+            "W3 = 0x68AC y OV = 1.",
+            "W3 = 0x6912 y C = 1."
+          ],
+          "correcta": 0,
+          "explicacion": "<p>0x1234 + 0x5678 = <strong>0x68AC</strong> (4660 + 22136 = 26796). No pasa de 0xFFFF → C = 0; no es cero → Z = 0; su bit 15 es 0 (0x6 = 0110b) → N = 0; dos positivos dan un positivo → OV = 0. Ningún flag a 1.</p>"
+        }
+      ]
+    },
+    "arquitectura-dspic-3": {
+      "titulo": "Mapa de memoria y little endian (cuestiones 7.5.4 y 7.5.5)",
+      "enunciado": "<p>Mapa de memoria del dsPIC33FJ32MC202: datos con SFR en 0x0000-0x07FF y RAM de usuario en 0x0800-0x0FFF; programa con vectores en 0x000000-0x0001FE y FLASH desde 0x000200. El micro es <em>little endian</em>.</p>",
+      "contexto": "<ul><li>Datos: direcciones de byte; los words están en direcciones pares.</li><li>Programa: instrucciones de 24 bits (3 bytes), con direcciones que avanzan de 2 en 2.</li><li>1 KB = 1024 bytes = 0x400.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "La RAM tiene 2 KB bajos con los SFR y 2 KB altos para datos de usuario, stack, etc. Se quiere situar un vector de 10 datos justo a la mitad de esos 2 KB altos. ¿En qué dirección va el primer dato?",
+          "opciones": [
+            "0x0C00",
+            "0x0400",
+            "0x0A00",
+            "0x0800"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>La zona alta va de 0x0800 a 0x0FFF (2 KB = 0x800 bytes). Su mitad está 1 KB = 0x400 más allá del principio: 0x0800 + 0x0400 = <strong>0x0C00</strong>. 0x0400 es la mitad de la zona de SFR; 0x0800 es el principio de la RAM.</p>"
+        },
+        {
+          "texto": "Un programa de 4 instrucciones ocupa 1 word de programa cada una. ¿Cuántos bytes de memoria ocupa?",
+          "opciones": [
+            "12 bytes",
+            "8 bytes",
+            "16 bytes",
+            "6 bytes"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Cada word de instrucción es de 24 bits = <strong>3 bytes</strong>, luego 4 × 3 = <strong>12 bytes</strong>. No hay que confundirlo con las direcciones: las 4 instrucciones ocupan 4 direcciones que avanzan de 2 en 2 (0x100, 0x102, 0x104, 0x106), lo que llevaría a pensar erróneamente en 8 bytes.</p>"
+        },
+        {
+          "texto": "Se escribe el word 0x1234 en la dirección 0x0800. ¿Qué byte queda en la dirección 0x0801?",
+          "opciones": [
+            "0x12",
+            "0x34",
+            "0x00",
+            "0x1234"
+          ],
+          "correcta": 0,
+          "explicacion": "<p><em>Little endian</em>: el byte menos significativo (0x34) va a la dirección par 0x0800 y el más significativo (<strong>0x12</strong>) a la impar 0x0801. Por eso <code>MOV.B 0x801, W0</code> cargaría 0x12 en el byte bajo de W0.</p>"
+        },
+        {
+          "texto": "El programa de 7.3 empieza en 0x100 y su última instrucción, <code>MOV W3, 0x804</code>, está en 0x106. ¿Cuánto vale el PC justo después de ejecutarla?",
+          "opciones": [
+            "0x108",
+            "0x107",
+            "0x109",
+            "0x10A"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>El PC guarda la dirección de la siguiente instrucción, y las direcciones de programa avanzan de <strong>2 en 2</strong> aunque cada instrucción ocupe 3 bytes: 0x106 + 2 = <strong>0x108</strong>. Además el bit 0 del PC es siempre 0, así que nunca puede valer 0x107 ni 0x109.</p>"
+        }
+      ]
+    }
+  },
+  "ejerciciosEnTema": [
+    "arquitectura-dspic-1",
+    "arquitectura-dspic-2",
+    "arquitectura-dspic-3"
+  ],
+  "tituloEjercicios": "Ejercicios y cuestiones",
+  "resumen": [
+    "El <strong>modelo del programador</strong> del dsPIC: 16 registros de trabajo de 16 bits <code class=\"reg\">W0</code>-<code class=\"reg\">W15</code> (<code class=\"reg\">W15</code> es el <em>stack pointer</em>), <code class=\"reg\">PC</code> de 23 bits, <code class=\"reg\">SR</code> y <code class=\"reg\">SPLIM</code>; los registros de E/S están <strong>mapeados en la memoria de datos</strong>.",
+    "Cada instrucción de ensamblador es <strong>una</strong> instrucción de código máquina de 24 bits (3 bytes). El ejemplo <code>MOV 0x800,W1 / MOV 0x802,W2 / ADD W1,W2,W3 / MOV W3,0x804</code> (0x804001, 0x804012, 0x408182, 0x884023 en 0x100-0x106) suma 0x1234 + 0x5678 = 0x68AC.",
+    "Modos de direccionamiento: inmediato <code>#lit</code>, directo a WR <code>Wx</code>, directo a memoria <code>mem</code>, indirecto <code>[Wx]</code> y sus variantes <code>[--Wx]</code>, <code>[Wx++]</code>, <code>[Wx--]</code>, <code>[++Wx]</code>, que actualizan el puntero en ±2 (word) o ±1 (<code>.B</code>), como <code>*p++</code> en C.",
+    "En complemento a 2, −x = 2<sup>16</sup> − x: 0xFFFE puede ser 65534 (sin signo) o −2 (con signo). La interpretación la decide el programador con el tipo de instrucción (<code>GTU</code>/<code>GTS</code>, <code>MUL.UU</code>/<code>MUL.SS</code>).",
+    "Memoria de datos: SFR en 0x0000-0x07FE (W0-W15 en 0x0000-0x001E) y <strong>2 KB de RAM</strong> en 0x0800-0x0FFE. Es <strong><em>little endian</em></strong> (0x1234 en 0x800 → 0x34 en 0x800, 0x12 en 0x801) y los words van en direcciones pares.",
+    "Memoria de programa: vectores de interrupción en 0x000000-0x0001FE y FLASH en 0x000200-0x0057FE (unos 11 K instrucciones, 32 KB). Las direcciones de instrucción avanzan de <strong>2 en 2</strong>.",
+    "<code class=\"reg\">SR</code>: C (bit 0, acarreo sin signo), Z (bit 1, cero), OV (bit 2, rebose con signo), N (bit 3, negativo) e IPL&lt;2:0&gt; (bits 7-5). Ejemplo: W0 = 0x8000 y <code>add W0,W0,W0</code> → SR = 0x0007.",
+    "El <strong>stack</strong> es una zona LIFO de la RAM entre 0x800 y <code class=\"reg\">SPLIM</code>; W15 apunta al primer hueco libre y crece hacia direcciones altas (meter con <code>[W15++]</code>, sacar con <code>[--W15]</code>). Guarda el PC en las llamadas y el PC y el SR en las interrupciones."
+  ]
+}

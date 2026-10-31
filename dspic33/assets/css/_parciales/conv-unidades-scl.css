@@ -1,0 +1,69 @@
+/* ---------- Componente: conv-unidades-scl (unidades sin decimales para estímulos SCL) ---------- */
+.mpi-conv-unidades-scl { position: relative; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-conv-unidades-scl .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .7rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; }
+.cus-cab-sub { color: var(--txt-tenue); font-weight: 400; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
+.cus-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.mpi-conv-unidades-scl button:focus-visible, .mpi-conv-unidades-scl input:focus-visible, .mpi-conv-unidades-scl select:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 2px; }
+.cus-btn { background: var(--bg-3); border: 1px solid var(--borde); color: var(--txt); padding: .3rem .6rem; border-radius: 5px; cursor: pointer; font-size: .78rem; min-height: 32px; }
+.cus-btn:hover { border-color: var(--acento); }
+
+.cus-top { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; font-size: .86rem; color: var(--txt-2); }
+.cus-top select, .cus-form select { font-family: var(--mono); background: var(--bg); border: 1px solid var(--borde); color: var(--txt); padding: .35rem .45rem; border-radius: 5px; font-size: .84rem; max-width: 100%; min-width: 0; }
+.cus-tcy { font-family: var(--mono); font-size: .8rem; color: var(--txt-tenue); }
+
+.cus-rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: .8rem; margin-top: .8rem; }
+.cus-caja { background: var(--bg); border: 1px solid var(--borde-2); border-radius: 8px; padding: .7rem .8rem; min-width: 0; }
+.cus-tit { margin: 0 0 .5rem; font-size: .9rem; color: var(--txt); font-weight: 600; }
+.cus-form { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .5rem; }
+.cus-form label { font-size: .82rem; color: var(--txt-2); }
+.cus-in { font-family: var(--mono); background: var(--bg-2); border: 1px solid var(--borde); color: var(--azul-cl); padding: .38rem .5rem; border-radius: 5px; font-size: .86rem; min-width: 0; }
+.cus-form .cus-in { width: 7rem; }
+.cus-l { width: 100%; }
+.cus-in[aria-invalid="true"] { border-color: var(--rojo); }
+.cus-err { color: var(--rojo); font-size: .8rem; margin: .35rem 0 0; }
+.cus-err:empty { display: none; }
+.cus-ejs { display: flex; flex-wrap: wrap; gap: .3rem; margin: .5rem 0 0; }
+.cus-ejs-l .cus-btn { font-family: var(--mono); font-size: .74rem; }
+
+.cus-res { margin: .55rem 0 .2rem; }
+.cus-res:empty { display: none; }
+.cus-kv { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .5rem; font-size: .84rem; margin-top: .3rem; }
+.cus-kv > span:first-child { color: var(--txt-2); font-family: var(--mono); font-size: .8rem; }
+.cus-kv b { font-family: var(--mono); color: var(--acento); font-size: .98rem; }
+.cus-tenue { color: var(--txt-tenue); font-size: .76rem; }
+.cus-p { margin: .4rem 0 0; line-height: 1.45; }
+.cus-aviso { font-size: .79rem; line-height: 1.5; color: var(--txt); background: rgba(220,220,170,.08); border: 1px solid rgba(220,220,170,.35); border-radius: 6px; padding: .35rem .55rem; margin: .4rem 0 0; }
+.cus-aviso b { font-family: var(--mono); color: var(--amarillo); }
+.cus-mal { background: rgba(244,135,113,.08); border-color: rgba(244,135,113,.45); }
+.cus-ok { font-size: .8rem; color: var(--acento); margin: .4rem 0 0; line-height: 1.45; }
+.mpi-conv-unidades-scl :not(pre) > code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+
+.cus-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: .5rem 0 .2rem; }
+.cus-tabla { border-collapse: collapse; width: 100%; font-size: .78rem; }
+.cus-tabla th, .cus-tabla td { text-align: left; padding: .22rem .45rem; border-bottom: 1px solid var(--borde-2); white-space: nowrap; }
+.cus-tabla thead th { color: var(--txt-tenue); font-weight: 600; font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; }
+.cus-tabla tbody th { font-family: var(--mono); color: var(--txt-2); font-weight: 600; }
+.cus-tabla td { font-family: var(--mono); color: var(--txt); }
+.cus-tabla tr.cus-nodec td, .cus-tabla tr.cus-nodec th { color: var(--txt-tenue); }
+.cus-tabla tr.cus-mejor td, .cus-tabla tr.cus-mejor th { background: rgba(78,201,176,.12); color: var(--txt); }
+.cus-si { color: var(--acento); font-family: var(--sans); }
+.cus-no { color: var(--rojo); font-family: var(--sans); }
+
+.cus-cod { display: flex; align-items: flex-start; gap: .4rem; margin-top: .5rem; }
+.cus-pre { flex: 1 1 auto; min-width: 0; margin: 0; padding: .5rem .7rem; }
+.cus-pre code { display: block; font-size: .82rem; color: var(--amarillo); }
+.cus-pre code:empty::before { content: "—"; color: var(--txt-tenue); }
+
+.cus-diag { margin-top: .6rem; }
+.cus-msgs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .3rem; }
+.cus-msgs li { font-size: .8rem; line-height: 1.5; border-radius: 6px; padding: .35rem .55rem; border: 1px solid; }
+.cus-msgs li.cus-error { background: rgba(244,135,113,.08); border-color: rgba(244,135,113,.45); }
+.cus-msgs li.cus-aviso { background: rgba(220,220,170,.08); border-color: rgba(220,220,170,.35); margin: 0; }
+.cus-fix { color: var(--acento) !important; overflow-wrap: anywhere; }
+.cus-nota { color: var(--txt-tenue); font-size: .8rem; margin: .8rem 0 0; line-height: 1.55; }
+
+@media (max-width: 480px) {
+  .mpi-conv-unidades-scl { padding: .85rem .7rem; }
+  .cus-caja { padding: .6rem .6rem; }
+  .cus-form .cus-in { width: 5.8rem; }
+}

@@ -1,0 +1,106 @@
+/* ---------- Componente: cpp-ciclo-vida (pila, heap y registro de constructores/destructores) ---------- */
+.mpi-cpp-ciclo-vida { container-type: inline-size; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-cpp-ciclo-vida .mpi-sim-cab { font-family: var(--mono); font-weight: 700; color: var(--acento); font-size: 1.05rem; margin-bottom: .7rem; }
+.cv-sub { font-family: var(--sans); font-weight: 400; color: var(--txt-2); font-size: .82rem; margin-left: .4rem; }
+.mpi-cpp-ciclo-vida button { font-family: inherit; background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .4rem .8rem; cursor: pointer; font-size: .86rem; }
+.mpi-cpp-ciclo-vida button:hover:not(:disabled) { border-color: var(--acento); }
+.mpi-cpp-ciclo-vida button:disabled { opacity: .4; cursor: default; }
+.mpi-cpp-ciclo-vida button:focus-visible, .cv-codigo:focus-visible { outline: 2px solid var(--acento-2); outline-offset: 1px; }
+.mpi-cpp-ciclo-vida .cv-var[aria-pressed="true"] { background: rgba(78,201,176,.15); border-color: var(--acento); color: var(--acento); font-weight: 700; }
+.mpi-cpp-ciclo-vida .cv-paso { background: var(--acento); color: #06231d; border-color: var(--acento); font-weight: 700; }
+.mpi-cpp-ciclo-vida :not(pre) > code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+
+.cv-variantes { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: .9rem; }
+.cv-grupo { font-size: .8rem; color: var(--txt-tenue); margin-right: .2rem; }
+.cv-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.1rem; align-items: start; }
+@container (min-width: 860px) { .cv-cuerpo { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); } }
+.cv-izq, .cv-der { min-width: 0; }
+.cv-tit { color: var(--txt-tenue); font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; margin: 0 0 .35rem; }
+.cv-tit code { text-transform: none; letter-spacing: 0; }
+.cv-tit-sal { margin-top: .9rem; }
+
+/* Listados (main y función en ejecución): scroll horizontal propio */
+.cv-codigo { min-width: 0; }
+.mpi-cpp-ciclo-vida pre.cv-pre { margin: 0 0 .7rem; padding: .45rem 0; overflow-x: auto; }
+.cv-linea { display: flex; align-items: baseline; padding: .03rem .6rem .03rem .3rem; min-width: max-content; }
+.mpi-cpp-ciclo-vida .cv-linea code { white-space: pre; background: none; padding: 0; border-radius: 0; color: var(--txt); font-size: .82rem; }
+.cv-marca { width: 1rem; flex: 0 0 1rem; color: var(--amarillo); font-size: .75rem; }
+.cv-num { width: 1.5rem; flex: 0 0 1.5rem; color: var(--txt-tenue); font-family: var(--mono); font-size: .74rem; text-align: right; margin-right: .6rem; user-select: none; }
+.cv-linea.cv-actual { background: rgba(78,201,176,.16); box-shadow: inset 0 0 0 1px rgba(78,201,176,.45); }
+.cv-pre-fn .cv-linea { padding-left: .6rem; }
+
+.cv-controles { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: .7rem; }
+.cv-contador { font-family: var(--mono); font-size: .8rem; color: var(--txt-tenue); margin-left: .3rem; }
+.cv-expl { font-size: .88rem; color: var(--txt-2); background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; padding: .55rem .7rem; min-height: 4.6rem; line-height: 1.5; margin-bottom: .8rem; }
+.cv-expl strong { color: var(--txt); }
+.cv-fn-nota { font-size: .78rem; color: var(--txt-tenue); margin: -.4rem 0 .4rem; }
+
+/* Contador de objetos vivos */
+.cv-vivos { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .5rem; background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; padding: .45rem .7rem; margin-bottom: .8rem; }
+.cv-vivos-n { font-family: var(--mono); font-size: 1.5rem; font-weight: 700; color: var(--acento); line-height: 1; }
+.cv-vivos-t { color: var(--txt); font-size: .88rem; }
+.cv-vivos-d { color: var(--txt-tenue); font-size: .8rem; font-family: var(--mono); margin-left: auto; }
+
+/* Memoria: pila | heap (apilados si el componente es estrecho) */
+.cv-mem { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.4rem; }
+@container (min-width: 520px) { .cv-mem { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 2.2rem; } }
+.cv-pila, .cv-heap { min-width: 0; position: relative; z-index: 1; }
+.cv-heap-in { background: rgba(197,134,192,.06); border: 1px dashed var(--borde); border-radius: 8px; padding: .5rem; min-height: 3.5rem; }
+.cv-flechas { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; z-index: 2; }
+.cv-flecha { fill: none; stroke: var(--amarillo); stroke-width: 2; }
+.cv-flecha-col { stroke: var(--rojo); stroke-dasharray: 5 4; }
+.cv-punta { fill: var(--amarillo); }
+.cv-punta-col { fill: var(--rojo); }
+
+.cv-marco { background: var(--bg); border: 1px solid var(--borde-2); border-radius: 8px; padding: .45rem .5rem; margin-bottom: .5rem; }
+.cv-marco-act { border-color: var(--acento-2); }
+.cv-marco-cab { font-size: .76rem; color: var(--txt-2); margin-bottom: .35rem; }
+.cv-refs { list-style: none; margin: 0 0 .35rem; padding: 0; font-size: .78rem; color: var(--txt-2); }
+.cv-refs li { margin: .1rem 0; overflow-wrap: anywhere; }
+.cv-tenue { color: var(--txt-tenue); font-size: .74rem; }
+.cv-vacio { margin: .2rem; font-size: .8rem; color: var(--txt-tenue); }
+.cv-objs { display: flex; flex-wrap: wrap; gap: .45rem; }
+
+.cv-obj { flex: 1 1 8.5rem; max-width: 13rem; min-width: 0; background: var(--bg-3); border: 1px solid var(--borde); border-radius: 6px; padding: .35rem .5rem; font-size: .78rem; transition: background .2s; }
+.cv-obj-cab { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 .4rem; margin-bottom: .2rem; }
+.cv-obj-cab code { font-weight: 700; }
+.cv-tipo { color: var(--txt-tenue); font-family: var(--mono); font-size: .68rem; }
+.cv-dir { color: var(--txt-tenue); font-family: var(--mono); font-size: .66rem; width: 100%; }
+.cv-campo { display: flex; justify-content: space-between; gap: .5rem; font-family: var(--mono); font-size: .74rem; color: var(--txt-2); }
+.cv-v { color: var(--num); font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+.cv-v.cv-basura { color: var(--txt-tenue); font-weight: 400; }
+.cv-estado { font-size: .7rem; color: var(--txt-tenue); margin-top: .15rem; }
+.cv-obj.cv-nuevo { border-color: var(--acento); background: rgba(78,201,176,.13); }
+.cv-obj.cv-nuevo .cv-estado { color: var(--acento); }
+.cv-obj.cv-cambio { border-color: var(--num); background: rgba(181,206,168,.13); }
+.cv-obj.cv-muerto, .cv-obj.cv-liberado { opacity: .5; border-style: dashed; }
+.cv-obj.cv-muerto .cv-obj-cab code, .cv-obj.cv-liberado .cv-obj-cab code { text-decoration: line-through; }
+.cv-obj.cv-muere { opacity: .85; border-color: var(--rojo); background: rgba(244,135,113,.12); }
+.cv-obj.cv-muere .cv-estado { color: var(--rojo); }
+.cv-ptr .cv-campo { flex-direction: column; gap: 0; }
+.cv-ptr .cv-v { font-weight: 400; color: var(--amarillo); text-align: left; overflow-wrap: normal; }
+.cv-null { color: var(--txt-tenue); }
+.cv-colg { color: var(--rojo); }
+
+.mpi-cpp-ciclo-vida pre.cv-salida { margin: 0; padding: .45rem .7rem; min-height: 2.2rem; font-family: var(--mono); font-size: .82rem; color: var(--txt); white-space: pre-wrap; }
+
+/* Registro de llamadas */
+.cv-log { list-style: decimal; margin: 0; padding: .4rem .5rem .4rem 2.1rem; max-height: 16rem; overflow-y: auto; background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; font-size: .8rem; color: var(--txt-2); }
+.cv-log:empty::before { content: "Todavía no se ha llamado a ninguna función de CComplex."; display: block; margin-left: -1.6rem; color: var(--txt-tenue); }
+.cv-log li { padding: .12rem .2rem; border-radius: 4px; }
+.cv-log li.cv-l-ult { background: rgba(86,156,214,.14); color: var(--txt); }
+.cv-badge { display: inline-block; font-family: var(--mono); font-size: .68rem; font-weight: 700; padding: 0 .35rem; border-radius: 8px; border: 1px solid currentColor; }
+.cv-l-ctor .cv-badge { color: var(--acento); }
+.cv-l-copia .cv-badge { color: var(--azul-cl); }
+.cv-l-asig .cv-badge { color: var(--amarillo); }
+.cv-l-dtor .cv-badge { color: var(--rojo); }
+.cv-l-llamada .cv-badge { color: var(--morado); }
+.cv-l-nota .cv-badge { color: var(--txt-tenue); }
+
+.cv-nota { font-size: .8rem; color: var(--txt-tenue); margin: .9rem 0 0; }
+
+@media (max-width: 480px) {
+  .mpi-cpp-ciclo-vida { padding: .85rem; }
+  .cv-sub { display: block; margin-left: 0; }
+  .cv-vivos-d { margin-left: 0; }
+}

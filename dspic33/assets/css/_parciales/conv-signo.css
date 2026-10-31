@@ -1,0 +1,73 @@
+/* ---------- Componente: conv-signo (sin signo / complemento a 2 en n bits) ---------- */
+.mpi-conv-signo { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-conv-signo [hidden] { display: none !important; }
+.mpi-conv-signo .mpi-sim-cab { font-family: var(--mono); font-weight: 700; color: var(--acento); font-size: 1.05rem; margin-bottom: .7rem; }
+.cs-sub { font-family: var(--sans); font-weight: 400; color: var(--txt-2); font-size: .85rem; margin-left: .4rem; }
+.mpi-conv-signo button { font-family: inherit; }
+.mpi-conv-signo button:focus-visible, .mpi-conv-signo input:focus-visible { outline: 2px solid var(--acento-2); outline-offset: 1px; }
+.mpi-conv-signo :not(pre) > code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+
+.cs-ej, .cs-n {
+  background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px;
+  padding: .4rem .75rem; cursor: pointer; font-size: .84rem;
+}
+.cs-ej:hover, .cs-n:hover { border-color: var(--acento); }
+.cs-n { font-family: var(--mono) !important; min-width: 2.6rem; }
+.cs-n[aria-pressed="true"] { background: rgba(78,201,176,.15); border-color: var(--acento); color: var(--acento); font-weight: 700; }
+.cs-ejemplos { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: .9rem; }
+.cs-lbl { font-size: .85rem; color: var(--txt-2); }
+.cs-form { display: flex; flex-wrap: wrap; gap: .7rem 1.4rem; align-items: center; }
+.cs-campo { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; }
+.cs-campo > label { font-size: .85rem; color: var(--txt-2); }
+.cs-seg { display: inline-flex; gap: .3rem; }
+.cs-otro { font-size: .82rem; color: var(--txt-tenue); display: inline-flex; align-items: center; gap: .3rem; }
+.cs-txt, .cs-in-n { font-family: var(--mono); background: var(--bg); border: 1px solid var(--borde); color: var(--azul-cl); padding: .35rem .5rem; border-radius: 5px; font-size: .9rem; }
+.cs-txt { width: 6.4rem; }
+.cs-in-n { width: 4rem; }
+.cs-txt[aria-invalid="true"] { border-color: var(--rojo); }
+.cs-nota { font-size: .82rem; color: var(--txt-tenue); margin: .45rem 0 .7rem; }
+.cs-error { font-size: .88rem; color: var(--rojo); background: rgba(244,135,113,.08); border: 1px solid rgba(244,135,113,.4); border-radius: 6px; padding: .5rem .7rem; margin: .3rem 0 .8rem; }
+
+/* Bits con su peso debajo; el bit de signo pesa +2^(n−1) sin signo y −2^(n−1) con signo */
+.cs-bits-wrap { overflow-x: auto; max-width: 100%; padding-bottom: .2rem; }
+.cs-bits { display: flex; flex-wrap: wrap; gap: .45rem .6rem; }
+.cs-nib { display: flex; gap: 2px; }
+.cs-bit {
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  min-width: 34px; padding: .2rem .15rem; background: var(--bg); border: 1.5px solid var(--borde); border-radius: 5px;
+  color: var(--txt); font-family: var(--mono); line-height: 1.2; cursor: pointer;
+}
+.cs-bit:hover { background: var(--bg-3); }
+.cs-bit.cs-on { background: rgba(78,201,176,.12); }
+.cs-bit.cs-on .cs-bv { color: var(--acento); font-weight: 700; }
+.cs-bit.cs-msb { border-style: dashed; border-color: var(--morado); }
+.cs-bn { font-size: .58rem; color: var(--txt-tenue); }
+.cs-bv { font-size: 1rem; }
+.cs-peso { font-size: .58rem; color: var(--txt-tenue); margin-top: .1rem; display: flex; flex-direction: column; align-items: center; }
+.cs-pu { color: var(--txt-tenue); }
+.cs-ps { color: var(--morado); }
+
+.cs-interp { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: .7rem; margin: 1rem 0; }
+.cs-tarjeta { background: var(--bg); border: 1px solid var(--borde); border-radius: 8px; padding: .65rem .8rem; min-width: 0; }
+.cs-t-cab { font-size: .86rem; color: var(--txt-2); font-weight: 600; }
+.cs-t-cab span { font-weight: 400; color: var(--txt-tenue); font-size: .8rem; }
+.cs-t-val { font-family: var(--mono); font-size: 1.5rem; font-weight: 700; color: var(--acento); margin: .15rem 0 .25rem; }
+.cs-tarjeta p { margin: .25rem 0; font-size: .82rem; color: var(--txt-2); overflow-wrap: anywhere; }
+.cs-tarjeta .cs-rango { color: var(--txt-tenue); font-family: var(--mono); font-size: .76rem; }
+
+.cs-p-tit { font-size: .92rem; color: var(--azul-cl); margin: .4rem 0 .5rem; font-weight: 600; }
+.cs-p-wrap { overflow-x: auto; max-width: 100%; }
+.cs-p-tabla { border-collapse: collapse; font-size: .85rem; }
+.cs-p-tabla th { text-align: left; color: var(--txt-2); font-weight: 500; padding: .28rem .8rem .28rem 0; white-space: nowrap; border-bottom: 1px solid var(--borde-2); }
+.cs-p-tabla td { padding: .28rem .7rem .28rem 0; font-family: var(--mono); white-space: nowrap; border-bottom: 1px solid var(--borde-2); }
+.cs-p-bin { color: var(--azul-cl); letter-spacing: .03em; }
+.cs-p-hex { color: var(--num); }
+.cs-p-dec { color: var(--txt-2); font-family: var(--sans) !important; font-size: .82rem; }
+.cs-p-tabla tr:last-child td, .cs-p-tabla tr:last-child th { border-bottom: 0; }
+.cs-p-tabla tr:last-child .cs-p-bin, .cs-p-tabla tr:last-child .cs-p-hex { color: var(--acento); font-weight: 700; }
+.cs-p-alt { font-size: .85rem; color: var(--txt-2); margin: .55rem 0 .2rem; overflow-wrap: anywhere; }
+
+@media (max-width: 480px) {
+  .mpi-conv-signo { padding: .85rem; }
+  .cs-bit { min-width: 30px; }
+}

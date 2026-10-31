@@ -1,0 +1,103 @@
+/* ---------- Componente: calc-mascaras (calculadora de máscaras de 16 bits) ---------- */
+.mpi-calc-mascaras { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-calc-mascaras [hidden] { display: none !important; }
+.mpi-calc-mascaras .mpi-sim-cab { font-family: var(--mono); font-weight: 700; color: var(--acento); font-size: 1.05rem; margin-bottom: .7rem; }
+.mpi-calc-mascaras .cm-sub { font-family: var(--sans); font-weight: 400; color: var(--txt-2); font-size: .85rem; margin-left: .4rem; }
+.mpi-calc-mascaras button { font-family: inherit; }
+.mpi-calc-mascaras button:focus-visible, .mpi-calc-mascaras input:focus-visible, .mpi-calc-mascaras select:focus-visible { outline: 2px solid var(--acento-2); outline-offset: 1px; }
+
+.cm-modos { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .9rem; }
+.cm-modo, .cm-ej, .cm-usar, .cm-op {
+  background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px;
+  padding: .4rem .8rem; cursor: pointer; font-size: .86rem;
+}
+.cm-modo:hover, .cm-ej:hover, .cm-usar:hover, .cm-op:hover { border-color: var(--acento); }
+.cm-modo[aria-pressed="true"], .cm-op[aria-pressed="true"] { background: rgba(78,201,176,.15); border-color: var(--acento); color: var(--acento); font-weight: 700; }
+.cm-ej, .cm-op, .cm-usar { font-family: var(--mono); }
+.cm-op { min-width: 2.6rem; font-size: .95rem; padding: .35rem .6rem; }
+.cm-usar { font-size: .78rem; padding: .25rem .6rem; margin-left: .5rem; }
+
+.cm-ejemplos { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: .9rem; }
+.cm-lbl { font-size: .85rem; color: var(--txt-2); }
+.cm-fila { margin: .7rem 0; min-width: 0; }
+.cm-fila-cab { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-bottom: .4rem; }
+.cm-fila-cab label, .cm-fila-cab .cm-lbl { font-size: .88rem; color: var(--txt-2); min-width: 7.5rem; }
+.cm-fila-op { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
+.cm-ops { display: flex; flex-wrap: wrap; gap: .3rem; }
+.cm-hex, .cm-in-n, .mpi-calc-mascaras select {
+  font-family: var(--mono); background: var(--bg); border: 1px solid var(--borde); color: var(--azul-cl);
+  padding: .35rem .5rem; border-radius: 5px; font-size: .9rem;
+}
+.cm-hex { width: 6.2rem; }
+.cm-hex[aria-invalid="true"] { border-color: var(--rojo); }
+.cm-in-n { width: 4.5rem; }
+.cm-dec { font-family: var(--mono); font-size: .82rem; color: var(--txt-tenue); }
+.cm-chk { display: inline-flex; align-items: center; gap: .35rem; font-size: .86rem; color: var(--txt-2); cursor: pointer; }
+.cm-chk input { accent-color: var(--acento); width: 1rem; height: 1rem; }
+.cm-tipo { font-family: var(--mono); color: var(--txt-tenue); font-size: .8rem; }
+.mpi-calc-mascaras :not(pre) > code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+
+/* Rejilla de bits: 2 bytes x 2 nibbles; en pantallas estrechas cada byte baja de línea. */
+.cm-bits { display: flex; flex-wrap: wrap; gap: .45rem .7rem; }
+.cm-byte { display: flex; gap: .4rem; }
+.cm-nib { display: flex; gap: 2px; }
+.cm-bit {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 30px; padding: .2rem 0; background: var(--bg); border: 1.5px solid var(--borde); border-radius: 5px;
+  color: var(--txt); font-family: var(--mono); line-height: 1.2;
+}
+button.cm-bit { cursor: pointer; }
+button.cm-bit:hover { background: var(--bg-3); }
+.cm-bit.cm-on .cm-bv { color: var(--acento); font-weight: 700; }
+.cm-bits-a .cm-bit.cm-on, .cm-bits-m .cm-bit.cm-on { background: rgba(78,201,176,.12); }
+.cm-bn { font-size: .58rem; color: var(--txt-tenue); }
+.cm-bv { font-size: .95rem; }
+
+/* Clases del resultado: qué le ha pasado a cada bit */
+.cm-res .cm-bit { border-width: 2px; }
+.cm-k-cons { --cm-c: var(--txt-tenue); }
+.cm-k-f0   { --cm-c: var(--rojo); }
+.cm-k-f1   { --cm-c: var(--acento); }
+.cm-k-inv  { --cm-c: var(--amarillo); }
+.cm-k-mov  { --cm-c: var(--azul-cl); }
+.cm-k-e0   { --cm-c: var(--morado); }
+.cm-k-e1   { --cm-c: var(--naranja); }
+.cm-res .cm-bit { border-color: var(--cm-c); }
+.cm-res .cm-bit:not(.cm-k-cons) { background: color-mix(in srgb, var(--cm-c) 14%, var(--bg)); }
+.cm-res .cm-k-e0, .cm-res .cm-k-e1 { border-style: dashed; }
+.cm-res .cm-bit.cm-on .cm-bv { color: var(--txt); }
+.cm-res .cm-bit .cm-bv { color: var(--txt); }
+.cm-res .cm-bit.cm-on .cm-bv { font-weight: 700; }
+.cm-leyenda { display: flex; flex-wrap: wrap; gap: .3rem .9rem; margin: .55rem 0 .3rem; font-size: .78rem; color: var(--txt-2); }
+.cm-ley { display: inline-flex; align-items: center; gap: .3rem; }
+.cm-ley-c { width: .8rem; height: .8rem; border-radius: 3px; border: 2px solid var(--cm-c); background: color-mix(in srgb, var(--cm-c) 14%, var(--bg)); }
+.cm-ley.cm-k-e0 .cm-ley-c, .cm-ley.cm-k-e1 .cm-ley-c { border-style: dashed; }
+
+.cm-tabla { border-collapse: collapse; margin: .5rem 0; }
+.cm-tabla th { text-align: left; color: var(--txt-2); font-weight: 500; padding: .2rem .9rem .2rem 0; font-size: .86rem; line-height: 1.25; }
+.cm-tabla th span { display: block; font-family: var(--mono); color: var(--txt-tenue); font-size: .76rem; }
+.cm-tabla td { font-family: var(--mono); color: var(--num); padding: .2rem 0; font-size: .92rem; }
+.cm-tabla .cm-r-hex { color: var(--acento); font-weight: 700; font-size: 1.05rem; }
+.cm-expl { font-size: .88rem; color: var(--txt-2); margin: .5rem 0; }
+.cm-codigo pre, .cm-c-codigo pre { margin: .6rem 0; }
+
+/* Modo copiar un bit */
+.cm-nota { font-size: .84rem; color: var(--txt-tenue); margin: .4rem 0 .8rem; }
+.cm-copiar-form { display: flex; flex-wrap: wrap; gap: .6rem 1rem; align-items: center; }
+.cm-copiar-form label { font-size: .86rem; color: var(--txt-2); display: inline-flex; align-items: center; gap: .4rem; }
+.cm-c-wrap { overflow-x: auto; max-width: 100%; }
+.cm-pasos { border-collapse: collapse; width: 100%; font-size: .85rem; margin: .3rem 0; }
+.cm-pasos th { text-align: left; color: var(--txt-tenue); font-weight: 600; font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; padding: .3rem .5rem; border-bottom: 1px solid var(--borde); }
+.cm-pasos td { padding: .3rem .5rem; border-bottom: 1px solid var(--borde-2); white-space: nowrap; }
+.cm-pasos .cm-hexv { font-family: var(--mono); color: var(--num); }
+.cm-pasos .cm-binv { font-family: var(--mono); color: var(--txt-2); }
+.cm-pasos mark { background: rgba(220,220,170,.25); color: var(--amarillo); font-weight: 700; border-radius: 2px; padding: 0 1px; }
+.cm-pasos tr.cm-final td { border-bottom: 0; }
+.cm-pasos tr.cm-final .cm-hexv { color: var(--acento); font-weight: 700; }
+.cm-c-aviso { color: var(--amarillo); font-size: .85rem; background: rgba(220,220,170,.08); border: 1px solid rgba(220,220,170,.28); padding: .4rem .6rem; border-radius: 6px; }
+
+@media (max-width: 480px) {
+  .mpi-calc-mascaras { padding: .85rem; }
+  .cm-bit { width: 28px; }
+  .cm-fila-cab label, .cm-fila-cab .cm-lbl { min-width: 0; }
+}

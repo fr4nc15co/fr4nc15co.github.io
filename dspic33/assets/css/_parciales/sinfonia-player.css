@@ -1,0 +1,64 @@
+/* ---------- Componente: sinfonia-player (problema 19.6.1, notas por la ISR del Timer 1) ---------- */
+.mpi-sinfonia-player { position: relative; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-sinfonia-player .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .7rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; }
+.sfp-cab-sub { color: var(--txt-tenue); font-weight: 400; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
+.sfp-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.mpi-sinfonia-player button:focus-visible, .mpi-sinfonia-player input:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 2px; }
+.sfp-btn { background: var(--bg-3); border: 1px solid var(--borde); color: var(--txt); padding: .35rem .7rem; border-radius: 5px; cursor: pointer; font-size: .8rem; min-height: 34px; }
+.sfp-btn:hover:not(:disabled) { border-color: var(--acento); }
+.sfp-btn:disabled { opacity: .45; cursor: default; }
+.sfp-btn[aria-pressed="true"] { border-color: var(--acento); color: var(--acento); background: rgba(78,201,176,.10); }
+.sfp-intro { font-size: .84rem; color: var(--txt-2); margin: 0 0 .5rem; line-height: 1.5; }
+
+/* Tabla */
+.sfp-scroll { position: relative; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: .5rem 0; }
+.sfp-tabla { border-collapse: collapse; width: 100%; font-size: .84rem; min-width: 540px; }
+.sfp-t { color: var(--txt-tenue); }
+.sfp-tabla th, .sfp-tabla td { text-align: left; padding: .32rem .4rem; border-bottom: 1px solid var(--borde-2); white-space: nowrap; }
+.sfp-tabla thead th { color: var(--txt-tenue); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; white-space: normal; vertical-align: bottom; line-height: 1.3; }
+.sfp-tabla tbody th { color: var(--txt); font-weight: 600; }
+.sfp-tabla td { font-family: var(--mono); color: var(--txt); }
+.sfp-tabla td b { color: var(--acento); }
+.sfp-idx { font-family: var(--mono); color: var(--txt-tenue); font-weight: 400; font-size: .74rem; text-transform: none; }
+.sfp-tabla td.sfp-dif { color: var(--amarillo); }
+.sfp-tabla tr.sfp-sel td, .sfp-tabla tr.sfp-sel th { background: rgba(86,156,214,.08); }
+.sfp-tabla tr.sfp-sonando td, .sfp-tabla tr.sfp-sonando th { background: rgba(78,201,176,.16); }
+.sfp-tabla tr.sfp-sonando th { color: var(--acento); }
+.sfp-acc { display: flex; gap: .3rem; }
+.sfp-acc .sfp-btn { padding: .25rem .5rem; min-height: 30px; min-width: 34px; }
+
+/* Controles */
+.sfp-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .9rem; margin: .7rem 0 .4rem; }
+.sfp-tocar { font-size: .88rem; padding: .4rem .9rem; min-height: 38px; }
+.sfp-bucle { font-size: .84rem; color: var(--txt-2); display: inline-flex; align-items: center; gap: .35rem; cursor: pointer; }
+.sfp-bucle input { accent-color: var(--acento); width: 1rem; height: 1rem; }
+.sfp-estado { font-family: var(--mono); font-size: .82rem; color: var(--acento); flex: 1 1 220px; }
+.sfp-tira { display: flex; gap: 2px; height: 22px; margin: .2rem 0 .6rem; }
+.sfp-seg { position: relative; flex-basis: 0; min-width: 14px; background: var(--bg); border: 1px solid var(--borde-2); border-radius: 3px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.sfp-seg-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: rgba(78,201,176,.30); }
+.sfp-seg-lab { position: relative; font-family: var(--mono); font-size: .68rem; color: var(--txt-tenue); }
+.sfp-seg-on { border-color: var(--acento); background: rgba(78,201,176,.12); }
+.sfp-seg-on .sfp-seg-lab { color: var(--acento); font-weight: 700; }
+
+/* Forma de onda */
+.sfp-sub { font-size: .92rem; color: var(--txt); font-weight: 600; margin: .8rem 0 .2rem; }
+.sfp-onda-tit { font-weight: 400; color: var(--txt-2); font-family: var(--mono); font-size: .82rem; }
+.sfp-svg-caja { background: var(--bg); border: 1px solid var(--borde-2); border-radius: 8px; }
+.sfp-svg { display: block; width: 100%; min-width: 520px; height: auto; }
+.sfp-svg-lab { font-family: var(--mono); font-size: 11px; fill: var(--txt-2); }
+.sfp-svg-ax { font-family: var(--mono); font-size: 10.5px; fill: var(--txt-tenue); }
+.sfp-svg-cont { font-family: var(--mono); font-size: 9px; fill: var(--txt-tenue); }
+.sfp-svg-rej { stroke: var(--borde-2); stroke-width: 1; }
+.sfp-svg-per { stroke: var(--borde); stroke-width: 1; stroke-dasharray: 3 3; }
+.sfp-svg-onda { fill: none; stroke: var(--acento); stroke-width: 2.2; stroke-linejoin: round; }
+.sfp-onda-txt { font-size: .82rem; color: var(--txt-2); line-height: 1.55; margin: .45rem 0 0; }
+.sfp-onda-txt code, .sfp-aviso code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+.sfp-aviso { font-size: .8rem; line-height: 1.55; color: var(--txt); background: rgba(220,220,170,.08); border: 1px solid rgba(220,220,170,.35); border-radius: 6px; padding: .45rem .65rem; margin: .7rem 0 0; }
+.sfp-aviso b { color: var(--amarillo); font-family: var(--mono); }
+.sfp-noaudio { background: rgba(244,135,113,.08); border-color: rgba(244,135,113,.45); }
+.sfp-noaudio[hidden] { display: none; }
+
+@media (max-width: 480px) {
+  .mpi-sinfonia-player { padding: .85rem .7rem; }
+  .sfp-seg-lab { font-size: .6rem; }
+}

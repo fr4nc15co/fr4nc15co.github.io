@@ -1,0 +1,76 @@
+/* ---------- Componente: vis-punteros (memoria byte a byte y punteros paso a paso) ---------- */
+.mpi-vis-punteros { container-type: inline-size; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-vis-punteros .mpi-sim-cab { font-family: var(--mono); font-weight: 700; color: var(--acento); font-size: 1.05rem; margin-bottom: .7rem; }
+.vp-sub { font-family: var(--sans); font-weight: 400; color: var(--txt-2); font-size: .82rem; margin-left: .4rem; }
+.mpi-vis-punteros button { font-family: inherit; background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .4rem .8rem; cursor: pointer; font-size: .86rem; }
+.mpi-vis-punteros button:hover:not(:disabled) { border-color: var(--acento); }
+.mpi-vis-punteros button:disabled { opacity: .4; cursor: default; }
+.mpi-vis-punteros button:focus-visible, .vp-mem-wrap:focus-visible { outline: 2px solid var(--acento-2); outline-offset: 1px; }
+.mpi-vis-punteros .vp-prog-btn[aria-pressed="true"] { background: rgba(78,201,176,.15); border-color: var(--acento); color: var(--acento); font-weight: 700; }
+.mpi-vis-punteros .vp-paso { background: var(--acento); color: #06231d; border-color: var(--acento); font-weight: 700; }
+.mpi-vis-punteros :not(pre) > code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+
+.vp-progs { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .9rem; }
+.vp-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.1rem; align-items: start; }
+/* Dos columnas (programa | memoria) solo si el propio componente es ancho. */
+@container (min-width: 860px) { .vp-cuerpo { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); } }
+.vp-izq, .vp-der { min-width: 0; }
+
+/* Listado del programa con la línea ejecutada resaltada */
+.mpi-vis-punteros pre.vp-pre { margin: 0 0 .7rem; padding: .5rem 0; }
+.vp-linea { display: flex; align-items: baseline; padding: .05rem .6rem .05rem .3rem; border-left: 3px solid transparent; }
+.mpi-vis-punteros .vp-linea code { white-space: pre; background: none; padding: 0; border-radius: 0; color: var(--txt); font-size: .86rem; }
+.vp-marca { width: 1rem; flex: 0 0 1rem; color: var(--amarillo); font-size: .75rem; }
+.vp-num { width: 1.6rem; flex: 0 0 1.6rem; color: var(--txt-tenue); font-family: var(--mono); font-size: .75rem; text-align: right; margin-right: .7rem; user-select: none; }
+.vp-linea.vp-hecha code { opacity: .75; }
+.vp-linea.vp-actual { background: rgba(78,201,176,.14); border-left-color: var(--acento); }
+.vp-linea.vp-actual code { opacity: 1; }
+
+.vp-controles { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: .7rem; }
+.vp-contador { font-family: var(--mono); font-size: .8rem; color: var(--txt-tenue); margin-left: .3rem; }
+.vp-expl { font-size: .88rem; color: var(--txt-2); background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; padding: .55rem .7rem; min-height: 4.2rem; line-height: 1.5; }
+.vp-expl strong { color: var(--txt); }
+
+.vp-vars { width: 100%; border-collapse: collapse; margin-top: .8rem; font-size: .84rem; }
+.vp-vars caption { text-align: left; color: var(--txt-tenue); font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; padding-bottom: .3rem; }
+.vp-vars th { text-align: left; color: var(--txt-tenue); font-weight: 600; font-size: .74rem; padding: .25rem .4rem; border-bottom: 1px solid var(--borde); }
+.vp-vars td { padding: .3rem .4rem; border-bottom: 1px solid var(--borde-2); font-family: var(--mono); color: var(--num); vertical-align: top; }
+.vp-vars td:first-child { white-space: nowrap; }
+.vp-dir { color: var(--txt-2) !important; }
+.vp-tenue { color: var(--txt-tenue); font-family: var(--sans); font-size: .8rem; }
+
+/* Mapa de memoria (scroll horizontal propio) */
+.vp-mem-wrap { overflow-x: auto; max-width: 100%; border: 1px solid var(--borde-2); border-radius: 6px; }
+.vp-mem { border-collapse: collapse; width: 100%; font-size: .84rem; }
+.vp-oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.vp-mem thead th { text-align: left; color: var(--txt-tenue); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; padding: .35rem .5rem; border-bottom: 1px solid var(--borde); background: var(--bg-3); white-space: nowrap; line-height: 1.25; }
+.vp-mem thead th span { text-transform: none; font-weight: 400; }
+.vp-mem tbody th { font-family: var(--mono); color: var(--txt-2); font-weight: 400; text-align: left; padding: .25rem .5rem; white-space: nowrap; border-left: 3px solid transparent; }
+.vp-mem td { padding: .25rem .5rem; border-bottom: 1px solid var(--borde-2); white-space: nowrap; }
+.vp-mem tbody tr { border-bottom: 1px solid var(--borde-2); }
+.vp-byte { font-family: var(--mono); color: var(--azul-cl); text-align: center; font-weight: 700; }
+.vp-byte.vp-basura { color: var(--txt-tenue); font-weight: 400; }
+.vp-byte.vp-cambio { background: rgba(181,206,168,.22); color: var(--num); box-shadow: inset 0 0 0 1px var(--num); }
+.vp-var { font-size: .82rem; vertical-align: middle; border-left: 1px solid var(--borde-2); }
+.vp-var code { font-weight: 700; }
+.vp-tipo { display: block; color: var(--txt-tenue); font-family: var(--mono); font-size: .7rem; }
+.vp-val { font-family: var(--mono); color: var(--num); vertical-align: middle; font-size: .82rem; }
+.vp-libre { color: var(--txt-tenue); font-family: var(--sans); font-size: .78rem; }
+.vp-apunta { min-width: 4.5rem; }
+
+/* Destino de cada puntero: color 0 (pti / p) y color 1 (ptc) */
+.vp-mem tr.vp-ptr0 > th { border-left-color: var(--acento); background: rgba(78,201,176,.10); }
+.vp-mem tr.vp-ptr1 > th { border-left-color: var(--amarillo); background: rgba(220,220,170,.10); }
+.vp-mem tr.vp-ptr0.vp-ptr1 > th { border-left-color: var(--acento); background: linear-gradient(90deg, rgba(78,201,176,.14), rgba(220,220,170,.14)); }
+.vp-mem tr.vp-leido > td.vp-byte { outline: 2px dashed var(--morado); outline-offset: -3px; }
+.vp-badge { display: inline-block; font-family: var(--mono); font-size: .74rem; font-weight: 700; padding: .05rem .4rem; border-radius: 10px; margin: .05rem .2rem .05rem 0; white-space: nowrap; }
+.vp-b0 { color: #06231d; background: var(--acento); }
+.vp-b1 { color: #2a2a14; background: var(--amarillo); }
+.vp-bl { color: var(--morado); border: 1px dashed var(--morado); }
+.vp-nota { font-size: .8rem; color: var(--txt-tenue); margin: .6rem 0 0; }
+
+@media (max-width: 480px) {
+  .mpi-vis-punteros { padding: .85rem; }
+  .vp-sub { display: block; margin-left: 0; }
+  .vp-mem thead th, .vp-mem tbody th, .vp-mem td { padding: .2rem .35rem; }
+}

@@ -1,0 +1,65 @@
+/* ---------- Componente: traza-calendario (calendario por interrupción del Timer 1, ej. 5.8) ---------- */
+.mpi-traza-calendario { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-traza-calendario .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .4rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; }
+.tc-cab-sub { color: var(--txt-tenue); font-weight: 400; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
+.tc-sub { color: var(--txt-2); font-size: .86rem; margin: 0 0 .8rem; }
+.tc-sub code, .tc-expr code { font-family: var(--mono); font-size: .9em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+.tc-sub b { color: var(--acento); }
+
+.tc-contadores { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: .5rem; }
+.tc-cont { background: var(--bg); border: 1px solid var(--borde); border-radius: 8px; padding: .45rem .6rem; display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.tc-et { font-family: var(--mono); font-size: .72rem; color: var(--txt-tenue); }
+.tc-cont b { font-family: var(--mono); font-size: 1.35rem; color: var(--num); font-variant-numeric: tabular-nums; }
+.tc-reloj b { color: var(--acento); }
+.tc-barra { display: block; height: 3px; background: var(--bg-3); border-radius: 2px; overflow: hidden; }
+.tc-barra-in { display: block; height: 100%; width: 0; background: var(--acento-2); }
+
+.tc-ctl { display: flex; flex-wrap: wrap; gap: .45rem; align-items: center; margin: .9rem 0; }
+.tc-vel { display: inline-flex; flex-wrap: wrap; gap: 0; }
+.mpi-traza-calendario button { background: var(--bg-3); border: 1px solid var(--borde); color: var(--txt); padding: .35rem .7rem; border-radius: 5px; cursor: pointer; font-size: .82rem; font-family: inherit; }
+.mpi-traza-calendario button:hover { border-color: var(--acento); }
+.mpi-traza-calendario button:focus-visible, .mpi-traza-calendario input:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 2px; }
+.tc-vel button { border-radius: 0; margin-left: -1px; font-family: var(--mono); }
+.tc-vel button:first-child { border-radius: 5px 0 0 5px; margin-left: 0; }
+.tc-vel button:last-child { border-radius: 0 5px 5px 0; }
+.mpi-traza-calendario button[aria-pressed="true"] { background: var(--acento); border-color: var(--acento); color: #06231d; font-weight: 600; position: relative; }
+
+.tc-io { display: flex; flex-wrap: wrap; gap: 1rem 1.6rem; align-items: flex-start; }
+.tc-sw { display: flex; gap: .8rem; align-items: flex-start; flex: 1 1 240px; }
+.mpi-traza-calendario .tc-sw-btn { width: 64px; height: 64px; border-radius: 50%; flex: 0 0 auto; font-family: var(--mono); font-weight: 700; background: radial-gradient(circle at 40% 35%, #5a5a5a, #2e2e2e); border: 3px solid #6a6a6a; color: var(--txt); touch-action: none; user-select: none; -webkit-user-select: none; box-shadow: 0 3px 0 #111; transition: transform .05s, box-shadow .05s; }
+.mpi-traza-calendario .tc-sw-btn.tc-pulsado { transform: translateY(2px); box-shadow: 0 1px 0 #111; background: radial-gradient(circle at 40% 35%, #4a4a4a, #222); border-color: var(--amarillo); color: var(--amarillo); }
+.tc-sw-est { font-family: var(--mono); font-size: .88rem; color: var(--txt); margin-bottom: .3rem; }
+.tc-sw-fijo { font-size: .82rem; color: var(--txt-2); display: inline-flex; gap: .35rem; align-items: center; }
+.tc-ayuda { color: var(--txt-tenue); font-size: .76rem; margin-top: .25rem; line-height: 1.4; }
+
+.tc-puerto { flex: 2 1 320px; min-width: 0; }
+.tc-expr { font-size: .86rem; color: var(--txt-2); line-height: 1.5; margin-bottom: .4rem; }
+.tc-expr b { font-family: var(--mono); color: var(--acento); }
+.tc-nota { color: var(--txt-tenue); font-size: .78rem; }
+.tc-bits { display: flex; flex-wrap: wrap; gap: 2px; margin-bottom: .6rem; }
+.tc-bit { display: inline-flex; flex-direction: column; align-items: center; min-width: 19px; padding: .1rem 0; font-family: var(--mono); font-size: .8rem; color: var(--txt-2); background: var(--bg); border: 1px solid var(--borde-2); border-radius: 3px; }
+.tc-bit i { font-style: normal; font-size: .55rem; color: var(--txt-tenue); }
+.tc-bit-led { border-color: var(--acento-2); color: var(--txt); }
+.tc-bit-sw { border-style: dashed; }
+.tc-leds { display: flex; gap: .8rem; flex-wrap: wrap; }
+.tc-led { display: flex; flex-direction: column; align-items: center; gap: .15rem; font-family: var(--mono); }
+.tc-led-luz { width: 22px; height: 22px; border-radius: 50%; background: #3a2a24; border: 2px solid #5a4038; transition: background .08s, box-shadow .08s; }
+.tc-led.tc-on .tc-led-luz { background: #ff6b4a; border-color: #ffb199; box-shadow: 0 0 12px 3px rgba(255,107,74,.55); }
+.tc-led-n { font-size: .78rem; color: var(--txt); }
+.tc-led-rb { font-size: .66rem; color: var(--txt-tenue); }
+.tc-lectura { color: var(--txt-2); font-size: .8rem; margin-top: .45rem; line-height: 1.45; }
+
+.tc-codigos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: .8rem; margin-top: 1rem; }
+.tc-codigos > div { min-width: 0; }
+.tc-cod-tit { font-family: var(--mono); font-size: .74rem; color: var(--txt-tenue); text-transform: uppercase; letter-spacing: .04em; margin-bottom: .2rem; }
+.tc-codigos pre { margin: 0; font-size: .92em; }
+.tc-codigos pre code { display: inline-block; min-width: 100%; }
+.tc-ln { display: block; padding: 0 .3rem; margin: 0 -.3rem; border-left: 3px solid transparent; }
+.tc-ln.tc-activa { background: rgba(78,201,176,.13); border-left-color: var(--acento); }
+.tc-ln.tc-flash { background: rgba(220,220,170,.10); border-left-color: var(--amarillo); }
+
+@media (max-width: 480px) {
+  .mpi-traza-calendario { padding: .85rem .75rem; }
+  .tc-cont b { font-size: 1.1rem; }
+  .tc-bit { min-width: 16px; font-size: .72rem; }
+}

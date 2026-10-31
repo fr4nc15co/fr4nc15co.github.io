@@ -1,0 +1,948 @@
+{
+  "slug": "conversor-ad",
+  "titulo": "Módulo conversor A/D",
+  "temaNum": 11,
+  "lenguaje": "c",
+  "lead": "El objetivo del tema es saber cómo se introduce una <strong>señal analógica</strong> en el micro para usar después esa información en un programa. Verás cómo funciona el conversor A/D de 10 bits del dsPIC33FJ32MC202 (canal, conversor, tiempos T<sub>AD</sub> y pre-escalado ADCS), sus registros (<code class=\"reg\">AD1CON1</code>-<code class=\"reg\">AD1CON3</code>, <code class=\"reg\">AD1PCFGL</code>, <code class=\"reg\">AD1CSSL</code>, <code class=\"reg\">AD1CHS0</code>, <code class=\"reg\">ADC1BUF0</code>) y sus modos básicos (simple, escaneo e interrupción), usando como ejemplo el potenciómetro de la PicTrainer.",
+  "secciones": [
+    {
+      "titulo": "11.1 Principios fundamentales de la conversión A/D",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>La conversión analógico-digital consiste en <strong>tomar muestras</strong> de una señal analógica y convertir esos valores analógicos muestreados en <strong>valores digitales</strong>. Las funciones de este módulo resultan útiles, por ejemplo, para controlar la velocidad de un motor a partir de un potenciómetro.</p><p>En los dsPIC el módulo de conversión A/D consta de dos elementos fundamentales: un <strong>muestreador-retenedor</strong> (llamado <strong>canal</strong>, CH) y el <strong>conversor A/D</strong>. Internamente, el pin con el valor analógico entra por la entrada + del canal; la entrada − del canal está unida a la tensión de referencia baja V<sub>ref−</sub> (masa). La salida del canal llega al conversor, que recibe además las dos referencias V<sub>ref+</sub> y V<sub>ref−</sub> y entrega el <strong>valor digital</strong>.</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>El canal</strong> (muestreador-retenedor) es un elemento con un <strong>condensador</strong>: una vez conectado a un pin con una señal analógica, se carga con la tensión de la señal. Transcurrido el tiempo necesario para la carga completa, ese valor de tensión es el que convertirá después el conversor. El dsPIC33FJ32MC202 dispone de hasta <strong>cuatro canales</strong> (CH0-CH3), útiles para conversiones simultáneas o más rápidas; en el curso solo se usa el <strong>canal 0</strong>.",
+            "<strong>El conversor A/D</strong> realiza la conversión de analógico a digital. El dsPIC33FJ32MC202 puede configurarse a 10 o a 12 bits (bit AD12B); en el curso se usa siempre el modo de <strong>10 bits</strong> (AD12B = 0, configuración por defecto). Si la señal es igual a la referencia baja V<sub>ref−</sub> devuelve <code>0</code>; si es igual a la referencia alta V<sub>ref+</sub> devuelve <code>0x03FF</code> (1023)."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>En la tarjeta del laboratorio las referencias son la propia alimentación analógica (campo VCFG = 000 de <code class=\"reg\">AD1CON2</code>: V<sub>ref+</sub> = AV<sub>DD</sub> = 3,3 V y V<sub>ref−</sub> = AV<sub>SS</sub> = 0 V). El código es, por tanto, proporcional a la tensión, y cada unidad del código equivale a unos 3,23 mV:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Código de salida N para una tensión V<sub>in</sub> (con V<sub>ref−</sub> = 0 V) y resolución del conversor de 10 bits con V<sub>ref+</sub> = 3,3 V:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mi>N</mi><mo>≈</mo><mfrac><msub><mi>V</mi><mi>in</mi></msub><msub><mi>V</mi><mrow><mi>ref</mi><mo>+</mo></mrow></msub></mfrac><mo>·</mo><mn>1023</mn><mo>,</mo><mspace width=\"2em\"/><mtext>resolución</mtext><mo>=</mo><mfrac><mrow><mn>3,3</mn><mtext> V</mtext></mrow><mn>1023</mn></mfrac><mo>≈</mo><mn>3,23</mn><mtext> mV</mtext></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<table class=\"tabla-datos\"><thead><tr><th>Tensión en el pin</th><th>Código N (decimal)</th><th>Código N (hex)</th></tr></thead><tbody><tr><td>0 V (= V<sub>ref−</sub>)</td><td>0</td><td><code>0x000</code></td></tr><tr><td>0,5 V</td><td>155</td><td><code>0x09B</code></td></tr><tr><td>1 V</td><td>310</td><td><code>0x136</code></td></tr><tr><td>1,65 V (mitad)</td><td>512</td><td><code>0x200</code></td></tr><tr><td>2 V</td><td>620</td><td><code>0x26C</code></td></tr><tr><td>3,3 V (= V<sub>ref+</sub>)</td><td>1023</td><td><code>0x3FF</code></td></tr></tbody></table><p>Estrictamente, un conversor de 10 bits reparte el rango en 2<sup>10</sup> = 1024 escalones (3,3 V / 1024 ≈ 3,22 mV) y satura en 1023; con la aproximación V · 1023 / 3,3 redondeada al entero más próximo los códigos de la tabla son los mismos. Ojo con 1,65 V: cae justo en la frontera entre 511 (<code>0x1FF</code>) y 512 (<code>0x200</code>), así que en la placa real, con un poco de ruido, el código puede alternar entre ambos valores.</p><h3>Tiempos de una conversión</h3><p>Otro aspecto clave son los <strong>tiempos de espera</strong>. Una conversión completa tiene dos fases consecutivas:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": true,
+          "items": [
+            "<strong>Tiempo de muestreo.</strong> Empieza al conectar el pin al canal (conexión pin-CH). Hay que esperar a que el condensador del canal se cargue por completo a la tensión del pin; si se convierte antes, el valor es erróneo.",
+            "<strong>Tiempo de conversión.</strong> Empieza al desconectar el pin del canal (fin de muestreo): el condensador mantiene la tensión estable mientras el conversor la convierte. Al terminar, la conversión está completa y el resultado disponible."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El valor real de estos tiempos es fijo, pero la configuración del micro para cumplirlos depende de la velocidad de conversión que se quiera y del oscilador. Los tiempos se miden en <strong>períodos del conversor, T<sub>AD</sub></strong>: se necesita un período por cada bit de resolución y otros dos para finalizar, así que una conversión de 10 bits dura <strong>12 T<sub>AD</sub></strong> (datasheet, tabla 24-46, parámetro AD55). El tiempo de muestreo es variable y depende de la velocidad deseada: para una velocidad razonable de <strong>500 ksps</strong> (miles de muestras por segundo) el libro toma un muestreo de <strong>1 T<sub>AD</sub></strong>, de modo que un proceso completo requiere <strong>13 T<sub>AD</sub></strong>.</p><p>Un período T<sub>AD</sub> no tiene por qué coincidir con el período del oscilador: hay que configurar un <strong>pre-escalado</strong> (campo ADCS de <code class=\"reg\">AD1CON3</code>) que lo derive del ciclo de instrucción T<sub>CY</sub>:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Período del reloj del conversor en función del pre-escalado ADCS (datasheet, registro 20-3):</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>T</mi><mi>AD</mi></msub><mo>=</mo><msub><mi>T</mi><mi>CY</mi></msub><mo>·</mo><mo>(</mo><mi>ADCS</mi><mo>+</mo><mn>1</mn><mo>)</mo></mrow></math>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Duración de una muestra completa (SAMC períodos de muestreo + 12 de conversión) y velocidad de muestreo resultante:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>T</mi><mtext>muestra</mtext></msub><mo>=</mo><mo>(</mo><mi>SAMC</mi><mo>+</mo><mn>12</mn><mo>)</mo><mo>·</mo><msub><mi>T</mi><mi>AD</mi></msub><mo>,</mo><mspace width=\"2em\"/><msub><mi>f</mi><mi>s</mi></msub><mo>=</mo><mfrac><mn>1</mn><msub><mi>T</mi><mtext>muestra</mtext></msub></mfrac></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Para 500 ksps hay que hacer una conversión cada 2 µs; repartidos en 13 períodos, el T<sub>AD</sub> debe ser de 153,85 ns. Con el oscilador del libro, de 40 MIPS (F<sub>CY</sub> = 40 MHz), T<sub>CY</sub> = 25 ns, demasiado corto: de ahí el pre-escalado.</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>T<sub>AD</sub> necesario para 500 ksps con 13 períodos por muestra:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>T</mi><mi>AD</mi></msub><mo>=</mo><mfrac><mn>1</mn><mrow><mn>13</mn><mo>·</mo><mn>500</mn><mtext> ksps</mtext></mrow></mfrac><mo>=</mo><mfrac><mrow><mn>2</mn><mtext> µs</mtext></mrow><mn>13</mn></mfrac><mo>≈</mo><mn>153,85</mn><mtext> ns</mtext></mrow></math>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p><strong>E.6.</strong> Valor del pre-escalado ADCS para 500 ksps a 40 MIPS. <em>Fórmula reconstruida: en el Markdown del libro la ecuación E.6 no se conserva (solo queda «T<sub>AD</sub> = 153 ns»); se ha despejado de T<sub>AD</sub> = T<sub>CY</sub> · (ADCS + 1) con los números del libro.</em></p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mi>ADCS</mi><mo>=</mo><mfrac><msub><mi>T</mi><mi>AD</mi></msub><msub><mi>T</mi><mi>CY</mi></msub></mfrac><mo>−</mo><mn>1</mn><mo>=</mo><mfrac><mrow><mn>153,85</mn><mtext> ns</mtext></mrow><mrow><mn>25</mn><mtext> ns</mtext></mrow></mfrac><mo>−</mo><mn>1</mn><mo>≈</mo><mn>5,15</mn><mo>→</mo><mi>ADCS</mi><mo>=</mo><mn>5</mn></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Con <strong>ADCS = 5</strong> resulta T<sub>AD</sub> = 25 ns · 6 = <strong>150 ns</strong>; una muestra completa dura 13 · 150 ns = <strong>1,95 µs</strong>, es decir, unas <strong>513 ksps</strong> (≈ 500 ksps). El datasheet fija además un T<sub>AD</sub> mínimo de <strong>76 ns</strong> en modo de 10 bits (tabla 24-46, AD50): con F<sub>CY</sub> = 40 MHz, ADCS debe ser al menos 3 (T<sub>AD</sub> = 100 ns); ADCS = 2 daría 75 ns, por debajo del mínimo.</p><p>Prueba la calculadora: cambia ADCS, SAMC y el número de pines escaneados y observa T<sub>AD</sub>, la duración de cada muestra, la velocidad en ksps y el tiempo de un barrido completo. Con los valores del libro (ADCS = 5, SAMC = 1, un pin) salen 150 ns, 1,95 µs y ≈ 513 ksps:</p><div class=\"mpi-mount\" data-componente=\"calc-tiempos-adc\" data-config='{\"fcy\":40000000,\"adcs\":5,\"samc\":1,\"pines\":1}'></div>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Nota.</strong> El datasheet (tabla 24-46, parámetro AD57) da un tiempo de muestreo mínimo T<sub>SAMP</sub> = 2,0 T<sub>AD</sub>, y recomienda además una impedancia de la fuente analógica de 200 Ω como máximo (tabla 24-42, AD17); el potenciómetro RV1 de 10 kΩ tiene una impedancia de Thévenin de hasta 2,5 kΩ en el cursor, de modo que con 1 T<sub>AD</sub> de muestreo el condensador puede no cargarse por completo si la tensión cambia bruscamente o se alternan pines. Para una señal lenta como la del potenciómetro el efecto es pequeño, pero se recomienda usar <strong>SAMC = 2</strong> (14 T<sub>AD</sub> de muestra, ≈ 476 ksps con ADCS = 5) para tener más margen."
+        }
+      ]
+    },
+    {
+      "titulo": "11.2 Registros del módulo A/D",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El conversor del micro lleva asociados los siguientes registros:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<code class=\"reg\">ADC1BUFx</code>: registros de 16 bits en los que se almacenan los <strong>resultados</strong> de la conversión.",
+            "<code class=\"reg\">AD1CON1</code>, <code class=\"reg\">AD1CON2</code>, <code class=\"reg\">AD1CON3</code>, <code class=\"reg\">AD1PCFGL</code>, <code class=\"reg\">AD1CSSL</code>, <code class=\"reg\">AD1CHS0</code>: registros de 16 bits que <strong>controlan</strong> el funcionamiento del conversor.",
+            "<code class=\"reg\">IFS0</code>: registro de flags que indica el <strong>final de la conversión</strong> (bit AD1IF).",
+            "<code class=\"reg\">IEC0</code>: registro para <strong>habilitar</strong> las interrupciones (bit AD1IE).",
+            "<code class=\"reg\">IPC3</code>: registro que establece la <strong>prioridad</strong> de la interrupción (campo AD1IP)."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<table class=\"tabla-datos\"><thead><tr><th>Tipo de registro</th><th>Registros</th><th>Dirección y bits (datasheet, tablas 4-4 y 4-14)</th></tr></thead><tbody><tr><td>Registros de datos</td><td><code class=\"reg\">ADC1BUF0</code> … <code class=\"reg\">ADC1BUFF</code></td><td>0x0300 … 0x031E (16 palabras consecutivas)</td></tr><tr><td>Registros de control</td><td><code class=\"reg\">AD1CON1</code>, <code class=\"reg\">AD1CON2</code>, <code class=\"reg\">AD1CON3</code>, <code class=\"reg\">AD1CHS0</code>, <code class=\"reg\">AD1PCFGL</code>, <code class=\"reg\">AD1CSSL</code></td><td>AD1CON1 = 0x0320, AD1CON2 = 0x0322, AD1CON3 = 0x0324, AD1CHS0 = 0x0328, AD1PCFGL = 0x032C, AD1CSSL = 0x0330</td></tr><tr><td>Registros de control de interrupciones</td><td><code class=\"reg\">IFS0</code>, <code class=\"reg\">IEC0</code>, <code class=\"reg\">IPC3</code></td><td>AD1IF = IFS0&lt;13&gt; (0x0084), AD1IE = IEC0&lt;13&gt; (0x0094), AD1IP = IPC3&lt;6:4&gt; (0x00AA, prioridad 4 tras el reset)</td></tr></tbody></table><p>A continuación se detalla el funcionamiento de cada uno de ellos.</p><h3>11.2.1 AD1CON</h3><p>AD1CON es en realidad el nombre de tres registros (<code class=\"reg\">AD1CON1</code>, <code class=\"reg\">AD1CON2</code> y <code class=\"reg\">AD1CON3</code>) cuyos bits controlan todos los parámetros del módulo A/D: tiempos de espera, formato de salida, método de muestreo… Es decir, controlan la forma de trabajar del conversor.</p><p><strong><code class=\"reg\">AD1CON1</code></strong>. Los campos que usa el curso son:</p><table class=\"tabla-datos\"><thead><tr><th></th><th>Bit 15</th><th>…</th><th>Bits 7-5</th><th>…</th><th>Bit 2</th><th>Bit 1</th><th>Bit 0</th></tr></thead><tbody><tr><td><code class=\"reg\">AD1CON1</code></td><td>ADON</td><td></td><td>SSRC</td><td></td><td>ASAM</td><td>SAMP</td><td>DONE</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>ADON</strong> (bit 15): a 1 <strong>activa</strong> el conversor, aunque no lo pone a convertir. A 0 el periférico se deshabilita y se ahorra energía.",
+            "<strong>SSRC</strong> (bits 7-5): fuente que indica <strong>cuándo termina el muestreo y empieza la conversión</strong>. Hay varias; en el curso se usan dos: con <code>111</code> la conversión empieza automáticamente después de SAMC períodos T<sub>AD</sub> de muestreo (contador interno); con <code>000</code> empieza cuando el programa pone SAMP a 0.",
+            "<strong>ASAM</strong> (bit 2): muestreo <strong>automático</strong>. A 1, al terminar una conversión empieza sola la siguiente muestra; a 0, el muestreo empieza cuando el programa pone SAMP a 1.",
+            "<strong>SAMP</strong> (bit 1): con ASAM = 0, el programa lo pone a 1 para <strong>empezar a muestrear</strong>. Con SSRC = 000, ponerlo a 0 termina el muestreo y arranca la conversión; con SSRC = 111 lo pone a 0 el hardware al acabar el muestreo.",
+            "<strong>DONE</strong> (bit 0): bit informativo que indica que la conversión <strong>ha terminado</strong>."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El valor de inicialización del libro es <code>AD1CON1 = 0x80E0</code> (ADON = 1, SSRC = 111): conversor encendido, conversión automática tras el muestreo y muestreo manual. En modo escaneo se usa <code>0x80E4</code>, que añade ASAM = 1. Fíjate en que ambos valores dejan a 0 dos campos que el libro no comenta: <strong>AD12B = 0</strong> (bit 10), que selecciona el modo de <strong>10 bits</strong> con cuatro canales, y <strong>FORM = 00</strong> (bits 9-8), que entrega el resultado como <strong>entero sin signo alineado a la derecha</strong> (<code>0000 00dd dddd dddd</code>): por eso <code class=\"reg\">ADC1BUF0</code> vale directamente de 0 a 1023. Explora el registro y prueba a activar ASAM (0x80E4) o SAMP (0x80E2):</p>"
+        },
+        {
+          "tipo": "registro",
+          "registro": "AD1CON1",
+          "valor": "0x80E0"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong><code class=\"reg\">AD1CON2</code></strong>. Campos que usa el curso:</p><table class=\"tabla-datos\"><thead><tr><th></th><th>…</th><th>Bit 10</th><th>Bits 9-8</th><th>…</th><th>Bits 5-2</th><th>…</th></tr></thead><tbody><tr><td><code class=\"reg\">AD1CON2</code></td><td></td><td>CSCNA</td><td>CHPS</td><td></td><td>SMPI</td><td></td></tr></tbody></table>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>CSCNA</strong> (bit 10): a 1 se hace un <strong>barrido</strong> (escaneo) de todos los pines que se indiquen en <code class=\"reg\">AD1CSSL</code>.",
+            "<strong>CHPS</strong> (bits 9-8): canales (muestreadores) que se usan en la conversión. En el curso siempre 0 (solo CH0).",
+            "<strong>SMPI</strong> (bits 5-2): número de conversiones, menos una, hasta que salta la interrupción (AD1IF): con SMPI = 0 avisa tras cada conversión, con SMPI = n − 1 tras n conversiones. Cada conversión se guarda en un registro <code class=\"reg\">ADC1BUFx</code>, empezando por <code class=\"reg\">ADC1BUF0</code>."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>En modo simple el libro usa <code>AD1CON2 = 0</code> (referencias AV<sub>DD</sub>/AV<sub>SS</sub>, sin escaneo, CH0, interrupción en cada conversión). En modo escaneo usa <code>AD1CON2 = 0x0400 | ((n_pines − 1) &lt;&lt; 2)</code>: CSCNA = 1 y SMPI = n − 1. Para los 6 pines del micro sale <code>0x0400 | (5 &lt;&lt; 2) = 0x0414</code>, el valor cargado:</p>"
+        },
+        {
+          "tipo": "registro",
+          "registro": "AD1CON2",
+          "valor": "0x0414"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong><code class=\"reg\">AD1CON3</code></strong>. Campos que usa el curso:</p><table class=\"tabla-datos\"><thead><tr><th></th><th>…</th><th>Bits 12-8</th><th>Bits 7-0</th></tr></thead><tbody><tr><td><code class=\"reg\">AD1CON3</code></td><td></td><td>SAMC</td><td>ADCS</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>SAMC</strong> (bits 12-8): si SSRC = 111, número de períodos T<sub>AD</sub> de <strong>muestreo</strong> (adquisición) antes de la conversión (0 a 31).",
+            "<strong>ADCS</strong> (bits 7-0): <strong>pre-escalado</strong> del reloj del conversor, T<sub>AD</sub> = T<sub>CY</sub> · (ADCS + 1). Hay que configurarlo para respetar los tiempos mínimos y obtener conversiones correctas (16.2)."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El valor del libro es <code>AD1CON3 = 0x0105</code>: SAMC = 1 (un período de muestreo) y ADCS = 5 (T<sub>AD</sub> = 150 ns a 40 MIPS). El bit ADRC (15) queda a 0, de modo que el reloj del conversor se deriva del reloj del sistema:</p>"
+        },
+        {
+          "tipo": "registro",
+          "registro": "AD1CON3",
+          "valor": "0x0105"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>11.2.2 AD1PCFGL</h3><p>Este registro contiene los 6 bits asociados a cada uno de los pines del conversor del dsPIC33FJ32MC202 y permite configurarlos como <strong>analógicos</strong>: hay que poner un <strong>0</strong> en el bit del pin que se quiere hacer analógico (un 1 lo deja digital). El libro llama a los bits AN5…AN0; el datasheet los llama PCFG5…PCFG0. La correspondencia con los pines es:</p><table class=\"tabla-datos\"><thead><tr><th>Entrada</th><th>Bit de AD1PCFGL / AD1CSSL</th><th>Pin del puerto</th><th>Pin del chip</th><th>En la PicTrainer</th></tr></thead><tbody><tr><td>AN0</td><td>0</td><td>RA0</td><td>2</td><td>—</td></tr><tr><td>AN1</td><td>1</td><td>RA1</td><td>3</td><td>—</td></tr><tr><td>AN2</td><td>2</td><td>RB0</td><td>4</td><td>PGED1 (conector de programación P4)</td></tr><tr><td>AN3</td><td>3</td><td>RB1</td><td>5</td><td>PGEC1 (conector de programación P4)</td></tr><tr><td>AN4</td><td>4</td><td>RB2</td><td>6</td><td>Pulsador SW2 (JP1, pulsado = 0)</td></tr><tr><td>AN5</td><td>5</td><td>RB3</td><td>7</td><td><strong>Potenciómetro RV1</strong> (JP2)</td></tr></tbody></table><p>Para convertir no basta con configurar el pin como analógico: además debe ser una <strong>entrada</strong> (su bit de <code class=\"reg\">TRISx</code> a 1). La función <code>init_ad</code> del libro escribe <code>AD1PCFGL = ~pines;</code>, de modo que solo quedan analógicos los pines de la máscara. Para el potenciómetro (AN5, máscara <code>0x20</code>) sale <code>0xFFDF</code>:</p>"
+        },
+        {
+          "tipo": "registro",
+          "registro": "AD1PCFGL",
+          "valor": "0xFFDF"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Pines analógicos por defecto.</strong> Tras el reset <code class=\"reg\">AD1PCFGL</code> = 0x0000: los seis pines AN0-AN5 son <strong>analógicos</strong> y, mientras lo sean, al leer su bit de PORTx se obtiene siempre 0 (datasheet, registro 20-7: «port read input disabled»). Por eso la plantilla de <code>main</code> empieza con <code>AD1PCFGL = 0xFFFF;</code>; sin ella el pulsador SW2 de RB2 (AN4) se leería siempre como pulsado. Y al revés: si el bit de un pin que se quiere convertir se queda a 1 (digital), la entrada del conversor se conecta a AV<sub>SS</sub> y la conversión da 0. Ojo al depurar: el datasheet (sección 2.8) indica que al usar el depurador (ICD) se ponen a 1 automáticamente todos los bits de <code class=\"reg\">AD1PCFGL</code>, pero no al programar el micro, así que un programa que olvide configurarlo puede funcionar en depuración y fallar después."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>11.2.3 AD1CSSL</h3><p>Este registro contiene los 6 bits asociados a cada uno de los pines del conversor y permite seleccionarlos para hacer un <strong>escaneo</strong>: hay que poner un <strong>1</strong> en el bit de cada pin que se quiere escanear (bits CSS5…CSS0 en el datasheet, con la misma correspondencia ANx que <code class=\"reg\">AD1PCFGL</code>). Solo tiene efecto con CSCNA = 1. Para escanear los seis pines, <code>AD1CSSL = 0x003F</code>:</p>"
+        },
+        {
+          "tipo": "registro",
+          "registro": "AD1CSSL",
+          "valor": "0x003F"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>11.2.4 AD1CHS0</h3><p>Este registro indica qué entrada se conecta a cada muestreador de conversión. Como solo se usa el muestreador 0 (y la muestra A), el campo relevante es <strong>CH0SA</strong>: se escribe en él el número del canal de conversión, es decir, del pin AN<em>x</em> donde se quiere convertir. Para el potenciómetro, <code>AD1CHS0 = 5</code> (AN5). La entrada negativa (CH0NA = 0) es V<sub>ref−</sub>:</p>"
+        },
+        {
+          "tipo": "registro",
+          "registro": "AD1CHS0",
+          "valor": "0x0005"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>11.2.5 ADC1BUF0</h3><p>Es el registro donde se guarda el <strong>resultado</strong> de una conversión A/D. El resultado es de 10 bits; el registro es de 16 bits y, con FORM = 00, los 6 bits altos valen 0. En realidad hay 16 registros de resultado, <code class=\"reg\">ADC1BUF0</code> … <code class=\"reg\">ADC1BUFF</code>, en direcciones consecutivas a partir de <strong>0x0300</strong> (ADC1BUF1 = 0x0302, ADC1BUF2 = 0x0304…). Los demás solo se usan cuando SMPI es mayor que 0: por ejemplo, con SMPI = 2 los tres resultados se guardan en ADC1BUF0, ADC1BUF1 y ADC1BUF2, y al saltar la interrupción el puntero vuelve a ADC1BUF0. Por eso las funciones de escaneo los recorren con un puntero a 0x300.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "11.3 Modos de funcionamiento básicos",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>A continuación se muestran los modos más básicos de funcionamiento del conversor, que se pueden combinar.</p><h3>11.3.1 Modo conversión simple</h3><p>Consiste en hacer conversiones sobre distintos pines del micro, pero <strong>de uno en uno</strong>. La función de inicialización <code>init_ad</code> recibe como parámetro una <strong>máscara de pines</strong>: un entero con un 1 en el bit de cada pin AN<em>x</em> sobre el que se quiera convertir (<code>0x20</code> para AN5).</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Función de inicialización del módulo A/D en modo simple (Figura 87 del libro):</p>",
+          "codigo": "void init_ad(int pines) {\n    TRISB |= pines & 0x3F >> 2;\n    TRISA |= pines & 3;\n    AD1PCFGL = ~pines;\n    AD1CON3 = 0x105;        // SAMC = 1, ADCS = 5 -> 1 ciclo de muestreo\n    AD1CON2 = 0;\n    AD1CON1 = 0x80E0;       // ADON, SSRC = 111\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La configuración se resume en:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "El muestreo comienza cuando el programa pone el bit <strong>SAMP</strong> a 1 (ASAM = 0).",
+            "La conversión comienza automáticamente al terminar el muestreo (<strong>SSRC = 7</strong>, <code>111</code>).",
+            "Se activa el flag AD1IF al final de cada conversión (<strong>SMPI = 0</strong>).",
+            "Solo se emplea el muestreador 0 (<strong>CHPS = 0</strong>).",
+            "El muestreo dura un solo período T<sub>AD</sub> (<strong>SAMC = 1</strong>).",
+            "Pre-escalado <strong>ADCS = 5</strong>, para conseguir ≈ 500 ksps con la CPU a 40 MIPS (16.2)."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Es importante ver cómo se obtiene el pre-escalado ADCS: para 500 ksps hace falta una conversión cada 2 µs, es decir, T<sub>AD</sub> ≈ 153,85 ns, y con T<sub>CY</sub> = 25 ns la ecuación E.6 de 16.2 da ADCS ≈ 5,15 → 5. La función que devuelve el valor de la conversión de cada canal es:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Función que devuelve el resultado de la conversión (Figura 88 del libro):</p>",
+          "codigo": "int get_ad(int pin) {\n    AD1CHS0 = pin;              // selecciona pin de conversión\n    IFS0bits.AD1IF = 0;\n    AD1CON1bits.SAMP = 1;       // comienza\n    while (!IFS0bits.AD1IF);    // conversión terminada?\n    return ADC1BUF0;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Lo primero que hace la función es seleccionar el pin sobre el que se quiere convertir (<code>AD1CHS0 = pin</code>); después borra el flag y arranca el muestreo con <code>SAMP = 1</code>; el contador interno termina el muestreo tras SAMC períodos y lanza la conversión (SSRC = 111), y la función espera por <em>polling</em> a que AD1IF indique que ha terminado para devolver <code class=\"reg\">ADC1BUF0</code>. <strong>SAMP = 1 es imprescindible</strong>: con ASAM = 0 el conversor no empieza a muestrear por sí mismo, así que sin esa línea no habría conversión, AD1IF nunca se pondría a 1 y el <code>while</code> se quedaría colgado.</p><h3>Programa de prueba del potenciómetro</h3><p>En el laboratorio (Práctica 8) estas dos funciones se prueban con el potenciómetro RV1 de la PicTrainer, conectado a <strong>AN5 = RB3 (pin 7)</strong> a través del puente JP2, y con los cuatro LEDs D6-D9 de RB15-RB12:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Programa de prueba del convertidor con el potenciómetro (Práctica 8, apartado P8.5):</p>",
+          "codigo": "#include \"config.h\"\n\nvoid init_ad(int canales) {\n    TRISB |= canales & 0x3F >> 2;\n    TRISA |= canales & 3;\n    AD1PCFGL = ~canales;\n    AD1CON3 = 0x105;\n    AD1CON2 = 0;\n    AD1CON1 = 0x80E0;\n}\n\nint get_ad(int canal) {\n    AD1CHS0 = canal;\n    AD1CON1bits.SAMP = 1;\n    IFS0bits.AD1IF = 0;\n    while (!IFS0bits.AD1IF);\n    return ADC1BUF0;\n}\n\nint main(void) {\n    InicializarReloj();\n    PORTB = 0xFFFF;\n    TRISB = 0x0FFF;\n    init_ad(0x20);          // canal 5\n    while (1)\n        PORTB = (get_ad(5) << 6) & 0xF000;\n    return 0;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>¿Qué hace? <code>init_ad(0x20)</code> deja solo AN5 como analógico (<code>AD1PCFGL = 0xFFDF</code>) y en el bucle se convierte AN5 sin parar. <code>get_ad(5)</code> devuelve un valor de 10 bits (0-1023); al desplazarlo 6 posiciones a la izquierda, sus bits 9-6 (los <strong>4 bits más significativos</strong>) caen en los bits 15-12, y la máscara <code>0xF000</code> se queda solo con ellos. Así, RB15 = bit 9, RB14 = bit 8, RB13 = bit 7 y RB12 = bit 6 del resultado: los LEDs muestran el valor del potenciómetro en binario con 16 niveles (cada nivel son 64 códigos, ≈ 206 mV). Es una sola escritura en PORTB, así que no hay problema de lectura-modificación-escritura.</p><p><strong>Atención a la polaridad.</strong> Los LEDs de la PicTrainer son <strong>activos a nivel bajo</strong>: un <strong>1</strong> en el bit <strong>apaga</strong> el LED y un 0 lo enciende. Por tanto los LEDs encendidos muestran el <em>complemento</em> de los 4 bits altos: con <strong>0 V</strong> (código 0 → PORTB = 0x0000) los <strong>cuatro LEDs están encendidos</strong>; con <strong>3,3 V</strong> (código 1023 → PORTB = 0xF000) los <strong>cuatro están apagados</strong>; y con <strong>1,65 V</strong> (código 512 → PORTB = 0x8000) se apaga solo D6 (RB15) y lucen D7, D8 y D9. Al girar el potenciómetro de 0 a 3,3 V, los LEDs encendidos «cuentan hacia abajo» en binario.</p><table class=\"tabla-datos\"><thead><tr><th>Tensión</th><th>N = get_ad(5)</th><th>Bits 9-6 de N</th><th>PORTB = (N &lt;&lt; 6) &amp; 0xF000</th><th>D6 (RB15)</th><th>D7 (RB14)</th><th>D8 (RB13)</th><th>D9 (RB12)</th></tr></thead><tbody><tr><td>0 V</td><td>0</td><td><code>0000</code></td><td><code>0x0000</code></td><td>encendido</td><td>encendido</td><td>encendido</td><td>encendido</td></tr><tr><td>0,5 V</td><td>155</td><td><code>0010</code></td><td><code>0x2000</code></td><td>encendido</td><td>encendido</td><td><strong>apagado</strong></td><td>encendido</td></tr><tr><td>1 V</td><td>310</td><td><code>0100</code></td><td><code>0x4000</code></td><td>encendido</td><td><strong>apagado</strong></td><td>encendido</td><td>encendido</td></tr><tr><td>1,65 V</td><td>512</td><td><code>1000</code></td><td><code>0x8000</code></td><td><strong>apagado</strong></td><td>encendido</td><td>encendido</td><td>encendido</td></tr><tr><td>2 V</td><td>620</td><td><code>1001</code></td><td><code>0x9000</code></td><td><strong>apagado</strong></td><td>encendido</td><td>encendido</td><td><strong>apagado</strong></td></tr><tr><td>3,3 V</td><td>1023</td><td><code>1111</code></td><td><code>0xF000</code></td><td><strong>apagado</strong></td><td><strong>apagado</strong></td><td><strong>apagado</strong></td><td><strong>apagado</strong></td></tr></tbody></table><p>Mueve el potenciómetro del simulador y observa el código de <code class=\"reg\">ADC1BUF0</code> (en decimal y hexadecimal), el valor que se escribe en PORTB y qué LEDs quedan encendidos. Parte de 1,65 V: código 512, PORTB = 0x8000, D6 apagado y D7-D9 encendidos:</p><div class=\"mpi-mount\" data-componente=\"sim-adc-dspic\" data-config='{\"canal\":5,\"vref\":3.3,\"tension\":1.65,\"leds\":true}'></div>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Orden de las instrucciones en <code>get_ad</code>.</strong> En la Figura 88 se borra AD1IF <em>antes</em> de poner SAMP = 1; en el programa de la Práctica 8 se hace al revés. Funciona porque la conversión dura 13 T<sub>AD</sub> = 1,95 µs (78 ciclos de instrucción) y el flag se borra justo después de arrancar, mucho antes de que termine; aun así, el orden de la Figura 88 (borrar el flag y luego arrancar) es el más seguro y el que se usa en el resto del tema."
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Nota.</strong> La Práctica 8 advierte que la instrucción <code>AD1CON1 = 0x80E2;</code> no inicia el muestreo, y recomienda hacerlo en dos líneas: <code>AD1CON1 = 0x80E0;</code> y después <code>AD1CON1bits.SAMP = 1;</code>. Una posible explicación es que <code>0x80E2</code> intenta encender el conversor (ADON) y empezar a muestrear (SAMP) en la <strong>misma escritura</strong>, cuando el módulo aún está apagado; además, la etapa analógica necesita hasta 20 µs para estabilizarse tras encenderla (tabla 24-46, AD63, t<sub>DPU</sub>). <code>init_ad</code> y <code>get_ad</code> siguen esa recomendación: encender primero y poner SAMP = 1 después."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>11.3.2 Modo de conversión con escaneo</h3><p>Consiste en convertir sobre distintos pines del micro, pero obteniendo la información de todos <strong>de un golpe</strong> y sin preocuparse de seleccionar el pin en cada conversión: el conversor recorre él solo los pines marcados en <code class=\"reg\">AD1CSSL</code>. La función de inicialización añade un parámetro con el <strong>número de pines</strong> sobre los que se quiere convertir (se podría deducir de la máscara, pero no se hace por simplicidad).</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Función de inicialización del módulo A/D en modo escaneo (Figura 89 del libro):</p>",
+          "codigo": "void init_ad(int pines, int n_pines) {\n    TRISB |= pines & 0x3F >> 2;\n    TRISA |= pines & 3;\n    AD1PCFGL = ~pines;\n    AD1CSSL = pines;\n    AD1CON3 = 0x0105;                       // SAMC = 1, ADCS = 5 -> 1 ciclo de muestreo\n    AD1CON2 = 0x0400 | (n_pines-1 << 2);    // CSCNA, SMPI escaneo\n    AD1CON1 = 0x80E4;                       // ADON, SSRC = 111, ASAM = 1.\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La configuración se resume en:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "Configurar como entradas analógicas los pines correspondientes (<code class=\"reg\">TRISx</code>, <code class=\"reg\">AD1PCFGL</code>).",
+            "Muestreo automático (<strong>ASAM = 1</strong>). Es importante activarlo para no tener que estar pendiente de por dónde va el escaneo.",
+            "La conversión comienza automáticamente al terminar el muestreo (<strong>SSRC = 7</strong>).",
+            "Se produce la interrupción (flag AD1IF) al final de la conversión de <strong>todos</strong> los pines (SMPI = n_pines − 1).",
+            "Solo se emplea el muestreador 0 (<strong>CHPS = 0</strong>).",
+            "El muestreo dura un solo período T<sub>AD</sub> (<strong>SAMC = 1</strong>).",
+            "Pre-escalado <strong>ADCS = 5</strong>, ≈ 500 ksps a 40 MIPS.",
+            "Modo escaneo (<strong>CSCNA = 1</strong> y pines seleccionados en <code class=\"reg\">AD1CSSL</code>)."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Función que devuelve los resultados de la conversión con escaneo (Figura 90 del libro). Borra el flag, espera a que se complete un barrido entero (AD1IF se activa tras n_pines conversiones) y copia los n_pines resultados, que el conversor ha dejado en <code class=\"reg\">ADC1BUF0</code>, <code class=\"reg\">ADC1BUF1</code>… a partir de la dirección 0x300, en el orden creciente de los pines seleccionados. Los resultados se devuelven en un <strong>vector que se pasa como parámetro</strong>, para el que previamente hay que haber reservado memoria suficiente; no se puede hacer de otra manera salvo con memoria dinámica, que queda fuera del alcance del curso. Elige qué pines se escanean y observa cómo se rellenan ADC1BUF0…ADC1BUF<em>n</em>, el valor de SMPI y el de <code class=\"reg\">AD1CON2</code> (con los seis pines, 0x0414):</p><div class=\"mpi-mount\" data-componente=\"sim-adc-dspic\" data-config='{\"modo\":\"escaneo\",\"pines\":\"0x3F\",\"vref\":3.3}'></div>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Detalles de compilación.</strong> <code>int * pBuf = 0x300;</code> asigna un entero a un puntero: el compilador lo acepta con un aviso; la forma limpia es <code>int *pBuf = (int *) &amp;ADC1BUF0;</code> (o <code>(int *) 0x300</code>). Y <code>for (int i = 0; …)</code> declara la variable dentro del <code>for</code>, que es C99: si el compilador trabaja en un modo C más antiguo, hay que declarar <code>int i;</code> al principio de la función."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>11.3.3 Interrupción del módulo A/D</h3><p>El manejo por interrupción del convertidor A/D se hace igual que el del resto de módulos: se borra el flag <strong>AD1IF</strong> (<code class=\"reg\">IFS0</code>&lt;13&gt;), se habilita con <strong>AD1IE</strong> (<code class=\"reg\">IEC0</code>&lt;13&gt;), se fija la prioridad en <strong>AD1IP</strong> (<code class=\"reg\">IPC3</code>&lt;6:4&gt;) y se escribe la rutina <code>_ADC1Interrupt</code> (vector 21 de la tabla 7-1 del datasheet). A continuación se muestran las funciones de la sección anterior adaptadas a interrupciones, en forma de <strong>driver</strong> del módulo A/D: la ISR copia el buffer en un vector global cada vez que termina un barrido, y <code>get_ad</code> solo devuelve un puntero a ese vector.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Posible driver del conversor A/D usando interrupciones (Figura 91 del libro):</p>",
+          "codigo": "volatile int m_vi_valores[6];\nint m_n_pines;\n\nvoid init_ad(int pines, int n_pines) {\n    m_n_pines = n_pines;\n    TRISB |= pines & 0x3F >> 2;\n    TRISA |= pines & 3;\n    AD1PCFGL = ~pines;\n    AD1CSSL = pines;\n    AD1CON3 = 0x0105;                       // SAMC = 1, ADCS = 5 -> 1 ciclo de muestreo\n    AD1CON2 = 0x0400 | (n_pines-1 << 2);    // CSCNA, SMPI escaneo\n    AD1CON1 = 0x80E4;                       // ADON, SSRC = 111, ASAM = 1.\n    IFS0bits.AD1IF = 0;     // Borrar la bandera de la interrupción\n    IEC0bits.AD1IE = 1;     // Habilitar las interrupciones del conversor A/D\n    IPC3bits.AD1IP = 1;     // Prioridad de la interrupción (máx. 7 - mín. 1)\n}\n\nvoid __attribute__((interrupt, no_auto_psv)) _ADC1Interrupt(void) {\n    IFS0bits.AD1IF = 0;     // Borrar la bandera de la interrupción\n    int *pBuf = 0x300;      // dirección de ADC1BUF0\n    for (int i = 0; i < m_n_pines; i++)\n        m_vi_valores[i] = *(pBuf+i);\n}\n\nvolatile int* get_ad() {\n    return m_vi_valores;\n}"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Frecuencia de la interrupción.</strong> Con ASAM = 1 el conversor no para nunca: cada barrido de n pines dura n · 13 T<sub>AD</sub> = n · 1,95 µs. Con los 6 pines, la ISR se ejecuta cada 11,7 µs (≈ 468 ciclos de instrucción); con un solo pin y SMPI = 0, cada 1,95 µs (78 ciclos), de modo que la CPU pasaría buena parte del tiempo dentro de la ISR. Si no hace falta tanta velocidad, conviene aumentar ADCS o SAMC."
+        }
+      ]
+    },
+    {
+      "titulo": "11.4 Ejercicios",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<h3>11.4.1 Ejercicio 1</h3><p>Hacer un programa que convierta secuencialmente la señal de los <strong>6 pines del conversor</strong> a una velocidad de muestreo de <strong>100 ksps</strong>.</p><p><strong>Planteamiento.</strong> Se usa el modo escaneo (16.4.2) con la máscara <code>0x3F</code> y 6 pines: <code>AD1PCFGL = ~0x3F</code> (0xFFC0), <code>AD1CSSL = 0x003F</code>, <code>AD1CON2 = 0x0400 | (5 &lt;&lt; 2) = 0x0414</code> y <code>AD1CON1 = 0x80E4</code>. Solo cambia el pre-escalado: 100 ksps son una conversión cada 10 µs; con SAMC = 1 cada muestra dura 13 T<sub>AD</sub>, así que T<sub>AD</sub> = 10 µs / 13 ≈ 769 ns y ADCS = 769 / 25 − 1 ≈ 29,8 → <strong>ADCS = 30</strong> (T<sub>AD</sub> = 775 ns ≥ 76 ns; 13 · 775 ns = 10,08 µs → ≈ 99,3 ksps). Por tanto <code>AD1CON3 = 0x011E</code> (SAMC = 1, ADCS = 30 = 0x1E). Cada pin se refresca una vez por barrido, cada 6 · 10,08 µs ≈ 60,5 µs.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Propuesta de solución del ejercicio 1 (reconstruida: la solución del libro no se conserva en el material). Sigue el modo escaneo de las Figuras 89 y 90, con la máscara de TRISB corregida y la plantilla del curso:</p>",
+          "codigo": "#include \"config.h\"\n\n#define N_PINES 6\n\nvoid init_ad(int pines, int n_pines) {\n    TRISB |= (pines & 0x3C) >> 2;           // AN2-AN5 -> RB0-RB3 como entradas\n    TRISA |= pines & 3;                     // AN0-AN1 -> RA0-RA1 como entradas\n    AD1PCFGL = ~pines;                      // pines analógicos (0 = analógico)\n    AD1CSSL = pines;                        // pines que se escanean\n    AD1CON3 = 0x011E;                       // SAMC = 1, ADCS = 30 -> TAD = 775 ns\n    AD1CON2 = 0x0400 | ((n_pines - 1) << 2);    // CSCNA = 1, SMPI = n_pines - 1\n    AD1CON1 = 0x80E4;                       // ADON, SSRC = 111, ASAM = 1\n}\n\nvoid get_ad(int n_pines, int *valores) {\n    volatile unsigned int *pBuf = &ADC1BUF0;    // ADC1BUF0 está en 0x0300\n    int i;\n    IFS0bits.AD1IF = 0;\n    while (!IFS0bits.AD1IF);                // espera al final del barrido\n    for (i = 0; i < n_pines; i++)\n        valores[i] = pBuf[i];               // ADC1BUF0 = AN0 ... ADC1BUF5 = AN5\n}\n\nint main(void) {\n    int valores[N_PINES];\n\n    InicializarReloj();\n    AD1PCFGL = 0xFFFF;                      // plantilla: todo digital (init_ad lo cambia)\n    PORTB = 0xFFFF;                         // LEDs apagados (activos a nivel bajo)\n    TRISB = 0x0FFF;\n    init_ad(0x3F, N_PINES);                 // AN0-AN5\n    while (1) {\n        get_ad(N_PINES, valores);\n        // ... usar valores[0] (AN0) ... valores[5] (AN5) ...\n    }\n    return 0;\n}"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Interpretación de «100 ksps».</strong> La solución toma 100 ksps como la velocidad del conversor (100 000 conversiones por segundo, repartidas entre los 6 pines). Si se interpretase como 100 000 muestras por segundo <em>de cada pin</em>, harían falta 600 ksps en total: T<sub>AD</sub> = 10 µs / (6 · 13) ≈ 128 ns → ADCS = 4 (T<sub>AD</sub> = 125 ns, ≈ 103 ksps por pin). En la PicTrainer, además, AN2 y AN3 (RB0 y RB1) son las líneas de programación PGED1/PGEC1 y AN4 (RB2) es el pulsador."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>11.4.2 Ejercicio 2</h3><p>Hacer un programa que muestree el <strong>bit 0 del puerto B</strong>, empleando <strong>interrupciones</strong>. Los <strong>4 bits más significativos</strong> del valor de la muestra se mostrarán, fuera de la rutina de interrupción, como datos binarios por los pines 12 a 15 del puerto B.</p><p><strong>Planteamiento.</strong> RB0 es la entrada analógica <strong>AN2</strong> (pin 4): máscara <code>0x04</code>, <code>AD1PCFGL = ~0x0004</code> (0xFFFB) y <code>AD1CHS0 = 2</code>. Se usa conversión continua (ASAM = 1, SSRC = 111) sin escaneo y con SMPI = 0, de modo que la interrupción salta tras cada conversión; la ISR solo borra el flag y guarda <code class=\"reg\">ADC1BUF0</code> en una variable global <code>volatile</code>. Fuera de la ISR, el <code>main</code> saca los bits 9-6 de la muestra por RB15-RB12 con la misma expresión que el programa del potenciómetro: <code>PORTB = (m_valor &lt;&lt; 6) &amp; 0xF000;</code>.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Propuesta de solución del ejercicio 2 (reconstruida: la solución del libro no se conserva en el material). Driver por interrupción como el de la Figura 91, para un solo pin y con la cabecera de ISR del curso:</p>",
+          "codigo": "#include \"config.h\"\n\nvolatile int m_valor;       // última muestra de AN2 (RB0), compartida con la ISR\n\nvoid init_ad(void) {\n    TRISB |= 0x0001;            // RB0 (AN2) como entrada\n    AD1PCFGL = ~0x0004;         // solo AN2 analógico\n    AD1CHS0 = 2;                // CH0SA = AN2\n    AD1CON3 = 0x0105;           // SAMC = 1, ADCS = 5\n    AD1CON2 = 0;                // sin escaneo, SMPI = 0: interrupción en cada conversión\n    AD1CON1 = 0x80E4;           // ADON, SSRC = 111, ASAM = 1 (muestreo continuo)\n    IFS0bits.AD1IF = 0;         // borrar la bandera\n    IPC3bits.AD1IP = 1;         // prioridad 1\n    IEC0bits.AD1IE = 1;         // habilitar la interrupción del A/D\n}\n\nvoid __attribute__((interrupt, no_auto_psv)) _ADC1Interrupt(void) {\n    IFS0bits.AD1IF = 0;\n    m_valor = ADC1BUF0;         // dato de 10 bits (0 ... 1023)\n}\n\nint main(void) {\n    InicializarReloj();\n    AD1PCFGL = 0xFFFF;\n    PORTB = 0xFFFF;             // LEDs apagados\n    TRISB = 0x0FFF;             // RB12-RB15 como salidas\n    init_ad();\n    while (1)\n        PORTB = (m_valor << 6) & 0xF000;    // bits 9-6 de la muestra -> RB15-RB12\n    return 0;\n}"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>En la PicTrainer.</strong> RB12-RB15 son los LEDs D9-D6, <strong>activos a nivel bajo</strong>: un bit a 1 apaga su LED, así que los LEDs encendidos muestran el complemento de los 4 bits (0 V → los cuatro encendidos; tensión máxima → los cuatro apagados). Si se quiere que un LED encendido signifique «1», basta escribir <code>PORTB = ~(m_valor &lt;&lt; 6) &amp; 0xF000;</code>. Recuerda también que RB0 es la línea PGED1 del conector de programación, y que con SMPI = 0 y ADCS = 5 la interrupción salta cada 1,95 µs (78 ciclos de instrucción): si el <code>main</code> va lento, aumenta ADCS o SAMC."
+        }
+      ]
+    }
+  ],
+  "registros": {
+    "AD1CON1": {
+      "titulo": "AD1CON1 — control 1 del conversor A/D",
+      "ancho": 16,
+      "nota": "Libro 16.3.1: ADON, SSRC, ASAM, SAMP y DONE. Resto de campos según datasheet, registro 20-1 (dirección 0x0320). Los bits 14, 12, 11 y 4 no están implementados. Valores del libro: 0x80E0 (modo simple) y 0x80E4 (escaneo/interrupción). 0x80E2 (ADON + SAMP en una sola escritura) no inicia el muestreo según la Práctica 8.",
+      "campos": [
+        {
+          "bit": 15,
+          "nombre": "ADON",
+          "desc": "Enciende (1) o apaga (0) el conversor. Encenderlo no lo pone a convertir.",
+          "valores": {
+            "0": "Conversor apagado",
+            "1": "Conversor encendido"
+          }
+        },
+        {
+          "bit": 13,
+          "nombre": "ADSIDL",
+          "desc": "Parar el módulo en modo Idle de la CPU. No se usa en el curso.",
+          "valores": {
+            "0": "Sigue en Idle",
+            "1": "Se para en Idle"
+          }
+        },
+        {
+          "bit": 10,
+          "nombre": "AD12B",
+          "desc": "Modo de 10 bits con 4 canales (0) o de 12 bits con 1 canal (1). En el curso siempre 0. Solo se puede cambiar con el conversor apagado.",
+          "valores": {
+            "0": "10 bits, 4 canales",
+            "1": "12 bits, 1 canal"
+          }
+        },
+        {
+          "bits": [
+            9,
+            8
+          ],
+          "nombre": "FORM",
+          "desc": "Formato del resultado en ADC1BUFx. En el curso 00: entero sin signo alineado a la derecha (0-1023).",
+          "valores": {
+            "0": "Entero (0000 00dd dddd dddd)",
+            "1": "Entero con signo",
+            "2": "Fraccionario (dddd dddd dd00 0000)",
+            "3": "Fraccionario con signo"
+          }
+        },
+        {
+          "bits": [
+            7,
+            5
+          ],
+          "nombre": "SSRC",
+          "desc": "Qué termina el muestreo y arranca la conversión. En el curso 111 (contador interno, tras SAMC períodos TAD).",
+          "valores": {
+            "0": "Al poner SAMP = 0 (manual)",
+            "1": "Flanco en el pin INT0",
+            "2": "Comparación del Timer 3",
+            "3": "Intervalo del PWM1",
+            "4": "Reservado",
+            "5": "Intervalo del PWM2",
+            "6": "Reservado",
+            "7": "Contador interno (auto-convert)"
+          }
+        },
+        {
+          "bit": 3,
+          "nombre": "SIMSAM",
+          "desc": "Muestreo simultáneo de varios canales (solo con CHPS ≠ 0). No se usa en el curso.",
+          "valores": {
+            "0": "Canales en secuencia",
+            "1": "Canales simultáneos"
+          }
+        },
+        {
+          "bit": 2,
+          "nombre": "ASAM",
+          "desc": "Muestreo automático: a 1, la siguiente muestra empieza sola al terminar cada conversión (escaneo).",
+          "valores": {
+            "0": "Muestreo al poner SAMP = 1",
+            "1": "Muestreo automático"
+          }
+        },
+        {
+          "bit": 1,
+          "nombre": "SAMP",
+          "desc": "Muestreo en curso. Con ASAM = 0 el programa lo pone a 1 para empezar a muestrear; con SSRC = 111 lo borra el hardware al empezar la conversión.",
+          "valores": {
+            "0": "Reteniendo (sin muestrear)",
+            "1": "Muestreando"
+          }
+        },
+        {
+          "bit": 0,
+          "nombre": "DONE",
+          "desc": "Lo pone a 1 el hardware al terminar la conversión; se borra al empezar la siguiente.",
+          "valores": {
+            "0": "No empezada o en curso",
+            "1": "Conversión terminada"
+          }
+        }
+      ]
+    },
+    "AD1CON2": {
+      "titulo": "AD1CON2 — control 2 del conversor A/D",
+      "ancho": 16,
+      "nota": "Libro 16.3.1: CSCNA, CHPS y SMPI. Resto de campos según datasheet, registro 20-2 (dirección 0x0322). Los bits 12, 11 y 6 no están implementados. Valores del libro: 0x0000 (modo simple) y 0x0400 | ((n − 1) << 2) en escaneo (0x0414 con 6 pines).",
+      "campos": [
+        {
+          "bits": [
+            15,
+            13
+          ],
+          "nombre": "VCFG",
+          "desc": "Tensiones de referencia del conversor. En el curso 000: Vref+ = AVDD (3,3 V), Vref− = AVSS (0 V).",
+          "valores": {
+            "0": "AVDD / AVSS",
+            "1": "VREF+ externa / AVSS",
+            "2": "AVDD / VREF− externa",
+            "3": "VREF+ y VREF− externas",
+            "4": "AVDD / AVSS",
+            "5": "AVDD / AVSS",
+            "6": "AVDD / AVSS",
+            "7": "AVDD / AVSS"
+          }
+        },
+        {
+          "bit": 10,
+          "nombre": "CSCNA",
+          "desc": "Escaneo de los pines seleccionados en AD1CSSL para el canal 0.",
+          "valores": {
+            "0": "Sin escaneo (pin de AD1CHS0)",
+            "1": "Escanea los pines de AD1CSSL"
+          }
+        },
+        {
+          "bits": [
+            9,
+            8
+          ],
+          "nombre": "CHPS",
+          "desc": "Canales (muestreadores) que se usan. En el curso siempre 0: solo CH0.",
+          "valores": {
+            "0": "Solo CH0",
+            "1": "CH0 y CH1",
+            "2": "CH0 a CH3",
+            "3": "CH0 a CH3"
+          }
+        },
+        {
+          "bit": 7,
+          "nombre": "BUFS",
+          "desc": "Mitad del buffer que se está llenando (solo con BUFM = 1). Solo lectura. No se usa en el curso.",
+          "valores": {
+            "0": "Llenando la primera mitad",
+            "1": "Llenando la segunda mitad"
+          }
+        },
+        {
+          "bits": [
+            5,
+            2
+          ],
+          "nombre": "SMPI",
+          "desc": "Conversiones por interrupción, menos una: AD1IF salta cada SMPI + 1 conversiones y el puntero del buffer vuelve a ADC1BUF0. En escaneo, n_pines − 1.",
+          "valores": {
+            "0": "Cada conversión",
+            "1": "Cada 2 conversiones",
+            "2": "Cada 3 conversiones",
+            "3": "Cada 4 conversiones",
+            "4": "Cada 5 conversiones",
+            "5": "Cada 6 conversiones",
+            "6": "Cada 7 conversiones",
+            "7": "Cada 8 conversiones",
+            "8": "Cada 9 conversiones",
+            "9": "Cada 10 conversiones",
+            "10": "Cada 11 conversiones",
+            "11": "Cada 12 conversiones",
+            "12": "Cada 13 conversiones",
+            "13": "Cada 14 conversiones",
+            "14": "Cada 15 conversiones",
+            "15": "Cada 16 conversiones"
+          }
+        },
+        {
+          "bit": 1,
+          "nombre": "BUFM",
+          "desc": "Buffer partido en dos mitades de 8 que se alternan. No se usa en el curso.",
+          "valores": {
+            "0": "Siempre desde ADC1BUF0",
+            "1": "Alterna mitades"
+          }
+        },
+        {
+          "bit": 0,
+          "nombre": "ALTS",
+          "desc": "Alterna las selecciones de entrada de las muestras A y B. No se usa en el curso.",
+          "valores": {
+            "0": "Siempre muestra A",
+            "1": "Alterna A y B"
+          }
+        }
+      ]
+    },
+    "AD1CON3": {
+      "titulo": "AD1CON3 — control 3 del conversor A/D (tiempos)",
+      "ancho": 16,
+      "nota": "Libro 16.3.1: SAMC y ADCS. ADRC según datasheet, registro 20-3 (dirección 0x0324); los bits 14 y 13 no están implementados. TAD = TCY · (ADCS + 1); ADCS de 64 en adelante está reservado. Valor del libro: 0x0105 (SAMC = 1, ADCS = 5 → TAD = 150 ns a 40 MIPS).",
+      "campos": [
+        {
+          "bit": 15,
+          "nombre": "ADRC",
+          "desc": "Reloj del conversor: derivado del reloj del sistema (0) o RC interno (1). En el curso 0.",
+          "valores": {
+            "0": "Reloj del sistema (TCY)",
+            "1": "RC interno del conversor"
+          }
+        },
+        {
+          "bits": [
+            12,
+            8
+          ],
+          "nombre": "SAMC",
+          "desc": "Tiempo de muestreo automático en períodos TAD (solo con SSRC = 111). En el libro, 1.",
+          "valores": {
+            "0": "0 TAD",
+            "1": "1 TAD",
+            "2": "2 TAD",
+            "3": "3 TAD",
+            "31": "31 TAD"
+          }
+        },
+        {
+          "bits": [
+            7,
+            0
+          ],
+          "nombre": "ADCS",
+          "desc": "Pre-escalado del reloj del conversor: TAD = TCY · (ADCS + 1). Con TCY = 25 ns: 5 → 150 ns. Mínimo útil 3 (TAD ≥ 76 ns).",
+          "valores": {
+            "0": "TAD = TCY = 25 ns",
+            "1": "TAD = 2·TCY = 50 ns",
+            "2": "TAD = 3·TCY = 75 ns",
+            "3": "TAD = 4·TCY = 100 ns",
+            "4": "TAD = 5·TCY = 125 ns",
+            "5": "TAD = 6·TCY = 150 ns",
+            "6": "TAD = 7·TCY = 175 ns",
+            "30": "TAD = 31·TCY = 775 ns",
+            "63": "TAD = 64·TCY = 1,6 µs"
+          }
+        }
+      ]
+    },
+    "AD1PCFGL": {
+      "titulo": "AD1PCFGL — configuración analógica/digital de los pines",
+      "ancho": 16,
+      "nota": "Libro 16.3.2 (bits AN5…AN0); datasheet, registro 20-7 y tabla 4-14 (dirección 0x032C), donde se llaman PCFG5…PCFG0. En el dsPIC33FJ32MC202 solo existen los bits 5-0 (los demás no tienen efecto). 0 = analógico, 1 = digital. Tras el reset vale 0x0000 (todos analógicos). Valor del ejemplo: ~0x20 = 0xFFDF (solo AN5 analógico).",
+      "campos": [
+        {
+          "bit": 5,
+          "nombre": "PCFG5",
+          "desc": "AN5 = RB3 (pin 7): potenciómetro RV1 de la PicTrainer.",
+          "valores": {
+            "0": "Analógico (AN5)",
+            "1": "Digital (RB3)"
+          }
+        },
+        {
+          "bit": 4,
+          "nombre": "PCFG4",
+          "desc": "AN4 = RB2 (pin 6): pulsador SW2 de la PicTrainer.",
+          "valores": {
+            "0": "Analógico (AN4)",
+            "1": "Digital (RB2)"
+          }
+        },
+        {
+          "bit": 3,
+          "nombre": "PCFG3",
+          "desc": "AN3 = RB1 (pin 5).",
+          "valores": {
+            "0": "Analógico (AN3)",
+            "1": "Digital (RB1)"
+          }
+        },
+        {
+          "bit": 2,
+          "nombre": "PCFG2",
+          "desc": "AN2 = RB0 (pin 4).",
+          "valores": {
+            "0": "Analógico (AN2)",
+            "1": "Digital (RB0)"
+          }
+        },
+        {
+          "bit": 1,
+          "nombre": "PCFG1",
+          "desc": "AN1 = RA1 (pin 3).",
+          "valores": {
+            "0": "Analógico (AN1)",
+            "1": "Digital (RA1)"
+          }
+        },
+        {
+          "bit": 0,
+          "nombre": "PCFG0",
+          "desc": "AN0 = RA0 (pin 2).",
+          "valores": {
+            "0": "Analógico (AN0)",
+            "1": "Digital (RA0)"
+          }
+        }
+      ]
+    },
+    "AD1CSSL": {
+      "titulo": "AD1CSSL — selección de pines para el escaneo",
+      "ancho": 16,
+      "nota": "Libro 16.3.3; datasheet, registro 20-6 y tabla 4-14 (dirección 0x0330), bits CSS5…CSS0 (en el dsPIC33FJ32MC202 solo existen los bits 5-0). 1 = se escanea ANx. Solo tiene efecto con CSCNA = 1 en AD1CON2. Valor del ejemplo: 0x003F (los seis pines).",
+      "campos": [
+        {
+          "bit": 5,
+          "nombre": "CSS5",
+          "desc": "Escanear AN5 (RB3, potenciómetro).",
+          "valores": {
+            "0": "Se salta AN5",
+            "1": "Se escanea AN5"
+          }
+        },
+        {
+          "bit": 4,
+          "nombre": "CSS4",
+          "desc": "Escanear AN4 (RB2).",
+          "valores": {
+            "0": "Se salta AN4",
+            "1": "Se escanea AN4"
+          }
+        },
+        {
+          "bit": 3,
+          "nombre": "CSS3",
+          "desc": "Escanear AN3 (RB1).",
+          "valores": {
+            "0": "Se salta AN3",
+            "1": "Se escanea AN3"
+          }
+        },
+        {
+          "bit": 2,
+          "nombre": "CSS2",
+          "desc": "Escanear AN2 (RB0).",
+          "valores": {
+            "0": "Se salta AN2",
+            "1": "Se escanea AN2"
+          }
+        },
+        {
+          "bit": 1,
+          "nombre": "CSS1",
+          "desc": "Escanear AN1 (RA1).",
+          "valores": {
+            "0": "Se salta AN1",
+            "1": "Se escanea AN1"
+          }
+        },
+        {
+          "bit": 0,
+          "nombre": "CSS0",
+          "desc": "Escanear AN0 (RA0).",
+          "valores": {
+            "0": "Se salta AN0",
+            "1": "Se escanea AN0"
+          }
+        }
+      ]
+    },
+    "AD1CHS0": {
+      "titulo": "AD1CHS0 — selección de entrada del canal 0",
+      "ancho": 16,
+      "nota": "Libro 16.3.4: solo CH0SA (el libro lo sitúa en los bits 3-0; el datasheet, registro 20-5, dirección 0x0328, en los bits 4-0). Los bits 14, 13, 6 y 5 no están implementados. En el dsPIC33FJ32MC202 CH0SA y CH0SB solo admiten 0-5 (AN0-AN5). Valor del ejemplo: 0x0005 (AN5, potenciómetro).",
+      "campos": [
+        {
+          "bit": 15,
+          "nombre": "CH0NB",
+          "desc": "Entrada negativa del canal 0 para la muestra B. No se usa en el curso.",
+          "valores": {
+            "0": "VREF−",
+            "1": "AN1"
+          }
+        },
+        {
+          "bits": [
+            12,
+            8
+          ],
+          "nombre": "CH0SB",
+          "desc": "Entrada positiva del canal 0 para la muestra B (solo con ALTS = 1). No se usa en el curso.",
+          "valores": {
+            "0": "AN0",
+            "1": "AN1",
+            "2": "AN2",
+            "3": "AN3",
+            "4": "AN4",
+            "5": "AN5"
+          }
+        },
+        {
+          "bit": 7,
+          "nombre": "CH0NA",
+          "desc": "Entrada negativa del canal 0 para la muestra A. En el curso 0 (VREF−, masa).",
+          "valores": {
+            "0": "VREF−",
+            "1": "AN1"
+          }
+        },
+        {
+          "bits": [
+            4,
+            0
+          ],
+          "nombre": "CH0SA",
+          "desc": "Entrada positiva del canal 0 (muestra A): número del pin ANx que se convierte. Es lo que escribe get_ad(pin).",
+          "valores": {
+            "0": "AN0 (RA0)",
+            "1": "AN1 (RA1)",
+            "2": "AN2 (RB0)",
+            "3": "AN3 (RB1)",
+            "4": "AN4 (RB2)",
+            "5": "AN5 (RB3, potenciómetro)"
+          }
+        }
+      ]
+    }
+  },
+  "ejercicios": {
+    "conversor-ad-1": {
+      "titulo": "Del potenciómetro al código y a los LEDs",
+      "enunciado": "<p>El potenciómetro RV1 de la PicTrainer está conectado a AN5 y el programa de prueba de 16.4.1 lo convierte sin parar y saca los 4 bits altos del resultado por los LEDs de RB15-RB12.</p>",
+      "contexto": "<ul><li>Conversor de 10 bits, V<sub>ref−</sub> = 0 V, V<sub>ref+</sub> = 3,3 V: N ≈ V · 1023 / 3,3.</li><li>Potenciómetro RV1 en AN5 = RB3 (pin 7). Programa: <code>PORTB = (get_ad(5) &lt;&lt; 6) &amp; 0xF000;</code></li><li>LEDs D6 = RB15, D7 = RB14, D8 = RB13, D9 = RB12, <strong>activos a nivel bajo</strong> (0 = encendido).</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Qué código devuelve <code>get_ad(5)</code> si el cursor del potenciómetro está a 1 V?",
+          "opciones": [
+            "77 (0x04D)",
+            "310 (0x136)",
+            "303 (0x12F)",
+            "1023 (0x3FF)"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>N ≈ V · 1023 / V<sub>ref+</sub> = 1 · 1023 / 3,3 = <strong>310</strong> = 0x136. 77 sería el resultado con un conversor de 8 bits (1 · 255 / 3,3), 303 sale de usar 1000 en lugar de 1023 y 1023 corresponde a 3,3 V.</p>"
+        },
+        {
+          "texto": "¿Cuál es la resolución (tensión de un escalón) del conversor con V<sub>ref+</sub> = 3,3 V?",
+          "opciones": [
+            "12,9 mV",
+            "0,81 mV",
+            "3,23 mV",
+            "3,3 mV"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>El conversor es de 10 bits: el rango 0-3,3 V se representa con los códigos 0-1023, así que cada escalón vale 3,3 V / 1023 ≈ <strong>3,23 mV</strong> (con 1024 escalones, 3,22 mV). 12,9 mV correspondería a 8 bits, 0,81 mV a 12 bits y 3,3 mV a repartir el rango en 1000 escalones.</p>"
+        },
+        {
+          "texto": "Con el cursor a 2 V, ¿qué LEDs están <strong>encendidos</strong>?",
+          "opciones": [
+            "D6 y D9",
+            "D7 y D8",
+            "D6, D7 y D8",
+            "Ninguno"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>N = 2 · 1023 / 3,3 = 620 = <code>10 0110 1100</code>. Sus bits 9-6 son <code>1001</code>, y <code>(620 &lt;&lt; 6) &amp; 0xF000 = 0x9000</code>: RB15 = 1, RB14 = 0, RB13 = 0, RB12 = 1. Como los LEDs son activos a nivel bajo, un 1 los <strong>apaga</strong>: D6 (RB15) y D9 (RB12) apagados y <strong>D7 y D8 encendidos</strong>. «D6 y D9» es el error de pensar que un 1 enciende.</p>"
+        },
+        {
+          "texto": "Se gira el potenciómetro hasta el extremo de 3,3 V. ¿Qué se ve en los LEDs?",
+          "opciones": [
+            "Los cuatro encendidos",
+            "Solo D6 encendido",
+            "Los cuatro apagados",
+            "Solo D9 apagado"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>Con 3,3 V el código es 1023 = 0x3FF; <code>(1023 &lt;&lt; 6) &amp; 0xF000 = 0xF000</code>: los cuatro bits RB15-RB12 a 1. Con LEDs activos a nivel bajo, los <strong>cuatro quedan apagados</strong>. En el otro extremo (0 V → 0x0000) los cuatro están encendidos, y a mitad de recorrido (1,65 V → 512 → 0x8000) solo se apaga D6.</p>"
+        }
+      ]
+    },
+    "conversor-ad-2": {
+      "titulo": "Tiempos de conversión y registros de control",
+      "enunciado": "<p>El conversor trabaja con F<sub>CY</sub> = 40 MHz (T<sub>CY</sub> = 25 ns) y el reloj del sistema (ADRC = 0). Cada muestra dura SAMC períodos de muestreo más 12 de conversión.</p>",
+      "contexto": "<ul><li>T<sub>AD</sub> = T<sub>CY</sub> · (ADCS + 1); T<sub>AD</sub> mínimo 76 ns.</li><li>T<sub>muestra</sub> = (SAMC + 12) · T<sub>AD</sub>.</li><li><code class=\"reg\">AD1CON3</code>: SAMC = bits 12-8, ADCS = bits 7-0. <code class=\"reg\">AD1CON2</code>: CSCNA = bit 10, SMPI = bits 5-2.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "Con <code>AD1CON3 = 0x0105</code>, ¿cuánto valen T<sub>AD</sub>, la duración de una muestra y la velocidad de conversión?",
+          "opciones": [
+            "153,85 ns, 2 µs y 500 ksps exactos",
+            "150 ns, 1,8 µs y ≈ 556 ksps",
+            "150 ns, 1,95 µs y ≈ 513 ksps",
+            "125 ns, 1,63 µs y ≈ 615 ksps"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>0x0105 → SAMC = 1, ADCS = 5. T<sub>AD</sub> = 25 ns · (5 + 1) = <strong>150 ns</strong>; una muestra son 1 + 12 = 13 T<sub>AD</sub> = <strong>1,95 µs</strong>, es decir, 1 / 1,95 µs ≈ <strong>513 ksps</strong> (el «≈ 500 ksps» del libro). 1,8 µs olvida el período de muestreo y 125 ns corresponde a ADCS = 4.</p>"
+        },
+        {
+          "texto": "Ejercicio 16.5.1: se quieren 100 ksps (una conversión cada 10 µs) con SAMC = 1. ¿Qué ADCS hay que poner?",
+          "opciones": [
+            "ADCS = 5",
+            "ADCS = 30",
+            "ADCS = 399",
+            "ADCS = 4"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Cada muestra son 13 T<sub>AD</sub>: T<sub>AD</sub> = 10 µs / 13 ≈ 769 ns. ADCS = T<sub>AD</sub> / T<sub>CY</sub> − 1 = 769 / 25 − 1 ≈ 29,8 → <strong>30</strong> (T<sub>AD</sub> = 775 ns, 13 · 775 ns = 10,08 µs ≈ 99,3 ksps). 399 saldría de olvidar los 13 períodos (10 µs / 25 ns − 1), y además no cabe: ADCS solo admite hasta 63. ADCS = 4 (T<sub>AD</sub> = 125 ns, 13 · 125 ns = 1,625 µs) da ≈ 615 ksps en total, ≈ 103 ksps por pin: correspondería a pedir 100 ksps en cada uno de los 6 pines.</p>"
+        },
+        {
+          "texto": "¿Qué valor hay que escribir en <code class=\"reg\">AD1CON3</code> para SAMC = 1 y ADCS = 30?",
+          "opciones": [
+            "0x011E",
+            "0x1E01",
+            "0x001E",
+            "0x0130"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>SAMC = 1 va en los bits 12-8 → 1 &lt;&lt; 8 = 0x0100; ADCS = 30 = 0x1E va en los bits 7-0. Total: <strong>0x011E</strong>. 0x1E01 intercambia los campos, 0x001E deja SAMC = 0 y 0x0130 confunde el 30 decimal con 0x30, que daría ADCS = 48.</p>"
+        },
+        {
+          "texto": "Con la función de escaneo del libro, <code>AD1CON2 = 0x0400 | ((n_pines - 1) &lt;&lt; 2)</code>, ¿qué valor se escribe para escanear 4 pines?",
+          "opciones": [
+            "0x0410",
+            "0x0404",
+            "0x040C",
+            "0x000C"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>CSCNA = 1 (bit 10) → 0x0400. SMPI = n − 1 = 3 en los bits 5-2 → 3 &lt;&lt; 2 = 0x000C. Total: <strong>0x040C</strong>, y AD1IF salta tras 4 conversiones (un barrido). 0x0410 pone SMPI = 4 (interrumpiría tras 5), 0x0404 pone SMPI = 1 y 0x000C olvida activar el escaneo.</p>"
+        }
+      ]
+    },
+    "conversor-ad-3": {
+      "titulo": "Configuración del conversor y fallos típicos",
+      "enunciado": "<p>Se usan las funciones del modo simple del libro: <code>init_ad(pines)</code> (TRISx, <code>AD1PCFGL = ~pines</code>, <code>AD1CON3 = 0x105</code>, <code>AD1CON2 = 0</code>, <code>AD1CON1 = 0x80E0</code>) y <code>get_ad(pin)</code> (AD1CHS0, borra AD1IF, <code>SAMP = 1</code>, espera AD1IF, devuelve ADC1BUF0).</p>",
+      "contexto": "<ul><li><code class=\"reg\">AD1PCFGL</code>: 0 = pin analógico, 1 = digital; tras el reset vale 0x0000.</li><li>Pulsador SW2 en RB2 = AN4 (pulsado = 0); potenciómetro en RB3 = AN5.</li><li><code class=\"reg\">AD1CON1</code> = 0x80E0: ADON = 1, SSRC = 111, ASAM = 0.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "Un programa pone <code>AD1PCFGL = 0xFFFF</code> (plantilla) pero se olvida de llamar a <code>init_ad(0x20)</code>, aunque sí configura AD1CON1-3. ¿Qué devuelve <code>get_ad(5)</code>?",
+          "opciones": [
+            "El valor correcto: el conversor lee la tensión aunque el pin sea digital",
+            "Siempre ≈ 0, porque con el pin en modo digital la entrada del conversor se conecta a AVSS",
+            "Siempre 1023, porque el pin digital lee un 1",
+            "Nada: el programa se queda colgado en el while"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Con el bit PCFG5 a 1 el pin RB3 es <strong>digital</strong>, y según el datasheet (registro 20-7) en ese modo «ADC input multiplexer connected to AVSS»: la conversión se hace (AD1IF se activa y no se cuelga), pero convierte masa, <strong>≈ 0</strong>. Con el programa de los LEDs, los cuatro quedarían encendidos fijos se mueva o no el potenciómetro.</p>"
+        },
+        {
+          "texto": "Y al revés: un programa lee el pulsador SW2 (RB2) y nunca escribe <code class=\"reg\">AD1PCFGL</code>. ¿Qué ocurre?",
+          "opciones": [
+            "Funciona normalmente: RB2 es digital por defecto",
+            "RB2 se lee siempre como 0, como si el pulsador estuviera siempre pulsado",
+            "RB2 se lee siempre como 1, como si nunca se pulsara",
+            "El micro se resetea al pulsar"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Tras el reset <code>AD1PCFGL = 0x0000</code>: RB2 (AN4) es <strong>analógico</strong> y su entrada digital está deshabilitada, así que PORTB lee un <strong>0</strong> en ese bit. Como el pulsador es activo a nivel bajo (pulsado = 0), el programa creerá que está <strong>siempre pulsado</strong>. Por eso la plantilla de <code>main</code> empieza con <code>AD1PCFGL = 0xFFFF;</code> (y <code>init_ad</code> solo deja analógicos los pines de la máscara).</p>"
+        },
+        {
+          "texto": "¿Por qué <code>get_ad</code> tiene que poner <code>AD1CON1bits.SAMP = 1</code>?",
+          "opciones": [
+            "Porque enciende el conversor, que init_ad deja apagado",
+            "Porque con ASAM = 0 el muestreo no empieza solo: sin SAMP = 1 no hay conversión, AD1IF no se activa y el while no termina",
+            "Porque borra el flag AD1IF",
+            "Porque selecciona el pin que se va a convertir"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Con 0x80E0 el conversor está encendido (ADON = 1) pero ASAM = 0: el muestreo solo empieza cuando el programa pone <strong>SAMP = 1</strong>. Después, como SSRC = 111, el contador interno termina el muestreo tras SAMC = 1 T<sub>AD</sub> y lanza la conversión, y al acabar se activa AD1IF. Sin esa línea no se convierte nada y <code>while (!IFS0bits.AD1IF);</code> espera para siempre. El pin lo selecciona AD1CHS0 y el flag se borra con <code>IFS0bits.AD1IF = 0</code>.</p>"
+        },
+        {
+          "texto": "En <code>init_ad(0x20)</code>, ¿qué valor se suma (OR) a TRISB con la línea del libro <code>TRISB |= pines &amp; 0x3F &gt;&gt; 2;</code>?",
+          "opciones": [
+            "0x0008: pone RB3 como entrada",
+            "0x0000: no cambia TRISB",
+            "0x0020: pone RB5 como entrada",
+            "0x000F: pone RB0-RB3 como entradas"
+          ],
+          "correcta": 1,
+          "explicacion": "<p><code>&gt;&gt;</code> tiene más precedencia que <code>&amp;</code>: se calcula <code>0x3F &gt;&gt; 2 = 0x0F</code> y luego <code>0x20 &amp; 0x0F = <strong>0x0000</strong></code>, así que TRISB no cambia y RB3 no se configura como entrada (el programa funciona porque TRISB ya tenía ese bit a 1). Lo que se pretendía, 0x0008, se obtiene con <code>(pines &amp; 0x3C) &gt;&gt; 2</code>.</p>"
+        }
+      ]
+    }
+  },
+  "ejerciciosEnTema": [
+    "conversor-ad-1",
+    "conversor-ad-2",
+    "conversor-ad-3"
+  ],
+  "tituloEjercicios": "Ejercicios y cuestiones",
+  "resumen": [
+    "El módulo A/D tiene un <strong>canal</strong> (muestreador-retenedor con condensador) y un <strong>conversor de 10 bits</strong>: 0 V → <code>0x000</code>, V<sub>ref+</sub> = 3,3 V → <code>0x3FF</code> (1023); cada escalón ≈ 3,23 mV.",
+    "Una conversión de 10 bits dura <strong>12 T<sub>AD</sub></strong> más el muestreo (SAMC = 1 → 13 T<sub>AD</sub>), con <strong>T<sub>AD</sub> = T<sub>CY</sub> · (ADCS + 1)</strong>. Con ADCS = 5 a 40 MIPS: 150 ns, 1,95 µs y ≈ 513 ksps (el «≈ 500 ksps» del libro).",
+    "<code class=\"reg\">AD1CON1</code> = 0x80E0 (ADON, SSRC = 111; 10 bits, entero) en modo simple y 0x80E4 (+ ASAM) en escaneo; <code class=\"reg\">AD1CON2</code> = 0 o <code>0x0400 | ((n − 1) &lt;&lt; 2)</code>; <code class=\"reg\">AD1CON3</code> = 0x0105.",
+    "En <code class=\"reg\">AD1PCFGL</code> un 0 hace analógico el pin (AN0-AN5 = RA0, RA1, RB0-RB3); tras el reset todos son analógicos y se leen como 0 en PORTx. <code class=\"reg\">AD1CSSL</code> marca con 1 los pines a escanear y <code class=\"reg\">AD1CHS0</code> (CH0SA) elige el pin en modo simple.",
+    "Los resultados se guardan en <code class=\"reg\">ADC1BUF0</code> … <code class=\"reg\">ADC1BUFF</code> (desde 0x0300); el fin de conversión lo indica AD1IF (<code class=\"reg\">IFS0</code>), que se habilita con AD1IE (<code class=\"reg\">IEC0</code>) y se prioriza con AD1IP (<code class=\"reg\">IPC3</code>).",
+    "Modo simple: <code>get_ad</code> elige el pin, pone <strong>SAMP = 1</strong> (imprescindible con ASAM = 0) y espera AD1IF. Modo escaneo: ASAM = 1 y CSCNA = 1, AD1IF tras un barrido completo. Por interrupción: la ISR <code>_ADC1Interrupt</code> copia el buffer.",
+    "Con el potenciómetro (AN5) y <code>PORTB = (get_ad(5) &lt;&lt; 6) &amp; 0xF000;</code> los 4 bits altos salen por RB15-RB12, pero los LEDs son <strong>activos a nivel bajo</strong>: 0 V → los cuatro encendidos, 3,3 V → los cuatro apagados, 1,65 V → solo D6 apagado."
+  ]
+}

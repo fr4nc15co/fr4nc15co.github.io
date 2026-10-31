@@ -1,0 +1,484 @@
+{
+  "slug": "arquitectura-micro",
+  "titulo": "Arquitectura de un micro",
+  "temaNum": 6,
+  "lenguaje": "c",
+  "lead": "Para programar un micro hay que conocer su <strong>modelo del programador</strong>: qué bloques tiene (CPU, memorias de programa y de datos, E/S), qué registros (<code class=\"reg\">Wx</code>, <code class=\"reg\">PC</code>, <code class=\"reg\">IR</code>, <code class=\"reg\">SR</code>) y cómo ejecuta las instrucciones. Con un micro hipotético de instrucciones de 16 bits verás cómo se codifica una instrucción, cómo recorre la CPU los ciclos de <em>fetch</em> y <em>execute</em>, con qué niveles de abstracción se interpretan los bits y cómo viajan los datos por los buses.",
+  "secciones": [
+    {
+      "titulo": "6.1 Introducción",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Para poder utilizar un microcontrolador conviene conocer su <strong>arquitectura</strong>, es decir, cómo es por dentro <em>desde el punto de vista del programador</em>: cuáles son sus recursos, cómo son sus instrucciones y qué modos de direccionamiento soporta, cuáles son sus registros y de qué tamaño, cómo es su mapa de memoria y cuánto tarda en ejecutarse una instrucción. Es algo muy distinto de la <strong>organización</strong> de un computador, que estudia el hardware por dentro (cuántos módulos tiene y cómo están conectados): ese es el punto de vista del diseñador, y no es el objetivo de esta asignatura.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "6.2 Modelo del programador de un micro",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Desde el punto de vista del programador, según el <strong>modelo Harvard</strong>, un micro se ve como una máquina formada por cuatro bloques. La CPU ocupa un bloque a la izquierda y se comunica en ambos sentidos con los otros tres:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>1. CPU</strong>: la <strong>unidad de control</strong> y la <strong>unidad aritmético-lógica (ALU)</strong>, que junto con los <strong>registros</strong> forman la CPU. La ALU realiza las operaciones aritméticas que requiere cada instrucción, los registros son celdas de memoria de acceso rápido y la unidad de control reparte el trabajo y coordina el resto de bloques.",
+            "<strong>2. Memoria de datos</strong>: almacena la información que usan los programas.",
+            "<strong>3. Memoria de programa</strong>: almacena los programas que se van a ejecutar.",
+            "<strong>4. Unidad de entrada/salida (E/S o I/O)</strong>: imprescindible para que el microcontrolador se comunique con el exterior; sin ella sería inútil. Gracias a ella se conectan sensores y actuadores al micro y este puede comunicarse con otros micros y sistemas digitales."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El <strong>banco de registros</strong> de la CPU también puede almacenar datos, igual que la memoria de datos; la diferencia es que la memoria de datos es <strong>mucho más grande pero más lenta</strong> que el banco de registros.</p><p>Existe otro modelo del programador, el <strong>modelo de Von Neumann</strong>, similar al Harvard con una diferencia: la memoria de datos y la de programa son <strong>la misma</strong>.</p><table class=\"tabla-datos\"><thead><tr><th></th><th>Modelo Harvard</th><th>Modelo de Von Neumann</th></tr></thead><tbody><tr><td>Memorias</td><td>Memoria de programa y memoria de datos <strong>separadas</strong></td><td>Una sola memoria compartida para programa y datos</td></tr><tr><td>Accesos</td><td>Permite leer una instrucción y acceder a un dato <strong>a la vez</strong></td><td>Instrucciones y datos se turnan en la misma memoria</td></tr><tr><td>Uso típico</td><td>Micros que requieren alto rendimiento, como el <strong>dsPIC33FJ32MC202</strong></td><td>—</td></tr></tbody></table><p>El modelo Harvard es el más usado por micros que requieren alto rendimiento, como el dsPIC33FJ32MC202 de la asignatura: al tener separadas las zonas de memoria permite accesos simultáneos al programa y a los datos.</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "El datasheet (sección 3.0, «CPU») precisa que el dsPIC33FJ32MC202 tiene una arquitectura <strong>Harvard modificada</strong> de 16 bits para datos: memoria de programa con palabras de 24 bits y espacio de datos de 16 bits separados, aunque se pueden leer constantes guardadas en la memoria de programa. Para este tema basta con quedarse con que es Harvard."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>En las secciones siguientes se explica cada una de estas unidades con más detalle. Para entender cómo se codifican y ejecutan las instrucciones se usa un <strong>micro hipotético</strong> muy sencillo, con instrucciones de 16 bits; no es el dsPIC, pero los conceptos son exactamente los mismos.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "6.3 La CPU",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Además de la unidad de control y la ALU, la CPU contiene los <strong>registros</strong>: un banco de memoria de acceso rápido para almacenar datos. Se dice que un micro es <strong>de 8 bits si sus registros son de 8 bits</strong>, de 16 bits si sus registros son de 16 bits, etc. El dsPIC33FJ32MC202 es, por tanto, un micro de 16 bits.</p><p>De todos los registros que tiene una CPU, desde el punto de vista del programador interesa conocer los siguientes:</p><table class=\"tabla-datos\"><thead><tr><th>Registro</th><th>Nombre</th><th>Función</th><th>En el dsPIC</th></tr></thead><tbody><tr><td><code class=\"reg\">Wx</code></td><td><em>Working registers</em> (registros de trabajo)</td><td>Almacenamiento temporal de un dato. Son básicos para las operaciones en la ALU, porque sirven como punto de entrada y salida de la misma, y sirven de apoyo para transferir información entre dos posiciones de memoria.</td><td>16 registros, de <code class=\"reg\">W0</code> a <code class=\"reg\">W15</code>. <code class=\"reg\">W0</code> es el registro por defecto y se nota también <code class=\"reg\">WREG</code>.</td></tr><tr><td><code class=\"reg\">PC</code></td><td><em>Program counter</em> (contador de programa)</td><td>Contiene la <strong>dirección de la próxima instrucción</strong> a ejecutar.</td><td>23 bits.</td></tr><tr><td><code class=\"reg\">IR</code></td><td><em>Instruction register</em> (registro de instrucción)</td><td>Contiene la instrucción que se está procesando. Es el <strong>único registro que almacena instrucciones</strong> en lugar de datos y el programador <strong>no puede usarlo</strong>: es parte del hardware que necesita la CPU para procesar instrucciones.</td><td>Interno, no accesible.</td></tr><tr><td><code class=\"reg\">SR</code></td><td><em>State register</em> (registro de estado)</td><td>Contiene el <strong>estado del micro</strong> después de ejecutar una instrucción: por ejemplo, si una operación ha dado un resultado negativo o si una suma ha generado acarreo.</td><td>Sus bits (C, Z, OV, N…) se estudian en temas posteriores.</td></tr></tbody></table>"
+        }
+      ]
+    },
+    {
+      "titulo": "6.4 La memoria de datos",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>La memoria de datos almacena los datos que usan los programas. Los datos están guardados en <strong>formato binario</strong> en <strong>celdas de 8 bits</strong> (un byte). Por ejemplo, el número 5 se codifica como <code>0000 0101</code>, y un número más grande, como el 127, como <code>0111 1111</code>:</p><table class=\"tabla-datos\"><thead><tr><th>Decimal</th><th>Binario (8 bits)</th><th>Hexadecimal</th></tr></thead><tbody><tr><td>5</td><td><code>0000 0101</code></td><td><code>0x05</code></td></tr><tr><td>127</td><td><code>0111 1111</code></td><td><code>0x7F</code></td></tr></tbody></table><p>Para manejar números binarios con comodidad se usa la <strong>base hexadecimal</strong>: los bits se agrupan de 4 en 4 empezando por la derecha y cada grupo (un <em>nibble</em>) da una cifra hexadecimal. Así, <code>0111 1111</code> → <code>7</code> y <code>F</code> → <code>0x7F</code>.</p><table class=\"tabla-datos\"><thead><tr><th>Binario</th><th>Hex</th><th>Binario</th><th>Hex</th></tr></thead><tbody><tr><td><code>0000</code></td><td>0</td><td><code>1000</code></td><td>8</td></tr><tr><td><code>0001</code></td><td>1</td><td><code>1001</code></td><td>9</td></tr><tr><td><code>0010</code></td><td>2</td><td><code>1010</code></td><td>A</td></tr><tr><td><code>0011</code></td><td>3</td><td><code>1011</code></td><td>B</td></tr><tr><td><code>0100</code></td><td>4</td><td><code>1100</code></td><td>C</td></tr><tr><td><code>0101</code></td><td>5</td><td><code>1101</code></td><td>D</td></tr><tr><td><code>0110</code></td><td>6</td><td><code>1110</code></td><td>E</td></tr><tr><td><code>0111</code></td><td>7</td><td><code>1111</code></td><td>F</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Para pasar de hexadecimal a decimal se multiplica cada cifra por su potencia de 16:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mn>0x7F</mn><mo>=</mo><mn>7</mn><mo>·</mo><msup><mn>16</mn><mn>1</mn></msup><mo>+</mo><mn>15</mn><mo>·</mo><msup><mn>16</mn><mn>0</mn></msup><mo>=</mo><mn>112</mn><mo>+</mo><mn>15</mn><mo>=</mo><mn>127</mn></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La memoria está organizada en celdas de 8 bits y a cada celda se le asigna una <strong>dirección de memoria</strong>. El micro accede al dato de una celda indicando a la memoria su dirección a través del <strong>bus de direcciones</strong> (6.3.8). En el ejemplo del libro la memoria se dibuja como una columna de celdas con direcciones de 16 bits, desde <code>0x0000</code> hasta <code>0xFFFF</code>:</p><table class=\"tabla-datos\"><thead><tr><th>Dirección</th><th>Dato (8 bits)</th></tr></thead><tbody><tr><td><code>0x0000</code></td><td><code>0x05</code></td></tr><tr><td><code>0x0001</code></td><td><code>0x7F</code></td></tr><tr><td>…</td><td>…</td></tr><tr><td><code>0xFFFF</code></td><td><code>0xA0</code></td></tr></tbody></table><p>Con direcciones de 16 bits hay 2<sup>16</sup> = 65 536 celdas posibles. La memoria es, por tanto, como un <strong>vector</strong> en el que el índice es la dirección y el contenido es el dato.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "6.5 La memoria de programa",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>La memoria de programa almacena las <strong>instrucciones</strong> que se van a ejecutar, es decir, el programa. Las instrucciones también están guardadas en formato binario en celdas de 8 bits, y una instrucción suele necesitar varias celdas. En el dsPIC casi todas las instrucciones ocupan <strong>3 bytes, es decir, 24 bits</strong>.</p><p>Si la memoria de datos fuera compartida con la de programa (modelo de Von Neumann), ¿cómo sabe el micro qué direcciones contienen instrucciones y cuáles datos? Por la forma de acceder:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "Toda dirección de memoria a la que se accede <strong>a través del registro <code class=\"reg\">PC</code></strong> se interpreta como una <strong>instrucción</strong> de programa.",
+            "Toda dirección a la que se accede <strong>de otra manera</strong> se considera un <strong>dato</strong>; por ejemplo, cuando el micro lee una posición para guardarla en un registro de propósito general."
+          ]
+        },
+        {
+          "tipo": "nota",
+          "html": "Los bits de una celda no llevan ninguna etiqueta que diga «soy instrucción» o «soy dato»: la misma palabra <code>0x2800</code> es la instrucción <code>move 0x80, W0</code> si la recoge el <code class=\"reg\">PC</code> y el número 10 240 si se lee como dato. Su significado depende de quién y cómo la lee (véase también 6.3.7)."
+        }
+      ]
+    },
+    {
+      "titulo": "6.6 Codificación de las instrucciones",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Las instrucciones también se guardan en memoria en binario. Considera esta instrucción del micro hipotético:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Suma <code>W0</code> al dato almacenado en el registro <code>W1</code> y deja el resultado en <code>W1</code> (W1 ← W0 + W1):</p>",
+          "codigo": "add W0, W1",
+          "lenguaje": "asm"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Esta instrucción podría estar codificada en 16 bits como <code>0001 0000 0000 0001</code> = <strong><code>0x1001</code></strong>. Los 16 bits significan:</p><table class=\"tabla-datos\"><thead><tr><th>Bits</th><th>15-12</th><th>11-8</th><th>7-4</th><th>3-0</th></tr></thead><tbody><tr><td>Campo</td><td>Código de instrucción</td><td>No se usan</td><td>Registro origen (Wx)</td><td>Registro destino (Wy)</td></tr><tr><td>Valor en <code>add W0, W1</code></td><td><code>0001</code> (ADD)</td><td><code>0000</code></td><td><code>0000</code> → W0</td><td><code>0001</code> → W1</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "Los <strong>4 bits más significativos</strong> guardan el <strong>código de la instrucción</strong> (<code>0001</code> para ADD).",
+            "Los <strong>12 bits menos significativos</strong> indican los <strong>operandos</strong> o parámetros: los 4 bits de menor peso codifican el registro destino (<code>0001</code> = W1), los 4 siguientes el registro origen (<code>0000</code> = W0) y los 4 siguientes no se usan."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Con esta codificación el micro hipotético podría trabajar con un máximo de <strong>16 registros</strong> de propósito general (solo hay 4 bits para codificar el número de registro: 2<sup>4</sup> = 16) y tener un máximo de <strong>16 instrucciones</strong> (4 bits para el código de instrucción). Los micros reales, y en particular el dsPIC, tienen más registros y un amplio conjunto de operaciones aritmético-lógicas; además, el tamaño del código de instrucción y de los parámetros varía de una instrucción a otra.</p><p>Otro ejemplo de codificación siguiendo este esquema:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Pone lo que hay en la dirección de memoria <code>0x10</code> en el registro <code>W0</code> (W0 ← (0x10)):</p>",
+          "codigo": "move 0x10, W0",
+          "lenguaje": "asm"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Su codificación podría ser <code>0010 0001 0000 0000</code> = <strong><code>0x2100</code></strong>:</p><table class=\"tabla-datos\"><thead><tr><th>Bits</th><th>15-12</th><th>11-4</th><th>3-0</th></tr></thead><tbody><tr><td>Campo</td><td>Código de instrucción</td><td>Dirección de memoria (mem)</td><td>Registro destino (Wx)</td></tr><tr><td>Valor en <code>move 0x10, W0</code></td><td><code>0010</code> = 2 (MOV mem, Wx)</td><td><code>0001 0000</code> = <code>0x10</code></td><td><code>0000</code> → W0</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "Los 4 bits más significativos guardan el código de la instrucción (2 para MOV mem, Wx).",
+            "Los 8 bits siguientes codifican la dirección de memoria de la que se coge el dato (<code>0x10</code>); con 8 bits solo se pueden indicar las direcciones <code>0x00</code> a <code>0xFF</code>.",
+            "Los 4 bits menos significativos codifican el número del registro destino (<code>0000</code> = W0)."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Estos ejemplos indican que:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "El número de bits necesarios para codificar una instrucción depende del «tamaño» del microprocesador: un micro más grande (con más registros) necesita más bits para codificar una instrucción dada.",
+            "Por tanto, las instrucciones necesitan más o menos celdas de memoria para almacenarse. En el micro hipotético cada instrucción ocupa 16 bits, es decir, <strong>dos celdas</strong> de 8 bits."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>En el ejemplo de 6.3.6 aparece un tercer formato, la escritura de un registro en memoria (<code>move W1, 0x84</code> = <code>0x3184</code>). Resumiendo los tres formatos del micro hipotético:</p><table class=\"tabla-datos\"><thead><tr><th>Código (bits 15-12)</th><th>Instrucción</th><th>Bits 11-8</th><th>Bits 7-4</th><th>Bits 3-0</th><th>Ejemplo</th></tr></thead><tbody><tr><td>1</td><td><code>add Wx, Wy</code> (Wy ← Wx + Wy)</td><td>sin uso</td><td>Wx</td><td>Wy</td><td><code>add W0, W1</code> = <code>0x1001</code></td></tr><tr><td>2</td><td><code>move mem, Wx</code> (Wx ← (mem))</td><td>mem (alto)</td><td>mem (bajo)</td><td>Wx</td><td><code>move 0x82, W1</code> = <code>0x2821</code></td></tr><tr><td>3</td><td><code>move Wx, mem</code> ((mem) ← Wx)</td><td>Wx</td><td>mem (alto)</td><td>mem (bajo)</td><td><code>move W1, 0x84</code> = <code>0x3184</code></td></tr></tbody></table>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Escribe una instrucción en hexadecimal y mira cómo se reparten sus 16 bits en campos (o al revés, elige instrucción y operandos y obtén el código máquina):</p><div class=\"mpi-mount\" data-componente=\"decod-instruccion-16\" data-config='{\"ejemplos\": [\"0x1001\", \"0x2100\", \"0x2800\", \"0x2821\", \"0x3184\"], \"formatos\": [{\"op\": 1, \"asm\": \"add Wx, Wy\", \"campos\": \"15-12 op, 11-8 sin uso, 7-4 Wx (origen), 3-0 Wy (destino)\"}, {\"op\": 2, \"asm\": \"move mem, Wx\", \"campos\": \"15-12 op, 11-4 mem, 3-0 Wx (destino)\"}, {\"op\": 3, \"asm\": \"move Wx, mem\", \"campos\": \"15-12 op, 11-8 Wx (origen), 7-0 mem\"}]}'></div>"
+        }
+      ]
+    },
+    {
+      "titulo": "6.7 Ciclos de ejecución de una instrucción",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>La CPU ejecuta las instrucciones que están en la memoria a partir de la posición que indique el <code class=\"reg\">PC</code>. Ejecutar una instrucción supone recorrer <strong>dos ciclos</strong>, que se repiten en bucle desde que el micro arranca (<em>START</em>): <strong>buscar la siguiente instrucción</strong> (<em>Fetch Cycle</em>) y <strong>ejecutarla</strong> (<em>Execute Cycle</em>); al terminar se vuelve a buscar la siguiente, y así hasta que el programa se detiene (<em>HALT</em>).</p><p><strong>Ciclos y pasos no son lo mismo.</strong> Los ciclos son <strong>dos</strong>, y cada uno se detalla en <strong>cinco</strong> puntos, que no se cuentan igual: el fetch son cinco <em>pasos</em> que la CPU recorre siempre, uno tras otro y en ese orden; el execute son cinco <em>tipos</em> de instrucción, de los que cada instrucción ejecuta uno (o una combinación), no cinco etapas sucesivas.</p><h3>Ciclo de fetch (búsqueda): cinco pasos</h3><p>Se busca la instrucción que hay que ejecutar y se interpreta para saber qué hay que hacer. Además se incrementa el <code class=\"reg\">PC</code> para que apunte a la siguiente instrucción. Sus pasos son:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": true,
+          "items": [
+            "El contador de programa (<code class=\"reg\">PC</code>) contiene la dirección de la próxima instrucción a ejecutar.",
+            "El procesador captura la instrucción de la memoria.",
+            "La instrucción se carga en el registro de instrucción (<code class=\"reg\">IR</code>).",
+            "El <code class=\"reg\">PC</code> se incrementa (salvo en las instrucciones de salto, en las que el <code class=\"reg\">PC</code> toma el valor de la dirección de salto).",
+            "Se interpreta la instrucción y se generan las señales de control (<strong>decodificación</strong> de la instrucción)."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>Ciclo de ejecución (execute): cinco tipos de instrucción</h3><p>Se ejecuta propiamente lo que indica la instrucción. La CPU puede ejecutar distintos tipos de instrucciones:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": true,
+          "items": [
+            "Transferencia de procesador a memoria (o de memoria a procesador).",
+            "Transferencia de procesador a E/S.",
+            "Procesado de datos: la ALU efectúa una operación sobre los datos.",
+            "Instrucciones de control: alteran la secuencia del programa; por ejemplo, un salto (<em>jump</em>).",
+            "Combinaciones de las anteriores."
+          ]
+        },
+        {
+          "tipo": "nota",
+          "html": "Fíjate en el orden: el <code class=\"reg\">PC</code> se incrementa durante el <em>fetch</em>, antes de ejecutar la instrucción. Por eso, mientras se ejecuta una instrucción el <code class=\"reg\">PC</code> ya apunta a la siguiente."
+        }
+      ]
+    },
+    {
+      "titulo": "6.8 Ejemplo de funcionamiento de la ejecución de un programa",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Este ejemplo es muy importante desde el punto de vista conceptual: muestra cómo un micro ejecuta un conjunto de instrucciones y pone en juego todos los conceptos anteriores.</p><p>En lenguaje de alto nivel, el ejercicio consiste en sumar los dos números que hay en las direcciones de memoria <code>0x80</code> y <code>0x82</code> y guardar el resultado en la dirección <code>0x84</code>, algo similar a:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Los paréntesis significan «lo que hay en la dirección de memoria»:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mo>(</mo><mn>0x84</mn><mo>)</mo><mo>=</mo><mo>(</mo><mn>0x80</mn><mo>)</mo><mo>+</mo><mo>(</mo><mn>0x82</mn><mo>)</mo></mrow></math>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>En lenguaje simbólico de código máquina (<strong>ensamblador</strong>), que es el que entiende el micro, la operación se descompone en instrucciones que se apoyan en los registros de propósito general. Programa cargado a partir de la posición 0 de la memoria de programa:</p>",
+          "codigo": "; dir.    código   instrucción\n0x0000    0x2800   move 0x80, W0    ; W0 <- (0x80)\n0x0002    0x2821   move 0x82, W1    ; W1 <- (0x82)\n0x0004    0x1001   add  W0, W1      ; W1 <- W0 + W1\n0x0006    0x3184   move W1, 0x84    ; (0x84) <- W1",
+          "lenguaje": "asm"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Cada instrucción en código máquina tiene cuatro dígitos hexadecimales: el primero representa la operación según el tipo de parámetros que usa (1 = <code>add Wx, Wy</code>, 2 = <code>move mem, Wx</code>, 3 = <code>move Wx, mem</code>) y los otros tres, los operandos (6.3.4). Son las instrucciones más sencillas en las que se puede descomponer el ejemplo desde el punto de vista de la máquina, porque cada una realiza <strong>una sola acción</strong>: o una transferencia de información o una operación con la ALU.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>Memorias tras cargar el programa</h3><p>Una vez cargado el programa en la posición 0, las memorias quedan así:</p><table class=\"tabla-datos\"><thead><tr><th>Memoria de programa</th><th>Contenido</th><th></th><th>Memoria de datos</th><th>Contenido</th></tr></thead><tbody><tr><td><code>0x0000</code></td><td><code>0x2800</code> (instrucción)</td><td></td><td><code>0x0080</code></td><td><code>0x0007</code> (dato)</td></tr><tr><td><code>0x0002</code></td><td><code>0x2821</code> (instrucción)</td><td></td><td><code>0x0082</code></td><td><code>0x0003</code> (dato)</td></tr><tr><td><code>0x0004</code></td><td><code>0x1001</code> (instrucción)</td><td></td><td><code>0x0084</code></td><td><code>0x0000</code> (resultado)</td></tr><tr><td><code>0x0006</code></td><td><code>0x3184</code> (instrucción)</td><td></td><td>…</td><td>…</td></tr></tbody></table><p>Observa que las direcciones van <strong>de 2 en 2</strong>: cada instrucción (y cada dato) ocupa 16 bits, es decir, <strong>dos celdas de 8 bits</strong>. Por eso en cada <em>fetch</em> el <code class=\"reg\">PC</code> avanza 2 posiciones y los datos están en <code>0x80</code>, <code>0x82</code> y <code>0x84</code>.</p><h3>Ejecución paso a paso</h3><p>Al mandar ejecutar el programa se pone <code>PC = 0x0000</code>. En la fase de <strong>fetch</strong> de la primera instrucción se coge la instrucción a la que apunta el <code class=\"reg\">PC</code> y se guarda en el <code class=\"reg\">IR</code> (<code>IR = 0x2800</code>), y el <code class=\"reg\">PC</code> se incrementa para que apunte a la siguiente (<code>PC = 0x0002</code>). En la fase de <strong>execute</strong> se ejecuta la instrucción que hay en el <code class=\"reg\">IR</code>: se coge el valor de la dirección <code>0x80</code> y se pone en <code>W0</code> (<code>W0 = 7</code>). Y así sucesivamente con las tres instrucciones siguientes:</p><table class=\"tabla-datos\"><thead><tr><th>Instr.</th><th>Fase</th><th>PC</th><th>IR</th><th>W0</th><th>W1</th><th>(0x84)</th><th>Qué ocurre</th></tr></thead><tbody><tr><td>Estado inicial</td><td>—</td><td><code>0x0000</code></td><td>—</td><td><code>0x0000</code></td><td><code>0x0000</code></td><td><code>0x0000</code></td><td>Se pone PC = 0x0000 para ejecutar el programa</td></tr><tr><td>1</td><td>Fetch</td><td><code>0x0002</code></td><td><code>0x2800</code></td><td><code>0x0000</code></td><td><code>0x0000</code></td><td><code>0x0000</code></td><td>IR ← (PC); PC + 2</td></tr><tr><td>1</td><td>Execute</td><td><code>0x0002</code></td><td><code>0x2800</code></td><td><strong><code>0x0007</code></strong></td><td><code>0x0000</code></td><td><code>0x0000</code></td><td>W0 ← (0x80) = 7</td></tr><tr><td>2</td><td>Fetch</td><td><code>0x0004</code></td><td><code>0x2821</code></td><td><code>0x0007</code></td><td><code>0x0000</code></td><td><code>0x0000</code></td><td>IR ← (PC); PC + 2</td></tr><tr><td>2</td><td>Execute</td><td><code>0x0004</code></td><td><code>0x2821</code></td><td><code>0x0007</code></td><td><strong><code>0x0003</code></strong></td><td><code>0x0000</code></td><td>W1 ← (0x82) = 3</td></tr><tr><td>3</td><td>Fetch</td><td><code>0x0006</code></td><td><code>0x1001</code></td><td><code>0x0007</code></td><td><code>0x0003</code></td><td><code>0x0000</code></td><td>IR ← (PC); PC + 2</td></tr><tr><td>3</td><td>Execute</td><td><code>0x0006</code></td><td><code>0x1001</code></td><td><code>0x0007</code></td><td><strong><code>0x000A</code></strong></td><td><code>0x0000</code></td><td>ALU: W1 ← W0 + W1 = 7 + 3 = 10</td></tr><tr><td>4</td><td>Fetch</td><td><code>0x0008</code></td><td><code>0x3184</code></td><td><code>0x0007</code></td><td><code>0x000A</code></td><td><code>0x0000</code></td><td>IR ← (PC); PC + 2</td></tr><tr><td>4</td><td>Execute</td><td><code>0x0008</code></td><td><code>0x3184</code></td><td><code>0x0007</code></td><td><code>0x000A</code></td><td><strong><code>0x000A</code></strong></td><td>(0x84) ← W1 = 10</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "nota",
+          "html": "Valores leídos en las figuras de la traza del libro (47 a 50). Las figuras no muestran el valor de <code>W0</code> antes de la primera instrucción; aquí se toma 0. Las figuras de la suma y de la escritura dibujan además <code>W2 = 0x0000</code>, que el programa no usa."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Ejecuta tú el programa fase a fase y observa cómo cambian <code class=\"reg\">PC</code>, <code class=\"reg\">IR</code>, <code>W0</code>, <code>W1</code> y la memoria de datos:</p><div class=\"mpi-mount\" data-componente=\"sim-fetch-execute\" data-config='{\"programa\": [{\"dir\": \"0x0000\", \"asm\": \"move 0x80, W0\", \"hex\": \"0x2800\"}, {\"dir\": \"0x0002\", \"asm\": \"move 0x82, W1\", \"hex\": \"0x2821\"}, {\"dir\": \"0x0004\", \"asm\": \"add W0, W1\", \"hex\": \"0x1001\"}, {\"dir\": \"0x0006\", \"asm\": \"move W1, 0x84\", \"hex\": \"0x3184\"}], \"datos\": {\"0x80\": 7, \"0x82\": 3, \"0x84\": 0}, \"incrementoPC\": 2}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Es importante entender este ejemplo para comprender cómo ejecuta las instrucciones un micro y, por tanto, los detalles del lenguaje ensamblador. El ensamblador es el lenguaje de <strong>más bajo nivel</strong> con el que se puede programar y tiene una <strong>correspondencia biunívoca</strong> entre código máquina e instrucción: a cada instrucción de ensamblador le corresponde exactamente un código máquina, y viceversa.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "6.9 Distintos niveles de abstracción de un sistema digital",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Según el nivel al que se trabaje, un sistema electrónico se puede ver de muchas maneras. De abajo arriba, en orden creciente de abstracción:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": true,
+          "items": [
+            "<strong>Nivel físico</strong> (el más bajo): interpretación eléctrica, común a todo tipo de sistema electrónico. Solo hay medidas de <strong>tensión</strong> (por ejemplo, +5 V y 0 V). Es el nivel en que se trabaja con el osciloscopio y con las leyes de Kirchhoff.",
+            "<strong>Nivel lógico</strong>: interpretación lógica de las medidas eléctricas del nivel físico. Las tensiones se traducen a ceros y unos: por ejemplo, una tensión <strong>por debajo de 0,7 V</strong> se considera un <strong>0 lógico</strong> y una <strong>por encima de 3,5 V</strong> un <strong>1 lógico</strong>. En este nivel se opera con el álgebra de Boole y en él se sitúa el <strong>código máquina</strong>.",
+            "<strong>Nivel de codificación</strong>: los ceros y unos se agrupan en palabras que una persona entiende mejor. Este nivel <strong>depende del sistema</strong> y del código usado: para programar un micro, la codificación es el <strong>ensamblador</strong> (distinto para cada micro); para trabajar con números, binario o hexadecimal, con signo o sin signo; para programar FPGA o EPLD (lógica programable), <strong>VHDL</strong>, que más que un lenguaje de programación es un lenguaje de descripción de hardware: los ceros y unos se interpretan como conexiones dentro de un circuito.",
+            "<strong>Alto nivel</strong> (el nivel más alto de abstracción): una codificación más entendible por una persona y además <strong>independiente del dispositivo</strong>. Para programar micros se usa el lenguaje <strong>C</strong>, que es el mismo sea cual sea el micro; para datos existen codificaciones como <strong>ASCII</strong> o UNICODE, iguales para todos los sistemas."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<table class=\"tabla-datos\"><thead><tr><th>Nivel</th><th>Programas de µC</th><th>Datos</th><th>Descripción de hardware (FPGA)</th></tr></thead><tbody><tr><td>Alto nivel</td><td>Lenguaje C</td><td>Códigos de alto nivel (ASCII)</td><td>—</td></tr><tr><td>Codificación (interpretación de 0 y 1)</td><td>Ensamblador</td><td>Números con y sin signo</td><td>Lenguaje VHDL</td></tr><tr><td>Lógico</td><td>0 y 1 (común a todos)</td><td>0 y 1 (común a todos)</td><td>0 y 1 (común a todos)</td></tr><tr><td>Físico</td><td>Hardware: +5 V, 0 V</td><td>Hardware: +5 V, 0 V</td><td>Hardware: +5 V, 0 V</td></tr></tbody></table><p>Existen niveles de abstracción superiores, pero no se usan en la programación de sistemas electrónicos digitales.</p><p>Un mismo conjunto de bits admite así varias interpretaciones. Por ejemplo, la palabra de 16 bits <code>0010 1000 0000 0000</code>:</p><table class=\"tabla-datos\"><thead><tr><th>Interpretación</th><th>Significado de <code>0x2800</code></th></tr></thead><tbody><tr><td>Nivel lógico</td><td>16 bits: <code>0010 1000 0000 0000</code></td></tr><tr><td>Número sin signo</td><td>10 240</td></tr><tr><td>Instrucción del micro hipotético (ensamblador)</td><td><code>move 0x80, W0</code></td></tr><tr><td>Dos caracteres ASCII de 8 bits</td><td><code>0x28</code> = «(» y <code>0x00</code> = carácter nulo</td></tr></tbody></table>"
+        },
+        {
+          "tipo": "nota",
+          "html": "Los umbrales de 0,7 V y 3,5 V son solo un <em>ejemplo</em> (el libro dibuja el nivel físico con +5 V y 0 V). Cada circuito define los suyos: el dsPIC33FJ32MC202 se alimenta a 3,3 V y, según el datasheet (tabla 24-9, parámetros DI10 y DI20), en sus pines de E/S lee un 0 por debajo de V<sub>IL</sub> = 0,2·V<sub>DD</sub> (0,66 V a 3,3 V) y un 1 por encima de V<sub>IH</sub> = 0,7·V<sub>DD</sub> (2,31 V a 3,3 V)."
+        }
+      ]
+    },
+    {
+      "titulo": "6.10 Organización de un micro a nivel de bloques y buses",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Aunque la organización de un micro no es el objetivo de la asignatura, para entender qué es un <strong>sistema electrónico digital (SED)</strong> hay que introducir algunos aspectos de organización: la composición en bloques físicos y la conexión entre bloques mediante <strong>buses</strong>. Un bus no es más que un <strong>conjunto de líneas común a varios bloques</strong> que permite la comunicación entre ellos. En un SED típico hay tres buses:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Bus de direcciones</strong>: lo pone la CPU para indicar a qué posición quiere acceder; el resto de bloques (memoria de datos, memoria de programa, E/S) lo leen.",
+            "<strong>Bus de datos</strong>: bidireccional; por él viaja el dato entre la CPU y la memoria o la E/S.",
+            "<strong>Bus de control</strong>: organiza la transferencia (líneas de lectura <code>RD</code>, de escritura <code>WR</code>, de interrupción…)."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>En el modelo Harvard extendido a nivel hardware, la CPU (ALU, registros y control), la memoria de datos, la memoria de programa y la E/S cuelgan de esos tres buses, que forman el <strong>bus del sistema</strong>. <strong>Desde la CPU todo se ve como direcciones</strong>: el mapa de memoria es un vector en el que el índice es la dirección.</p><h3>Ciclo de lectura</h3><p>Para acceder a un dato de la memoria, la CPU pone en el bus de direcciones la dirección en la que se encuentra el dato y la memoria le devuelve el dato por el bus de datos; el bus de control organiza la transferencia. Por ejemplo, para leer el dato de la posición <code>0x82</code> del ejemplo anterior:</p><table class=\"tabla-datos\"><thead><tr><th>Paso</th><th>Quién</th><th>Bus</th><th>Valor</th></tr></thead><tbody><tr><td>1</td><td>CPU</td><td>Direcciones</td><td><code>0x82</code></td></tr><tr><td>2</td><td>CPU</td><td>Control</td><td><code>RD</code> (lectura)</td></tr><tr><td>3</td><td>Memoria</td><td>Datos</td><td><code>0x0003</code></td></tr></tbody></table>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": true,
+          "items": [
+            "La CPU pone en el bus de direcciones la dirección del dato que quiere leer (<code>0x82</code>).",
+            "A continuación activa una línea del bus de control que indica operación de lectura (<code>RD</code>, <em>read</em>).",
+            "La memoria suministra el dato almacenado en esa posición (3) en el bus de datos.",
+            "Por último, la CPU recoge el dato del bus de datos y lo guarda en un registro de propósito general (en el ejemplo, <code>W1</code>)."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>Ciclo de escritura</h3><p>Es similar, pero ahora la CPU suministra <strong>tanto la dirección como el dato</strong> que se escribe (en el bus de direcciones y en el bus de datos, respectivamente) y activa la línea <code>WR</code> (<em>write</em>) del bus de control. Es lo que ocurre en la última instrucción del ejemplo, <code>move W1, 0x84</code>: dirección <code>0x84</code>, dato <code>0x000A</code> y <code>WR</code>.</p><p>Observa la animación de los dos ciclos sobre los buses:</p><div class=\"mpi-mount\" data-componente=\"vis-bus\" data-config='{\"lectura\": {\"dir\": \"0x82\", \"dato\": \"0x0003\"}, \"escritura\": {\"dir\": \"0x84\", \"dato\": \"0x000A\"}}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>Microprocesador, microcontrolador y periféricos</h3><p>Los <strong>microcontroladores</strong> tienen <strong>periféricos y memoria integrados en el chip</strong> junto con la CPU, mientras que los <strong>microprocesadores</strong> no. Los periféricos sirven para comunicar la CPU con el exterior y para realizar ciertas tareas sin consumir tiempo de CPU: hay periféricos que controlan motores, otros que digitalizan señales analógicas, etc. Igual que la CPU, los periféricos tienen <strong>registros</strong> que les permiten funcionar.</p><p>Se dice que un periférico está <strong>mapeado en memoria</strong> si la CPU ve sus registros como una dirección más de memoria; es decir, accede a ellos igual que a cualquier otra dirección. El <strong>mapa de memoria</strong> describe de forma gráfica qué hay en cada rango de direcciones: memoria RAM, ROM o periféricos.</p><p>Cuando la CPU manda hacer algo a un periférico tiene dos formas de enterarse de que ha terminado:</p><table class=\"tabla-datos\"><thead><tr><th></th><th>Polling</th><th>Interrupciones</th></tr></thead><tbody><tr><td>Quién avisa</td><td>La CPU <strong>pregunta</strong> continuamente al periférico si ha terminado</td><td>El periférico <strong>avisa</strong> a la CPU interrumpiendo lo que esté haciendo</td></tr><tr><td>Cómo</td><td>Consultando un bit de un registro del periférico, igual que consulta una dirección de memoria</td><td>Mediante líneas específicas de comunicación entre periférico y CPU, que están en el bus de control</td></tr></tbody></table><p>Ambos modos se han visto ya con el Timer 1 del dsPIC: el <em>polling</em> en el tema <em>Timers</em> y la interrupción en el tema <em>Interrupciones aplicadas a timer</em>. Aquí se añade el punto de vista del <strong>hardware</strong>: la petición de interrupción viaja por una línea del <strong>bus de control</strong>.</p>"
+        }
+      ]
+    }
+  ],
+  "ejercicios": {
+    "arquitectura-micro-1": {
+      "titulo": "Modelo del programador (cuestiones 6.4)",
+      "enunciado": "<p>Responde a estas cuestiones de comprensión sobre el modelo del programador de un micro y los registros de la CPU.</p>",
+      "contexto": "<ul><li>Modelo Harvard: CPU (unidad de control, ALU y registros), memoria de programa, memoria de datos y E/S.</li><li>Registros: Wx (W0-W15, W0 = WREG), PC, IR y SR.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Qué significa el «modelo del programador» de un micro y de qué partes consta según el modelo Harvard?",
+          "opciones": [
+            "Es cómo está conectado el hardware por dentro (punto de vista del diseñador); consta de transistores, puertas lógicas y biestables.",
+            "Es cómo ve el micro quien lo programa (recursos, registros, instrucciones, memoria); consta de CPU (unidad de control, ALU y registros), memoria de programa, memoria de datos y unidad de E/S.",
+            "Es el lenguaje C con que se programa; consta de compilador, enlazador y depurador.",
+            "Es cómo ve el micro quien lo programa; consta solo de CPU y una única memoria compartida para programa y datos."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>El modelo del programador describe el micro <strong>desde el punto de vista de quien lo programa</strong>: sus recursos, registros, instrucciones, modos de direccionamiento y mapa de memoria (la organización interna es el punto de vista del diseñador). Según el modelo Harvard tiene cuatro bloques: <strong>CPU</strong> (unidad de control + ALU + registros), <strong>memoria de programa</strong>, <strong>memoria de datos</strong> y <strong>E/S</strong>. Una única memoria compartida es el modelo de Von Neumann.</p>"
+        },
+        {
+          "texto": "¿Qué significa que un microprocesador sea «de 16 bits»?",
+          "opciones": [
+            "Que su bus de direcciones tiene 16 líneas.",
+            "Que sus registros son de 16 bits.",
+            "Que tiene 16 registros de trabajo.",
+            "Que todas sus instrucciones ocupan 16 bits."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Según 6.3.1, un micro es de 8 bits si sus <strong>registros</strong> son de 8 bits, de 16 bits si sus registros son de 16 bits, etc. El dsPIC33FJ32MC202 es de 16 bits aunque sus instrucciones ocupen 24 bits y su PC tenga 23 bits; que tenga 16 registros W0-W15 es una coincidencia.</p>"
+        },
+        {
+          "texto": "¿Qué diferencia un microprocesador de un microcontrolador?",
+          "opciones": [
+            "El microcontrolador integra en el mismo chip la CPU, la memoria y los periféricos; el microprocesador no.",
+            "El microprocesador sigue el modelo Harvard y el microcontrolador el de Von Neumann.",
+            "El microcontrolador no tiene ALU; sus operaciones las hacen los periféricos.",
+            "El microprocesador es siempre de 8 bits y el microcontrolador de 16 o más."
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Los microcontroladores tienen <strong>periféricos y memoria integrados en el chip</strong> junto con la CPU, mientras que los microprocesadores no (6.3.8). El modelo de memoria (Harvard o Von Neumann) y el número de bits no definen esta diferencia: el dsPIC es un microcontrolador Harvard de 16 bits.</p>"
+        },
+        {
+          "texto": "¿Qué es el PC y para qué sirve?",
+          "opciones": [
+            "Es el registro que contiene la instrucción que se está ejecutando; en el dsPIC es de 24 bits.",
+            "Es el registro que contiene la dirección de la próxima instrucción a ejecutar; en el dsPIC es de 23 bits y se incrementa en cada fetch salvo en los saltos.",
+            "Es el registro de estado, que indica si la última operación dio negativo o acarreo.",
+            "Es el registro de trabajo por defecto, también llamado WREG."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>El <strong>PC</strong> (<em>program counter</em>) contiene la <strong>dirección de la próxima instrucción</strong> a ejecutar. En el ciclo de fetch se usa para leer la instrucción, que se copia en el IR, y después se incrementa (salvo en los saltos, que lo cargan con la dirección de destino). En el dsPIC es de 23 bits. La instrucción en curso está en el IR, el estado en el SR y WREG es W0.</p>"
+        }
+      ]
+    },
+    "arquitectura-micro-2": {
+      "titulo": "Codificación de instrucciones del micro hipotético",
+      "enunciado": "<p>El micro hipotético de 6.3.4 tiene instrucciones de 16 bits. Los bits 15-12 son el código de la instrucción y el resto, los operandos.</p>",
+      "contexto": "<ul><li>Código 1, <code>add Wx, Wy</code> (Wy ← Wx + Wy): bits 11-8 sin uso, bits 7-4 = Wx, bits 3-0 = Wy. Ej.: <code>add W0, W1</code> = <code>0x1001</code>.</li><li>Código 2, <code>move mem, Wx</code> (Wx ← (mem)): bits 11-4 = mem, bits 3-0 = Wx. Ej.: <code>move 0x10, W0</code> = <code>0x2100</code>.</li><li>Código 3, <code>move Wx, mem</code> ((mem) ← Wx): bits 11-8 = Wx, bits 7-0 = mem. Ej.: <code>move W1, 0x84</code> = <code>0x3184</code>.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Qué instrucción está codificada como <code>0x1023</code>?",
+          "opciones": [
+            "<code>add W3, W2</code>",
+            "<code>add W2, W3</code>",
+            "<code>move 0x02, W3</code>",
+            "<code>add W0, W2</code>"
+          ],
+          "correcta": 1,
+          "explicacion": "<p><code>0x1023</code> = <code>0001 0000 0010 0011</code>. Bits 15-12 = <code>0001</code> → ADD; bits 11-8 = 0 (sin uso); bits 7-4 = <code>0010</code> → origen <strong>W2</strong>; bits 3-0 = <code>0011</code> → destino <strong>W3</strong>. Es <strong><code>add W2, W3</code></strong>, es decir, W3 ← W2 + W3.</p>"
+        },
+        {
+          "texto": "¿Cuál es el código máquina de <code>move 0x84, W2</code> (W2 ← (0x84))?",
+          "opciones": [
+            "<code>0x2482</code>",
+            "<code>0x3284</code>",
+            "<code>0x2842</code>",
+            "<code>0x2084</code>"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>Es una lectura de memoria, código <strong>2</strong>: bits 15-12 = <code>0010</code>; bits 11-4 = dirección <code>0x84</code> = <code>1000 0100</code>; bits 3-0 = registro destino W2 = <code>0010</code>. Juntando: <code>0010 1000 0100 0010</code> = <strong><code>0x2842</code></strong>. <code>0x3284</code> sería <code>move W2, 0x84</code> (escritura en memoria).</p>"
+        },
+        {
+          "texto": "Con el formato de <code>move mem, Wx</code>, ¿a qué direcciones de memoria de datos puede acceder la instrucción?",
+          "opciones": [
+            "De <code>0x0000</code> a <code>0xFFFF</code> (65 536 posiciones).",
+            "De <code>0x00</code> a <code>0x0F</code> (16 posiciones).",
+            "De <code>0x00</code> a <code>0xFF</code> (256 posiciones).",
+            "De <code>0x000</code> a <code>0xFFF</code> (4096 posiciones)."
+          ],
+          "correcta": 2,
+          "explicacion": "<p>El campo mem ocupa los bits 11-4, es decir, <strong>8 bits</strong>: 2<sup>8</sup> = 256 direcciones, de <code>0x00</code> a <code>0xFF</code>. Del mismo modo, con 4 bits para el registro solo hay 16 registros, y con 4 bits de código, 16 instrucciones como máximo. Por eso un micro «más grande» necesita instrucciones con más bits.</p>"
+        },
+        {
+          "texto": "La palabra de 16 bits <code>0x2800</code> está guardada en memoria. ¿Cuál de estas afirmaciones es correcta?",
+          "opciones": [
+            "Siempre es una instrucción, porque su primer dígito es un código de operación válido.",
+            "Si la CPU la recoge a través del PC es la instrucción <code>move 0x80, W0</code>; si se lee como dato es el número sin signo 10 240.",
+            "Siempre es un dato, porque está en una celda de memoria.",
+            "Si se lee como dato vale 2800 en decimal."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Los bits no llevan etiqueta: su significado depende de cómo se accede a ellos (6.3.3) y de la codificación que se aplique (6.3.7). Accedida por el <strong>PC</strong> se interpreta como instrucción: código 2, mem = <code>0x80</code>, Wx = W0 → <code>move 0x80, W0</code>. Leída como número sin signo: 2·4096 + 8·256 = <strong>10 240</strong> (no 2800, que es la lectura en hexadecimal).</p>"
+        }
+      ]
+    },
+    "arquitectura-micro-3": {
+      "titulo": "Traza del ejemplo (0x84) = (0x80) + (0x82)",
+      "enunciado": "<p>El programa de 6.3.6 está cargado a partir de la dirección 0 y se ejecuta con <code>PC = 0x0000</code>. Inicialmente W0 = W1 = 0.</p>",
+      "contexto": "<ul><li>Memoria de programa: <code>0x0000</code>: <code>0x2800</code> (<code>move 0x80, W0</code>); <code>0x0002</code>: <code>0x2821</code> (<code>move 0x82, W1</code>); <code>0x0004</code>: <code>0x1001</code> (<code>add W0, W1</code>); <code>0x0006</code>: <code>0x3184</code> (<code>move W1, 0x84</code>).</li><li>Memoria de datos: (0x80) = 7, (0x82) = 3, (0x84) = 0.</li><li>Cada instrucción ocupa 2 celdas de 8 bits: el PC avanza de 2 en 2.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Cuánto valen PC e IR justo después del <em>fetch</em> de la segunda instrucción?",
+          "opciones": [
+            "PC = <code>0x0002</code>, IR = <code>0x2821</code>",
+            "PC = <code>0x0004</code>, IR = <code>0x2821</code>",
+            "PC = <code>0x0004</code>, IR = <code>0x1001</code>",
+            "PC = <code>0x0002</code>, IR = <code>0x2800</code>"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>En el fetch se copia en el IR la instrucción a la que apunta el PC (<code>0x0002</code> → <code>0x2821</code>) y a continuación <strong>se incrementa el PC</strong> en 2, de modo que queda apuntando a la siguiente: <strong>PC = <code>0x0004</code>, IR = <code>0x2821</code></strong>.</p>"
+        },
+        {
+          "texto": "¿Cuánto valen W0 y W1 después del <em>execute</em> de <code>add W0, W1</code>?",
+          "opciones": [
+            "W0 = <code>0x000A</code>, W1 = <code>0x0003</code>",
+            "W0 = <code>0x0007</code>, W1 = <code>0x0003</code>",
+            "W0 = <code>0x0007</code>, W1 = <code>0x000A</code>",
+            "W0 = <code>0x0007</code>, W1 = <code>0x0010</code>"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>Antes de la suma W0 = 7 (primera instrucción) y W1 = 3 (segunda). <code>add W0, W1</code> hace W1 ← W0 + W1 = 7 + 3 = 10 = <strong><code>0x000A</code></strong>; W0 no cambia (sigue en 7). Ojo: 10 en decimal es <code>0x0A</code>, no <code>0x10</code>.</p>"
+        },
+        {
+          "texto": "Si antes de ejecutar el programa la posición <code>0x82</code> contuviera 5 en lugar de 3, ¿qué quedaría en <code>0x84</code> al terminar y cuánto valdría el PC?",
+          "opciones": [
+            "(0x84) = <code>0x000C</code>, PC = <code>0x0008</code>",
+            "(0x84) = <code>0x000A</code>, PC = <code>0x0006</code>",
+            "(0x84) = <code>0x0012</code>, PC = <code>0x0008</code>",
+            "(0x84) = <code>0x000C</code>, PC = <code>0x0006</code>"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>W0 = 7, W1 = 5, la suma deja W1 = 12 = <code>0x000C</code> y la última instrucción lo escribe en <code>0x84</code>. En el fetch de la cuarta instrucción (en <code>0x0006</code>) el PC se incrementa a <strong><code>0x0008</code></strong>, que es el valor que queda al terminar (12 decimal = <code>0x0C</code>; <code>0x12</code> sería 18).</p>"
+        },
+        {
+          "texto": "Durante el execute de <code>move 0x82, W1</code> la CPU lee la memoria por los buses. ¿Cuál es la secuencia correcta?",
+          "opciones": [
+            "La memoria pone <code>0x0003</code> en el bus de direcciones, la CPU activa WR y pone <code>0x82</code> en el bus de datos.",
+            "La CPU pone <code>0x82</code> en el bus de direcciones, activa RD en el bus de control y la memoria pone <code>0x0003</code> en el bus de datos.",
+            "La CPU pone <code>0x82</code> en el bus de datos, activa RD y la memoria pone <code>0x0003</code> en el bus de direcciones.",
+            "La CPU pone <code>0x82</code> en el bus de direcciones y <code>0x0003</code> en el bus de datos, y activa WR."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Ciclo de lectura (6.3.8): <strong>0x82 (CPU) en el bus de direcciones → RD (CPU) en el bus de control → 0003 (memoria) en el bus de datos</strong>; después la CPU recoge el dato y lo guarda en W1. Poner dirección y dato a la vez y activar WR es el ciclo de <em>escritura</em>, el de <code>move W1, 0x84</code>.</p>"
+        }
+      ]
+    }
+  },
+  "ejerciciosEnTema": [
+    "arquitectura-micro-1",
+    "arquitectura-micro-2",
+    "arquitectura-micro-3"
+  ],
+  "tituloEjercicios": "Ejercicios y cuestiones",
+  "resumen": [
+    "El <strong>modelo del programador</strong> describe el micro desde el punto de vista de quien lo programa (no del diseñador). En el modelo <strong>Harvard</strong> hay CPU (unidad de control, ALU y registros), memoria de programa, memoria de datos y E/S; en el de <strong>Von Neumann</strong> programa y datos comparten memoria. El dsPIC33FJ32MC202 es Harvard: lee instrucción y dato a la vez.",
+    "Registros de la CPU: <code class=\"reg\">W0</code>-<code class=\"reg\">W15</code> de trabajo (W0 = WREG), <code class=\"reg\">PC</code> (dirección de la próxima instrucción; 23 bits en el dsPIC), <code class=\"reg\">IR</code> (instrucción en curso, no accesible) y <code class=\"reg\">SR</code> (estado tras cada instrucción). Un micro es de 16 bits si sus registros son de 16 bits.",
+    "La memoria se organiza en <strong>celdas de 8 bits</strong> con una dirección cada una; los datos se guardan en binario y se escriben en hexadecimal agrupando de 4 en 4 bits (5 = <code>0x05</code>, 127 = <code>0x7F</code>). En el dsPIC casi todas las instrucciones ocupan 24 bits.",
+    "Lo que se lee a través del <code class=\"reg\">PC</code> se interpreta como instrucción; lo demás, como dato. Los mismos bits (<code>0x2800</code>) pueden ser una instrucción o el número 10 240.",
+    "Micro hipotético de 16 bits: bits 15-12 = código de instrucción y el resto, operandos. <code>add W0, W1</code> = <code>0x1001</code> (W1 ← W0 + W1), <code>move 0x10, W0</code> = <code>0x2100</code>, <code>move W1, 0x84</code> = <code>0x3184</code>. Con 4 bits: 16 registros y 16 instrucciones como máximo.",
+    "Cada instrucción se ejecuta en dos ciclos: <strong>fetch</strong> (IR ← instrucción apuntada por el PC, PC incrementado, decodificación) y <strong>execute</strong>. En el ejemplo (0x84) = (0x80) + (0x82) con 0x2800, 0x2821, 0x1001 y 0x3184, el PC avanza de 2 en 2 y el resultado es 7 + 3 = <code>0x000A</code>.",
+    "Niveles de abstracción: físico (tensiones), lógico (0 y 1, p. ej. &lt; 0,7 V y &gt; 3,5 V; código máquina), codificación (ensamblador, números con/sin signo, VHDL) y alto nivel (C, ASCII).",
+    "Los bloques se comunican por los buses de <strong>direcciones</strong>, <strong>datos</strong> y <strong>control</strong>. Lectura: 0x82 (CPU, bus dir.) → RD (CPU, bus control) → 0003 (memoria, bus datos); escritura con WR. Un microcontrolador integra memoria y periféricos (mapeados en memoria, atendidos por polling o por interrupciones)."
+  ]
+}

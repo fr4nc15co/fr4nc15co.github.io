@@ -1,0 +1,226 @@
+{
+  "slug": "introduccion-dspic",
+  "titulo": "Introducción al dsPIC33FJ32MC202",
+  "temaNum": 1,
+  "lenguaje": "c",
+  "lead": "Este tema presenta <strong>muy por encima</strong> qué es el dsPIC33FJ32MC202, para saber de qué se habla cuando se hace referencia a él: la diferencia entre un <em>microprocesador</em> como el de un PC y un <em>microcontrolador</em>, la potencia y capacidades del dsPIC, su patillaje de 28 pines y el reloj interno que fija su velocidad (FCY ≈ 40 MHz).",
+  "secciones": [
+    {
+      "titulo": "1.1 Descripción",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El dsPIC es un microcontrolador que tiene dos «vidas». Por un lado tiene un núcleo de <strong>microcontrolador</strong> (MCU, <em>Microcontroller Unit</em>) y por otro lado tiene un núcleo de <strong>procesador de señal</strong> (DSP, <em>Digital Signal Processor</em>). En esta asignatura se ve solamente la parte correspondiente a la MCU.</p><p>La diferencia entre <strong>microcontrolador</strong> y <strong>microprocesador</strong> radica en que el microcontrolador está hecho para <em>controlar el entorno</em>: por ello está dotado de una serie de periféricos que le permiten obtener información del entorno y le ayudan a actuar sobre él, todo ello en un solo chip. En cambio, un microprocesador, como el que puede tener un ordenador, es un dispositivo de propósito general que tiene gran capacidad de cálculo y de extensión, pensado para añadirle otros chips que le ayuden a hacer tareas más concretas (controladores gráficos, de teclado, etc.).</p><p>El dsPIC, como microcontrolador que es, tiene una gran cantidad de <strong>periféricos</strong> asociados:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Convertidor A/D:</strong> permite obtener información del entorno. El entorno es analógico por naturaleza; con este periférico se obtiene información analógica y se pasa a formato digital, que es lo único que entiende la MCU.",
+            "<strong>Puertos I/O:</strong> permiten comunicarse con el entorno de forma digital (0 o 1), es decir, con dos estados. Se usan para percibir información digital (por ejemplo, un pulsador) y para actuar sobre actuadores de dos estados, abierto o cerrado (por ejemplo, un LED).",
+            "<strong>Módulo de PWM:</strong> permite controlar de forma «analógica» el entorno (analógica entre comillas, porque no es cierto del todo). De esta manera se interviene sobre actuadores analógicos: control de velocidad de motores, regular la intensidad de una luz, variar la frecuencia de una bocina, etc.",
+            "<strong>Timers:</strong> permiten llevar la gestión del tiempo. Es como el reloj de una persona: teniendo el tiempo gestionado, se pueden planificar tareas.",
+            "<strong>Módulo de encoders:</strong> permite conectar un encoder al micro. Los encoders son sensores que indican cuánto se mueve un eje y en qué sentido. Son suficientemente complicados y requieren bastantes recursos como para asignarles un periférico que se encargue de esa tarea y deje tiempo a la MCU para hacer otras cosas. Es un módulo muy específico del sensor y de la aplicación, que en general será control de motores (velocidad, posición…).",
+            "<strong>Módulos de comunicaciones:</strong> permiten comunicar el micro con otros dispositivos (otro micro, un ordenador…). Hay varios módulos, cada uno con un protocolo distinto: <strong>UART</strong> (RS232), <strong>I2C</strong> y <strong>SPI</strong>."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Las <strong>ventajas</strong> más importantes que tiene este microcontrolador respecto de otros son:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "Tiene solamente <strong>28 pines</strong>. Esto lo hace ideal para aplicaciones modulares distribuidas: muchos micros repartidos en varias tarjetas haciendo distintas tareas.",
+            "Tiene los periféricos adecuados para controlar los actuadores más complejos, como por ejemplo los motores <em>brushless</em> DC.",
+            "La frecuencia a la que trabaja el micro puede llegar a <strong>80 MHz</strong> (con un reloj interno), consiguiendo <strong>40 MIPS</strong> (millones de instrucciones por segundo).",
+            "No necesita circuitos externos para funcionar: ni circuito de reset, ni oscilador, ni memoria RAM, ni EEPROM, ni FLASH. Todo lo tiene dentro del chip.",
+            "Tiene la posibilidad de encapsulado <strong>DIP</strong> (<em>Dual In Line</em>), lo que le hace idóneo para hacer tarjetas de prototipado y aprender en el laboratorio.",
+            "Tiene la posibilidad de usar un núcleo DSP para las aplicaciones más exigentes de procesamiento de señal (por ejemplo, calcular la transformada discreta de Fourier de una señal).",
+            "Es un micro de <strong>16 bits</strong>, que puede trabajar incluso con datos de 32 bits. ¡Todo ello en 28 pines!",
+            "Tiene memoria <strong>RAM de 2 KB</strong> y memoria de programa <strong>FLASH de 32 KB</strong>."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El manejo de la MCU es muy simple: tiene memoria muy plana e instrucciones de manejo potentes y sencillas. También es cierto que es un dispositivo que para programadores expertos tiene detalles que hacen su manejo más complicado, sobre todo cuando se maneja el núcleo DSP. Pero los detalles complejos son opcionales: se puede usar el micro como cualquier otro sin necesidad de conocerlos. Quien quiera sacar el máximo rendimiento tiene la posibilidad de adentrarse en un mundo lleno de detalles complejos que lo aumentan espectacularmente. En esta asignatura únicamente se ve el manejo de la MCU, que es lo más estándar y común en las familias de microcontroladores, sin perder las características que lo hacen imbatible: <strong>40 MIPS, 16 bits y periféricos potentes en solamente 28 pines DIP</strong>.</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Ficha resumen del dsPIC33FJ32MC202.</strong> Microcontrolador de 16 bits de Microchip, encapsulado de 28 pines, 32 KB de FLASH de programa, 2 KB de RAM, hasta 40 MIPS con el oscilador interno y el PLL, y periféricos de I/O digital, A/D, PWM de control de motores, timers, encoder (QEI), UART, I2C y SPI. El datasheet (sección 1.0, <em>Device Overview</em>) describe la familia dsPIC33FJ32MC202/204 y dsPIC33FJ16MC304; en el curso se usa el 202, en encapsulado SPDIP de 28 pines."
+        }
+      ]
+    },
+    {
+      "titulo": "1.2 Manejo",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El micro inicialmente viene vacío: hay que programarlo para que haga lo que se quiera. Para ello existe un conjunto de herramientas (MPLAB X IDE y el compilador XC16) que permiten programar el micro de forma sencilla; su manejo detallado se ve en el laboratorio. La programación se hace en <strong>lenguaje C</strong> o en <strong>ensamblador</strong>. El lenguaje C que soporta es estándar, usando ciertas peculiaridades más habituales en micros que se comentan en el tema <em>Programación en C para micros</em>. El lenguaje ensamblador se comenta en el tema <em>Ensamblador del dsPIC</em>, pero para poder manejarlo hace falta conocer las «tripas» (modelo del programador) del micro, que se explican en el tema <em>Arquitectura y mapa de memoria del dsPIC</em>.</p><p>La asignatura empieza usando el lenguaje C para programar el micro, entrando poco a poco en detalles internos, hasta llegar al lenguaje ensamblador. Este último solamente se usa cuando el código es crítico en alguno de los siguientes aspectos:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "Las necesidades de <strong>tiempo real</strong> y de control de ejecución son importantes.",
+            "La necesidad de <strong>optimizar el código</strong> por escasez de memoria."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>A pesar de entrar a manejar el micro en alto nivel al principio, es útil conocer algunos aspectos de manejo internos, que se comentan en las subsecciones siguientes.</p><h3>1.2.1 Descripción del patillaje</h3><p>Los pines de cada dsPIC están internamente configurados y divididos en 2 puertos: <strong>Puerto A</strong> y <strong>Puerto B</strong>. Merece la pena conocer a qué puerto corresponde cada pin, ya que muchos de los registros asociados llevan el nombre de ese puerto (<code class=\"reg\">TRISA</code>, <code class=\"reg\">PORTB</code>…). Cada uno de estos puertos contiene un número desigual de pines (RA0-RA4 en el puerto A, RB0-RB15 en el puerto B) y no todos están preparados para realizar cualquier función: la mayoría de los pines son <em>multifunción</em> y comparten la línea digital RAx/RBx con una entrada analógica (ANx), una salida PWM, una señal de I2C, el oscilador, etc.</p><p>Haz clic en cada pin del chip para ver sus funciones y qué periférico de la tarjeta PicTrainer lo usa (LED, pulsador, potenciómetro, UART, programación, alimentación):</p><div class=\"mpi-mount\" data-componente=\"pinout-dspic\" data-config='{\"resaltar\":\"pictrainer\"}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>La tabla siguiente recoge los 28 pines con el nombre completo que les da el datasheet (sección 1.0, Tabla 1-1), la función que explica el libro y el uso que se les da en la tarjeta <strong>PicTrainer</strong> del laboratorio:</p><table class=\"tabla-datos\"><thead><tr><th>Pin</th><th>Nombre (datasheet)</th><th>Funciones</th><th>Uso en la PicTrainer</th></tr></thead><tbody><tr><td>1</td><td>MCLR</td><td>Pin de <strong>reset</strong>, activo a nivel bajo: inicializa el micro.</td><td>Pulsador de reset SW1 (con R11 = 10 kΩ y C12, a través de R13 = 470 Ω) y conector de programación P4.</td></tr><tr><td>2</td><td>AN0/VREF+/CN2/RA0</td><td>Entrada analógica 0 (AN0), de 0 a 3,3 V; o E/S digital bit 0 del puerto A (RA0).</td><td>Libre (accesible en el conector de expansión P5-P8).</td></tr><tr><td>3</td><td>AN1/VREF-/CN3/RA1</td><td>Entrada analógica 1 (AN1), de 0 a 3,3 V; o E/S digital bit 1 del puerto A (RA1).</td><td>Libre (accesible en el conector de expansión P5-P8).</td></tr><tr><td>4</td><td>PGED1/AN2/C2IN-/RP0/CN4/RB0</td><td>Entrada analógica 2 (AN2); o E/S digital bit 0 del puerto B (RB0). PGED1 = datos de programación/depuración (canal 1).</td><td>Línea <strong>PGD</strong> del conector de programación P4 (canal 1 de programación); también llega al conector de expansión P6.</td></tr><tr><td>5</td><td>PGEC1/AN3/C2IN+/RP1/CN5/RB1</td><td>Entrada analógica 3 (AN3); o E/S digital bit 1 del puerto B (RB1). PGEC1 = reloj de programación/depuración (canal 1).</td><td>Línea <strong>PGC</strong> del conector de programación P4 (canal 1 de programación); también llega al conector de expansión P6.</td></tr><tr><td>6</td><td>AN4/RP2/CN6/RB2</td><td>Entrada analógica 4 (AN4); o E/S digital bit 2 del puerto B (<strong>RB2</strong>).</td><td><strong>Pulsador SW2</strong>: pull-up de 10 kΩ y a masa al pulsar (JP1) → <strong>pulsado = 0</strong>.</td></tr><tr><td>7</td><td>AN5/RP3/CN7/RB3</td><td>Entrada analógica 5 (<strong>AN5</strong>); o E/S digital bit 3 del puerto B (RB3).</td><td><strong>Potenciómetro RV1</strong> (10 kΩ entre 3,3 V y masa), cursor a AN5 a través de JP2.</td></tr><tr><td>8</td><td>VSS</td><td>Tierra del micro.</td><td>Masa.</td></tr><tr><td>9</td><td>OSC1/CLKI/CN30/RA2</td><td>Usado para osciladores externos; o E/S digital bit 2 del puerto A (RA2).</td><td>Libre (no se usa oscilador externo); accesible en el conector de expansión P5-P8.</td></tr><tr><td>10</td><td>OSC2/CLKO/CN29/RA3</td><td>Usado para osciladores externos; o E/S digital bit 3 del puerto A (RA3).</td><td>Libre (no se usa oscilador externo); accesible en el conector de expansión P5-P8.</td></tr><tr><td>11</td><td>SOSCI/RP4/CN1/RB4</td><td>E/S digital bit 4 del puerto B (RB4). RP4 = pin remapeable (puede llevar la UART).</td><td><strong>U1TX</strong> (transmisión de la UART, por RP4) que va a la vez al USB (FT230XS) y al conector Arduino (P8-2): no pasa por el selector K2.</td></tr><tr><td>12</td><td>SOSCO/T1CK/CN0/RA4</td><td>E/S digital bit 4 del puerto A (RA4). T1CK = reloj externo del Timer 1.</td><td>Libre (accesible en el conector de expansión P5-P8).</td></tr><tr><td>13</td><td>VDD</td><td>Alimentación del micro a 3,3 V.</td><td>+3,3 V (regulador de la tarjeta, LED D5).</td></tr><tr><td>14</td><td>PGED3/ASDA1/RP5/CN27/RB5</td><td>E/S digital bit 5 del puerto B (RB5). RP5 = pin remapeable.</td><td><strong>U1RX</strong> (recepción de la UART, por RP5) desde el USB (FT230XS) o desde el conector Arduino (P8-1), según el selector K2.</td></tr><tr><td>15</td><td>PGEC3/ASCL1/RP6/CN24/RB6</td><td>E/S digital bit 6 del puerto B (RB6).</td><td>Libre (accesible en el conector de expansión P5-P8).</td></tr><tr><td>16</td><td>INT0/RP7/CN23/RB7</td><td>E/S digital bit 7 del puerto B (RB7). INT0 = interrupción externa 0.</td><td>Libre (accesible en el conector de expansión P5-P8).</td></tr><tr><td>17</td><td>TCK/PWM2H1/SCL1/RP8/CN22/RB8</td><td>E/S digital bit 8 del puerto B (RB8); señal de reloj del módulo I2C (SCL); salida PWM invertida del módulo 2 (PWM2H1).</td><td>Libre (accesible en el conector de expansión P5-P8).</td></tr><tr><td>18</td><td>TDO/PWM2L1/SDA1/RP9/CN21/RB9</td><td>E/S digital bit 9 del puerto B (RB9); señal de datos del módulo I2C (SDA); salida PWM del módulo 2 (PWM2L1).</td><td>Libre (accesible en el conector de expansión P5-P8).</td></tr><tr><td>19</td><td>VSS</td><td>Tierra del micro.</td><td>Masa.</td></tr><tr><td>20</td><td>VCAP</td><td>Alimentación del micro (ver nota: el datasheet lo define como condensador de filtro del núcleo).</td><td>Condensador <strong>C16</strong> (10 µF, cerámico X7R) a masa, que permite funcionar al regulador interno que alimenta el núcleo.</td></tr><tr><td>21</td><td>PGED2/TDI/PWM1H3/RP10/CN16/RB10</td><td>E/S digital bit 10 del puerto B (RB10); salida PWM invertida del módulo 1, canal 3 (PWM1H3).</td><td>Libre (accesible en el conector de expansión P5-P8).</td></tr><tr><td>22</td><td>PGEC2/TMS/PWM1L3/RP11/CN15/RB11</td><td>E/S digital bit 11 del puerto B (RB11); salida PWM del módulo 1, canal 3 (PWM1L3).</td><td>Libre (accesible en el conector de expansión P5-P8).</td></tr><tr><td>23</td><td>PWM1H2/RP12/CN14/RB12</td><td>E/S digital bit 12 del puerto B (<strong>RB12</strong>); salida PWM invertida del módulo 1, canal 2 (PWM1H2).</td><td><strong>LED D9</strong>: en serie con 270 Ω hacia +3,3 V a través de JP3 → <strong>se enciende con 0</strong>.</td></tr><tr><td>24</td><td>PWM1L2/RP13/CN13/RB13</td><td>E/S digital bit 13 del puerto B (<strong>RB13</strong>); salida PWM del módulo 1, canal 2 (PWM1L2).</td><td><strong>LED D8</strong>, activo a nivel bajo.</td></tr><tr><td>25</td><td>PWM1H1/RP14/CN12/RB14</td><td>E/S digital bit 14 del puerto B (<strong>RB14</strong>); salida PWM invertida del módulo 1, canal 1 (PWM1H1).</td><td><strong>LED D7</strong>, activo a nivel bajo.</td></tr><tr><td>26</td><td>PWM1L1/RP15/CN11/RB15</td><td>E/S digital bit 15 del puerto B (<strong>RB15</strong>); salida PWM del módulo 1, canal 1 (PWM1L1).</td><td><strong>LED D6</strong>, activo a nivel bajo.</td></tr><tr><td>27</td><td>AVSS</td><td>Tierra del convertidor A/D.</td><td>Masa analógica.</td></tr><tr><td>28</td><td>AVDD</td><td>Alimentación a 3,3 V del convertidor A/D.</td><td>+3,3 V.</td></tr></tbody></table><p>Leyenda de los nombres del datasheet que el libro no detalla: <strong>CNx</strong> = entrada de <em>change notification</em> (puede avisar con una interrupción cuando cambia el pin); <strong>RPx</strong> = pin <em>remapeable</em> (<em>Peripheral Pin Select</em>): a estos pines se les puede asignar por software la UART, el SPI, las capturas, etc. Por eso la UART de la PicTrainer sale por RB4 (RP4) y RB5 (RP5), que no tienen una función UART «fija» en su nombre. <strong>PGEDx/PGECx</strong> = datos y reloj de los tres canales posibles de programación/depuración (la PicTrainer usa el canal 1, pines 4 y 5); <strong>TCK/TDI/TDO/TMS</strong> = JTAG (no se usa en el curso).</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Lo que hay que recordar de la PicTrainer.</strong> LEDs D6-D9 en <strong>RB15-RB12</strong> (D6 = RB15 … D9 = RB12), <strong>activos a nivel bajo</strong> (0 = encendido, puente JP3). Pulsador SW2 en <strong>RB2</strong> con pull-up: <strong>pulsado = 0</strong> (JP1). Potenciómetro RV1 en <strong>AN5 = RB3</strong> (JP2). UART: <strong>U1TX = RB4 (RP4, pin 11)</strong> y <strong>U1RX = RB5 (RP5, pin 14)</strong>, con el selector K2, que elige de dónde llega la recepción U1RX (1-2 USB, 2-3 conector Arduino). <strong>MCLR</strong> activo a nivel bajo (SW1). Alimentación por USB, por el jack J2 (7,5-9 V) o por Vin del conector P5; LEDs D4 (5 V) y D5 (3,3 V) indican que hay tensión."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>1.2.2 Oscilador interno</h3><p>Todos los microcontroladores realizan las tareas y funciones para las que han sido configurados a un <strong>ritmo constante</strong>. Este ritmo viene marcado por los pulsos de un reloj u oscilador. El dsPIC33FJ32MC202 dispone de varias fuentes de oscilación: un <strong>oscilador interno de aproximadamente 8 MHz (FRC)</strong>, un oscilador interno de bajo consumo de 32 kHz (LPRC) y la posibilidad de conectar un oscilador externo de hasta 40 MHz. Además, con cualquiera de ellos se dispone de un <strong>multiplicador de frecuencia</strong> (PLL, <em>Phase Lock Loop</em>) que permite obtener períodos múltiplos del período del oscilador elegido. Este PLL puede multiplicar la frecuencia de la fuente de oscilación seleccionada hasta llegar a <strong>80 MHz</strong>.</p><p>En el curso, por simplicidad, se ha decidido prescindir de osciladores externos y se ha seleccionado como fuente de oscilación el reloj interno FRC de <strong>7,37 MHz</strong> con un PLL que lleva al micro a una velocidad de 80 MHz. Con esta configuración la frecuencia máxima de trabajo en régimen permanente viene dada por la ecuación:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>F</mi><mi>OSC</mi></msub><mo>=</mo><msub><mi>F</mi><mi>RC</mi></msub><mo>×</mo><mi>PLL</mi><mo>=</mo><mn>7,37</mn><mtext> MHz</mtext><mo>×</mo><mi>PLL</mi><mo>≈</mo><mn>80</mn><mtext> MHz</mtext></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Sin embargo, hay que ser consciente de que el dsPIC requiere <strong>2 ciclos de reloj para ejecutar una instrucción</strong>; por tanto, la frecuencia real útil que se obtiene con la configuración anterior (la <em>frecuencia de ciclo de instrucción</em>, FCY) es la indicada en la ecuación:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>F</mi><mi>CY</mi></msub><mo>=</mo><mfrac><msub><mi>F</mi><mi>OSC</mi></msub><mn>2</mn></mfrac><mo>≈</mo><mfrac><mrow><mn>80</mn><mtext> MHz</mtext></mrow><mn>2</mn></mfrac><mo>=</mo><mn>40</mn><mtext> MHz</mtext><mspace width=\"1em\"></mspace><mo>(</mo><mtext>valor exacto: </mtext><mn>39 613 750</mn><mtext> Hz</mtext><mo>)</mo></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>A efectos prácticos, <strong>la frecuencia de trabajo del micro es de 40 MHz</strong>. Este valor es crítico durante la programación de los dsPIC y debe ser la primera constante a definir: <code>FCY = 39613750</code> (es el valor exacto en Hz). Esta frecuencia es la de trabajo real del micro desde el punto de vista práctico e indica la frecuencia de ejecución de instrucciones (MIPS). Así, <code>FCY = 39613750</code> indica que el micro es capaz de ejecutar <strong>39,61 millones de instrucciones por segundo</strong>. El inverso de FCY es el <strong>ciclo de instrucción</strong>, TCY: con 40 MHz, TCY = 1/40 MHz = <strong>25 ns</strong> (el mínimo que admite el dsPIC según el datasheet, parámetro OS25 de la Tabla 24-16: <em>Instruction Cycle Time</em> = 25 ns). Con el valor exacto sale TCY = 1/39 613 750 Hz ≈ 25,24 ns.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Así queda la constante en el código de todos los programas del curso (en <code>config.h</code> o al principio del programa), antes de cualquier cálculo de tiempos:</p>",
+          "codigo": "#define FCY 39613750UL      // frecuencia de ciclo de instruccion exacta (Hz): FRC 7,37 MHz x PLL / 2\n                            // para hacer cuentas a mano se aproxima a 40 MHz (TCY = 25 ns)"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Prueba a cambiar la frecuencia del FRC o el factor del PLL y observa cómo salen FOSC, FCY (los 39 613 750 Hz exactos y el redondeo a 40 MHz) y TCY:</p><div class=\"mpi-mount\" data-componente=\"calc-reloj\" data-config='{\"frc\":7370000,\"fcy\":39613750}'></div>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Nota.</strong> El factor del PLL no es un número entero: 80 MHz / 7,37 MHz = 10,85, y con el valor exacto, 79,2275 MHz / 7,37 MHz = <strong>10,75</strong>. Según el datasheet (sección 8.1.3, Ecuación 8-2), el PLL multiplica así: F<sub>OSC</sub> = F<sub>IN</sub> × M / (N1 × N2), con N1 = prescaler de entrada (PLLPRE, 2…33), M = divisor de realimentación (PLLDIV, 2…513) y N2 = postscaler (PLLPOST, 2, 4 u 8). Los valores reales que usa <code>InicializarReloj()</code> en el laboratorio son <strong>N1 = 2, M = 43, N2 = 2</strong> (<code class=\"reg\">CLKDIVbits.PLLPRE = 0</code>, <code class=\"reg\">PLLFBD = 41</code>, <code class=\"reg\">CLKDIVbits.PLLPOST = 0</code>): 7,37 MHz / 2 = 3,685 MHz a la entrada del VCO (dentro del rango 0,8-8 MHz), 3,685 × 43 = 158,455 MHz a su salida (dentro del rango 100-200 MHz) y 158,455 / 2 = <strong>79,2275 MHz</strong> de F<sub>OSC</sub>, de donde F<sub>CY</sub> = 39 613 750 Hz."
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Fórmula del PLL según el datasheet (Ecuación 8-2) con la combinación anterior:</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>F</mi><mi>OSC</mi></msub><mo>=</mo><msub><mi>F</mi><mi>IN</mi></msub><mo>×</mo><mfrac><mi>M</mi><mrow><mi>N1</mi><mo>·</mo><mi>N2</mi></mrow></mfrac><mo>=</mo><mn>7,37</mn><mtext> MHz</mtext><mo>×</mo><mfrac><mn>43</mn><mrow><mn>2</mn><mo>·</mo><mn>2</mn></mrow></mfrac><mo>=</mo><mn>79,2275</mn><mtext> MHz</mtext><mspace width=\"1em\"></mspace><mo>⇒</mo><mspace width=\"1em\"></mspace><msub><mi>F</mi><mi>CY</mi></msub><mo>=</mo><mfrac><msub><mi>F</mi><mi>OSC</mi></msub><mn>2</mn></mfrac><mo>=</mo><mn>39 613 750</mn><mtext> Hz</mtext></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p><strong>¿Por qué importa tanto FCY?</strong> Porque es la base de tiempos de todos los periféricos: a partir de ella se calculan los tiempos de muestreo y conversión en el <strong>convertidor A/D</strong>, los períodos y ciclos de trabajo en el <strong>módulo PWM</strong>, la velocidad de comunicación (baudios) en la <strong>UART</strong>, los períodos de los <strong>timers</strong> (lo primero que se ve: un timer cuenta ciclos de instrucción, de modo que 40 000 ciclos a 40 MHz son 1 ms) y, en general, la gestión de cualquier dispositivo que implique control de tiempos. Un error en FCY se traduce en que todo va «a otra velocidad»: los retardos no duran lo esperado y la UART no se entiende con el PC.</p>"
+        }
+      ]
+    }
+  ],
+  "registros": {},
+  "ejercicios": {
+    "introduccion-dspic-1": {
+      "titulo": "Microprocesador, microcontrolador y velocidad",
+      "enunciado": "<p>Cuestiones de comprensión sobre qué es el dsPIC33FJ32MC202 y qué significan sus cifras de velocidad.</p>",
+      "contexto": "<ul><li>Reloj del curso: FRC interno 7,37 MHz × PLL → F<sub>OSC</sub> ≈ 80 MHz.</li><li>El dsPIC necesita 2 ciclos de reloj por instrucción.</li><li>Para las cuentas se usa F<sub>CY</sub> = 40 MHz (valor exacto: 39 613 750 Hz).</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Cuál es la diferencia esencial entre un microcontrolador como el dsPIC y un microprocesador como el de un PC?",
+          "opciones": [
+            "El microcontrolador es siempre de 8 bits y el microprocesador de 32 o 64 bits.",
+            "El microcontrolador integra en un solo chip el procesador y los periféricos (A/D, I/O, PWM, timers, comunicaciones) para controlar su entorno; el microprocesador es de propósito general y necesita otros chips alrededor.",
+            "El microprocesador no puede ejecutar programas en C.",
+            "El microcontrolador necesita memoria RAM, FLASH y oscilador externos; el microprocesador no."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>El microcontrolador está hecho para <strong>controlar el entorno</strong> y por eso lleva dentro del chip los periféricos que le permiten percibirlo y actuar sobre él (convertidor A/D, puertos I/O, PWM, timers, encoders, UART/I2C/SPI). El microprocesador de un ordenador es un dispositivo de propósito general con gran capacidad de cálculo, pensado para añadirle otros chips (gráficos, teclado…). El dsPIC es de 16 bits y precisamente <em>no</em> necesita RAM, FLASH ni oscilador externos.</p>"
+        },
+        {
+          "texto": "El dsPIC trabaja a 40 MIPS (F<sub>CY</sub> = 40 MHz). ¿Cuántos ciclos de instrucción caben en 1 ms?",
+          "opciones": [
+            "40",
+            "40 000",
+            "40 000 000",
+            "80 000"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Si se ejecutan 40 millones de instrucciones por segundo, en una milésima de segundo se ejecutan 40 000 000 × 0,001 = <strong>40 000</strong> ciclos de instrucción. Dicho de otra forma: 1 ms / T<sub>CY</sub> = 1 ms / 25 ns = 40 000. Este es el número que aparecerá, por ejemplo, al cargar un timer para que desborde cada milisegundo (PR1 = 40 000). Las respuestas 40 y 40 000 000 corresponden a 1 µs y 1 s; 80 000 sería contar ciclos de reloj (F<sub>OSC</sub> = 80 MHz), no de instrucción.</p>"
+        },
+        {
+          "texto": "Con el reloj del curso, F<sub>OSC</sub> ≈ 80 MHz y el dsPIC necesita 2 ciclos de reloj por instrucción. ¿Cuánto valen la frecuencia de ciclo de instrucción F<sub>CY</sub> y el ciclo de instrucción T<sub>CY</sub>?",
+          "opciones": [
+            "F<sub>CY</sub> = 80 MHz y T<sub>CY</sub> = 12,5 ns",
+            "F<sub>CY</sub> = 40 MHz y T<sub>CY</sub> = 25 ns",
+            "F<sub>CY</sub> = 20 MHz y T<sub>CY</sub> = 50 ns",
+            "F<sub>CY</sub> = 40 MHz y T<sub>CY</sub> = 12,5 ns"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>F<sub>CY</sub> = F<sub>OSC</sub> / 2 = 80 MHz / 2 = <strong>40 MHz</strong> (exactamente 39 613 750 Hz), y T<sub>CY</sub> = 1 / F<sub>CY</sub> = 1 / 40 MHz = <strong>25 ns</strong> (el mínimo que admite el dsPIC según el datasheet). 12,5 ns sería el período del reloj de 80 MHz, no el de instrucción; 20 MHz supondría 4 ciclos por instrucción.</p>"
+        }
+      ]
+    },
+    "introduccion-dspic-2": {
+      "titulo": "Patillaje del dsPIC y tarjeta PicTrainer",
+      "enunciado": "<p>Cuestiones sobre qué hay en cada pin del dsPIC33FJ32MC202 y cómo está conectado en la tarjeta PicTrainer del laboratorio.</p>",
+      "contexto": "<ul><li>LEDs D6-D9 en RB15-RB12 (D6 = RB15 … D9 = RB12), en serie con 270 Ω hacia +3,3 V (JP3).</li><li>Pulsador SW2 en RB2 con pull-up de 10 kΩ, a masa al pulsar (JP1).</li><li>Potenciómetro RV1 de 10 kΩ con el cursor a AN5 (JP2).</li><li>UART: U1TX = RB4 (RP4, pin 11), U1RX = RB5 (RP5, pin 14).</li></ul>",
+      "preguntas": [
+        {
+          "texto": "El pin 6 del dsPIC se llama AN4/RP2/CN6/RB2. En la PicTrainer, ¿qué tiene conectado y qué lee el programa cuando se actúa sobre él?",
+          "opciones": [
+            "Un LED, que se enciende escribiendo un 1 en RB2.",
+            "El pulsador SW2: como tiene una resistencia de pull-up y se conecta a masa al pulsarlo, el programa lee un 0 mientras está pulsado.",
+            "El potenciómetro RV1, que se lee por la entrada analógica AN4.",
+            "La transmisión de la UART (U1TX)."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>En la PicTrainer el pin 6 (RB2) lleva el <strong>pulsador SW2</strong> con una resistencia de pull-up de 10 kΩ a 3,3 V: en reposo el pin está a 1 y, al pulsar, se conecta a masa y se lee un <strong>0</strong> (a través del puente JP1). El potenciómetro está en AN5 (pin 7, RB3), la UART en RB4/RB5 y los LEDs en RB12-RB15.</p>"
+        },
+        {
+          "texto": "¿Cuál de las siguientes afirmaciones sobre los pines del dsPIC33FJ32MC202 es correcta?",
+          "opciones": [
+            "AN5 está en el pin 7, compartido con RB3, y en la PicTrainer recibe el cursor del potenciómetro RV1.",
+            "MCLR es el pin 28 y provoca el reset cuando se pone a nivel alto.",
+            "AN5 está en el pin 2, compartido con RA0.",
+            "MCLR (pin 1) es una entrada/salida digital de propósito general del puerto A."
+          ],
+          "correcta": 0,
+          "explicacion": "<p>El pin 7 se llama AN5/RP3/CN7/<strong>RB3</strong>: es la entrada analógica 5 o el bit 3 del puerto B, y en la tarjeta el cursor del potenciómetro RV1 (10 kΩ entre 3,3 V y masa) llega a él a través de JP2. <strong>MCLR es el pin 1</strong>, es el reset y está <strong>activo a nivel bajo</strong> (el pulsador SW1 lo lleva a masa); no es un pin de E/S de propósito general. El pin 28 es AVDD y el pin 2 es AN0/RA0.</p>"
+        },
+        {
+          "texto": "Los LEDs D6-D9 de la PicTrainer están en RB15-RB12 (D6 = RB15 … D9 = RB12). ¿Por qué se encienden escribiendo un 0 en el pin y no un 1?",
+          "opciones": [
+            "Porque el puerto B solo puede dar salida a nivel bajo.",
+            "Porque cada LED está en serie con 270 Ω entre el pin y +3,3 V: con el pin a 0 circula corriente por el LED (ánodo a 3,3 V, cátodo al pin) y con el pin a 1 no hay diferencia de tensión y el LED se apaga.",
+            "Porque el compilador XC16 invierte las salidas del puerto B.",
+            "Porque están conectados a las salidas PWM invertidas (PWM1Hx)."
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Los LEDs están conectados <strong>activos a nivel bajo</strong>: el ánodo va a +3,3 V a través de 270 Ω (puente JP3) y el cátodo al pin del micro. Con el pin a <strong>0</strong> hay 3,3 V entre ánodo y cátodo, circula corriente y el LED se enciende; con el pin a 1 ambos extremos están a 3,3 V y no circula corriente. Es una decisión del circuito de la tarjeta, no del compilador ni del puerto; por eso la plantilla de <code>main</code> del curso escribe <code>PORTB = 0xEFFF</code> (RB12 a 0, encendido; RB13-RB15 a 1, apagados) antes de poner <code>TRISB = 0x0FFF</code>.</p>"
+        }
+      ]
+    }
+  },
+  "ejerciciosEnTema": [
+    "introduccion-dspic-1",
+    "introduccion-dspic-2"
+  ],
+  "tituloEjercicios": "Ejercicios y cuestiones",
+  "resumen": [
+    "Un <strong>microcontrolador</strong> integra en un chip el procesador y los periféricos para controlar su entorno; un <strong>microprocesador</strong> es de propósito general y necesita chips de apoyo.",
+    "El <strong>dsPIC33FJ32MC202</strong> es un micro de <strong>16 bits</strong>, <strong>28 pines</strong> (DIP), <strong>32 KB de FLASH</strong> y <strong>2 KB de RAM</strong>, hasta <strong>40 MIPS</strong>, con A/D, I/O, PWM, timers, encoder, UART, I2C y SPI; en el curso solo se usa su núcleo MCU, no el DSP.",
+    "Se programa en <strong>C</strong> (normalmente) y en <strong>ensamblador</strong> solo cuando el tiempo real o la memoria son críticos.",
+    "Los pines se reparten en el <strong>puerto A</strong> (RA0-RA4) y el <strong>puerto B</strong> (RB0-RB15) y casi todos son multifunción (ANx, PWM, I2C, oscilador, remapeables RPx).",
+    "En la <strong>PicTrainer</strong>: LEDs en <strong>RB12-RB15</strong> (se encienden con <strong>0</strong>), pulsador en <strong>RB2</strong> (pulsado = <strong>0</strong>), potenciómetro en <strong>AN5/RB3</strong>, UART en <strong>RB4</strong> (U1TX) y <strong>RB5</strong> (U1RX), reset <strong>MCLR</strong> activo a nivel bajo.",
+    "Reloj: FRC interno de <strong>7,37 MHz</strong> × PLL → F<sub>OSC</sub> ≈ <strong>80 MHz</strong>; como cada instrucción necesita 2 ciclos, F<sub>CY</sub> = F<sub>OSC</sub>/2 ≈ <strong>40 MHz</strong> (exacto: <strong>39 613 750 Hz</strong>) y T<sub>CY</sub> = <strong>25 ns</strong>.",
+    "<code>FCY</code> es la primera constante que se define en cualquier programa: de ella dependen los tiempos de timers, A/D, PWM y la velocidad de la UART (40 000 ciclos de instrucción = 1 ms)."
+  ]
+}

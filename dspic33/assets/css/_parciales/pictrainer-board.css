@@ -1,0 +1,143 @@
+/* ---------- Componente: pictrainer-board (tarjeta PicTrainer v3.0 clicable) ---------- */
+.mpi-pictrainer-board { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1rem 1.1rem; margin: 1.2rem 0; }
+.mpi-pictrainer-board .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .3rem; }
+.mpi-pictrainer-board :not(pre) > code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+.ptb-ayuda { color: var(--txt-tenue); font-size: .82rem; margin: 0 0 .7rem; }
+
+.ptb-filtros { display: flex; flex-wrap: wrap; gap: .4rem; }
+.ptb-filtro { background: var(--bg-3); border: 1px solid var(--borde); color: var(--txt-2); padding: .3rem .65rem; border-radius: 999px; cursor: pointer; font-size: .8rem; font-family: inherit; }
+.ptb-filtro:hover { border-color: var(--acento); color: var(--txt); }
+.ptb-filtro[aria-pressed="true"] { background: var(--acento); border-color: var(--acento); color: #06231d; font-weight: 600; }
+.ptb-filtro:focus-visible, .ptb-op:focus-visible, .ptb-ir:focus-visible, .ptb-tabla-det summary:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 2px; }
+.ptb-filtro-desc { color: var(--txt-2); font-size: .84rem; margin: .6rem 0 .9rem; min-height: 1.4em; }
+.ptb-filtro-desc strong { color: var(--txt); }
+
+.ptb-cuerpo { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; }
+.ptb-dibujo { flex: 1 1 420px; min-width: 0; max-width: 620px; }
+.ptb-svg { display: block; width: 100%; height: auto; }
+
+/* --- Dibujo SVG --- */
+.ptb-pcb { fill: #13261f; stroke: #2f5244; stroke-width: 2; }
+.ptb-taladro { fill: var(--bg-2); stroke: #2f5244; stroke-width: 2; }
+.ptb-pista { fill: none; stroke: #2f6b54; stroke-width: 3; stroke-linecap: round; }
+.ptb-titulo { font: 700 17px var(--sans); fill: #6f8f82; letter-spacing: .04em; }
+.ptb-t { font: 700 13px var(--sans); fill: var(--txt); }
+.ptb-tx { font: 10px var(--sans); fill: #a9bdb4; }
+.ptb-ts { font: 700 11px var(--sans); fill: #e6e6e6; }
+.ptb-tic { font: 700 11px var(--mono); fill: #d0d0d0; }
+.ptb-tchip { font: 700 13px var(--mono); fill: #d8d8d8; }
+
+.ptb-metal { fill: #9aa3ab; stroke: #5d656c; stroke-width: 1.5; }
+.ptb-hueco { fill: #3a3f44; stroke: #2a2e31; }
+.ptb-ic { fill: #1b1b1b; stroke: #555; stroke-width: 1.2; }
+.ptb-pata { stroke: #b7bec4; stroke-width: 2.5; fill: none; }
+.ptb-cuerpo { fill: #161616; stroke: #4a4a4a; }
+.ptb-cpin { fill: #d4b24c; stroke: #8a7330; stroke-width: 1; }
+.ptb-cpin1 { fill: #e8c45a; }
+.ptb-cap { fill: #2a64c8; stroke: #8fb4f0; stroke-width: 1; opacity: .92; }
+.ptb-cap.ptb-oculto { display: none; }
+.ptb-nomontado { fill: none; stroke: #8b949e; stroke-dasharray: 3 3; }
+.ptb-zocalo { fill: #2b2b2b; stroke: #5a5a5a; }
+.ptb-chip { fill: #141414; stroke: #4a4a4a; }
+.ptb-muesca { fill: #3a3a3a; }
+.ptb-punto { fill: #3a3a3a; }
+.ptb-dpin { fill: #b9bec3; stroke: #707579; stroke-width: .8; transition: fill .15s; }
+.ptb-dpin.ptb-pin-f { fill: var(--acento); }
+.ptb-dpin.ptb-pin-s { fill: var(--amarillo); stroke: #fff; }
+.ptb-npin { font: 700 10px var(--mono); fill: var(--amarillo); display: none; }
+.ptb-npin.ptb-visible { display: inline; }
+.ptb-npin:not(.ptb-npin-s) { fill: var(--acento); }
+.ptb-boton { fill: #2b2b2b; stroke: #111; stroke-width: 2; }
+.ptb-pot { fill: #2d5fb0; stroke: #1b3a6e; }
+.ptb-ranura { stroke: #ddd; stroke-width: 3; stroke-linecap: round; }
+.ptb-res { fill: #c8b48c; stroke: #7a6a48; }
+.ptb-led { stroke-width: 1.5; }
+.ptb-led-r { fill: #e05a4a; stroke: #ff9b8c; }
+.ptb-led-v { fill: #4fbf66; stroke: #9be6a9; }
+.ptb-led-n { fill: #e8933a; stroke: #f5c08a; }
+.ptb-cable { fill: none; stroke: var(--amarillo); stroke-width: 1.6; stroke-dasharray: 5 4; opacity: .85; }
+
+/* Elementos interactivos */
+.ptb-el { cursor: pointer; outline: none; transition: opacity .15s; }
+.ptb-hit { fill: rgba(0,0,0,0); stroke: none; pointer-events: all; }
+.ptb-el:hover .ptb-hit { fill: rgba(78,201,176,.08); stroke: var(--acento); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.ptb-el:focus-visible .ptb-hit { stroke: var(--amarillo); stroke-width: 2.5; stroke-dasharray: none; }
+.ptb-el.ptb-sel .ptb-hit { fill: rgba(86,156,214,.16); stroke: var(--acento-2); stroke-width: 2.5; stroke-dasharray: none; }
+.ptb-el.ptb-sel:focus-visible .ptb-hit { stroke: var(--amarillo); }
+.ptb-filtrando .ptb-el { opacity: .3; }
+.ptb-filtrando .ptb-el.ptb-on, .ptb-filtrando .ptb-el.ptb-sel, .ptb-filtrando .ptb-el:hover, .ptb-filtrando .ptb-el:focus-visible { opacity: 1; }
+.ptb-filtrando .ptb-el.ptb-on .ptb-hit { stroke: var(--acento); stroke-width: 2; }
+.ptb-el.ptb-sinpuente .ptb-led, .ptb-el.ptb-sinpuente .ptb-boton, .ptb-el.ptb-sinpuente .ptb-pot { opacity: .35; }
+.ptb-el.ptb-sinpuente .ptb-led-r { fill: #4a2a26; }
+
+/* --- Panel de detalle --- */
+.ptb-panel { flex: 1 1 320px; min-width: 0; background: var(--bg); border: 1px solid var(--borde); border-radius: 8px; padding: .8rem .9rem; font-size: .88rem; line-height: 1.45; }
+.ptb-vacio { color: var(--txt-tenue); margin: 0; }
+.ptb-p-cab { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem; margin-bottom: .4rem; }
+.ptb-p-id { font-family: var(--mono); font-weight: 700; color: var(--acento); font-size: 1.05rem; }
+.ptb-p-tit { color: var(--txt); font-weight: 600; }
+.ptb-tags { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: .6rem; }
+.ptb-tag { font-size: .7rem; padding: .1rem .45rem; border-radius: 999px; border: 1px solid var(--borde); color: var(--txt-2); background: var(--bg-3); }
+.ptb-tag-entradas { border-color: var(--acento-2); color: var(--acento-2); }
+.ptb-tag-salidas { border-color: var(--rojo); color: var(--rojo); }
+.ptb-tag-alimentacion { border-color: var(--num); color: var(--num); }
+.ptb-tag-programacion { border-color: var(--amarillo); color: var(--amarillo); }
+.ptb-tag-comunicacion { border-color: var(--morado); color: var(--morado); }
+.ptb-tag-puentes { border-color: var(--acento); color: var(--acento); }
+.ptb-dl { margin: 0 0 .5rem; }
+.ptb-dl dt { font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--txt-tenue); margin-top: .45rem; }
+.ptb-dl dd { margin: .05rem 0 0; color: var(--txt); }
+.ptb-dl strong { color: #fff; }
+.ptb-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin: .5rem 0; }
+.ptb-ctl-tit { font-size: .78rem; color: var(--txt-tenue); }
+.ptb-op { background: var(--bg-3); border: 1px solid var(--borde); color: var(--txt-2); padding: .3rem .7rem; border-radius: 6px; cursor: pointer; font-size: .8rem; font-family: inherit; }
+.ptb-op:hover { border-color: var(--acento-2); color: var(--txt); }
+.ptb-op[aria-pressed="true"] { background: var(--acento-2); border-color: var(--acento-2); color: #0b1a2b; font-weight: 600; }
+.ptb-efecto { margin: .3rem 0; padding: .4rem .55rem; border: 1px solid rgba(86,156,214,.35); background: rgba(86,156,214,.08); border-radius: 6px; }
+.ptb-efecto-2 { border-color: var(--borde); background: transparent; color: var(--txt-2); }
+.ptb-extra { margin: .5rem 0; color: var(--txt-2); }
+.ptb-extra strong { color: var(--txt); }
+.ptb-cod-tit { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--txt-tenue); margin-top: .6rem; }
+.ptb-pre { margin: .3rem 0 .5rem; padding: .6rem .7rem; }
+.ptb-pre code { font-size: .76rem; }
+.ptb-nota { font-size: .8rem; color: var(--txt-2); margin: .6rem 0 0; padding: .4rem .55rem; border: 1px solid rgba(220,220,170,.28); background: rgba(220,220,170,.06); border-radius: 6px; }
+.ptb-nota strong { color: var(--amarillo); }
+.ptb-rel { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; margin-top: .7rem; font-size: .78rem; color: var(--txt-tenue); }
+.ptb-ir { background: transparent; border: 1px solid var(--borde); color: var(--acento); font-family: var(--mono); font-size: .75rem; padding: .15rem .5rem; border-radius: 999px; cursor: pointer; }
+.ptb-ir:hover { border-color: var(--acento); }
+
+/* Tabla de pines de un conector (en el panel) */
+.ptb-ct-wrap { overflow-x: auto; margin: .5rem 0; }
+.ptb-ct { border-collapse: collapse; width: 100%; font-size: .8rem; }
+.ptb-ct th, .ptb-ct td { border: 1px solid var(--borde); padding: .2rem .45rem; text-align: left; }
+.ptb-ct th { background: var(--bg-3); color: var(--txt-2); font-weight: 600; }
+.ptb-ct td:first-child { font-family: var(--mono); color: var(--acento); text-align: center; }
+
+/* Aviso del orden de los LEDs */
+.ptb-aviso { font-size: .84rem; color: var(--txt-2); margin: 1rem 0 .4rem; padding: .55rem .7rem; border: 1px solid rgba(220,220,170,.3); background: rgba(220,220,170,.06); border-radius: 8px; }
+.ptb-aviso strong { color: var(--amarillo); }
+
+/* Tabla resumen de los 28 pines */
+.ptb-tabla-det { margin-top: .8rem; }
+.ptb-tabla-det summary { cursor: pointer; font-weight: 600; color: var(--txt); font-size: .92rem; padding: .3rem 0; }
+.ptb-libres { font-size: .84rem; color: var(--txt-2); margin: .4rem 0 .6rem; }
+.ptb-libres strong { color: var(--txt); }
+.ptb-tabla-wrap { overflow-x: auto; }
+.ptb-tabla { border-collapse: collapse; width: 100%; font-size: .82rem; min-width: 520px; }
+.ptb-tabla th, .ptb-tabla td { border: 1px solid var(--borde); padding: .25rem .5rem; text-align: left; vertical-align: top; }
+.ptb-tabla th { background: var(--bg-3); color: var(--txt-2); font-weight: 600; }
+.ptb-tabla td:first-child { font-family: var(--mono); color: var(--txt-2); text-align: right; }
+.ptb-tabla code { white-space: nowrap; }
+.ptb-tabla tr.ptb-f-libre td { background: rgba(78,201,176,.06); }
+.ptb-est { display: inline-block; font-size: .72rem; padding: .05rem .45rem; border-radius: 999px; border: 1px solid var(--borde); color: var(--txt-2); white-space: nowrap; }
+.ptb-est-libre { border-color: var(--acento); color: var(--acento); }
+.ptb-est-puente { border-color: var(--acento-2); color: var(--acento-2); }
+.ptb-est-prog, .ptb-est-reset { border-color: var(--amarillo); color: var(--amarillo); }
+.ptb-est-uart { border-color: var(--morado); color: var(--morado); }
+.ptb-est-alim { color: var(--txt-tenue); }
+
+@media (max-width: 520px) {
+  .mpi-pictrainer-board { padding: .9rem .75rem; }
+  .ptb-dibujo { flex-basis: 100%; }
+  .ptb-panel { flex-basis: 100%; }
+}

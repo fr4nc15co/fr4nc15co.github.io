@@ -1,0 +1,66 @@
+/* ---------- Componente: tabla-bra (CP + todas las condiciones de BRA) ---------- */
+.mpi-tabla-bra { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-tabla-bra [hidden] { display: none !important; }
+.mpi-tabla-bra .mpi-sim-cab { font-family: var(--mono); font-weight: 700; color: var(--acento); font-size: 1.05rem; margin-bottom: .7rem; }
+.tb-sub { font-family: var(--sans); font-weight: 400; color: var(--txt-2); font-size: .85rem; margin-left: .4rem; }
+.mpi-tabla-bra button { font-family: inherit; }
+.mpi-tabla-bra button:focus-visible, .mpi-tabla-bra input:focus-visible, .tb-wrap:focus-visible { outline: 2px solid var(--acento-2); outline-offset: 1px; }
+.mpi-tabla-bra :not(pre) > code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+.tb-oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.tb-ej, .tb-an, .tb-libro {
+  background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px;
+  padding: .4rem .75rem; cursor: pointer; font-size: .84rem;
+}
+.tb-ej:hover, .tb-an:hover, .tb-libro:hover { border-color: var(--acento); }
+.tb-an[aria-pressed="true"] { background: rgba(78,201,176,.15); border-color: var(--acento); color: var(--acento); font-weight: 700; }
+.tb-ejemplos { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: .9rem; }
+.tb-lbl { font-size: .85rem; color: var(--txt-2); }
+.tb-form { display: flex; flex-wrap: wrap; gap: .7rem 1.4rem; }
+.tb-campo { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; }
+.tb-campo label { font-family: var(--mono); font-size: .92rem; color: var(--txt); }
+.tb-reg { color: var(--txt-tenue); font-size: .8rem; }
+.tb-seg { display: inline-flex; flex-wrap: wrap; gap: .3rem; }
+.tb-hex { font-family: var(--mono); background: var(--bg); border: 1px solid var(--borde); color: var(--azul-cl); padding: .35rem .5rem; border-radius: 5px; font-size: .9rem; width: 6.2rem; }
+.tb-hex[aria-invalid="true"] { border-color: var(--rojo); }
+.tb-dec { font-family: var(--mono); font-size: .8rem; color: var(--txt-tenue); }
+.tb-nota { font-size: .82rem; color: var(--txt-tenue); margin: .4rem 0 .7rem; }
+.tb-asm pre { margin: .6rem 0; }
+
+.tb-flags { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; margin: .5rem 0 .8rem; }
+.tb-flag { font-family: var(--mono); font-size: .9rem; color: var(--txt-tenue); background: var(--bg); border: 1px solid var(--borde); border-radius: 6px; padding: .15rem .55rem; }
+.tb-flag-n { font-weight: 700; color: var(--txt-2); }
+.tb-flag-1 { color: var(--acento); border-color: rgba(78,201,176,.55); background: rgba(78,201,176,.08); }
+.tb-flag-1 .tb-flag-n { color: var(--acento); }
+.tb-flag-ex { font-size: .82rem; color: var(--txt-2); }
+
+/* Tabla de condiciones (scroll propio) */
+.tb-wrap { overflow-x: auto; max-width: 100%; border: 1px solid var(--borde-2); border-radius: 6px; }
+.tb-tabla, .tb-comp-tabla { border-collapse: collapse; width: 100%; font-size: .84rem; }
+.tb-tabla th, .tb-tabla td, .tb-comp-tabla th, .tb-comp-tabla td { padding: .3rem .55rem; border-bottom: 1px solid var(--borde-2); text-align: left; white-space: nowrap; }
+.tb-tabla thead th, .tb-comp-tabla thead th { color: var(--txt-tenue); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; background: var(--bg-3); border-bottom-color: var(--borde); }
+.tb-tabla tr.tb-grupo th { background: var(--bg); color: var(--txt-2); font-size: .74rem; font-weight: 600; padding-top: .45rem; }
+.tb-tabla tbody th code { font-weight: 700; }
+.tb-ex, .tb-sus, .tb-comp { font-family: var(--mono); }
+.tb-ex { color: var(--amarillo); }
+.tb-sus { color: var(--txt-2); }
+.tb-comp { color: var(--num); font-size: .8rem; }
+.tb-lee { color: var(--txt-2); white-space: normal !important; min-width: 12rem; }
+.tb-tabla tr.tb-si { background: rgba(78,201,176,.07); }
+.tb-si-txt { color: var(--acento); font-weight: 700; }
+.tb-no-txt { color: var(--txt-tenue); }
+.tb-comp-tabla caption { text-align: left; color: var(--txt-2); font-size: .8rem; padding: .4rem .55rem; font-family: var(--mono); }
+.tb-comp-tabla td { font-family: var(--mono); }
+.tb-comp-tabla td.tb-bien { color: var(--acento); }
+.tb-comp-tabla td.tb-mal { color: var(--rojo); }
+
+/* Aviso «A verificar»: borde completo de 1px con fondo tintado */
+.tb-aviso { margin-top: 1rem; font-size: .86rem; color: var(--txt-2); background: rgba(220,220,170,.07); border: 1px solid rgba(220,220,170,.32); border-radius: 8px; padding: .65rem .8rem; }
+.tb-aviso p { margin: 0 0 .6rem; line-height: 1.5; }
+.tb-aviso strong { color: var(--amarillo); }
+.tb-libro-cont { margin-top: .7rem; }
+.tb-libro-cont .tb-wrap { background: var(--bg); }
+
+@media (max-width: 480px) {
+  .mpi-tabla-bra { padding: .85rem; }
+}

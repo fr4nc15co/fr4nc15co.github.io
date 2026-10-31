@@ -1,0 +1,175 @@
+/* ---------- Componente: visor-mapa-memoria (mapas de datos y programa, little endian, instrucciones de 24 bits) ---------- */
+.mpi-visor-mapa-memoria { container-type: inline-size; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-visor-mapa-memoria .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .3rem; }
+.mpi-visor-mapa-memoria code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+.mpi-visor-mapa-memoria button { font-family: inherit; }
+.mpi-visor-mapa-memoria button:focus-visible, .mpi-visor-mapa-memoria input:focus-visible, .mpi-visor-mapa-memoria summary:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 2px; }
+.vm-ayuda { color: var(--txt-tenue); font-size: .82rem; margin: 0 0 .8rem; }
+.vm-mini { color: var(--txt-tenue); font-size: .78rem; }
+.vm-nota { font-size: .8rem; color: var(--txt-2); margin: .6rem 0 0; }
+.vm-err { color: var(--rojo); margin: 0 0 .4rem; font-size: .85rem; }
+.vm-oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Disposición: mapas | panel en ancho; apilado en estrecho */
+.vm-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; align-items: start; }
+.vm-mapas { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; min-width: 0; }
+@container (min-width: 460px) { .vm-mapas { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+@container (min-width: 820px) { .vm-cuerpo { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); } }
+
+/* Mapa vertical */
+.vm-mapa { min-width: 0; }
+.vm-mapa-cab { display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .5rem; margin-bottom: .4rem; }
+.vm-mapa-tit { font-weight: 600; color: var(--txt); font-size: .9rem; }
+.vm-mapa-sub { color: var(--txt-tenue); font-size: .74rem; }
+.vm-columna { display: flex; flex-direction: column; gap: 3px; }
+.vm-zona { display: grid; grid-template-columns: 4.7rem minmax(0, 1fr); gap: .4rem; min-height: 0; padding: 0; background: none; border: 0; color: var(--txt); cursor: pointer; text-align: left; }
+.vm-mapa-p .vm-zona { grid-template-columns: 5.3rem minmax(0, 1fr); }
+.vm-dirs { display: flex; flex-direction: column; justify-content: space-between; font-family: var(--mono); font-size: .68rem; color: var(--txt-tenue); text-align: right; line-height: 1.15; padding: .1rem 0; }
+.vm-bloque { position: relative; display: flex; flex-direction: column; justify-content: center; gap: .1rem; min-width: 0; padding: .3rem .55rem; border: 1px solid var(--borde); border-radius: 5px; background: var(--bg-3); overflow: hidden; transition: background-color .15s, border-color .15s, box-shadow .15s; }
+.vm-znom { font-size: .84rem; font-weight: 600; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vm-ztam { font-family: var(--mono); font-size: .7rem; color: var(--txt-2); white-space: nowrap; }
+.vm-baja .vm-bloque { gap: 0; padding-top: .1rem; padding-bottom: .1rem; }
+.vm-baja .vm-znom { font-size: .78rem; }
+.vm-stack-marca { position: absolute; left: .55rem; bottom: .3rem; font-size: .68rem; font-family: var(--mono); color: var(--acento); }
+
+.vm-t-wreg .vm-bloque { background: rgba(86,156,214,.16); border-color: rgba(86,156,214,.5); }
+.vm-t-sfr .vm-bloque { background: rgba(197,134,192,.14); border-color: rgba(197,134,192,.45); }
+.vm-t-ram .vm-bloque { background: rgba(78,201,176,.14); border-color: rgba(78,201,176,.5); }
+.vm-t-vectores .vm-bloque { background: rgba(220,220,170,.12); border-color: rgba(220,220,170,.42); }
+.vm-t-flash .vm-bloque { background: rgba(206,145,120,.14); border-color: rgba(206,145,120,.48); }
+.vm-t-noimpl .vm-bloque, .vm-t-config .vm-bloque { border-style: dashed; background: repeating-linear-gradient(135deg, rgba(139,148,158,.10) 0 6px, transparent 6px 12px); }
+.vm-t-noimpl .vm-znom, .vm-t-config .vm-znom { color: var(--txt-2); font-weight: 500; }
+.vm-t-config .vm-bloque { background: repeating-linear-gradient(45deg, rgba(139,148,158,.08) 0 4px, transparent 4px 10px); }
+
+.vm-zona:hover .vm-bloque { border-color: var(--txt-2); }
+.vm-zona:hover .vm-dirs { color: var(--txt-2); }
+.vm-zona.vm-sel .vm-bloque { border-color: var(--acento-2); box-shadow: 0 0 0 2px var(--acento-2); }
+.vm-zona.vm-sel .vm-dirs { color: var(--azul-cl); }
+.vm-zona:focus-visible { outline: none; }
+.vm-zona:focus-visible .vm-bloque { outline: 2px solid var(--amarillo); outline-offset: 2px; }
+
+.vm-izq { min-width: 0; }
+.vm-escala { color: var(--txt-tenue); font-size: .76rem; margin: .6rem 0 0; }
+
+/* Panel de detalle */
+.vm-panel { min-width: 0; background: var(--bg); border: 1px solid var(--borde); border-radius: 8px; padding: .8rem .9rem; font-size: .88rem; line-height: 1.5; }
+.vm-panel p { margin: 0 0 .55rem; }
+.vm-p-cab { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .6rem; margin-bottom: .5rem; }
+.vm-p-nom { font-weight: 700; color: var(--acento); font-size: 1.02rem; }
+.vm-tag { font-size: .7rem; padding: .1rem .45rem; border-radius: 999px; border: 1px solid var(--borde); color: var(--txt-2); background: var(--bg-3); }
+.vm-dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .2rem .7rem; margin: 0 0 .7rem; padding: .5rem .6rem; background: var(--bg-2); border: 1px solid var(--borde-2); border-radius: 6px; }
+.vm-dl dt { color: var(--txt-tenue); font-size: .78rem; padding-top: .1rem; }
+.vm-dl dd { margin: 0; font-size: .84rem; overflow-wrap: anywhere; }
+.vm-lista { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .3rem .7rem; margin: 0 0 .55rem; }
+.vm-lista dt { font-family: var(--mono); color: var(--azul-cl); font-size: .76rem; padding-top: .12rem; white-space: nowrap; }
+.vm-lista dd { margin: 0; }
+.vm-sub { color: var(--txt-tenue); font-size: .76rem; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; margin: .6rem 0 .3rem !important; }
+
+.vm-chips { display: flex; flex-wrap: wrap; gap: .3rem; }
+.vm-chip, .vm-wcel { display: inline-flex; align-items: baseline; gap: .35rem; background: var(--bg-3); border: 1px solid var(--borde); color: var(--txt); border-radius: 6px; padding: .2rem .45rem; cursor: pointer; font-size: .76rem; }
+.vm-chip:hover, .vm-wcel:hover { border-color: var(--acento-2); }
+.vm-chip-n { font-family: var(--mono); font-weight: 700; }
+.vm-chip-d { font-family: var(--mono); color: var(--txt-tenue); font-size: .7rem; }
+.vm-chip-on { background: rgba(86,156,214,.2); border-color: var(--acento-2); }
+.vm-chip-on .vm-chip-d { color: var(--azul-cl); }
+.vm-wgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .3rem; margin: .3rem 0 .6rem; }
+.vm-wcel { flex-direction: column; align-items: flex-start; gap: 0; }
+.vm-w15 { border-color: rgba(78,201,176,.6); }
+.vm-w15 .vm-chip-n { color: var(--acento); }
+.vm-regdet { margin: .55rem 0 .2rem; padding: .5rem .6rem; border: 1px solid rgba(86,156,214,.45); background: rgba(86,156,214,.08); border-radius: 6px; }
+.vm-regdet p { margin: .25rem 0 0; }
+.vm-regdet-n { font-family: var(--mono); font-weight: 700; color: var(--azul-cl); }
+.vm-todos { margin-top: .6rem; }
+.vm-todos summary { cursor: pointer; color: var(--acento-2); font-size: .82rem; }
+.vm-caja { border: 1px solid rgba(78,201,176,.4); background: rgba(78,201,176,.07); border-radius: 6px; padding: .5rem .65rem; margin: .3rem 0 .5rem; }
+.vm-caja-tit { display: block; font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--acento); margin-bottom: .2rem; font-weight: 600; }
+.vm-caja ul { margin: 0; padding-left: 1.1rem; }
+.vm-caja li { margin: .15rem 0; }
+
+/* Secciones inferiores */
+.vm-sec { margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid var(--borde); }
+.vm-sec-tit { display: block; font-weight: 600; color: var(--txt); font-size: .92rem; margin-bottom: .55rem; }
+.vm-busca-fila, .vm-le-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; }
+.vm-le-ctrl { margin-bottom: .7rem; }
+.vm-input { font-family: var(--mono); font-size: .9rem; background: var(--bg); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .4rem .55rem; width: 11rem; max-width: 100%; }
+.vm-input::placeholder { color: var(--txt-tenue); }
+.vm-input-corto { width: 7.5rem; }
+.vm-input[aria-invalid="true"] { border-color: var(--rojo); }
+.vm-btn { background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .4rem .8rem; cursor: pointer; font-size: .85rem; }
+.vm-btn:hover:not(:disabled) { border-color: var(--acento); }
+.vm-btn:disabled { opacity: .4; cursor: default; }
+.vm-btn-pri { background: var(--acento); border-color: var(--acento); color: #06231d; font-weight: 700; }
+.vm-btn-pri:hover:not(:disabled) { filter: brightness(1.08); }
+.vm-seg { display: inline-flex; border: 1px solid var(--borde); border-radius: 999px; overflow: hidden; }
+.vm-segb { background: var(--bg-3); border: 0; color: var(--txt-2); padding: .32rem .7rem; cursor: pointer; font-size: .8rem; }
+.vm-segb + .vm-segb { border-left: 1px solid var(--borde); }
+.vm-segb:hover { color: var(--txt); }
+.vm-segb[aria-pressed="true"] { background: var(--acento); color: #06231d; font-weight: 600; }
+.vm-busca .vm-mini { margin: .5rem 0 0; line-height: 1.9; }
+.vm-ej { background: none; border: 1px solid var(--borde); border-radius: 4px; color: var(--azul-cl); font-family: var(--mono) !important; font-size: .74rem; padding: .05rem .35rem; cursor: pointer; }
+.vm-ej:hover { border-color: var(--acento-2); }
+.vm-res { margin-top: .6rem; font-size: .88rem; line-height: 1.5; }
+.vm-res:empty { display: none; }
+.vm-res p { margin: 0 0 .4rem; }
+.vm-res:not(:empty) { background: var(--bg); border: 1px solid var(--borde); border-radius: 8px; padding: .6rem .8rem; }
+
+/* Tablas de bytes / words / instrucciones */
+.vm-tabla-wrap { overflow-x: auto; max-width: 100%; border: 1px solid var(--borde-2); border-radius: 6px; }
+.vm-tabla { border-collapse: collapse; width: 100%; font-size: .84rem; }
+.vm-tabla thead th { text-align: left; color: var(--txt-tenue); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; padding: .35rem .55rem; border-bottom: 1px solid var(--borde); background: var(--bg-3); white-space: nowrap; line-height: 1.25; vertical-align: bottom; }
+.vm-tabla thead th span { display: block; text-transform: none; font-family: var(--mono); font-weight: 400; }
+.vm-tabla thead abbr { text-decoration: none; cursor: help; }
+.vm-tabla tbody th { font-family: var(--mono); color: var(--txt-2); font-weight: 400; text-align: left; padding: .3rem .55rem; white-space: nowrap; }
+.vm-tabla td { padding: .3rem .55rem; border-top: 1px solid var(--borde-2); color: var(--txt-2); }
+.vm-tabla tbody th { border-top: 1px solid var(--borde-2); }
+.vm-tabla td:nth-child(2) { font-family: var(--mono); color: var(--num); font-weight: 700; white-space: nowrap; }
+.vm-tenue th, .vm-tenue td, .vm-tenue td:nth-child(2) { color: var(--txt-tenue); font-weight: 400; }
+.vm-lo { color: var(--azul-cl); font-weight: 700; }
+.vm-hi { color: var(--naranja); font-weight: 700; }
+.vm-le-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr); gap: .8rem; }
+@container (min-width: 640px) { .vm-le-cuerpo { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); align-items: start; } }
+.vm-le-exp, .vm-prog-exp { font-size: .86rem; line-height: 1.5; color: var(--txt-2); }
+.vm-le-exp p, .vm-prog-exp p { margin: 0 0 .5rem; }
+.vm-le-exp strong, .vm-prog-exp strong { color: var(--txt); }
+.mpi-visor-mapa-memoria pre.vm-pre { margin: 0 0 .5rem; padding: .45rem .6rem; background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; overflow-x: auto; }
+.mpi-visor-mapa-memoria pre.vm-pre code { background: none; padding: 0; color: var(--txt); font-size: .8rem; white-space: pre; }
+
+.vm-prog-tabla td.vm-b, .vm-prog-tabla td.vm-fant { font-family: var(--mono); text-align: center; font-weight: 700; }
+.vm-prog-tabla thead th.vm-th-b { text-align: center; }
+.vm-prog-tabla td.vm-fant { color: var(--txt-tenue); font-weight: 400; background: repeating-linear-gradient(135deg, rgba(139,148,158,.12) 0 4px, transparent 4px 8px); }
+.vm-prog-tabla td.vm-b2 { color: var(--naranja); }
+.vm-prog-tabla td.vm-b1 { color: var(--num); }
+.vm-prog-tabla td.vm-b0 { color: var(--azul-cl); }
+.vm-prog-tabla .vm-sindir { color: var(--txt-tenue); font-family: var(--sans); font-size: .76rem; font-style: italic; }
+.vm-tabla thead th span.vm-corto { display: none; }
+.vm-tabla thead th span.vm-largo { display: inline; font-family: inherit; text-transform: inherit; font-weight: inherit; }
+.vm-mas2 { font-family: var(--mono); font-size: .68rem; color: var(--acento); border: 1px solid rgba(78,201,176,.45); border-radius: 999px; padding: 0 .3rem; }
+.vm-pc-tag { font-family: var(--sans); font-size: .64rem; font-weight: 700; color: #0b1a2b; background: var(--acento-2); border-radius: 3px; padding: .02rem .3rem; }
+.vm-pc-fila th, .vm-pc-fila td { background: rgba(86,156,214,.12); }
+.vm-que { display: block; color: var(--txt-tenue); font-size: .74rem; font-family: var(--mono); margin-top: .1rem; }
+.vm-pc { font-family: var(--mono); font-size: .86rem; color: var(--txt-2); margin-right: .3rem; }
+.vm-pc strong { color: var(--azul-cl); }
+.vm-prog-exp { margin-top: .7rem; }
+
+@media (max-width: 520px) {
+  .mpi-visor-mapa-memoria { padding: .9rem .75rem; }
+  .vm-dl, .vm-lista { grid-template-columns: 1fr; gap: 0; }
+  .vm-dl dd, .vm-lista dd { margin-bottom: .35rem; }
+  .vm-lista dt { white-space: normal; }
+  .vm-wgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .vm-input { width: 100%; }
+  .vm-input-corto { width: 7.5rem; }
+  .vm-tabla { font-size: .78rem; }
+  .vm-tabla thead th, .vm-tabla tbody th, .vm-tabla td { padding: .3rem .4rem; }
+  .vm-prog-tabla { font-size: .74rem; }
+  .vm-prog-tabla thead th, .vm-prog-tabla tbody th, .vm-prog-tabla td { padding: .3rem .25rem; }
+  .vm-prog-tabla thead th { letter-spacing: 0; font-size: .64rem; }
+  .vm-prog-tabla .vm-marcas { display: block; }
+  .vm-tabla thead th span.vm-largo { display: none; }
+  .vm-tabla thead th span.vm-corto { display: inline; font-family: inherit; text-transform: inherit; font-weight: inherit; }
+  .vm-prog-tabla code { font-size: .92em; padding: 0 .15rem; }
+  .vm-que { display: none; }
+  .vm-prog-tabla .vm-sindir { white-space: normal; }
+  .mpi-visor-mapa-memoria pre.vm-pre { padding: .45rem .5rem; }
+  .mpi-visor-mapa-memoria pre.vm-pre code { font-size: .7rem; }
+}

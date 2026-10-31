@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "dark-glow",
+        "value": "*",
+        "files": [
+          "dspic33/index.html"
+        ],
+        "createdAt": "2026-10-31T14:41:24.254Z",
+        "reason": "LED glow shadows simulate real hardware LEDs lighting up in electronics simulators (sim-adc, sim-calculadora-3bits, sim-fsm, sim-interrupcion, sim-puertos-pictrainer, sim-pwm), domain-appropriate for a microcontroller teaching tool, not decorative UI chrome"
+      }
+    ]
+  }
+}

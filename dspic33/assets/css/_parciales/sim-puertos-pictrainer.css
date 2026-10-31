@@ -1,0 +1,102 @@
+/* ---------- Componente: sim-puertos-pictrainer (puerto B en la PicTrainer) ---------- */
+.mpi-sim-puertos-pictrainer { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1rem 1.1rem; margin: 1.2rem 0; }
+.mpi-sim-puertos-pictrainer .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .6rem; }
+.mpi-sim-puertos-pictrainer code { font-family: var(--mono); }
+
+/* Pestañas */
+.spp-tabs { display: flex; flex-wrap: wrap; gap: .3rem; border-bottom: 1px solid var(--borde); margin-bottom: .9rem; }
+.spp-tab { background: transparent; border: 1px solid transparent; border-bottom: none; color: var(--txt-2); padding: .45rem .8rem; border-radius: 6px 6px 0 0; cursor: pointer; font-size: .86rem; margin-bottom: -1px; min-height: 36px; }
+.spp-tab[aria-selected="true"] { background: var(--bg); border-color: var(--borde); color: var(--acento); font-weight: 600; }
+.spp-tab:focus-visible { outline: 2px solid var(--acento-2); outline-offset: -2px; }
+
+/* Controles */
+.spp-controles { display: flex; flex-wrap: wrap; gap: .6rem 1.2rem; align-items: center; margin-bottom: .7rem; }
+.spp-controles label { font-size: .85rem; color: var(--txt-2); display: inline-flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+.spp-hex { font-family: var(--mono); background: var(--bg); border: 1px solid var(--borde); color: var(--azul-cl); padding: .35rem .5rem; border-radius: 5px; width: 6.5rem; }
+.spp-hex:focus { outline: 2px solid var(--acento-2); outline-offset: 1px; }
+.spp-chk input { accent-color: var(--acento); width: 1.05rem; height: 1.05rem; }
+.spp-btn { background: var(--bg-3); border: 1px solid var(--borde); color: var(--txt); padding: .4rem .75rem; border-radius: 5px; cursor: pointer; font-size: .83rem; min-height: 36px; }
+.spp-btn:hover:not(:disabled), .spp-btn:focus-visible { border-color: var(--acento); outline: none; }
+.spp-btn:disabled { opacity: .4; cursor: default; }
+.spp-libro { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: .9rem; font-size: .82rem; color: var(--txt-tenue); }
+
+/* Rejilla de bits */
+.spp-bits { display: flex; flex-wrap: wrap; gap: .8rem 1.2rem; }
+.spp-byte { display: grid; grid-template-columns: 3.4rem repeat(8, minmax(0, 1fr)); gap: 2px; flex: 1 1 280px; max-width: 420px; align-items: center; }
+.spp-et { font-size: .66rem; color: var(--txt-tenue); line-height: 1.1; }
+.spp-et small { font-size: .9em; }
+.spp-bn { font-family: var(--mono); font-size: .62rem; color: var(--txt-tenue); text-align: center; }
+.spp-t { font-family: var(--mono); font-size: .72rem; padding: .3rem 0; min-height: 30px; background: var(--bg); border: 1px solid var(--borde); border-radius: 4px; color: var(--txt-2); cursor: pointer; }
+.spp-t:hover, .spp-t:focus-visible { border-color: var(--acento-2); outline: none; }
+.spp-t.spp-uno { color: var(--acento); border-color: rgba(78,201,176,.5); }
+.spp-tris { font-size: .62rem; }
+.spp-port.spp-inactivo { opacity: .45; border-style: dashed; }
+.spp-pin, .spp-lee { font-family: var(--mono); font-size: .78rem; text-align: center; color: var(--txt-tenue); padding: .15rem 0; border-radius: 3px; }
+.spp-pin.spp-sal { background: rgba(86,156,214,.12); }
+.spp-pin.spp-uno, .spp-lee.spp-uno { color: var(--amarillo); font-weight: 700; }
+.spp-lee { background: var(--bg); }
+.spp-leyenda { font-size: .76rem; color: var(--txt-tenue); margin: .5rem 0 .9rem; }
+
+/* Tarjeta */
+.spp-tarjeta { background: #17251f; border: 1px solid #2c4a3d; border-radius: 10px; padding: .7rem .9rem; margin-bottom: .9rem; }
+.spp-tarjeta-tit { font-family: var(--mono); font-size: .72rem; color: #7fb59d; letter-spacing: .06em; text-transform: uppercase; margin-bottom: .4rem; }
+.spp-hw { display: flex; flex-wrap: wrap; gap: 1rem 1.6rem; align-items: center; justify-content: space-around; }
+.spp-leds { display: flex; gap: .7rem; flex-wrap: wrap; }
+.spp-led { display: flex; flex-direction: column; align-items: center; min-width: 3.2rem; }
+.spp-led-luz { width: 30px; height: 30px; border-radius: 50%; background: #3a2526; border: 3px solid #5a3a3a; transition: background .12s, box-shadow .12s; }
+.spp-led.spp-on .spp-led-luz { background: #ff5340; border-color: var(--rojo); box-shadow: 0 0 16px 4px rgba(244,103,90,.55); }
+.spp-led-nom { font-family: var(--mono); font-weight: 700; font-size: .8rem; margin-top: .25rem; }
+.spp-led-rb { font-family: var(--mono); font-size: .66rem; color: var(--txt-tenue); }
+.spp-led-est { font-size: .66rem; color: var(--txt-2); }
+.spp-sw { display: flex; flex-direction: column; align-items: center; gap: .3rem; }
+.spp-boton { width: 84px; height: 84px; border-radius: 50%; background: var(--bg-3); border: 4px solid var(--borde); color: var(--txt); font-weight: 700; font-family: var(--mono); cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; }
+.spp-boton small { display: block; font-weight: normal; font-family: var(--sans); font-size: .6rem; color: var(--txt-tenue); margin-top: .15rem; }
+.spp-boton:focus-visible { outline: 2px solid var(--acento-2); outline-offset: 3px; }
+.spp-boton.spp-apretado { background: var(--acento); color: #06231d; border-color: var(--acento); transform: scale(.94); }
+.spp-boton.spp-apretado small { color: #06231d; }
+.spp-bloq { font-size: .76rem; color: var(--txt-2); display: inline-flex; gap: .3rem; align-items: center; }
+.spp-sw-est { font-size: .78rem; color: var(--txt-2); text-align: center; }
+.spp-nota { font-size: .74rem; color: var(--txt-tenue); margin: .6rem 0 0; }
+
+/* Lectura */
+.spp-lectura { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
+.spp-vivo { font-size: .82rem; color: var(--txt-2); }
+.spp-vivo small { font-family: var(--mono); color: var(--txt-tenue); }
+.spp-res { margin-top: .7rem; font-size: .86rem; }
+.spp-res:empty { display: none; }
+.spp-res.spp-viejo { opacity: .5; }
+.spp-res.spp-viejo::before { content: "(lectura anterior: pulsa «Leer PORTB» de nuevo)"; display: block; font-size: .74rem; color: var(--amarillo); }
+.spp-res-val { font-size: 1rem; }
+.spp-res-val strong { font-family: var(--mono); font-size: 1.25rem; color: var(--acento); }
+.spp-res-val small { font-family: var(--mono); color: var(--txt-tenue); overflow-wrap: anywhere; }
+.spp-res ul { margin: .4rem 0; padding-left: 1.2rem; color: var(--txt-2); }
+.spp-res li { margin: .2rem 0; }
+.spp-expl { background: rgba(220,220,170,.08); border: 1px solid rgba(220,220,170,.28); padding: .4rem .7rem; border-radius: 6px; color: var(--txt-2); margin: .4rem 0 0; }
+.spp-codigo { margin: .8rem 0 0; }
+
+/* Pestaña RMW */
+.spp-intro { font-size: .86rem; color: var(--txt-2); margin: 0 0 .7rem; }
+.spp-variantes { display: flex; flex-wrap: wrap; gap: .4rem 1rem; margin-bottom: .7rem; font-size: .85rem; color: var(--txt-2); }
+.spp-variantes label { display: inline-flex; align-items: center; gap: .35rem; cursor: pointer; }
+.spp-variantes input { accent-color: var(--acento); }
+.spp-rmw-cuerpo { display: flex; flex-wrap: wrap; gap: .8rem 1.4rem; align-items: center; }
+.spp-rmw-codigo { flex: 1 1 260px; min-width: 0; margin: 0; }
+.spp-rmw-codigo code.spp-l { display: block; padding: 0 .3rem; border-radius: 3px; border-left: 3px solid transparent; }
+.spp-rmw-codigo code.spp-l-act { background: rgba(78,201,176,.15); border-left-color: var(--acento); }
+.spp-rmw-estado { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.spp-rmw-regs { font-size: .82rem; color: var(--txt-2); line-height: 1.7; }
+.spp-rmw-regs code { color: var(--azul-cl); }
+.spp-pasos { display: flex; flex-wrap: wrap; gap: .4rem; margin: .8rem 0 .6rem; }
+.spp-tabla-wrap { overflow-x: auto; }
+.spp-tabla { width: 100%; min-width: 440px; border-collapse: collapse; font-size: .8rem; }
+.spp-tabla th { white-space: nowrap; }
+.spp-tabla th, .spp-tabla td { text-align: left; padding: .3rem .45rem; border-bottom: 1px solid var(--borde-2); vertical-align: top; }
+.spp-tabla th { color: var(--txt-tenue); font-weight: 600; font-size: .7rem; text-transform: uppercase; letter-spacing: .03em; }
+.spp-tabla td { font-family: var(--mono); }
+.spp-tabla code { color: var(--txt); white-space: nowrap; }
+.spp-tabla tr.spp-fila-act td { background: rgba(78,201,176,.1); }
+.spp-tabla .spp-vacio { font-family: var(--sans); color: var(--txt-tenue); }
+.spp-rmw-com { font-size: .86rem; color: var(--txt); min-height: 1.4em; margin: .6rem 0 .3rem; }
+.spp-rmw-veredicto { font-size: .9rem; margin: 0; }
+.spp-ok { color: var(--acento); }
+.spp-mal { color: var(--rojo); }

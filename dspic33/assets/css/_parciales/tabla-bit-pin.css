@@ -1,0 +1,59 @@
+/* ---------- Componente: tabla-bit-pin (Tabla 4 interactiva) ---------- */
+.mpi-tabla-bit-pin { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1rem 1.1rem; margin: 1.2rem 0; }
+.mpi-tabla-bit-pin .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .2rem; }
+.tbp-ayuda { color: var(--txt-2); font-size: .85rem; margin: .2rem 0 .8rem; }
+.tbp-ayuda strong { color: var(--amarillo); font-family: var(--mono); }
+.tbp-cuerpo-sim { display: flex; flex-wrap: wrap; gap: 1.2rem; align-items: flex-start; }
+.tbp-izq { flex: 1 1 290px; min-width: 0; }
+.tbp-reg { margin-bottom: .8rem; }
+.tbp-reg-tit { font-family: var(--mono); font-size: .82rem; color: var(--azul-cl); margin-bottom: .3rem; }
+.tbp-reg-tit small { color: var(--txt-tenue); font-family: var(--sans); font-size: .74rem; margin-left: .3rem; }
+.tbp-rejilla { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; max-width: 420px; }
+.tbp-bit { display: flex; flex-direction: column; align-items: center; padding: .2rem 0; min-height: 44px; background: var(--bg); border: 1.5px solid var(--borde); border-radius: 5px; color: var(--txt); font-family: var(--mono); cursor: pointer; line-height: 1.15; }
+.tbp-bit:hover, .tbp-bit:focus-visible { background: var(--bg-3); border-color: var(--acento-2); outline: none; }
+.tbp-bn { font-size: .58rem; color: var(--txt-tenue); }
+.tbp-id { font-size: .72rem; font-weight: 700; }
+.tbp-pn { font-size: .66rem; color: var(--num); text-align: center; }
+.tbp-pn small { display: block; font-size: .52rem; color: var(--txt-tenue); line-height: 1; }
+.tbp-bit.tbp-res, .tbp-pin.tbp-res { border-color: var(--amarillo); }
+.tbp-bit.tbp-res .tbp-id { color: var(--amarillo); }
+.tbp-bit.tbp-sel, .tbp-pin.tbp-sel { background: rgba(78,201,176,.18); border-color: var(--acento); }
+.tbp-bit.tbp-sel .tbp-id { color: var(--acento); }
+.tbp-inverso { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin: .3rem 0 .6rem; font-size: .86rem; color: var(--txt-2); }
+.tbp-pin-in, .tbp-quiz-in { font-family: var(--mono); background: var(--bg); border: 1px solid var(--borde); color: var(--azul-cl); padding: .35rem .5rem; border-radius: 5px; width: 5.5rem; }
+.tbp-pin-in:focus, .tbp-quiz-in:focus { outline: 2px solid var(--acento-2); outline-offset: 1px; }
+.tbp-info { background: var(--bg); border: 1px solid var(--borde-2); border-radius: 8px; padding: .6rem .8rem; min-height: 6.5rem; font-size: .86rem; }
+.tbp-info-tit { font-size: 1rem; margin-bottom: .3rem; }
+.tbp-info-id { font-family: var(--mono); font-weight: 700; color: var(--acento); }
+.tbp-info dl { display: grid; grid-template-columns: auto 1fr; gap: .2rem .7rem; margin: 0; }
+.tbp-info dt { color: var(--txt-tenue); font-size: .78rem; }
+.tbp-info dd { margin: 0; color: var(--txt); overflow-wrap: anywhere; }
+.tbp-info code { font-family: var(--mono); font-size: .85em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+.tbp-aviso { color: var(--amarillo); font-size: .8rem; margin: .4rem 0 0; }
+.tbp-vacio { color: var(--txt-tenue); margin: 0; }
+
+/* Chip DIP de 28 pines */
+.tbp-chip { flex: 0 1 270px; display: grid; grid-template-columns: minmax(0, 1fr) 54px minmax(0, 1fr); gap: 2px 0; margin: 0 auto; }
+.tbp-cuerpo { grid-column: 2; grid-row: 1 / span 14; background: #141414; border: 1.5px solid var(--borde); border-radius: 6px; position: relative; display: flex; align-items: center; justify-content: center; }
+.tbp-cuerpo::before { content: ""; position: absolute; top: -1px; left: 50%; width: 16px; height: 8px; margin-left: -8px; border: 1.5px solid var(--borde); border-top: none; border-radius: 0 0 8px 8px; background: var(--bg-2); }
+.tbp-cuerpo span { writing-mode: vertical-rl; transform: rotate(180deg); font-family: var(--mono); font-size: .66rem; color: var(--txt-tenue); letter-spacing: .06em; }
+.tbp-pin { display: flex; align-items: center; gap: .3rem; min-height: 24px; padding: 0 .3rem; background: var(--bg); border: 1px solid var(--borde); color: var(--txt); font-family: var(--mono); font-size: .7rem; cursor: pointer; }
+.tbp-pin:hover, .tbp-pin:focus-visible { background: var(--bg-3); border-color: var(--acento-2); outline: none; }
+.tbp-pin-izq { grid-column: 1; justify-content: flex-end; border-radius: 4px 0 0 4px; border-right: none; }
+.tbp-pin-der { grid-column: 3; justify-content: flex-start; border-radius: 0 4px 4px 0; border-left: none; }
+.tbp-pin-num { color: var(--num); min-width: 1.3rem; text-align: center; }
+.tbp-pin-np .tbp-pin-nom { color: var(--txt-tenue); }
+.tbp-pin.tbp-res .tbp-pin-nom { color: var(--amarillo); }
+.tbp-pin.tbp-sel .tbp-pin-nom { color: var(--acento); font-weight: 700; }
+
+/* Modo «pregúntame» */
+.tbp-quiz { margin-top: 1rem; border-top: 1px solid var(--borde-2); padding-top: .8rem; }
+.tbp-btn { background: var(--bg-3); border: 1px solid var(--borde); color: var(--txt); padding: .4rem .8rem; border-radius: 5px; cursor: pointer; font-size: .84rem; min-height: 36px; }
+.tbp-btn:hover, .tbp-btn:focus-visible { border-color: var(--acento); outline: none; }
+.tbp-quiz-preg { margin: .7rem 0 .4rem; }
+.tbp-quiz-preg strong { font-family: var(--mono); color: var(--acento); }
+.tbp-quiz-fila { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; font-size: .86rem; color: var(--txt-2); }
+.tbp-quiz-fb { min-height: 1.4em; margin: .5rem 0 .2rem; font-size: .9rem; }
+.tbp-quiz-fb.tbp-ok { color: var(--acento); }
+.tbp-quiz-fb.tbp-mal { color: var(--rojo); }
+.tbp-quiz-marca { font-family: var(--mono); font-size: .78rem; color: var(--txt-tenue); margin: 0; }

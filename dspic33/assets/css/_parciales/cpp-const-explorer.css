@@ -1,0 +1,65 @@
+/* ---------- Componente: cpp-const-explorer (const a un lado u otro del *) ---------- */
+.mpi-cpp-const-explorer { container-type: inline-size; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-cpp-const-explorer .mpi-sim-cab { font-family: var(--mono); font-weight: 700; color: var(--acento); font-size: 1.05rem; margin-bottom: .7rem; }
+.ce-sub { font-family: var(--sans); font-weight: 400; color: var(--txt-2); font-size: .82rem; margin-left: .4rem; }
+.mpi-cpp-const-explorer button { font-family: inherit; background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .4rem .7rem; cursor: pointer; font-size: .84rem; }
+.mpi-cpp-const-explorer button:hover { border-color: var(--acento); }
+.mpi-cpp-const-explorer button:focus-visible { outline: 2px solid var(--acento-2); outline-offset: 1px; }
+.mpi-cpp-const-explorer :not(pre) > code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+
+.mpi-cpp-const-explorer pre.ce-pre { margin: 0 0 .8rem; padding: .55rem .7rem; overflow-x: auto; }
+.mpi-cpp-const-explorer pre.ce-pre code { font-size: .8rem; background: none; padding: 0; color: var(--txt); }
+.ce-regla { font-size: .88rem; color: var(--txt-2); margin: 0 0 .9rem; line-height: 1.7; }
+.ce-chip, .ce-tok { font-family: var(--mono); font-weight: 700; padding: .05rem .35rem; border-radius: 4px; white-space: nowrap; }
+.ce-k-dato { color: var(--amarillo); background: rgba(220,220,170,.12); border: 1px solid rgba(220,220,170,.45); }
+.ce-k-ptr { color: var(--morado); background: rgba(197,134,192,.12); border: 1px solid rgba(197,134,192,.45); }
+
+/* Memoria: valores[0..4] y la posición «fin» */
+.ce-mem { margin-bottom: 1rem; }
+.ce-celdas { display: flex; flex-direction: column; gap: .25rem; }
+.ce-celda { display: grid; grid-template-columns: 5.6rem 3rem minmax(0, 1fr); align-items: center; gap: .5rem; min-width: 0; }
+.ce-idx { font-family: var(--mono); font-size: .72rem; color: var(--txt-tenue); text-align: right; }
+.ce-val { font-family: var(--mono); font-weight: 700; color: var(--num); background: var(--bg); border: 1px solid var(--borde); border-radius: 5px; padding: .15rem 0; text-align: center; }
+.ce-fin .ce-val { color: var(--txt-tenue); border-style: dashed; font-weight: 400; }
+.ce-tags { display: flex; flex-wrap: wrap; gap: .2rem; min-width: 0; }
+@container (min-width: 620px) {
+  .ce-celdas { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .4rem; }
+  .ce-celda { display: block; text-align: center; }
+  .ce-idx { text-align: center; }
+  .ce-val { padding: .3rem 0; }
+  .ce-tags { flex-direction: column; align-items: center; margin-top: .25rem; }
+}
+.ce-tag { font-family: var(--mono); font-size: .64rem; font-weight: 700; padding: 0 .3rem; border-radius: 8px; white-space: nowrap; }
+.ce-tag.ce-c0 { color: #06231d; background: var(--acento); }
+.ce-tag.ce-c1 { color: #0b1d2e; background: var(--acento-2); }
+.ce-tag.ce-c2 { color: #2a1229; background: var(--morado); }
+
+/* Tarjetas, una por puntero */
+.ce-tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: .8rem; }
+.ce-tarjeta { min-width: 0; background: var(--bg); border: 1px solid var(--borde-2); border-radius: 8px; padding: .7rem .75rem; }
+.ce-tarjeta.ce-c0 { border-color: rgba(78,201,176,.45); }
+.ce-tarjeta.ce-c1 { border-color: rgba(86,156,214,.5); }
+.ce-tarjeta.ce-c2 { border-color: rgba(197,134,192,.5); }
+.ce-tit { margin: 0 0 .4rem; font-size: .95rem; }
+.ce-decl { font-family: var(--mono); font-size: .84rem; color: var(--txt); margin-bottom: .4rem; overflow-wrap: anywhere; line-height: 1.8; }
+.ce-ast { color: var(--rojo); font-weight: 700; padding: 0 .1rem; }
+.ce-lee { font-size: .84rem; color: var(--txt-2); margin: 0 0 .55rem; }
+.ce-botones { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .5rem; }
+.ce-res:empty { display: none; }
+.ce-res { font-size: .84rem; color: var(--txt-2); }
+.mpi-cpp-const-explorer pre.ce-pre-op { margin: 0 0 .4rem; padding: .35rem .5rem; }
+.ce-veredicto { font-weight: 700; margin: 0 0 .3rem; }
+.ce-si { color: var(--acento); }
+.ce-no { color: var(--rojo); }
+.ce-error { font-family: var(--mono); font-size: .76rem; color: var(--rojo); background: rgba(244,135,113,.08); border: 1px solid rgba(244,135,113,.4); border-radius: 5px; padding: .35rem .5rem; margin-bottom: .4rem; overflow-wrap: anywhere; }
+.ce-error-nota { color: var(--txt-2); }
+.ce-error-en { color: var(--txt-tenue); font-size: .7rem; margin-top: .2rem; }
+.ce-efecto, .ce-porque { margin: 0 0 .3rem; line-height: 1.5; }
+
+.ce-pie { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .8rem; margin-top: .9rem; }
+.ce-nota { font-size: .78rem; color: var(--txt-tenue); }
+
+@media (max-width: 480px) {
+  .mpi-cpp-const-explorer { padding: .85rem; }
+  .ce-sub { display: block; margin-left: 0; }
+}

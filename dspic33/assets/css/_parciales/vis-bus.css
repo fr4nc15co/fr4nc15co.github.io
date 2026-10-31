@@ -1,0 +1,98 @@
+/* ---------- Componente: vis-bus (ciclo de lectura / escritura sobre los buses) ---------- */
+.mpi-vis-bus { container-type: inline-size; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-vis-bus .mpi-sim-cab { font-family: var(--mono); font-weight: 700; color: var(--acento); font-size: 1.05rem; margin-bottom: .7rem; }
+.vbus-sub { font-family: var(--sans); font-weight: 400; color: var(--txt-2); font-size: .82rem; margin-left: .4rem; }
+.mpi-vis-bus button { font-family: inherit; background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .4rem .8rem; cursor: pointer; font-size: .86rem; }
+.mpi-vis-bus button:hover:not(:disabled) { border-color: var(--acento); }
+.mpi-vis-bus button:disabled { opacity: .4; cursor: default; }
+.mpi-vis-bus button:focus-visible { outline: 2px solid var(--acento-2); outline-offset: 1px; }
+.mpi-vis-bus [aria-pressed="true"][data-modo] { background: rgba(78,201,176,.15); border-color: var(--acento); color: var(--acento); font-weight: 700; }
+.mpi-vis-bus .vbus-paso { background: var(--acento); color: #06231d; border-color: var(--acento); font-weight: 700; }
+.mpi-vis-bus :not(pre) > code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+.vbus-oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.vbus-modos, .vbus-controles { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: .7rem; }
+.vbus-contador { font-family: var(--mono); font-size: .78rem; color: var(--txt-tenue); margin-left: .3rem; }
+.vbus-expl { font-size: .88rem; color: var(--txt-2); background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; padding: .55rem .75rem; min-height: 3.6rem; line-height: 1.5; margin-bottom: .9rem; }
+.vbus-expl strong { color: var(--txt); }
+.vbus-t-dir { color: var(--acento); font-weight: 600; }
+.vbus-t-dat { color: var(--azul-cl); font-weight: 600; }
+.vbus-t-ctrl { color: var(--rojo); font-weight: 600; }
+
+/* Diagrama y cronograma: apilados; lado a lado si hay sitio */
+.vbus-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr); gap: .8rem; }
+@container (min-width: 700px) { .vbus-cuerpo { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.vbus-fig { margin: 0; min-width: 0; background: var(--bg); border: 1px solid var(--borde-2); border-radius: 8px; padding: .5rem; }
+.vbus-cap { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--txt-tenue); margin-top: .3rem; text-align: center; }
+.vbus-svg { display: block; width: 100%; height: auto; max-width: 520px; margin: 0 auto; font-family: var(--sans); }
+
+.vbus-caja { fill: var(--bg-2); stroke: var(--txt-tenue); stroke-width: 1.2; }
+.vbus-caja-t { fill: var(--txt); font-size: 12.5px; font-weight: 700; text-anchor: middle; }
+.vbus-reg-n { fill: var(--acento-2); font-family: var(--mono); font-size: 11px; font-weight: 700; text-anchor: middle; }
+.vbus-reg-r { fill: var(--txt-tenue); font-size: 9px; text-anchor: middle; }
+.vbus-celda { fill: var(--bg-3); stroke: var(--borde); stroke-width: 1; }
+.vbus-celda.vbus-celda-sel { stroke: var(--acento); stroke-width: 2; }
+.vbus-celda.vbus-celda-on { fill: color-mix(in srgb, var(--num) 22%, var(--bg-3)); stroke: var(--num); stroke-width: 2; }
+.vbus-celda-t { fill: var(--azul-cl); font-family: var(--mono); font-size: 11px; font-weight: 700; text-anchor: middle; }
+.vbus-mem-d { fill: var(--txt-tenue); font-family: var(--mono); font-size: 10px; }
+.vbus-mem-d.vbus-mem-d-sel { fill: var(--acento); font-weight: 700; }
+
+.vbus-bus-n { fill: var(--txt-tenue); font-size: 10px; }
+.vbus-bus-n.vbus-bus-n-on { fill: var(--txt-2); }
+.vbus-ln { stroke: var(--borde); stroke-width: 2; stroke-dasharray: 3 4; }
+.vbus-ln-on { stroke-width: 3.5; stroke-dasharray: 9 5; animation: vbus-flujo .9s linear infinite; }
+.vbus-ln-dir.vbus-ln-on { stroke: var(--acento); }
+.vbus-ln-dat.vbus-ln-on { stroke: var(--azul-cl); }
+.vbus-ln-ctrl.vbus-ln-on { stroke: var(--rojo); }
+.vbus-mk-dir { fill: var(--acento); }
+.vbus-mk-dat { fill: var(--azul-cl); }
+.vbus-mk-ctrl { fill: var(--rojo); }
+.vbus-pill rect { fill: var(--bg-2); stroke-width: 1.5; }
+.vbus-pill text { font-family: var(--mono); font-size: 11.5px; font-weight: 700; text-anchor: middle; }
+.vbus-pill-dir rect { stroke: var(--acento); } .vbus-pill-dir text { fill: var(--acento); }
+.vbus-pill-dat rect { stroke: var(--azul-cl); } .vbus-pill-dat text { fill: var(--azul-cl); }
+.vbus-pill-ctrl rect { stroke: var(--rojo); } .vbus-pill-ctrl text { fill: var(--rojo); }
+@keyframes vbus-flujo { to { stroke-dashoffset: -14; } }
+@keyframes vbus-entra { from { opacity: 0; } to { opacity: 1; } }
+.vbus-nuevo { animation: vbus-entra .6s ease-out both; }
+.vbus-ln-on.vbus-nuevo { animation: vbus-flujo .9s linear infinite, vbus-entra .6s ease-out both; }
+
+/* Cronograma */
+.vbus-cur { fill: color-mix(in srgb, var(--amarillo) 9%, transparent); }
+.vbus-rej { stroke: var(--borde-2); stroke-width: 1; }
+.vbus-paso-n { fill: var(--txt-tenue); font-family: var(--mono); font-size: 10px; text-anchor: middle; }
+.vbus-paso-n.vbus-paso-n-on { fill: var(--amarillo); font-weight: 700; }
+.vbus-crono-n { font-family: var(--mono); font-size: 10.5px; font-weight: 700; }
+.vbus-c-dir { fill: var(--acento); }
+.vbus-c-dat { fill: var(--azul-cl); }
+.vbus-c-ctrl { fill: var(--rojo); }
+.vbus-pend { stroke: var(--borde); stroke-width: 1; stroke-dasharray: 2 4; }
+.vbus-w { fill: none; stroke-width: 2; }
+.vbus-w-off { stroke: var(--txt-tenue); }
+.vbus-w-z { stroke: var(--txt-tenue); stroke-dasharray: 4 3; }
+.vbus-w-ctrl { stroke: var(--rojo); }
+.vbus-w-t { fill: var(--rojo); font-size: 9px; }
+.vbus-banda { stroke-width: 1.5; }
+.vbus-banda-dir { fill: color-mix(in srgb, var(--acento) 16%, transparent); stroke: var(--acento); }
+.vbus-banda-dat { fill: color-mix(in srgb, var(--azul-cl) 16%, transparent); stroke: var(--azul-cl); }
+.vbus-banda-t { font-family: var(--mono); font-size: 10.5px; font-weight: 700; text-anchor: middle; }
+
+/* Tabla de pasos */
+.vbus-tabla-wrap { overflow-x: auto; max-width: 100%; margin-top: .9rem; }
+.vbus-tabla { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.vbus-tabla th { text-align: left; color: var(--txt-tenue); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; padding: .25rem .45rem; border-bottom: 1px solid var(--borde); }
+.vbus-tabla td { padding: .3rem .45rem; border-bottom: 1px solid var(--borde-2); color: var(--txt-tenue); }
+.vbus-tabla .vbus-fila-hecha td { color: var(--txt-2); }
+.vbus-tabla .vbus-fila-on td { color: var(--txt); background: rgba(78,201,176,.10); }
+.vbus-tv { font-family: var(--mono); white-space: nowrap; }
+.vbus-fila-on .vbus-tv { color: var(--num) !important; font-weight: 700; }
+
+@media (prefers-reduced-motion: reduce) {
+  .vbus-ln-on, .vbus-nuevo, .vbus-ln-on.vbus-nuevo { animation: none; }
+}
+@media (max-width: 480px) {
+  .mpi-vis-bus { padding: .85rem; }
+  .vbus-sub { display: block; margin-left: 0; }
+  .vbus-tv { white-space: normal; }
+  .vbus-tabla td { padding: .3rem .3rem; }
+}

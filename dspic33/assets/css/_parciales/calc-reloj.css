@@ -1,0 +1,64 @@
+/* ---------- Componente: calc-reloj (FRC → PLL → FOSC → FCY) ---------- */
+.mpi-calc-reloj { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1rem 1.1rem; margin: 1.2rem 0; }
+.mpi-calc-reloj .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .3rem; }
+.cr-formula { font-family: var(--mono); font-size: .8rem; color: var(--txt-2); margin: 0 0 .8rem; overflow-wrap: anywhere; }
+
+.cr-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .7rem 1rem; }
+.cr-campo { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
+.cr-campo label { font-size: .85rem; color: var(--txt-2); }
+.cr-campo small { font-size: .72rem; color: var(--txt-tenue); }
+.cr-campo-m { grid-column: span 2; }
+.cr-m-fila { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+.cr-m-fila .cr-m { flex: 0 0 5.5rem; }
+.cr-m-rango { flex: 1 1 auto; min-width: 0; accent-color: var(--acento); }
+.cr-form input[type=text], .cr-form input[type=number], .cr-form select {
+  font-family: var(--mono); font-size: .9rem; background: var(--bg); border: 1px solid var(--borde); color: var(--azul-cl);
+  padding: .35rem .5rem; border-radius: 5px; width: 100%; min-width: 0; }
+.cr-form input:focus-visible, .cr-form select:focus-visible, .cr-botones button:focus-visible, .cr-m-rango:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 1px; }
+.cr-form input[aria-invalid="true"] { border-color: var(--rojo); }
+
+.cr-botones { display: flex; flex-wrap: wrap; gap: .5rem; margin: .9rem 0 .3rem; }
+.cr-botones button { background: var(--bg-3); border: 1px solid var(--borde); color: var(--txt); padding: .4rem .8rem; border-radius: 6px; cursor: pointer; font-size: .82rem; font-family: inherit; }
+.cr-botones button:hover { border-color: var(--acento); }
+.cr-botones .cr-curso { background: var(--acento); border-color: var(--acento); color: #06231d; font-weight: 700; }
+.cr-error { color: var(--rojo); font-size: .84rem; margin: .3rem 0; min-height: 0; }
+.cr-error:empty { display: none; }
+
+/* Cadena FIN → ÷N1 → ×M → ÷N2 → ÷2 */
+.cr-cadena { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; margin: .8rem 0; }
+.cr-caja { display: flex; flex-direction: column; background: var(--bg); border: 1px solid var(--borde); border-radius: 6px; padding: .3rem .5rem; min-width: 0; }
+.cr-caja-tit { font-size: .66rem; text-transform: uppercase; letter-spacing: .04em; color: var(--txt-tenue); }
+.cr-caja-val { font-family: var(--mono); font-size: .8rem; color: var(--num); white-space: nowrap; }
+.cr-caja-mal { border-color: var(--rojo); }
+.cr-caja-mal .cr-caja-val { color: var(--rojo); }
+.cr-op { font-family: var(--mono); font-size: .8rem; color: var(--acento-2); }
+
+.cr-tabla { border-collapse: collapse; width: 100%; font-size: .88rem; }
+.cr-tabla th, .cr-tabla td { text-align: left; padding: .35rem .5rem .35rem 0; border-bottom: 1px solid var(--borde-2); vertical-align: top; }
+.cr-tabla th { color: var(--txt-2); font-weight: 500; }
+.cr-tabla td { font-family: var(--mono); color: var(--txt); }
+.cr-tabla td b { color: var(--acento); }
+.cr-tabla td small { color: var(--txt-tenue); }
+.cr-tabla td.cr-est { font-family: var(--sans); font-size: .8rem; }
+.cr-ok { color: var(--acento); }
+.cr-aviso { color: var(--amarillo); }
+
+.cr-regs, .cr-aprox { margin-top: .8rem; font-size: .86rem; }
+.cr-regs-tit { font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; color: var(--txt-tenue); margin-bottom: .3rem; }
+.cr-regs ul { margin: 0; padding-left: 1.1rem; }
+.cr-regs li { margin: .15rem 0; }
+.cr-regs code { font-family: var(--mono); color: var(--azul-cl); }
+.cr-regs b, .cr-aprox b { font-family: var(--mono); color: var(--num); }
+.cr-bin { font-family: var(--mono); font-size: .78rem; color: var(--txt-tenue); }
+.cr-aprox p { margin: .2rem 0; }
+.cr-nota { color: var(--txt-2); font-size: .82rem; }
+
+@media (max-width: 520px) {
+  .mpi-calc-reloj { padding: .9rem .75rem; }
+  .cr-form { grid-template-columns: 1fr 1fr; }
+  .cr-campo-m, .cr-campo-n2 { grid-column: 1 / -1; }
+  /* La tabla pasa a filas apiladas para no desbordar a 360 px */
+  .cr-tabla, .cr-tabla tbody, .cr-tabla tr, .cr-tabla th, .cr-tabla td { display: block; }
+  .cr-tabla tr { border-bottom: 1px solid var(--borde-2); padding: .3rem 0; }
+  .cr-tabla th, .cr-tabla td { border: 0; padding: .05rem 0; }
+}

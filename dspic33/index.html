@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Microprocesadores · dsPIC33FJ32MC202</title>
+  <link rel="stylesheet" href="assets/css/estilos.css">
+  <!-- Google tag (gtag.js) + Consent Mode v2 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-M022B3BJJS"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    // Por defecto sin consentimiento (RGPD/LSSI): no se usan cookies de analítica
+    gtag('consent', 'default', {
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'ad_personalization': 'denied',
+      'analytics_storage': 'denied',
+      'wait_for_update': 500
+    });
+    gtag('js', new Date());
+    gtag('config', 'G-M022B3BJJS');
+    // Aplica el consentimiento previo si el usuario ya lo dio
+    try {
+      if (localStorage.getItem('cookie-consent') === 'granted') {
+        gtag('consent', 'update', { 'analytics_storage': 'granted' });
+      }
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <button id="mpi-menu-btn" type="button" aria-label="Menú">☰</button>
+  <div class="mpi-layout">
+    <aside class="mpi-sidebar">
+      <a class="mpi-marca" href="#/">
+        <span class="mpi-marca-chip">dsPIC33</span>
+        <span class="mpi-marca-txt">Microprocesadores · GITI</span>
+      </a>
+      <nav id="mpi-nav" aria-label="Temas"></nav>
+      <footer class="mpi-pie">Material de estudio · GITI · ICAI<br>Basado en el libro «Microprocesadores» v10.0 de Á. Sánchez Miralles y F. M. Martín Martínez<br><a href="/privacidad.html" style="color:inherit">Política de privacidad y cookies</a></footer>
+    </aside>
+    <main id="mpi-main" class="mpi-main"></main>
+  </div>
+
+  <!-- Sin build, sin módulos ES, sin CDN: funciona bajo file:// y en GitHub Pages -->
+  <!-- 1) Resaltador de código: C y C++ (lang-c y lang-cpp). Los bloques asm/scl van sin resaltar. -->
+  <script src="assets/js/resaltar-c.js"></script>
+  <!-- 2) Datos compartidos (registros curados para visor-bits; cada tema añade los suyos en su .js) -->
+  <script src="datos/registros.js"></script>
+  <!-- 3) Componentes (genéricos + los que crees para tu asignatura) -->
+  <script src="assets/js/componentes/visor-bits.js"></script>
+  <script src="assets/js/componentes/ejercicio-driver.js"></script>
+  <!-- Interactivos de la asignatura (CSS en assets/css/_parciales/, fusionado con herramientas/fusionar_css.py) -->
+  <script src="assets/js/componentes/pinout-dspic.js"></script>
+  <script src="assets/js/componentes/calc-reloj.js"></script>
+  <script src="assets/js/componentes/tabla-bit-pin.js"></script>
+  <script src="assets/js/componentes/sim-puertos-pictrainer.js"></script>
+  <script src="assets/js/componentes/sim-calculadora-3bits.js"></script>
+  <script src="assets/js/componentes/calc-mascaras.js"></script>
+  <script src="assets/js/componentes/vis-punteros.js"></script>
+  <script src="assets/js/componentes/sim-timer-dspic.js"></script>
+  <script src="assets/js/componentes/traza-calendario.js"></script>
+  <script src="assets/js/componentes/decod-instruccion-16.js"></script>
+  <script src="assets/js/componentes/sim-fetch-execute.js"></script>
+  <script src="assets/js/componentes/vis-bus.js"></script>
+  <script src="assets/js/componentes/visor-mapa-memoria.js"></script>
+  <script src="assets/js/componentes/sim-direccionamiento.js"></script>
+  <script src="assets/js/componentes/conv-signo.js"></script>
+  <script src="assets/js/componentes/vis-flags.js"></script>
+  <script src="assets/js/componentes/tabla-bra.js"></script>
+  <script src="assets/js/componentes/dspic-cpu.js"></script>
+  <script src="assets/js/componentes/sim-asm-dspic.js"></script>
+  <script src="assets/js/componentes/sim-interrupcion.js"></script>
+  <script src="assets/js/componentes/traza-puerta-domotica.js"></script>
+  <script src="assets/js/componentes/calc-u1brg.js"></script>
+  <script src="assets/js/componentes/trama-uart.js"></script>
+  <script src="assets/js/componentes/cola-circular.js"></script>
+  <script src="assets/js/componentes/sim-adc-dspic.js"></script>
+  <script src="assets/js/componentes/calc-tiempos-adc.js"></script>
+  <script src="assets/js/componentes/sim-servo.js"></script>
+  <script src="assets/js/componentes/sim-puente-h.js"></script>
+  <script src="assets/js/componentes/vis-rs232.js"></script>
+  <script src="assets/js/componentes/sim-fsm-dspic.js"></script>
+  <script src="assets/js/componentes/vis-muestreo-mcd.js"></script>
+  <script src="assets/js/componentes/sinfonia-player.js"></script>
+  <script src="assets/js/componentes/conv-unidades-scl.js"></script>
+  <script src="assets/js/componentes/sim-pwm-dspic.js"></script>
+  <script src="assets/js/componentes/sim-encoder.js"></script>
+  <script src="assets/js/componentes/mini-scl.js"></script>
+  <script src="assets/js/componentes/arbol-diagnostico.js"></script>
+  <script src="assets/js/componentes/pictrainer-board.js"></script>
+  <script src="assets/js/componentes/cpp-ciclo-vida.js"></script>
+  <script src="assets/js/componentes/cpp-const-explorer.js"></script>
+  <script src="assets/js/componentes/cpp-list-vector.js"></script>
+  <script src="assets/js/componentes/cpp-string-explorer.js"></script>
+  <script src="assets/js/componentes/cpp-shared-ptr.js"></script>
+  <script src="assets/js/componentes/cpp-herencia.js"></script>
+  <!-- 4) Registro de temas + contenido de cada tema (generados desde datos/_specs/) -->
+  <script src="assets/js/temas.js"></script>
+  <!-- TEMAS -->
+  <script src="datos/temas/introduccion-dspic.js"></script>
+  <script src="datos/temas/programacion-c-micros.js"></script>
+  <script src="datos/temas/puertos-paralelo.js"></script>
+  <script src="datos/temas/timers.js"></script>
+  <script src="datos/temas/interrupciones-timer.js"></script>
+  <script src="datos/temas/arquitectura-micro.js"></script>
+  <script src="datos/temas/arquitectura-dspic.js"></script>
+  <script src="datos/temas/ensamblador.js"></script>
+  <script src="datos/temas/uart.js"></script>
+  <script src="datos/temas/drivers.js"></script>
+  <script src="datos/temas/conversor-ad.js"></script>
+  <script src="datos/temas/organizacion-sistema-digital.js"></script>
+  <script src="datos/temas/sistemas-digitales-complejos.js"></script>
+  <script src="datos/temas/pwm.js"></script>
+  <script src="datos/temas/encoders.js"></script>
+  <script src="datos/temas/depuracion-simulador.js"></script>
+  <script src="datos/temas/laboratorio-pictrainer.js"></script>
+  <script src="datos/temas/cpp-clases-objetos.js"></script>
+  <script src="datos/temas/cpp-stl.js"></script>
+  <script src="datos/temas/cpp-moderno.js"></script>
+  <script src="datos/temas/cpp-herencia-polimorfismo.js"></script>
+  <!-- /TEMAS -->
+  <!-- 5) Núcleo (router) y buscador. Modo examen desactivado (assets/js/examen.js no se carga). -->
+  <script src="assets/js/buscador.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    // Menú lateral en móvil
+    (function () {
+      var btn = document.getElementById('mpi-menu-btn');
+      var lay = document.querySelector('.mpi-layout');
+      btn.addEventListener('click', function () { lay.classList.toggle('mpi-sidebar-abierta'); });
+      document.getElementById('mpi-main').addEventListener('click', function () { lay.classList.remove('mpi-sidebar-abierta'); });
+    })();
+  </script>
+  <script src="/cookies.js" data-purpose="y saber qué temas son más útiles" defer></script>
+</body>
+</html>

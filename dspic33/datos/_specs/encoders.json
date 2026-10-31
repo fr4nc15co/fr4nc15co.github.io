@@ -1,0 +1,528 @@
+{
+  "slug": "encoders",
+  "titulo": "Módulo de encoders (QEI)",
+  "temaNum": 15,
+  "lenguaje": "c",
+  "lead": "Un <strong>encoder</strong> es un sensor que mide la posición del eje de un motor; trabaja muy rápido y descodificarlo por programa ocuparía mucho tiempo de CPU, así que el dsPIC33FJ32MC202 incluye un módulo hardware para él, el <strong>QEI</strong> (<em>Quadrature Encoder Interface</em>). En este tema verás para qué sirve un encoder incremental (canales A, B e índice, sentido de giro, modos x2 y x4) y cómo se maneja el módulo —remapeo de sus entradas, registros <code class=\"reg\">QEICON</code>, <code class=\"reg\">POSCNT</code> y <code class=\"reg\">MAXCNT</code> e interrupción— para hacer programas con él.",
+  "secciones": [
+    {
+      "titulo": "15.1 Principios generales de los encoders",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Un <strong>encoder</strong> es un sistema de control de la posición del eje de un motor. Hay varios tipos, pero los más comunes son los <strong>encoders incrementales</strong> (o paso a paso). Aquí se explica su funcionamiento desde el punto de vista del programador, no los principios eléctricos y mecánicos.</p><p>Un encoder incremental es un disco solidario al eje con <strong>N ranuras</strong> repartidas por su perímetro, y unos detectores ópticos que entregan hasta <strong>tres canales</strong>:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Canal A (QEA)</strong> y <strong>canal B (QEB)</strong>: dos señales cuadradas con el mismo número de pulsos por vuelta, <strong>desfasadas 90° eléctricos</strong> entre sí (están «en cuadratura»). Por eso el módulo se llama <em>Quadrature Encoder Interface</em> (QEI).",
+            "<strong>Índice (INDX)</strong>: una señal plana que da <strong>un pulso por vuelta</strong>, en el instante en que la referencia del rotor pasa por el origen. Marca que el eje ha dado una vuelta completa."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El número de pulsos de A y de B en una vuelta es fijo y lo fija el <strong>número de ranuras</strong> del encoder. Los hay desde 16 hasta 4000 ranuras o más. Un encoder de 1000 ranuras da 1000 pulsos en A y 1000 en B antes de dar un pulso en el índice.</p><h3>Sentido de giro: quién adelanta a quién</h3><p>Como A y B están desfasadas un cuarto de periodo, el orden en que cambian indica el sentido: si el <strong>canal A va adelantado</strong> respecto al B, el motor gira en <strong>sentido positivo</strong> (la cuenta sube); si es B el que adelanta a A, gira en sentido negativo (la cuenta baja). La figura del libro (tomada de Microchip) lo muestra con los estados del par (A, B) en cada cuarto de ciclo:</p><table class=\"tabla-datos\"><thead><tr><th>Giro</th><th>Quién adelanta</th><th>Secuencia de estados (A B)</th><th>Cuenta (POSCNT)</th></tr></thead><tbody><tr><td>Positivo (<em>forward</em>)</td><td>A adelanta a B</td><td><code>01 → 00 → 10 → 11 → 01</code> …</td><td>Sube (UPDN = 1)</td></tr><tr><td>Negativo (<em>reverse</em>)</td><td>B adelanta a A</td><td><code>11 → 10 → 00 → 01 → 11</code> …</td><td>Baja (UPDN = 0)</td></tr></tbody></table><p>En cada transición cambia <strong>un solo</strong> canal (código Gray), así que el módulo sabe en todo momento hacia dónde se mueve el eje. En la figura del libro el pulso de índice dura medio ciclo: está activo durante dos estados seguidos (00 y 10), los dos con B a 0.</p><h3>Resolución: modos x2 y x4</h3><p>Cada ranura produce un periodo completo de A y de B, es decir, <strong>cuatro flancos</strong> (subida y bajada de A, subida y bajada de B). El módulo puede contar:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Modo x2</strong>: dos cuentas por pulso, una en el flanco de subida y otra en el de bajada. Una vuelta = <strong>2·N cuentas</strong>.",
+            "<strong>Modo x4</strong>: cuatro cuentas por pulso, una por cada flanco de subida y de bajada de los dos canales. Una vuelta = <strong>4·N cuentas</strong>."
+          ]
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Cuentas por vuelta y resolución angular de un encoder de N ranuras (k = 2 en modo x2, k = 4 en modo x4):</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>cuentas</mi><mtext>vuelta</mtext></msub><mo>=</mo><mi>k</mi><mo>·</mo><mi>N</mi><mspace width=\"2em\"/><mi>Δθ</mi><mo>=</mo><mfrac><mrow><mn>360</mn><mo>°</mo></mrow><mrow><mi>k</mi><mo>·</mo><mi>N</mi></mrow></mfrac></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Por ejemplo, con el encoder de 4000 ranuras del ejemplo del libro: en x2 son 8000 cuentas por vuelta (0,045° por cuenta) y en x4, 16 000 (0,0225°). El módulo QEI hace todo este trabajo por hardware: los encoders trabajan muy rápido y descodificarlos por programa consumiría mucho tiempo de CPU.</p><p>Gira la rueda en el simulador de 15.4 y observa cómo se suceden los estados de A y B en cada sentido.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "15.2 Puertos asociados",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El módulo de encoders no está asociado a ningún pin concreto del micro: sus tres entradas son <strong>remapeables</strong> (<em>Peripheral Pin Select</em>, PPS) y hay que asignarlas a pines RPn antes de usarlo:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>INDX</strong>: entrada del índice del encoder.",
+            "<strong>QEA</strong>: entrada del canal A del encoder.",
+            "<strong>QEB</strong>: entrada del canal B del encoder."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Son <em>entradas</em>, y las entradas se remapean <strong>por periférico</strong> (igual que U1RX en el tema de la UART): cada entrada tiene un campo de 5 bits que dice de qué pin RPn lee. Según la tabla 10-1 y el mapa de registros (tabla 4-16) del datasheet:</p><table class=\"tabla-datos\"><thead><tr><th>Entrada</th><th>Registro</th><th>Campo</th><th>Dirección</th><th>Reset</th></tr></thead><tbody><tr><td>QEA (canal A)</td><td><code class=\"reg\">RPINR14</code></td><td>QEA1R&lt;4:0&gt; (bits 4-0)</td><td rowspan=\"2\">0x069C</td><td rowspan=\"2\">0x1F1F</td></tr><tr><td>QEB (canal B)</td><td><code class=\"reg\">RPINR14</code></td><td>QEB1R&lt;4:0&gt; (bits 12-8)</td></tr><tr><td>INDX (índice)</td><td><code class=\"reg\">RPINR15</code></td><td>INDX1R&lt;4:0&gt; (bits 4-0)</td><td>0x069E</td><td>0x001F</td></tr></tbody></table><p>El valor de reset 31 (<code>11111</code>) conecta la entrada a V<sub>SS</sub>: sin remapeo el módulo no ve ningún flanco y <code class=\"reg\">POSCNT</code> no se mueve. Escribiendo <em>n</em> (0 a 15 en este micro) la entrada lee del pin RP<em>n</em>, que en el dsPIC33FJ32MC202 es el pin RB<em>n</em>.</p><h3>Ampliación: qué pines usar en la PicTrainer</h3><p>El libro dice que hay que remapear, pero no muestra el código. Para elegir los pines hay que descartar los que ya usa la tarjeta:</p><table class=\"tabla-datos\"><thead><tr><th>Pines</th><th>Uso en la PicTrainer</th><th>¿Para el encoder?</th></tr></thead><tbody><tr><td>RB0, RB1 (RP0, RP1)</td><td>PGED1/PGEC1: programación y depuración (conector P4)</td><td>No</td></tr><tr><td>RB2 (RP2)</td><td>Pulsador SW2 (JP1)</td><td>No</td></tr><tr><td>RB3 (RP3)</td><td>Potenciómetro RV1, AN5 (JP2)</td><td>No</td></tr><tr><td>RB4, RB5 (RP4, RP5)</td><td>UART: U1TX y U1RX</td><td>No</td></tr><tr><td><strong>RB6, RB7, RB8</strong> (RP6-RP8, pines 15-17)</td><td>Libres, en los conectores de expansión (P7/P8)</td><td><strong>Sí: QEA, QEB e INDX</strong></td></tr><tr><td>RB9 (RP9)</td><td>Libre (SDA1 del I<sup>2</sup>C, PWM2L1)</td><td>Reserva</td></tr><tr><td>RB10, RB11 (RP10, RP11)</td><td>Libres; son PWM1H3/PWM1L3</td><td>Mejor reservarlos para el PWM del motor</td></tr><tr><td>RB12-RB15 (RP12-RP15)</td><td>LEDs D9-D6 (activos a nivel bajo, JP3)</td><td>No</td></tr></tbody></table><p>Se eligen <strong>RB6 → QEA</strong>, <strong>RB7 → QEB</strong> y <strong>RB8 → INDX</strong>: son tres pines libres seguidos, no tienen función analógica (las entradas AN0-AN5 están en RA0, RA1 y RB0-RB3, así que <code class=\"reg\">AD1PCFGL</code> no les afecta) y dejan RB10/RB11 para la salida PWM1H3/PWM1L3 que normalmente moverá el motor cuyo eje mide el encoder. A cambio se renuncia a INT0 (RB7), a SCL1 del I<sup>2</sup>C y PWM2H1 (RB8) y al canal 3 de depuración (PGEC3 = RB6), que el curso no usa.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Propuesta de remapeo (ampliación: no está en el libro). Sigue el mismo patrón que el remapeo de la UART: desbloquear, asignar y volver a bloquear.</p>",
+          "codigo": "void remapea_encoder(void)\n{\n    __builtin_write_OSCCONL(OSCCON & ~0x40); // Desbloquea el remapeo PPS (IOLOCK = 0)\n    RPINR14bits.QEA1R = 6;                   // QEA lee del pin 15, que es RP6 (RB6)\n    RPINR14bits.QEB1R = 7;                   // QEB lee del pin 16, que es RP7 (RB7)\n    RPINR15bits.INDX1R = 8;                  // INDX lee del pin 17, que es RP8 (RB8)\n    __builtin_write_OSCCONL(OSCCON | 0x40);  // Bloquea el remapeo (IOLOCK = 1)\n}\n\n/* Equivalente escribiendo los registros completos:\n   RPINR14 = 0x0706;   // QEB1R = 7 (bits 12-8), QEA1R = 6 (bits 4-0)\n   RPINR15 = 0x0008;   // INDX1R = 8 (bits 4-0)                      */"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>Las entradas siguen necesitando TRIS.</strong> El remapeo no toca <code class=\"reg\">TRISB</code>: RB6-RB8 deben ser entradas (bit a 1). La plantilla del curso <code>TRISB = 0x0FFF</code> ya lo cumple.",
+            "<strong>Un solo bloque de remapeo.</strong> Con el bit de configuración IOL1WAY a 1 (su valor por defecto, datasheet 10.6.3.3) IOLOCK solo puede desbloquearse una vez tras el reset. Si el programa usa también la UART, todo el remapeo (U1RX, U1TX, QEA, QEB, INDX) debe ir en el mismo bloque entre desbloqueo y bloqueo.",
+            "<strong>Niveles de tensión.</strong> La PicTrainer trabaja a 3,3 V. Según el diagrama de pines del datasheet (encapsulado de 28 pines), los pines 15, 16 y 17 (RB6, RB7 y RB8) son tolerantes a 5 V, así que, como entradas digitales, admiten un encoder con salidas de 5 V; con otros pines habría que comprobarlo o adaptar los niveles."
+          ]
+        }
+      ]
+    },
+    {
+      "titulo": "15.3 Registros del módulo de encoders",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El módulo de encoders lleva asociados tres registros:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<code class=\"reg\">QEICON</code>: registro de 16 bits que controla el modo de funcionamiento del encoder.",
+            "<code class=\"reg\">MAXCNT</code>: almacena la máxima cuenta a la que puede llegar el encoder; después vuelve a empezar desde 0.",
+            "<code class=\"reg\">POSCNT</code>: cuenta del encoder."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<table class=\"tabla-datos\"><thead><tr><th>Tipo</th><th>Registros (libro)</th><th>Nombre en el datasheet · dirección</th></tr></thead><tbody><tr><td>Registros de datos</td><td><code class=\"reg\">MAXCNT</code>, <code class=\"reg\">POSCNT</code></td><td>MAX1CNT · 0x01E6 (reset 0xFFFF); POS1CNT · 0x01E4 (reset 0x0000)</td></tr><tr><td>Registros de control</td><td><code class=\"reg\">QEICON</code></td><td>QEI1CON · 0x01E0 (reset 0x0000)</td></tr><tr><td>Registros de control de interrupciones</td><td><code class=\"reg\">IFS3</code>, <code class=\"reg\">IEC3</code>, <code class=\"reg\">IPC13</code></td><td>QEIIF = <code class=\"reg\">IFS3</code>&lt;10&gt;, QEIIE = <code class=\"reg\">IEC3</code>&lt;10&gt;, QEIIP = <code class=\"reg\">IPC14</code>&lt;10:8&gt;</td></tr></tbody></table><p>El datasheet (tabla 4-10, «QEI1 register map») añade un cuarto registro que el libro no menciona, <code class=\"reg\">DFLTCON</code> (DFLT1CON, 0x01E2): un <strong>filtro digital</strong> de ruido para las entradas QEA, QEB e INDX (bits QEOUT y QECK&lt;2:0&gt;), la condición de A y B que debe cumplirse con el índice (IMV&lt;1:0&gt;) y el bit CEID, que deshabilita la interrupción por error de cuenta. Con su valor de reset (0x0000) el filtro está desactivado, que es como se usa el módulo en el curso; ojo: con CEID = 0 los errores de cuenta también pueden provocar la interrupción del QEI.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>15.3.1 QEICON</h3><p>Este registro controla el módulo QEI (<em>quadrature encoder interface</em>) del microcontrolador. Contiene todos los bits de control y estado del módulo. Los más importantes son:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong>CNTERR</strong> (bit 15): flag que indica que se ha producido un error en la cuenta.",
+            "<strong>UPDN</strong> (bit 11): bit de lectura que permite conocer el sentido de rotación del motor (solo si el bit 10 está a 1, es decir, con el módulo en modo encoder). 1 = sentido positivo, 0 = negativo.",
+            "<strong>QEIM</strong> (bits 10-8): modo de funcionamiento. Permiten habilitar el módulo e indicar en qué momento salta la interrupción asociada: en cada pulso del índice o cada vez que la cuenta alcance un valor concreto (MAXCNT).<ul><li><strong>Bit 10</strong>: a 1, el módulo QEI está activado.</li><li><strong>Bit 9</strong>: a 0, resolución <strong>x2</strong> (dos cuentas por pulso, una en el flanco de bajada y otra en el de subida); a 1, resolución <strong>x4</strong> (cuatro cuentas por pulso, una por flanco de subida y de bajada de cada canal).</li><li><strong>Bit 8</strong>: a 1, la cuenta se pone a cero cada vez que alcanza el valor de <code class=\"reg\">MAXCNT</code>; a 0, la cuenta se pone a cero cada vez que llega un pulso por el índice.</li></ul>",
+            "<strong>SWPAB</strong> (bit 7): intercambia los canales A y B. A 0 por defecto (no se intercambian). Útil si el encoder está cableado al revés: cambia el signo del sentido de giro sin tocar el cableado.",
+            "<strong>TQCKPS</strong> (bits 4-3): pre-escalado del módulo, para que la cuenta no se incremente tan rápido. Útil si el encoder es de muchas líneas (más de 4000).",
+            "<strong>POSRES</strong> (bit 2): habilita el reset de la cuenta cada vez que llega un pulso por el índice. A 1 para habilitarlo.",
+            "<strong>TQCS</strong> (bit 1): elige como fuente de reloj el reloj interno (0) o uno de los canales A o B (1)."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El datasheet (registro 16-1) completa la tabla de modos QEIM&lt;2:0&gt;, que confirma el significado bit a bit del libro:</p><table class=\"tabla-datos\"><thead><tr><th>QEIM&lt;2:0&gt;</th><th>Modo</th><th>Reset de POSCNT</th><th>QEICON típico</th></tr></thead><tbody><tr><td><code>000</code></td><td>QEI y timer apagados</td><td>—</td><td><code>0x0000</code></td></tr><tr><td><code>001</code></td><td>Timer/contador de 16 bits (no se usa en el curso)</td><td>—</td><td>—</td></tr><tr><td><code>010</code>, <code>011</code></td><td>Sin uso (módulo apagado)</td><td>—</td><td>—</td></tr><tr><td><code>100</code></td><td>Encoder <strong>x2</strong></td><td>Por <strong>índice</strong> (si POSRES = 1)</td><td><code>0x0404</code> (con POSRES) · <code>0x0400</code> (sin POSRES)</td></tr><tr><td><code>101</code></td><td>Encoder <strong>x2</strong></td><td>Al alcanzar <strong>MAXCNT</strong></td><td><code>0x0500</code></td></tr><tr><td><code>110</code></td><td>Encoder <strong>x4</strong></td><td>Por <strong>índice</strong> (si POSRES = 1)</td><td><code>0x0604</code> (con POSRES) · <code>0x0600</code> (sin POSRES)</td></tr><tr><td><code>111</code></td><td>Encoder <strong>x4</strong></td><td>Al alcanzar <strong>MAXCNT</strong></td><td><code>0x0700</code></td></tr></tbody></table><p>Los tres valores que usa el driver de 15.4 se descodifican así: <code>0x0404</code> = <code>0000 0100 0000 0100</code> → QEIM = 100 y POSRES = 1: <strong>x2 con reset por índice</strong>; <code>0x0500</code> = <code>0000 0101 0000 0000</code> → QEIM = 101: <strong>x2 con reset por MAXCNT</strong>; <code>0x0400</code> → QEIM = 100 y POSRES = 0: <strong>x2 en modo índice, pero el índice no resetea la cuenta</strong>. Los tres son x2, coherente con el <code>MAXCNT = 2*n_ranuras-1</code> del driver.</p><p>Pulsa los bits para ver cómo cambia el modo. El valor montado es el de la Figura 120, <code>0x0404</code>:</p>"
+        },
+        {
+          "tipo": "registro",
+          "registro": "QEICON",
+          "valor": "0x0404"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>15.3.2 POSCNT</h3><p>Es la cuenta del encoder (registro de 16 bits, POS1CNT en el datasheet, dirección 0x01E4). Su valor se irá incrementando (o decrementando, si el eje gira en sentido negativo) hasta un valor máximo definido (<code class=\"reg\">MAXCNT</code>) o hasta que llegue un pulso por el canal índice; lo determinan los bits QEIM de <code class=\"reg\">QEICON</code>. También se puede escribir, por ejemplo para ponerla a cero al arrancar.</p><p>El valor de la cuenta depende del encoder empleado. Así, un encoder de N ranuras con el microcontrolador trabajando a resolución x4 da 4·N cuentas por vuelta: como la cuenta empieza en 0, el valor máximo que llega a leerse en <code class=\"reg\">POSCNT</code> es 4·N − 1.</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Lectura de POSCNT.</strong> El datasheet (16.2) advierte que <code class=\"reg\">POSCNT</code> admite accesos de byte, pero que leerlo por bytes puede dar valores actualizados a medias si el contador está contando entre las dos lecturas. Desde C se lee siempre como palabra de 16 bits (<code>return POSCNT;</code>) y el problema no aparece."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>15.3.3 MAXCNT</h3><p>Registro de 16 bits (MAX1CNT en el datasheet, dirección 0x01E6, reset 0xFFFF) que contiene el valor máximo al que puede llegar la cuenta del encoder (<code class=\"reg\">POSCNT</code>) si dicha función está habilitada (bit 8 del registro <code class=\"reg\">QEICON</code> a 1, QEIM = 101 o 111).</p><p>Para que la cuenta dé exactamente una vuelta entre 0 y <code class=\"reg\">MAXCNT</code> hay que cargar el número de cuentas por vuelta menos uno:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Valor de <code class=\"reg\">MAXCNT</code> para un encoder de N ranuras (reset por MAXCNT):</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mi>MAXCNT</mi><mo>=</mo><mn>2</mn><mo>·</mo><mi>N</mi><mo>−</mo><mn>1</mn><mspace width=\"0.5em\"/><mtext>(x2)</mtext><mspace width=\"2em\"/><mi>MAXCNT</mi><mo>=</mo><mn>4</mn><mo>·</mo><mi>N</mi><mo>−</mo><mn>1</mn><mspace width=\"0.5em\"/><mtext>(x4)</mtext></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Con 4000 ranuras: 2 · 4000 − 1 = 7999 = <code>0x1F3F</code> en x2, y 4 · 4000 − 1 = 15 999 = <code>0x3E7F</code> en x4. Con un encoder de más de 16 384 ranuras, 4·N − 1 ya no cabe en 16 bits y habría que usar x2 (o ampliar la cuenta por software, como en 15.5).</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "15.4 Funcionamiento",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Para poner en marcha el módulo basta con definir el modo de funcionamiento. En la Figura 120 se inicializa a velocidad x2 con reset de la cuenta con el índice:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Figura 120. Funcionamiento del módulo de encoder:</p>",
+          "codigo": "QEICON = 0x404;"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>A continuación se describe un posible <strong>driver</strong> del módulo de encoders. La función de inicialización requiere dos parámetros: el modo de funcionamiento (si hay índice y si resetea la cuenta) y el número de ranuras del encoder.</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Figura 121. Posible driver del módulo de encoder:</p>",
+          "codigo": "// hay_indice = 0 -> no hay\n// hay_indice = 1 -> si hay y resetea\n// hay_indice = 2 -> si hay y no resetea\nvoid ini_enc(int hay_indice, int n_ranuras){\n    if (hay_indice == 0) {\n        QEICON = 0x500;\n        MAXCNT = 2*n_ranuras-1;\n    }\n    else if (hay_indice == 1)\n        QEICON = 0x404;\n    else\n        QEICON = 0x400;\n    IFS3bits.QEIIF = 0;\n    IEC3bits.QEIIE = 1;   // Habilitar las interrupciones\n}\n\nunsigned int get_enc(){\n    return POSCNT;\n}\n\n// salta cada index o final de cuenta\nvoid __attribute__((interrupt, no_auto_psv)) _QEIInterrupt(void)\n{\n    IFS3bits.QEIIF = 0;   // Borrar la bandera de la interrupción\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<table class=\"tabla-datos\"><thead><tr><th><code>hay_indice</code></th><th>QEICON</th><th>Modo</th><th>Rango de POSCNT</th><th>Cuándo salta la interrupción</th></tr></thead><tbody><tr><td>0 (no hay índice)</td><td><code>0x0500</code></td><td>x2, reset por MAXCNT</td><td>0 … 2·n − 1 (MAXCNT = 2·n − 1)</td><td>Al pasar la cuenta por MAXCNT (final de cuenta)</td></tr><tr><td>1 (hay y resetea)</td><td><code>0x0404</code></td><td>x2, reset por índice</td><td>0 … 2·n − 1 en giro positivo (lo marca el índice)</td><td>En cada pulso del índice (una vez por vuelta)</td></tr><tr><td>2 (hay y no resetea)</td><td><code>0x0400</code></td><td>x2, modo índice sin POSRES</td><td>La cuenta no se pone a cero con el índice</td><td>En cada pulso del índice, igual que con reset, pero sin reiniciar la cuenta</td></tr></tbody></table><p><code>get_enc()</code> devuelve la cuenta actual y la ISR <code>_QEIInterrupt</code> solo borra la bandera: es el punto donde se puede ampliar la cuenta por software (15.5). La interrupción se habilita con <code>IEC3bits.QEIIE = 1</code>; como el driver no escribe <code class=\"reg\">IPC14</code>, el QEI queda con su prioridad de reset, 4.</p><p>En la Figura 122 se muestra un ejemplo de manejo del driver:</p>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Figura 122. Manejo del driver del módulo de encoder:</p>",
+          "codigo": "#include \"config.h\"\n#include \"encoder.h\"\nint main(void) {\n    InicializarReloj();     // F_CY = 40 MHz\n    AD1PCFGL = 0xFFFF;      // todos los pines en digital\n    TRISB = 0x0FFF;\n    remapea_encoder();      // QEA = RP6, QEB = RP7, INDX = RP8 (15.2)\n    ini_enc(1,4000);\n    while(1){\n        PORTB = get_enc()<<12;\n    }\n    return 0;\n}"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Con <code>ini_enc(1, 4000)</code> (encoder de 4000 ranuras, índice que resetea) la cuenta recorre 0 … 7999 en cada vuelta. <code>PORTB = get_enc() &lt;&lt; 12</code> lleva los <strong>4 bits bajos de POSCNT</strong> a RB12-RB15: el bit 0 a RB12 (D9), el bit 1 a RB13 (D8), el bit 2 a RB14 (D7) y el bit 3 a RB15 (D6). Es una sola asignación, así que no hay problema de lectura-modificación-escritura; los bits 0-11 que se escriben son entradas y no cambian nada.</p><p><strong>Ojo con la polaridad:</strong> los LEDs de la PicTrainer son <strong>activos a nivel bajo</strong> (0 = encendido). Por eso los LEDs muestran los 4 bits bajos de POSCNT <strong>invertidos</strong>: luce el LED cuyo bit vale 0. Por ejemplo, con POSCNT = 1000 = <code>0x03E8</code> (4 bits bajos <code>1000</code>) RB15 = 1 y RB14-RB12 = 0: D6 apagado y D7, D8 y D9 encendidos. Con POSCNT = 7999 = <code>0x1F3F</code> (bits bajos <code>1111</code>) los cuatro están apagados. Al girar despacio, D9 cambia en cada cuenta y D6 cada 8 cuentas.</p><p>Gira la rueda del simulador (4000 ranuras, x2, reset por índice, <code class=\"reg\">QEICON</code> = 0x0404) y observa A, B, el índice, UPDN, la cuenta y los LEDs; cambia a x4 o a reset por MAXCNT y comprueba el rango de la cuenta:</p><div class=\"mpi-mount\" data-componente=\"sim-encoder\" data-config='{\"ranuras\":4000,\"modo\":\"x2\",\"reset\":\"indice\"}'></div>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Variante con la plantilla completa del curso y los LEDs mostrando la cuenta sin invertir (los de la PicTrainer son activos a nivel bajo):</p>",
+          "codigo": "#include \"config.h\"\n#include <p33FJ32MC202.h>\n#include \"encoder.h\"          // ini_enc(), get_enc() y remapea_encoder()\n\nint main(void)\n{\n    InicializarReloj();\n    AD1PCFGL = 0xFFFF;          // todos los pines digitales\n    PORTB = 0xFFFF;             // LEDs apagados (activos a nivel bajo)\n    TRISB = 0x0FFF;             // RB12-RB15 salidas (LEDs); RB6-RB8 entradas (QEA, QEB, INDX)\n    remapea_encoder();          // QEA = RP6, QEB = RP7, INDX = RP8 (15.2)\n    ini_enc(1, 4000);           // índice que resetea: x2, POSCNT de 0 a 7999\n    while (1) {\n        PORTB = (~get_enc() & 0x000F) << 12;   // LED encendido = bit de POSCNT a 1\n    }\n    return 0;\n}"
+        }
+      ]
+    },
+    {
+      "titulo": "15.5 Ejercicios",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Se pueden activar las interrupciones para que salte una cada vez que la cuenta llegue al final o llegue el índice. De esa manera se pueden <strong>aumentar los bits de la cuenta por software</strong>: el hardware cuenta las cuentas dentro de la vuelta (16 bits) y una variable cuenta las vueltas.</p><h3>Ampliación: contador de 32 bits</h3><p>Idea: usar el modo <strong>x2 con reset por MAXCNT</strong> (<code>QEICON = 0x0500</code>, <code class=\"reg\">MAXCNT</code> = 2·n − 1), de modo que <code class=\"reg\">POSCNT</code> recorre una vuelta exacta y la interrupción salta cada vez que la cuenta da la vuelta. La ISR suma o resta una vuelta según el sentido (UPDN, bit 11 de <code class=\"reg\">QEICON</code>), y la posición de 32 bits es:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "<p>Posición de 32 bits a partir de las vueltas (software) y la cuenta (hardware):</p>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mi>posición</mi><mo>=</mo><mi>vueltas</mi><mo>·</mo><mo>(</mo><mi>MAXCNT</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>+</mo><mi>POSCNT</mi></mrow></math>"
+        },
+        {
+          "tipo": "codigo",
+          "descripcion": "<p>Driver de 32 bits (ampliación). Se usan máscaras para UPDN y los nombres de bits de interrupción ya vistos:</p>",
+          "codigo": "/* encoder32.c: driver de 32 bits (propuesta de solución, no está en el libro) */\n#include <p33FJ32MC202.h>\n\nstatic volatile long vueltas = 0;  // vueltas completas con signo; la cambia la ISR\nstatic unsigned int cuentas_vuelta;  // MAXCNT + 1 = 2·n_ranuras (modo x2)\n\nvoid ini_enc32(int n_ranuras)        // n_ranuras <= 16383 para que quepa en 16 bits\n{\n    cuentas_vuelta = 2 * n_ranuras;\n    MAXCNT = cuentas_vuelta - 1;     // x2: 2·n - 1\n    POSCNT = 0;\n    vueltas = 0;\n    QEICON = 0x0500;                 // QEIM = 101: x2, reset por MAXCNT\n    IFS3bits.QEIIF = 0;              // Borrar la bandera\n    IEC3bits.QEIIE = 1;              // Habilitar la interrupción (prioridad de reset: 4)\n}\n\n// Salta cada vez que POSCNT da la vuelta: de MAXCNT a 0 o de 0 a MAXCNT\nvoid __attribute__((interrupt, no_auto_psv)) _QEIInterrupt(void)\n{\n    IFS3bits.QEIIF = 0;              // Borrar la bandera de la interrupción\n    if (QEICON & 0x0800)             // UPDN (bit 11) = 1: giro positivo\n        vueltas++;                   // POSCNT ha pasado de MAXCNT a 0\n    else\n        vueltas--;                   // POSCNT ha pasado de 0 a MAXCNT\n}\n\nlong get_enc32(void)\n{\n    long v;\n    unsigned int p;\n    int pendiente;\n    do {\n        IEC3bits.QEIIE = 0;          // Inicio de la sección crítica\n        v = vueltas;\n        p = POSCNT;\n        pendiente = IFS3bits.QEIIF;  // ¿ha dado la vuelta POSCNT sin que la ISR lo cuente?\n        IEC3bits.QEIIE = 1;          // Fin de la sección crítica\n        if (pendiente)               // Vuelta pendiente: se espera a que la ISR la atienda\n            while (IFS3bits.QEIIF);  // (al volver de la ISR, vueltas ya está actualizada)\n    } while (pendiente);             // y se repite la lectura\n    return v * cuentas_vuelta + p;   // vueltas·(MAXCNT + 1) + POSCNT\n}"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "<strong><code>volatile</code></strong>: <code>vueltas</code> la modifica la ISR de forma asíncrona; sin <code>volatile</code> el compilador podría trabajar con una copia en un registro y no ver los cambios.",
+            "<strong>Lectura de 32 bits protegida</strong>: el dsPIC es de 16 bits y lee <code>vueltas</code> (un <code>long</code>) en dos instrucciones. Si la ISR entrase entre ellas, o entre leer <code>vueltas</code> y <code class=\"reg\">POSCNT</code>, se mezclarían una parte antigua y otra nueva (un error de una vuelta entera). Por eso se deshabilita la interrupción del QEI durante la lectura, como en las secciones críticas del tema de interrupciones.",
+            "<strong>Vuelta pendiente</strong>: mientras la interrupción está deshabilitada el contador sigue contando. Si <code class=\"reg\">POSCNT</code> da la vuelta justo entonces, QEIIF se pone a 1 pero <code>vueltas</code> aún no está actualizada; el bucle lo detecta, rehabilita la interrupción, espera a que la ISR la atienda (QEIIF vuelve a 0) y repite la lectura. La espera explícita evita depender de cuántas instrucciones tarda la CPU en entrar en la ISR tras rehabilitarla.",
+            "Con <code>long</code> y 4000 ranuras en x2 (8000 cuentas por vuelta) caben unas ±268 000 vueltas antes de desbordar los 32 bits."
+          ]
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Nota.</strong> El driver supone que en modo reset por <code class=\"reg\">MAXCNT</code> la interrupción del QEI («QEI – Position Counter Compare», IRQ 58) salta tanto al pasar de MAXCNT a 0 (giro positivo) como de 0 a MAXCNT (giro negativo), y que UPDN leído dentro de la ISR indica el sentido del último paso. Si el eje invirtiera el sentido justo en el instante del paso por cero, UPDN podría haber cambiado ya al ejecutarse la ISR; una alternativa más robusta es decidir por el valor de <code class=\"reg\">POSCNT</code> dentro de la ISR (cerca de 0 → +1 vuelta; cerca de MAXCNT → −1 vuelta)."
+        }
+      ]
+    }
+  ],
+  "registros": {
+    "QEICON": {
+      "nombre": "QEICON",
+      "titulo": "QEICON — control del módulo de encoders (QEI)",
+      "ancho": 16,
+      "nota": "QEI1CON en el mapa de registros del datasheet (tabla 4-10, dirección 0x01E0, reset 0x0000; QEIxCON en el registro 16-1). El bit 14 no está implementado. Valor del curso: 0x0404 = x2 con reset por índice (Figura 120).",
+      "campos": [
+        {
+          "bit": 15,
+          "nombre": "CNTERR",
+          "desc": "Flag de error en la cuenta. Solo se activa en los modos de índice (QEIM = 100 o 110).",
+          "valores": {
+            "0": "Sin error de cuenta",
+            "1": "Se ha producido un error de cuenta"
+          }
+        },
+        {
+          "bit": 13,
+          "nombre": "QEISIDL",
+          "desc": "Parar el módulo en modo Idle de la CPU. No se usa en el curso.",
+          "valores": {
+            "0": "Sigue funcionando en Idle",
+            "1": "Se para en Idle"
+          }
+        },
+        {
+          "bit": 12,
+          "nombre": "INDEX",
+          "desc": "Estado del pin de índice (solo lectura). No se usa en el curso.",
+          "valores": {
+            "0": "Índice a nivel bajo",
+            "1": "Índice a nivel alto"
+          }
+        },
+        {
+          "bit": 11,
+          "nombre": "UPDN",
+          "desc": "Sentido de la cuenta. Solo lectura con el módulo en modo encoder (QEIM = 1xx): indica el sentido de giro del motor.",
+          "valores": {
+            "0": "Sentido negativo (la cuenta baja)",
+            "1": "Sentido positivo (la cuenta sube)"
+          }
+        },
+        {
+          "bits": [
+            10,
+            8
+          ],
+          "nombre": "QEIM",
+          "desc": "Modo del módulo. Bit 10 = 1: QEI activo; bit 9: 0 = x2, 1 = x4; bit 8: 1 = reset de la cuenta por MAXCNT, 0 = reset por índice.",
+          "valores": {
+            "0": "000 QEI/timer apagado",
+            "1": "001 Timer de 16 bits (no se usa en el curso)",
+            "2": "010 Sin uso (módulo apagado)",
+            "3": "011 Sin uso (módulo apagado)",
+            "4": "100 Encoder x2, reset por índice",
+            "5": "101 Encoder x2, reset por MAXCNT",
+            "6": "110 Encoder x4, reset por índice",
+            "7": "111 Encoder x4, reset por MAXCNT"
+          }
+        },
+        {
+          "bit": 7,
+          "nombre": "SWPAB",
+          "desc": "Intercambia las entradas de los canales A y B.",
+          "valores": {
+            "0": "A y B sin intercambiar",
+            "1": "A y B intercambiadas"
+          }
+        },
+        {
+          "bit": 6,
+          "nombre": "PCDOUT",
+          "desc": "Saca el sentido de la cuenta (UPDN) por un pin. No se usa en el curso.",
+          "valores": {
+            "0": "Pin de E/S normal",
+            "1": "El QEI controla el pin con el sentido"
+          }
+        },
+        {
+          "bit": 5,
+          "nombre": "TQGATE",
+          "desc": "Acumulación de tiempo por compuerta en modo timer. No se usa en el curso.",
+          "valores": {
+            "0": "Deshabilitada",
+            "1": "Habilitada"
+          }
+        },
+        {
+          "bits": [
+            4,
+            3
+          ],
+          "nombre": "TQCKPS",
+          "desc": "Pre-escalado del reloj. Según el datasheet solo se aplica en el modo timer de 16 bits.",
+          "valores": {
+            "0": "1:1",
+            "1": "1:8",
+            "2": "1:64",
+            "3": "1:256"
+          }
+        },
+        {
+          "bit": 2,
+          "nombre": "POSRES",
+          "desc": "El pulso de índice pone a cero la cuenta. Solo tiene efecto con QEIM = 100 o 110.",
+          "valores": {
+            "0": "El índice no resetea la cuenta",
+            "1": "El índice resetea la cuenta"
+          }
+        },
+        {
+          "bit": 1,
+          "nombre": "TQCS",
+          "desc": "Fuente de reloj del modo timer.",
+          "valores": {
+            "0": "Reloj interno (TCY)",
+            "1": "Reloj externo por el pin QEA (flanco de subida)"
+          }
+        },
+        {
+          "bit": 0,
+          "nombre": "UPDN_SRC",
+          "desc": "Quién fija el sentido de la cuenta en modo timer; indiferente en modo encoder. No se usa en el curso.",
+          "valores": {
+            "0": "El bit UPDN",
+            "1": "El estado del pin QEB"
+          }
+        }
+      ]
+    }
+  },
+  "ejercicios": {
+    "encoders-1": {
+      "titulo": "Resolución, cuentas por vuelta y MAXCNT (15.1, 15.3)",
+      "enunciado": "<p>Un motor lleva un encoder incremental conectado al módulo QEI del dsPIC33FJ32MC202. Calcula las cuentas por vuelta y el valor de <code class=\"reg\">MAXCNT</code> según el modo de resolución.</p>",
+      "contexto": "<ul><li>Modo x2: 2 cuentas por ranura; modo x4: 4 cuentas por ranura.</li><li>Reset por MAXCNT: la cuenta va de 0 a MAXCNT, así que MAXCNT = cuentas por vuelta − 1.</li><li>Resolución angular = 360° / cuentas por vuelta.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "Un encoder de 1000 ranuras trabaja en modo <strong>x2</strong>. ¿Cuántas cuentas da <code class=\"reg\">POSCNT</code> en una vuelta del eje?",
+          "opciones": [
+            "1000",
+            "2000",
+            "4000",
+            "1999"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>En x2 se cuentan dos flancos por pulso (subida y bajada): 2 · 1000 = <strong>2000</strong> cuentas por vuelta. 1000 sería contar solo un flanco por pulso, 4000 corresponde a x4 y 1999 es el valor máximo de la cuenta (2000 − 1), no el número de cuentas.</p>"
+        },
+        {
+          "texto": "El mismo encoder de 1000 ranuras pasa a modo <strong>x4</strong>. ¿Qué resolución angular se obtiene?",
+          "opciones": [
+            "0,36°",
+            "0,18°",
+            "0,09°",
+            "0,045°"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>En x4 una vuelta son 4 · 1000 = 4000 cuentas: 360° / 4000 = <strong>0,09°</strong> por cuenta. 0,36° sería una cuenta por ranura y 0,18° el modo x2 (2000 cuentas).</p>"
+        },
+        {
+          "texto": "Con el encoder de 4000 ranuras del ejemplo, en modo x2 con reset por MAXCNT (<code>QEICON = 0x0500</code>), ¿qué valor hay que cargar en <code class=\"reg\">MAXCNT</code> para que la cuenta dé exactamente una vuelta?",
+          "opciones": [
+            "8000",
+            "7999 (0x1F3F)",
+            "3999",
+            "15 999 (0x3E7F)"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>En x2 son 2 · 4000 = 8000 cuentas por vuelta. La cuenta empieza en 0, así que va de 0 a 7999: MAXCNT = 2 · 4000 − 1 = <strong>7999 = 0x1F3F</strong>, justo lo que hace el driver con <code>MAXCNT = 2*n_ranuras-1</code>. Con 8000 la vuelta tendría 8001 cuentas; 15 999 es el valor para x4.</p>"
+        },
+        {
+          "texto": "Un encoder de 500 ranuras se usa en modo <strong>x4</strong> con reset por MAXCNT. ¿Qué valor de <code class=\"reg\">MAXCNT</code> corresponde?",
+          "opciones": [
+            "999",
+            "1999",
+            "2000",
+            "499"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>MAXCNT = 4 · N − 1 = 4 · 500 − 1 = <strong>1999</strong>. 999 sería el valor en x2 (2 · 500 − 1) y 2000 el número de cuentas por vuelta, no el valor máximo.</p>"
+        }
+      ]
+    },
+    "encoders-2": {
+      "titulo": "Configuración de QEICON y remapeo de las entradas (15.2, 15.3.1)",
+      "enunciado": "<p>Hay que configurar el módulo QEI con <code class=\"reg\">QEICON</code> (bit 10 = módulo activo, bit 9 = x2/x4, bit 8 = reset por MAXCNT/índice, bit 2 = POSRES) y conectar sus entradas a pines de la PicTrainer.</p>",
+      "contexto": "<ul><li>QEIM&lt;2:0&gt; = bits 10-8: 100 x2 índice, 101 x2 MAXCNT, 110 x4 índice, 111 x4 MAXCNT.</li><li>POSRES (bit 2) = 1: el índice pone a cero la cuenta.</li><li>Entradas remapeables: QEA y QEB en <code class=\"reg\">RPINR14</code>, INDX en <code class=\"reg\">RPINR15</code>.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Qué valor de <code class=\"reg\">QEICON</code> configura el módulo en <strong>x4 con reset de la cuenta por MAXCNT</strong>?",
+          "opciones": [
+            "0x0700",
+            "0x0604",
+            "0x0500",
+            "0x0300"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>x4 con reset por MAXCNT es QEIM = <code>111</code> en los bits 10-8: <code>0000 0111 0000 0000</code> = <strong>0x0700</strong>. 0x0604 es x4 con reset por índice (QEIM = 110 y POSRES = 1), 0x0500 es x2 con reset por MAXCNT y 0x0300 tiene el bit 10 a 0: QEIM = 011, módulo apagado.</p>"
+        },
+        {
+          "texto": "¿Qué valor de <code class=\"reg\">QEICON</code> configura el módulo en <strong>x4 con reset de la cuenta por el índice</strong>?",
+          "opciones": [
+            "0x0600",
+            "0x0604",
+            "0x0404",
+            "0x0704"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Modo x4 con índice es QEIM = <code>110</code> (bits 10-8 → 0x0600) y, para que el índice resetee la cuenta, POSRES = 1 (bit 2 → 0x0004): <strong>0x0604</strong>. Es el equivalente en x4 del 0x0404 visto antes. 0x0600 deja POSRES a 0 (el índice no resetea), 0x0404 es x2 y 0x0704 es el modo MAXCNT (donde POSRES no tiene efecto).</p>"
+        },
+        {
+          "texto": "El driver de 15.4 carga <code>QEICON = 0x500</code> cuando no hay índice. ¿Qué modo es?",
+          "opciones": [
+            "x4 con reset por índice",
+            "x2 con reset por MAXCNT",
+            "x2 con reset por índice",
+            "Timer de 16 bits"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>0x0500 = <code>0000 0101 0000 0000</code>: QEIM = 101 → bit 10 = 1 (activo), bit 9 = 0 (<strong>x2</strong>), bit 8 = 1 (<strong>reset por MAXCNT</strong>). Por eso el driver carga a continuación <code>MAXCNT = 2*n_ranuras-1</code>, el valor de x2.</p>"
+        },
+        {
+          "texto": "¿Qué registro y campo hay que escribir para que la entrada <strong>QEA</strong> (canal A) lea del pin RP6 (RB6)?",
+          "opciones": [
+            "<code>RPINR14</code>, campo QEA1R (bits 4-0) = 6",
+            "<code>RPINR14</code>, campo QEB1R (bits 12-8) = 6",
+            "<code>RPINR15</code>, campo INDX1R (bits 4-0) = 6",
+            "<code>RPOR3</code>, campo RP6R = código de QEA"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>QEA es una <em>entrada</em>, y las entradas se remapean por periférico: su campo QEA1R está en los bits 4-0 de <code class=\"reg\">RPINR14</code> (0x069C). Se escribe <code>RPINR14bits.QEA1R = 6;</code> entre el desbloqueo y el bloqueo de IOLOCK. Los bits 12-8 del mismo registro son QEB1R, <code class=\"reg\">RPINR15</code> lleva INDX1R, y los <code class=\"reg\">RPORx</code> son para <em>salidas</em>.</p>"
+        }
+      ]
+    },
+    "encoders-3": {
+      "titulo": "Sentido de giro y cuenta en los LEDs (15.1, 15.4)",
+      "enunciado": "<p>Se usa el programa de la Figura 122 (<code>init_enc(1,4000)</code> y <code>PORTB = get_enc()&lt;&lt;12</code>) en la PicTrainer, con las entradas del encoder ya remapeadas. Recuerda que los LEDs D6 (RB15), D7 (RB14), D8 (RB13) y D9 (RB12) son <strong>activos a nivel bajo</strong>.</p>",
+      "contexto": "<ul><li>Si A adelanta a B: sentido positivo, UPDN = 1, la cuenta sube.</li><li><code>get_enc()&lt;&lt;12</code>: bit 0 de POSCNT → RB12 (D9), bit 1 → RB13 (D8), bit 2 → RB14 (D7), bit 3 → RB15 (D6).</li><li>LED encendido ⇔ su pin a 0.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "Con el osciloscopio se observa que los flancos del canal A se producen un cuarto de periodo <strong>antes</strong> que los del canal B. ¿Qué indica el módulo?",
+          "opciones": [
+            "Sentido positivo: UPDN = 1 y POSCNT aumenta",
+            "Sentido negativo: UPDN = 0 y POSCNT disminuye",
+            "Error de cuenta: CNTERR = 1",
+            "Nada: el sentido solo se conoce con el índice"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>Si el canal A va adelantado frente al B el motor gira en <strong>sentido positivo</strong>: el módulo pone UPDN = 1 (bit 11 de <code class=\"reg\">QEICON</code>) y la cuenta sube. El índice solo marca la vuelta completa; el sentido sale del desfase entre A y B.</p>"
+        },
+        {
+          "texto": "Los estados del par (A, B) se suceden así: <code>00 → 01 → 11 → 10 → 00</code>. ¿En qué sentido gira el eje?",
+          "opciones": [
+            "Positivo, porque A adelanta a B",
+            "Negativo, porque B adelanta a A",
+            "No se puede saber sin el índice",
+            "Hay un error: cambian los dos canales a la vez"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>De 00 a 01 cambia primero <strong>B</strong> (sube), y de 01 a 11 sube después A; luego baja B (11 → 10) y después A (10 → 00). B cambia siempre un cuarto de periodo antes que A: <strong>B adelanta a A → sentido negativo</strong> (UPDN = 0, la cuenta baja). Es la secuencia «reverse» de la figura de 15.1 (11 → 10 → 00 → 01). En cada paso cambia un solo canal, así que no hay error.</p>"
+        },
+        {
+          "texto": "Con el eje parado, <code>get_enc()</code> devuelve 1000. ¿Qué LEDs están encendidos?",
+          "opciones": [
+            "Solo D6",
+            "D7, D8 y D9",
+            "D6, D7 y D8",
+            "Ninguno"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>1000 = <code>0x03E8</code>; sus 4 bits bajos son <code>1000</code>. <code>get_enc()&lt;&lt;12</code> deja RB15 = 1 y RB14 = RB13 = RB12 = 0. Como los LEDs son activos a nivel bajo, D6 (RB15) está <strong>apagado</strong> y D7, D8 y D9 <strong>encendidos</strong>. «Solo D6» sería leer los LEDs como activos a nivel alto: los LEDs muestran los bits <em>invertidos</em>.</p>"
+        },
+        {
+          "texto": "El eje, que gira en sentido positivo, se para justo antes de pasar por el índice, con la cuenta en su valor máximo para este programa. ¿Qué valor tiene POSCNT y qué se ve en los LEDs?",
+          "opciones": [
+            "8000; D6 a D9 encendidos",
+            "7999; D6 a D9 apagados",
+            "7999; D6 a D9 encendidos",
+            "3999; solo D9 encendido"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Con <code>init_enc(1,4000)</code> el módulo trabaja en x2 con reset por índice: 8000 cuentas por vuelta, de 0 a <strong>7999</strong> = <code>0x1F3F</code>. Los 4 bits bajos son <code>1111</code>, así que RB12-RB15 = 1 y, al ser activos a nivel bajo, los cuatro LEDs están <strong>apagados</strong>. Al llegar el índice la cuenta pasa a 0 y los cuatro se encienden.</p>"
+        }
+      ]
+    }
+  },
+  "ejerciciosEnTema": [
+    "encoders-1",
+    "encoders-2",
+    "encoders-3"
+  ],
+  "tituloEjercicios": "Ejercicios y cuestiones",
+  "resumen": [
+    "Un <strong>encoder incremental</strong> de N ranuras da N pulsos por vuelta en los canales <strong>A y B</strong>, desfasados 90° (en cuadratura), y un pulso de <strong>índice</strong> por vuelta. Si A adelanta a B el giro es positivo (UPDN = 1, la cuenta sube); si B adelanta a A, negativo.",
+    "El módulo cuenta en <strong>x2</strong> (2·N cuentas por vuelta) o <strong>x4</strong> (4·N). Para recorrer una vuelta exacta con reset por MAXCNT: <strong>MAXCNT = 2·N − 1</strong> en x2 y 4·N − 1 en x4 (4000 ranuras en x2 → 7999).",
+    "Las entradas <strong>QEA, QEB e INDX</strong> son remapeables: QEA1R y QEB1R en <code class=\"reg\">RPINR14</code>, INDX1R en <code class=\"reg\">RPINR15</code>, entre <code>__builtin_write_OSCCONL(OSCCON &amp; ~0x40)</code> y <code>__builtin_write_OSCCONL(OSCCON | 0x40)</code>. En la PicTrainer se proponen RB6, RB7 y RB8 (RP6-RP8), los pines libres que no usan programación, SW2, potenciómetro, UART ni LEDs.",
+    "<code class=\"reg\">QEICON</code> (QEI1CON en el datasheet) elige el modo con QEIM (bits 10-8: bit 10 activo, bit 9 x2/x4, bit 8 reset por MAXCNT/índice) y POSRES (bit 2): <code>0x0404</code> = x2 con reset por índice, <code>0x0500</code> = x2 con reset por MAXCNT, <code>0x0400</code> = x2 sin reset por índice.",
+    "<code class=\"reg\">POSCNT</code> es la cuenta de 16 bits y <code class=\"reg\">MAXCNT</code> su valor máximo. La interrupción del QEI (QEIIF/QEIIE en <code class=\"reg\">IFS3</code>/<code class=\"reg\">IEC3</code>, ISR <code>_QEIInterrupt</code>) salta con el índice o al final de cuenta.",
+    "El driver ofrece <code>ini_enc(hay_indice, n_ranuras)</code> y <code>get_enc()</code>. <code>PORTB = get_enc() &lt;&lt; 12</code> saca los 4 bits bajos de la cuenta por RB12-RB15, pero como los LEDs son <strong>activos a nivel bajo</strong> se ven <strong>invertidos</strong>.",
+    "Para tener <strong>32 bits</strong> se cuentan las vueltas en la ISR en una variable <code>volatile</code>: posición = vueltas·(MAXCNT + 1) + POSCNT, leyendo ambas con la interrupción del QEI deshabilitada."
+  ]
+}

@@ -1,0 +1,66 @@
+/* ---------- Componente: arbol-diagnostico (asistente de diagnóstico de la tarjeta, libro 18.4) ---------- */
+.mpi-arbol-diagnostico { container-type: inline-size; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-arbol-diagnostico .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .5rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem .6rem; }
+.adg-cab-sub { color: var(--txt-tenue); font-weight: 400; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
+.mpi-arbol-diagnostico :not(pre) > code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; overflow-wrap: anywhere; }
+.mpi-arbol-diagnostico button { font-family: inherit; background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .4rem .75rem; cursor: pointer; font-size: .84rem; text-align: left; }
+.mpi-arbol-diagnostico button:hover:not(:disabled) { border-color: var(--acento); }
+.mpi-arbol-diagnostico button:disabled { opacity: .4; cursor: default; }
+.mpi-arbol-diagnostico button:focus-visible, .mpi-arbol-diagnostico a:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 2px; }
+.adg-tit:focus { outline: none; }
+.adg-tit:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 3px; border-radius: 3px; }
+
+.adg-intro { font-size: .86rem; color: var(--txt-2); margin: 0 0 .7rem; line-height: 1.55; }
+.adg-aviso { font-size: .82rem; color: var(--amarillo); margin: 0 0 .5rem; }
+
+/* Atajos y migas de pan */
+.adg-atajos { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; margin-bottom: .6rem; }
+.adg-atajos-tit { font-size: .76rem; color: var(--txt-tenue); margin-right: .2rem; }
+.mpi-arbol-diagnostico .adg-atajo { font-size: .76rem; padding: .22rem .55rem; border-radius: 999px; color: var(--txt-2); }
+.adg-migas:empty { display: none; }
+.adg-migas ol { list-style: none; margin: 0 0 .6rem; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .2rem; }
+.adg-migas li { margin: 0; display: inline-flex; align-items: center; font-size: .76rem; color: var(--txt-tenue); }
+.adg-migas li + li::before { content: "›"; margin: 0 .3rem 0 .1rem; color: var(--txt-tenue); }
+.mpi-arbol-diagnostico .adg-miga { background: none; border: 1px solid transparent; padding: .1rem .3rem; font-size: .76rem; color: var(--txt-2); border-radius: 4px; }
+.mpi-arbol-diagnostico .adg-miga:hover { border-color: var(--borde); color: var(--txt); }
+.adg-miga b { color: var(--acento); font-weight: 600; }
+.adg-miga-act { color: var(--amarillo); font-weight: 600; padding: .1rem .3rem; }
+
+/* Tarjeta de la pregunta / comprobación */
+.adg-tarjeta { background: var(--bg); border: 1px solid var(--borde-2); border-radius: 8px; padding: .8rem .9rem; }
+.adg-tarjeta.adg-t-d { border-color: rgba(86,156,214,.45); }
+.adg-num { margin: 0 0 .2rem; font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--txt-tenue); }
+.adg-libro { font-family: var(--mono); text-transform: none; letter-spacing: 0; color: var(--num); font-size: .72rem; margin-left: .3rem; }
+.adg-tit { margin: 0 0 .5rem; font-size: 1rem; line-height: 1.4; color: var(--txt); font-weight: 600; }
+.adg-fin-ok { color: var(--acento); }
+.adg-fin-prof { color: var(--amarillo); }
+.adg-ayuda, .adg-causa { margin: 0 0 .6rem; font-size: .86rem; color: var(--txt-2); line-height: 1.55; }
+.adg-ayuda b, .adg-causa b, .adg-pasos b { color: var(--txt); }
+.adg-sub { margin: .2rem 0 .3rem; font-size: .74rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--txt-tenue); }
+.adg-pasos { margin: 0 0 .7rem; padding-left: 1.3rem; font-size: .86rem; line-height: 1.55; color: var(--txt); }
+.adg-pasos li { margin: .3rem 0; }
+.adg-pasos li::marker { color: var(--acento); font-family: var(--mono); font-size: .8rem; }
+.adg-refs { font-size: .8rem; color: var(--txt-2); background: rgba(86,156,214,.07); border: 1px solid rgba(86,156,214,.3); border-radius: 6px; padding: .4rem .65rem; margin: 0 0 .7rem; }
+.adg-refs-tit { color: var(--txt-tenue); font-size: .74rem; }
+.adg-refs ul { margin: .2rem 0 0; padding-left: 1.1rem; }
+.adg-refs li { margin: .15rem 0; line-height: 1.45; }
+.adg-ref-ap { color: var(--txt-tenue); font-size: .76rem; }
+.adg-pronto { color: var(--txt-tenue); font-size: .72rem; }
+.adg-preg { margin: .2rem 0 .35rem; font-size: .84rem; color: var(--txt-2); font-weight: 600; }
+.adg-ops { display: flex; flex-wrap: wrap; gap: .4rem; }
+.mpi-arbol-diagnostico .adg-op { padding: .5rem .9rem; font-size: .88rem; min-height: 2.5rem; }
+.mpi-arbol-diagnostico .adg-op-si { border-color: rgba(78,201,176,.55); color: var(--acento); }
+.mpi-arbol-diagnostico .adg-op-si:hover { background: rgba(78,201,176,.12); }
+.mpi-arbol-diagnostico .adg-op-no { border-color: rgba(244,135,113,.5); color: var(--rojo); }
+.mpi-arbol-diagnostico .adg-op-no:hover { background: rgba(244,135,113,.1); border-color: var(--rojo); }
+.adg-hechas { margin: 0; padding-left: 1.2rem; font-size: .84rem; color: var(--txt-2); line-height: 1.5; }
+
+.adg-nav { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .7rem; }
+
+@media (max-width: 480px) {
+  .mpi-arbol-diagnostico { padding: .85rem .7rem; }
+  .adg-tarjeta { padding: .7rem .65rem; }
+  .adg-ops { flex-direction: column; }
+  .mpi-arbol-diagnostico .adg-op { width: 100%; }
+  .adg-nav button { flex: 1 1 auto; }
+}

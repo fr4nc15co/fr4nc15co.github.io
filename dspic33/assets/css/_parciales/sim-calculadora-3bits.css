@@ -1,0 +1,61 @@
+/* ---------- Componente: sim-calculadora-3bits (ejercicio 4 de 3.3) ---------- */
+.mpi-sim-calculadora-3bits { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1rem 1.1rem; margin: 1.2rem 0; }
+.mpi-sim-calculadora-3bits .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .7rem; }
+.mpi-sim-calculadora-3bits code { font-family: var(--mono); }
+
+/* Interruptores */
+.sc3-entradas { display: flex; flex-wrap: wrap; gap: .6rem; }
+.sc3-grupo { background: var(--bg); border: 1px solid var(--borde-2); border-top: 3px solid var(--borde); border-radius: 8px; padding: .45rem .55rem; flex: 0 1 auto; }
+.sc3-g1 { border-top-color: var(--acento); }
+.sc3-g2 { border-top-color: var(--acento-2); }
+.sc3-g3 { border-top-color: var(--morado); }
+.sc3-grupo-tit { font-size: .74rem; color: var(--txt-2); margin-bottom: .3rem; }
+.sc3-grupo-val { font-family: var(--mono); font-size: .8rem; color: var(--amarillo); text-align: center; margin-top: .25rem; }
+.sc3-sws { display: flex; gap: .3rem; }
+.sc3-sw { display: flex; flex-direction: column; align-items: center; gap: .15rem; width: 2.6rem; padding: .3rem 0; background: var(--bg-3); border: 1.5px solid var(--borde); border-radius: 6px; color: var(--txt); cursor: pointer; font-family: var(--mono); }
+.sc3-sw:hover, .sc3-sw:focus-visible { border-color: var(--acento-2); outline: none; }
+.sc3-sw-nom { font-size: .62rem; color: var(--txt-tenue); }
+.sc3-sw-pal { width: 14px; height: 26px; border-radius: 7px; background: #141414; border: 1px solid var(--borde); position: relative; }
+.sc3-sw-pal::after { content: ""; position: absolute; left: 1px; right: 1px; height: 11px; bottom: 1px; border-radius: 5px; background: var(--txt-tenue); transition: bottom .12s; }
+.sc3-sw.sc3-on .sc3-sw-pal::after { bottom: 12px; background: var(--acento); }
+.sc3-sw-val { font-size: .9rem; font-weight: 700; }
+.sc3-sw.sc3-on .sc3-sw-val { color: var(--acento); }
+.sc3-sw.sc3-analog { opacity: .55; border-style: dashed; }
+
+.sc3-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .9rem; margin: .8rem 0 .5rem; }
+.sc3-btn { background: var(--bg-3); border: 1px solid var(--borde); color: var(--txt); padding: .4rem .75rem; border-radius: 5px; cursor: pointer; font-size: .83rem; min-height: 36px; }
+.sc3-btn:hover:not(:disabled), .sc3-btn:focus-visible { border-color: var(--acento); outline: none; }
+.sc3-btn:disabled { opacity: .4; cursor: default; }
+.sc3-chk { font-size: .82rem; color: var(--txt-2); display: inline-flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
+.sc3-chk input { accent-color: var(--acento); width: 1.05rem; height: 1.05rem; }
+.sc3-chk small { color: var(--txt-tenue); }
+.sc3-portb { font-size: .88rem; color: var(--txt-2); margin-bottom: .7rem; }
+.sc3-aviso { display: block; color: var(--amarillo); font-size: .8rem; margin-top: .2rem; }
+
+/* LEDs de PORTA */
+.sc3-salida { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem 1.4rem; background: #17251f; border: 1px solid #2c4a3d; border-radius: 10px; padding: .7rem .9rem; }
+.sc3-leds { display: flex; gap: .7rem; }
+.sc3-led { display: flex; flex-direction: column; align-items: center; min-width: 3rem; }
+.sc3-led-luz { width: 28px; height: 28px; border-radius: 50%; background: #3a2526; border: 3px solid #5a3a3a; transition: background .12s, box-shadow .12s; }
+.sc3-led.sc3-led-on .sc3-led-luz { background: #ff5340; border-color: var(--rojo); box-shadow: 0 0 14px 4px rgba(244,103,90,.5); }
+.sc3-led-nom { font-family: var(--mono); font-weight: 700; font-size: .78rem; margin-top: .2rem; }
+.sc3-led-bit { font-family: var(--mono); font-size: .64rem; color: var(--txt-tenue); }
+.sc3-interp { flex: 1 1 220px; font-size: .88rem; color: var(--txt); }
+.sc3-interp strong { color: var(--amarillo); font-family: var(--mono); }
+.sc3-interp small { display: block; color: var(--txt-tenue); font-size: .76rem; margin-top: .3rem; }
+
+/* Paso a paso */
+.sc3-pasos { display: flex; flex-wrap: wrap; gap: .4rem; margin: .9rem 0 .6rem; }
+.sc3-cuerpo { display: flex; flex-wrap: wrap; gap: .8rem 1.2rem; align-items: flex-start; }
+.sc3-tabla-wrap { flex: 1 1 300px; min-width: 0; overflow-x: auto; }
+.sc3-tabla { width: 100%; border-collapse: collapse; font-size: .8rem; }
+.sc3-tabla th, .sc3-tabla td { text-align: left; padding: .3rem .45rem; border-bottom: 1px solid var(--borde-2); vertical-align: top; }
+.sc3-tabla th { color: var(--txt-tenue); font-weight: 600; font-size: .7rem; text-transform: uppercase; letter-spacing: .03em; }
+.sc3-tabla td code { color: var(--azul-cl); white-space: nowrap; }
+.sc3-mono { font-family: var(--mono); white-space: nowrap; color: var(--num); }
+.sc3-com { font-size: .74rem; color: var(--txt-2); margin-top: .15rem; }
+.sc3-tabla tr.sc3-fila-act td { background: rgba(78,201,176,.1); }
+.sc3-vacio { color: var(--txt-tenue); }
+.sc3-codigo { flex: 1 1 280px; min-width: 0; margin: 0; }
+.sc3-codigo code.sc3-l { display: block; min-height: 1.55em; padding: 0 .3rem; border-left: 3px solid transparent; border-radius: 3px; }
+.sc3-codigo code.sc3-l-act { background: rgba(78,201,176,.15); border-left-color: var(--acento); }

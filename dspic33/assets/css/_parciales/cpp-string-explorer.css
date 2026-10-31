@@ -1,0 +1,73 @@
+/* ---------- Componente: cpp-string-explorer (std::string: índices, substr, find, erase…) ---------- */
+.mpi-cpp-string-explorer { container-type: inline-size; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-cpp-string-explorer .mpi-sim-cab { font-family: var(--mono); font-weight: 700; color: var(--acento); font-size: 1.05rem; margin-bottom: .7rem; }
+.cse-sub { font-family: var(--sans); font-weight: 400; color: var(--txt-2); font-size: .82rem; margin-left: .4rem; }
+.mpi-cpp-string-explorer button { font-family: var(--mono); background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .35rem .65rem; cursor: pointer; font-size: .82rem; text-align: left; }
+.mpi-cpp-string-explorer button:hover { border-color: var(--acento); }
+.mpi-cpp-string-explorer button[aria-pressed="true"] { background: rgba(78,201,176,.15); border-color: var(--acento); color: var(--acento); }
+.mpi-cpp-string-explorer button:focus-visible, .mpi-cpp-string-explorer input:focus-visible, .cse-cad-wrap:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 2px; }
+.mpi-cpp-string-explorer input { font-family: var(--mono); background: var(--bg); border: 1px solid var(--borde); color: var(--azul-cl); padding: .3rem .4rem; border-radius: 5px; font-size: .86rem; }
+.mpi-cpp-string-explorer input[type="number"] { width: 3.8rem; }
+.cse-in-s { width: 14rem; max-width: 100%; }
+.cse-in-str { width: 7rem; }
+.mpi-cpp-string-explorer input[aria-invalid="true"] { border-color: var(--rojo); }
+.mpi-cpp-string-explorer :not(pre) > code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; overflow-wrap: anywhere; }
+
+.cse-fila { display: flex; flex-wrap: wrap; gap: .4rem .5rem; align-items: center; margin-bottom: .6rem; }
+.cse-etq { font-family: var(--sans); font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; color: var(--txt-tenue); font-weight: 600; }
+.cse-ayuda { margin: -.2rem 0 .6rem; font-size: .78rem; color: var(--txt-tenue); }
+.cse-ops { display: flex; flex-wrap: wrap; gap: .35rem; }
+.cse-error { margin: .4rem 0 0; font-size: .82rem; color: var(--rojo); }
+.cse-error:empty { display: none; }
+.cse-mal { color: var(--rojo); }
+
+/* Cadena: una celda por carácter con su índice */
+.cse-cad-wrap { overflow-x: auto; max-width: 100%; background: var(--bg); border: 1px solid var(--borde-2); border-radius: 8px; padding: .5rem .6rem .6rem; margin-bottom: .8rem; }
+.cse-decl { margin: 0 0 .4rem; font-size: .84rem; white-space: nowrap; }
+.mpi-cpp-string-explorer .cse-decl code { background: none; padding: 0; color: var(--txt); }
+.cse-n { font-family: var(--mono); font-size: .76rem; color: var(--num); margin-left: .5rem; }
+.cse-fila-tit { margin: .5rem 0 .3rem; font-size: .74rem; color: var(--txt-tenue); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; white-space: nowrap; }
+.mpi-cpp-string-explorer .cse-fila-tit code { text-transform: none; letter-spacing: 0; font-weight: 400; }
+.cse-celdas { display: flex; width: max-content; }
+.cse-celda { width: 2.1rem; flex: 0 0 2.1rem; text-align: center; border: 1px solid var(--borde); border-left-width: 0; background: var(--bg-2); padding: .15rem 0 .1rem; }
+.cse-celda:first-child { border-left-width: 1px; border-radius: 5px 0 0 5px; }
+.cse-celda:last-child { border-radius: 0 5px 5px 0; }
+.cse-ch { display: block; font-family: var(--mono); font-size: 1.05rem; font-weight: 700; color: var(--naranja); line-height: 1.4; }
+.cse-i { display: block; font-family: var(--mono); font-size: .68rem; color: var(--txt-tenue); border-top: 1px solid var(--borde-2); }
+.cse-nul { border-style: dashed; }
+.cse-nul .cse-ch { color: var(--morado); font-size: .85rem; line-height: 1.65; }
+.cse-celda.cse-sel { background: rgba(78,201,176,.18); border-color: var(--acento); }
+.cse-celda.cse-sel .cse-i { color: var(--acento); font-weight: 700; }
+.cse-celda.cse-busca { background: rgba(220,220,170,.10); }
+.cse-celda.cse-borra { background: rgba(244,135,113,.14); outline: 2px dashed var(--rojo); outline-offset: -4px; }
+.cse-celda.cse-borra .cse-ch { text-decoration: line-through; text-decoration-color: var(--rojo); color: var(--txt-2); }
+.cse-celda.cse-nueva { background: rgba(181,206,168,.15); box-shadow: inset 0 0 0 2px var(--num); }
+.cse-antes { opacity: .85; }
+.cse-vacia { font-size: .82rem; color: var(--txt-tenue); padding: .3rem 0; }
+
+/* Resultado */
+.cse-res { margin-top: .8rem; background: var(--bg); border: 1px solid var(--borde-2); border-radius: 8px; padding: .65rem .75rem; font-size: .88rem; color: var(--txt-2); line-height: 1.5; min-height: 3rem; }
+.cse-res.cse-res-mal { border-color: rgba(244,135,113,.45); background: rgba(244,135,113,.07); }
+.mpi-cpp-string-explorer pre.cse-pre { margin: 0 0 .5rem; padding: .45rem .6rem; overflow-x: auto; }
+.mpi-cpp-string-explorer pre.cse-pre code { font-size: .82rem; }
+.cse-resultado { margin: 0 0 .35rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem .6rem; }
+.cse-val { font-family: var(--mono); font-size: 1rem; font-weight: 700; color: var(--num); overflow-wrap: anywhere; }
+.cse-val.cse-mal { color: var(--rojo); }
+.cse-tipo { font-family: var(--mono); font-size: .76rem; color: var(--txt-tenue); overflow-wrap: anywhere; }
+.cse-expl { margin: 0; }
+.cse-expl strong { color: var(--txt); }
+.cse-expl strong.cse-mal { color: var(--rojo); }
+.cse-libro { margin-top: .6rem; padding-top: .55rem; border-top: 1px solid var(--borde-2); }
+.cse-libro .cse-pre { margin-top: .3rem; }
+.cse-salida { margin: 0; font-size: .84rem; }
+
+.cse-ejs { margin-top: .9rem; }
+.cse-ejs-lista { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .35rem; }
+.cse-ej-sec { font-family: var(--sans); font-size: .7rem; color: var(--txt-tenue); font-weight: 600; }
+.mpi-cpp-string-explorer .cse-ej code { background: none; padding: 0; }
+
+@media (max-width: 480px) {
+  .mpi-cpp-string-explorer { padding: .8rem; }
+  .cse-sub { display: block; margin-left: 0; }
+  .cse-celda { width: 1.9rem; flex-basis: 1.9rem; }
+}

@@ -1,0 +1,429 @@
+{
+  "slug": "organizacion-sistema-digital",
+  "titulo": "Organización de un sistema digital",
+  "temaNum": 12,
+  "lenguaje": "c",
+  "lead": "Casi todos los sistemas digitales están basados en un micro, pero el micro solo es una parte: alrededor de él hay sensores, actuadores, comunicaciones, la fuente de alimentación y el conector de programación. En este tema aprenderás a <strong>diseñar</strong> un sistema digital con esos elementos (fuentes lineal y conmutada, baterías, relés, motores DC con puente en H, servos, programador y RS-232) y a tener en cuenta los problemas que aparecen al <strong>implementarlo</strong> en la realidad y que no se aprecian sobre el papel, como el ruido.",
+  "secciones": [
+    {
+      "titulo": "12.1 Criterios de diseño general",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Casi todos los sistemas digitales están basados en micros. Diseñar uno no es solo escribir el programa: hay que decidir qué hay alrededor del micro y cómo se alimenta, se comunica y se protege. A la hora de diseñar un sistema digital se deben abordar los siguientes temas:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "Conocer cuáles son los <strong>sensores</strong>.",
+            "Conocer cuáles son los <strong>actuadores</strong>.",
+            "Conocer los tipos de <strong>comunicaciones</strong> con otros sistemas.",
+            "Determinar el <strong>método de implementación</strong> de las tarjetas.",
+            "Intentar evitar los <strong>ruidos</strong> que genere la tarjeta y los que puedan provenir del exterior. Esto se conoce como <strong>compatibilidad electromagnética</strong>.",
+            "Elegir el <strong>micro</strong> que se va a usar y el <strong>método de programación</strong> del mismo.",
+            "Determinar las <strong>necesidades energéticas</strong> del sistema."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>En el resto del tema se explican algunos detalles de estos conceptos. Como referencia, la tarjeta de laboratorio <strong>PicTrainer v3.0</strong> (anexo C del libro) ya es un sistema digital completo en el que se puede reconocer cada uno de estos criterios:</p><table class=\"tabla-datos\"><thead><tr><th>Criterio</th><th>Solución en la PicTrainer v3.0</th></tr></thead><tbody><tr><td>Sensores</td><td>Pulsador SW2 en RB2 (pull-up, pulsado = 0) y potenciómetro RV1 en AN5 = RB3</td></tr><tr><td>Actuadores</td><td>LEDs D6-D9 en RB15-RB12, activos a nivel bajo</td></tr><tr><td>Comunicaciones</td><td>UART del micro (U1TX = RB4, U1RX = RB5) conectada al PC por USB a través del FT230XS (selector K2)</td></tr><tr><td>Implementación</td><td>PCB con componentes SMD y de orificio pasante; conectores de expansión P5-P8 compatibles con Arduino</td></tr><tr><td>Ruido</td><td>Condensadores de desacoplo de 100 nF cerámicos junto a las patillas de alimentación</td></tr><tr><td>Micro y programación</td><td>dsPIC33FJ32MC202; conector de programación P4 de 6 pines</td></tr><tr><td>Energía</td><td>USB, jack J2 (7,5-9 V con regulador MC7805) o Vin del conector P5; segundo regulador a 3,3 V para el micro</td></tr></tbody></table>"
+        }
+      ]
+    },
+    {
+      "titulo": "12.2 Inhibición de ruidos",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Los sistemas digitales son vulnerables al <strong>ruido</strong> del propio sistema o de sistemas exteriores. Por ello hay que tomar dos tipos de medidas:</p>"
+        },
+        {
+          "tipo": "lista",
+          "ordenada": false,
+          "items": [
+            "Evitar que los ruidos de los componentes del sistema digital perturben a otros componentes del mismo sistema: <strong>condensadores de desacoplo</strong>.",
+            "Evitar que el sistema perturbe a otros sistemas exteriores: <strong>filtros EMI</strong>."
+          ]
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>En cualquier sistema digital es necesario poner <strong>condensadores de desacoplo en los pines de alimentación de todos los chips</strong>. El motivo es doble: en las pistas se puede inducir ruido electromagnético <em>radiado</em> por equipos externos (las pistas actúan como antenas) y ruido <em>conducido</em> por los elementos que conmutan en la propia tarjeta. Los condensadores evitan que ese ruido llegue a la alimentación del chip y provoque su mal funcionamiento.</p><p>Para que sean eficaces tienen que estar <strong>cerca del chip</strong> (a menos de 6 mm de los pines), de modo que no se pueda inducir ruido entre el condensador y el chip. Este ruido suele ser de alta frecuencia (&gt; 100 kHz), por lo que se usan <strong>condensadores cerámicos</strong> de baja ESR (por ejemplo X7R), que trabajan muy bien a esas frecuencias. Un valor de <strong>100 nF</strong> es razonable.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "12.3 Gestión de energía",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Todo sistema digital requiere energía, y su gestión es una parte importante del diseño: ¿es autónomo?, ¿cómo se carga?, ¿cómo toma la energía?, ¿cómo se gestiona la posible falta de energía?</p><h3>12.3.1 Fuentes de alimentación</h3><p>El objetivo de la fuente de alimentación de una tarjeta es dar a los componentes electrónicos la tensión que necesitan para funcionar. Esa tensión debe estar <strong>estabilizada</strong>: tiene que permanecer constante con independencia del consumo. En el diseño del libro la fuente es de <strong>5 V</strong>. Existen dos tipos fundamentales de fuentes de alimentación:</p><ul><li><strong>Fuente lineal.</strong></li><li><strong>Fuente conmutada.</strong></li></ul><p>En todas las fuentes se suele poner un <strong>LED</strong> a la salida, que permite saber si está funcionando, y a la entrada un <strong>fusible</strong> (protege de cortocircuitos) seguido de un <strong>varistor</strong> (protege de cambios bruscos de tensión).</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>5 V y 3,3 V.</strong> El dsPIC33FJ32MC202 funciona con V<sub>DD</sub> entre 3,0 V y 3,6 V (datasheet, sección 24.0). Por eso la PicTrainer tiene dos etapas: primero obtiene 5 V (del USB o del regulador MC7805) y después «otro regulador, para obtener a partir de 5 V la tensión de 3,3 V que necesita el microcontrolador» (anexo C). Dos LEDs, D4 (5 V) y D5 (3,3 V), indican que ambas tensiones están presentes."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h4>17.4.1.1 Fuente lineal</h4><p>La fuente lineal se basa en un <strong>transistor que trabaja en la zona lineal</strong> y que mantiene entre colector y emisor la caída de tensión necesaria para que la salida se mantenga a una tensión proporcional a la de referencia. Su esquema de bloques es: transformador de 50 Hz → puente rectificador → condensador (tensión continua sin regular) → transistor en serie con la carga, gobernado por un amplificador que compara una fracción de la salida (divisor resistivo) con una tensión de referencia V<sub>ref</sub> → tensión continua regulada.</p><p>Tiene las siguientes características:</p><ul><li>Los transformadores de 50 Hz son <strong>grandes y pesados</strong>.</li><li><strong>Perturban poco</strong> a la electrónica que alimentan: al no haber cambios bruscos de tensión no hay altas frecuencias en el circuito, lo que reduce el ruido conducido y radiado.</li><li>Al trabajar el transistor en la zona lineal se produce en él una caída de tensión considerable (mayor cuanto mayor sea la diferencia entre la tensión de entrada y la de salida) que, multiplicada por la corriente que demanda la salida, produce <strong>pérdidas significativas</strong>.</li><li>Son <strong>baratas</strong>.</li></ul><p>El chip más usado como regulador de 5 V es el <strong>7805</strong>. Su tensión de entrada puede ir desde <strong>7 V hasta 35 V</strong> y es capaz de dar <strong>1 A</strong>. Es sencillo de implementar, porque requiere pocos componentes (un condensador de 0,33 µF a la entrada y otro de 0,1 µF a la salida, ambos a masa, con el terminal central del 7805 también a masa), y no emite ruido. Existen otros reguladores 78xx que dan más o menos corriente y otras tensiones de salida. <strong>Solo se debe usar si la tensión de entrada es cercana a 7 V</strong>, porque si no tiene muy mal rendimiento:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "Rendimiento aproximado de una fuente lineal de 5 V (la corriente de entrada es prácticamente igual a la de salida, despreciando el consumo propio del regulador). <em>Fórmula reconstruida a partir de la prosa del libro: en el original (17.4.1.1) es una imagen que no se ha conservado.</em>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mi>η</mi><mo>≈</mo><mfrac><msub><mi>P</mi><mtext>salida</mtext></msub><msub><mi>P</mi><mtext>entrada</mtext></msub></mfrac><mo>=</mo><mfrac><mrow><msub><mi>V</mi><mtext>out</mtext></msub><mo>·</mo><mi>I</mi></mrow><mrow><msub><mi>V</mi><mtext>in</mtext></msub><mo>·</mo><mi>I</mi></mrow></mfrac><mo>=</mo><mfrac><mrow><mn>5</mn><mtext>&#160;V</mtext></mrow><msub><mi>V</mi><mtext>in</mtext></msub></mfrac></mrow></math>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "Potencia que disipa el regulador lineal en forma de calor (la diferencia de tensión entre entrada y salida por la corriente que consume la placa; anexo C del libro, nota sobre el MC7805).",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>P</mi><mtext>disipada</mtext></msub><mo>=</mo><mrow><mo>(</mo><msub><mi>V</mi><mtext>in</mtext></msub><mo>−</mo><mn>5</mn><mtext>&#160;V</mtext><mo>)</mo></mrow><mo>·</mo><mi>I</mi></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Por ejemplo, con una placa que consume 0,5 A:</p><table class=\"tabla-datos\"><thead><tr><th>V<sub>in</sub></th><th>Rendimiento η ≈ 5 / V<sub>in</sub></th><th>Potencia disipada con 0,5 A</th></tr></thead><tbody><tr><td>7 V</td><td>5 / 7 ≈ 71 %</td><td>(7 − 5) · 0,5 = 1 W</td></tr><tr><td>9 V</td><td>5 / 9 ≈ 56 %</td><td>(9 − 5) · 0,5 = 2 W</td></tr><tr><td>12 V</td><td>5 / 12 ≈ 42 %</td><td>(12 − 5) · 0,5 = 3,5 W</td></tr></tbody></table><p>Con 12 V de entrada, más de la mitad de la energía se pierde en forma de calor en el regulador, que además necesita un disipador.</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>En la PicTrainer.</strong> El jack J2 alimenta, a través del diodo D3, un regulador <strong>MC7805</strong> con un condensador cerámico de 0,33 µF a la entrada y uno de 100 nF a la salida, como en el esquema del libro. El anexo C pide que la fuente externa sea de más de 7 V y recomienda entre <strong>7,5 V y 9 V</strong>, porque el MC7805 disipa la corriente de la placa multiplicada por (V<sub>in</sub> − 5 V): por encima de 9 V «el chip se calentará en exceso». Por eso el esquema pide además un relleno de cobre en el PCB para disipar el calor. La fuente se elige con el puente K1 (2-3 USB, 1-2 fuente externa o baterías) o de forma automática con Q1, U4 y R7-R10."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h4>17.4.1.2 Fuente conmutada</h4><p>La fuente conmutada se basa en un <strong>interruptor que conmuta a alta frecuencia</strong>. El resultado es una señal PWM antes del transformador de alta frecuencia (HF), que la amplifica o atenúa, para luego ser rectificada de nuevo. Una realimentación compara la salida con una referencia: si la salida es menor que la referencia, se <strong>aumenta el factor de servicio</strong> del PWM y con él el valor medio de la tensión de salida. Su esquema de bloques es: filtro EMI → rectificador → interruptor de alta frecuencia → transformador HF → rectificador y condensador → tensión regulada, con la realimentación hacia el interruptor.</p><p>Tiene las siguientes características:</p><ul><li>Los transformadores son de alta frecuencia y por tanto <strong>pequeños y ligeros</strong>.</li><li><strong>Perturban mucho</strong> a la electrónica que alimentan: las conmutaciones de alta frecuencia producen emisiones conducidas y radiadas. Para que las conducidas no salgan a la red se pone un <strong>filtro EMI</strong>.</li><li>Tienen un <strong>rendimiento muy alto, cercano al 97 %</strong>. Los interruptores son transistores que trabajan en <strong>saturación y corte</strong>: en saturación la caída colector-emisor es prácticamente 0 y en corte la corriente es 0, así que las pérdidas son mínimas.</li><li>Son <strong>caras</strong>, porque requieren varios componentes de potencia y de alta frecuencia.</li><li>Son <strong>complicadas de implementar</strong>.</li></ul><p>Hay muchos chips para fuentes conmutadas; uno de ellos es el <strong>LM2675</strong>. Trabaja con tensiones de entrada de <strong>8 a 40 V</strong> (V<sub>BAT</sub>, pin 7) y da <strong>1 A</strong> a la salida (V<sub>CC</sub>, que se realimenta al pin 4). El circuito del libro necesita:</p><ul><li>Un <strong>diodo Schottky</strong> de conmutación rápida capaz de soportar 1 A, por ejemplo el <strong>1N5817</strong>, entre la salida de conmutación y masa.</li><li>Una <strong>bobina</strong> L1 de <strong>más de 100 µH</strong> que soporte también 1 A.</li><li>Un condensador de salida C11 de <strong>6 V y más de 100 µF</strong>.</li><li>Un condensador de entrada C6 que aguante una tensión mayor que la de entrada y de <strong>más de 100 µF</strong>.</li><li>Una resistencia R13 que limita la corriente del LED de encendido.</li></ul>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Ampliación (no está en el libro).</strong> El circuito del LM2675 no lleva transformador: es un convertidor <em>reductor</em> (<em>buck</em>). El interruptor interno trocea la tensión de entrada, y la bobina L1 con el condensador C11 filtran ese PWM para quedarse con su valor medio; el diodo da camino a la corriente de la bobina cuando el interruptor se abre. Es la misma idea de «tensión media mediante PWM» que se usa más abajo para controlar la velocidad de un motor DC."
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>12.3.2 Sistema autónomo o con cables</h3><p>El sistema digital puede ser <strong>autónomo</strong> o necesitar un <strong>cable de alimentación</strong>. Los sistemas autónomos están basados en baterías. Esto condiciona el diseño de la fuente de alimentación, que espera a la entrada una tensión continua en el caso de las baterías o alterna si toma la tensión de la red.</p><p>Si el sistema es autónomo, la elección de las baterías cobra importancia, porque condiciona el presupuesto, el peso, la autonomía y el tamaño del sistema. Las baterías tienen muchas ventajas: son baratas, en la mayor parte de los casos son seguras, pequeñas y fáciles de usar. A veces se habla de <strong>celdas</strong> en vez de baterías: una celda es una unidad en la que se produce una única reacción química para producir tensión, y una batería es un conjunto de celdas.</p><p>Para decidir qué batería usar hay que conocer sus características:</p><ul><li><strong>Tensión:</strong> depende de la reacción química. Por ejemplo, la mayor parte de las celdas alcalinas son de 1,5 V, mientras que la batería de un coche tiene seis celdas de 2 V cada una.</li><li><strong>Capacidad:</strong> para un mismo tipo de reacción química, cuanto más grande es la celda, más electricidad puede dar. Se mide en <strong>amperios-hora (Ah)</strong>: los amperios que la celda puede suministrar durante una hora antes de que su tensión baje de un umbral determinado. Una batería de 1 Ah funciona una hora dando 1 A, o dos horas dando 0,5 A.</li><li><strong>Densidad de energía:</strong> cociente entre la capacidad y el peso. Depende de la reacción química y de su eficiencia, y es determinante en un sistema autónomo: las baterías son de los componentes que más pesan.</li><li><strong>Curva de descarga:</strong> al descargarse, la tensión de la celda baja con el tiempo. Las alcalinas tienen una curva muy lineal, lo que permite saber cuándo se está debilitando; las de níquel-cadmio son lineales pero al final caen de forma muy abrupta, y el sistema deja de funcionar de repente.</li><li><strong>Resistencia interna:</strong> una celda se modela como una fuente de tensión ideal con una resistencia en serie. Al dar corriente, la tensión de salida cae en proporción a la caída en esa resistencia. Cuanto menor es, más potencia instantánea puede dar la celda, pero un cortocircuito produce corrientes muy elevadas que pueden quemar los cables o la propia celda, que además tiene que disipar el calor generado en su resistencia interna. Las celdas de litio-polímero son las de menor resistencia interna, pero son peligrosas: mal tratadas pueden provocar un incendio o una explosión.</li><li><strong>Recargabilidad:</strong> si es recargable, cuántas veces y si tiene <strong>memoria</strong> (se deteriora si no se usa en ciclos completos de carga y descarga). Todas las recargables tienen algo de memoria; hoy las que menos tienen son las de litio-ion y litio-polímero (hace unos años eran las de níquel-metal-hidruro). Conviene hacer al menos un ciclo completo al año y, como las celdas son tóxicas para el entorno, usar recargables. El tiempo de carga depende de la capacidad: una pila de 1 Ah tarda una hora en cargarse a 1 A, o dos horas a 0,5 A.</li><li><strong>Coste:</strong> en general está muy relacionado con la densidad de energía.</li></ul>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "Autonomía de una batería de capacidad C (en Ah) que alimenta un sistema que consume una corriente I (en A). Es la definición de capacidad del libro escrita como fórmula: 1 Ah = 1 h a 1 A, o 2 h a 0,5 A.",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>t</mi><mtext>autonomía</mtext></msub><mtext>&#160;(h)</mtext><mo>=</mo><mfrac><mrow><mi>C</mi><mtext>&#160;(Ah)</mtext></mrow><mrow><mi>I</mi><mtext>&#160;(A)</mtext></mrow></mfrac></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Las baterías más utilizadas se comparan en la tabla siguiente (datos del libro):</p><table class=\"tabla-datos\"><thead><tr><th>Tipo de celda</th><th>Tensión</th><th>Capacidad</th><th>Densidad</th><th>Resistencia</th><th>Recargable</th><th>Coste</th></tr></thead><tbody><tr><td>Alcalina</td><td>1,5 V</td><td>—</td><td>Alta</td><td>Alta</td><td>No</td><td>—</td></tr><tr><td>Litio-ion</td><td>3,6-3,7 V</td><td>—</td><td>Muy alta (14 g/VAh)</td><td>Pequeña</td><td>Sí</td><td>2-3 €/VAh</td></tr><tr><td>Níquel-metal-hidruro</td><td>1,2 V</td><td>—</td><td>Alta</td><td>Muy pequeña</td><td>Sí</td><td>1-2 €/VAh</td></tr><tr><td>Litio-polímero</td><td>3,6 V</td><td>2C-5C (10C)</td><td>Muy alta (8 g/VAh)</td><td>Extremadamente pequeña</td><td>Sí</td><td>6 €/VAh</td></tr><tr><td>Ácido-plomo</td><td>2 V</td><td>—</td><td>Baja</td><td>Muy pequeña</td><td>Sí</td><td>0,1-0,25 €/VAh</td></tr></tbody></table>"
+        }
+      ]
+    },
+    {
+      "titulo": "12.4 Actuadores",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Existen muchos actuadores; en este tema se estudian los más comunes: <strong>relés</strong>, <strong>motores de corriente continua</strong> y <strong>servos</strong>. Todos comparten una idea: un pin del micro da una señal de <strong>baja potencia</strong> (unos pocos miliamperios a 3,3 V en el dsPIC33FJ32MC202) que no puede mover directamente el actuador, así que entre ambos hace falta un <strong>driver</strong>: un transistor para la bobina de un relé, un puente en H para un motor DC; el servo lleva su propia electrónica y basta con darle la señal de control.</p>"
+        }
+      ]
+    },
+    {
+      "titulo": "12.5 Relés",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Los <strong>relés</strong> permiten abrir y cerrar un interruptor de un circuito desde otro circuito, proporcionando <strong>aislamiento galvánico</strong> entre ambos. Gracias a ese aislamiento se puede controlar, por ejemplo, un circuito de alterna de 220 V desde un circuito de continua de 5 V.</p><p>El montaje típico es: el pin del micro, a través de una resistencia, ataca la base de un transistor (en el esquema del libro, una pareja Darlington) que hace circular la corriente de 5 V por el <strong>actuador-solenoide</strong> del relé; el solenoide mueve el <strong>interruptor</strong>, que está en serie con la carga (una lámpara alimentada a 220 V); y en paralelo con el solenoide hay un <strong>diodo de libre circulación</strong>.</p><p>Características importantes de un relé son la <strong>tensión de trabajo del actuador</strong>, la <strong>corriente que es capaz de cortar el interruptor</strong> y la <strong>tensión máxima de trabajo del interruptor</strong>. Como el actuador es un solenoide (una bobina), al entrar en corte el transistor se produce un cambio brusco de corriente que genera una sobretensión; el <strong>diodo de libre circulación</strong> en paralelo con el solenoide da camino a esa corriente y evita la sobretensión.</p><h3>12.5.1 Tipos de contactos</h3><p>Cada interruptor de un relé se denomina <strong>polo</strong> (<em>pole</em>). Un relé simple tiene un único polo; en uno de dos polos hay dos interruptores accionados simultáneamente desde el circuito de control. Al activar el relé, el interruptor se mueve hasta tocar un contacto fijo (<em>throw</em>), y para cada polo puede haber uno o dos contactos fijos. Así existen los siguientes tipos de relés:</p><table class=\"tabla-datos\"><thead><tr><th>Tipo</th><th>Significado</th><th>Circuitos</th><th>Ejemplo de uso</th></tr></thead><tbody><tr><td><strong>SPST</strong></td><td><em>single pole single throw</em></td><td>Un circuito, sin conmutación</td><td>Encender y apagar una lámpara</td></tr><tr><td><strong>SPDT</strong></td><td><em>single pole dual throw</em></td><td>Un circuito, con conmutación</td><td>Encender una lámpara u otra</td></tr><tr><td><strong>DPST</strong></td><td><em>dual pole single throw</em></td><td>Dos circuitos, sin conmutación</td><td>Encender y apagar dos lámparas a la vez</td></tr><tr><td><strong>DPDT</strong></td><td><em>dual pole dual throw</em></td><td>Dos circuitos, con conmutación</td><td>Cambiar el sentido de giro de un motor de corriente continua</td></tr></tbody></table><p>El DPDT invierte el giro porque sus dos polos conmutan a la vez los dos terminales del motor: en una posición el motor ve +V<sub>DC</sub> y en la otra −V<sub>DC</sub>. En el esquema del libro cada relé se gobierna desde un pin distinto del micro con su propio transistor y su diodo.</p><h3>12.5.2 Formas de conmutar</h3><ul><li><strong>No lacheados (<em>non latching</em>):</strong> tienen un solo actuador y, por tanto, una posición por defecto <em>relajada</em> (el actuador no consume) y otra <em>en excitación</em> (el actuador consume). Por eso se habla de relés <strong>normalmente abiertos</strong> (interruptor abierto por defecto) y <strong>normalmente cerrados</strong> (interruptor cerrado por defecto).</li><li><strong>Lacheados (<em>latching</em>):</strong> tienen dos actuadores, así que necesitan dos circuitos de excitación con sus transistores, cada uno asociado a un pin del micro. No hay posición por defecto: si se excita un actuador, el interruptor se pone en una posición, y si se excita el otro, cambia. Ambas posiciones son relajadas, porque el actuador solo consume mientras cambia de posición. Es parecido a un <strong>biestable RS</strong>.</li></ul>"
+        }
+      ]
+    },
+    {
+      "titulo": "12.6 Motor DC",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<h3>12.6.1 Principio de funcionamiento</h3><p>Como todo motor, el de corriente continua tiene un <strong>estátor</strong> y un <strong>rotor</strong>. El estátor genera un campo de <strong>excitación</strong> (B<sub>exc</sub>), constante y fijo en el espacio, mediante un electroimán recorrido por corriente continua o, en motores de baja potencia, directamente con un imán. El rotor suele estar bobinado, y la corriente se le inyecta mediante unas <strong>escobillas</strong> que tocan los terminales de las bobinas, llamados <strong>delgas</strong>; también se alimenta en continua.</p><p>Al alimentar el rotor se produce un campo (B<sub>ind</sub>) que interacciona con el del estátor por el llamado <strong>efecto brújula</strong>: dos campos magnéticos no alineados tienden a alinearse, ejerciendo un par proporcional a su amplitud y función del ángulo que los separa. Lo idóneo es que ese ángulo sea de 90°.</p><p>Si no se hiciera nada, el rotor giraría hasta alinear ambos campos y se pararía. Para evitarlo, se disponen varias bobinas alrededor del rotor y se deja sin alimentar la que está en la dirección del eje magnético del campo: al principio B<sub>ind</sub> y B<sub>exc</sub> están a 90° y el par es máximo; según gira el rotor, B<sub>ind</sub> gira con él y el ángulo (y el par) se reduce; llegado cierto punto, las escobillas dejan de tocar una bobina y pasan a la siguiente, de modo que B<sub>ind</sub> vuelve a quedar a 90° del campo del estátor. El conjunto delgas-escobillas actúa como un <strong>conmutador mecánico</strong>.</p><p>Para hacer cálculos eléctricos se usa el <strong>modelo eléctrico</strong> del motor: entre sus bornes, con tensión de alimentación U<sub>CC</sub> y corriente I<sub>a</sub>, hay en serie una fuente de tensión E<sub>0</sub> (la tensión inducida), la inductancia del bobinado L<sub>σ</sub>, su resistencia R y una pequeña pila que modela la caída de tensión en las escobillas. Según la ley de Faraday, en el bobinado del rotor, al girar dentro del campo del imán, se induce una tensión proporcional a la velocidad de giro y a la magnitud del campo:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "Ecuación (1): tensión inducida en el rotor, proporcional a la velocidad de giro ω y al flujo del imán λ<sub>imán</sub> que concatena el devanado (Φ en otras notaciones). Tomada del modelo eléctrico de la Figura 97 del libro.",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>E</mi><mn>0</mn></msub><mo>=</mo><mi>K</mi><mo>·</mo><msub><mi>λ</mi><mtext>imán</mtext></msub><mo>·</mo><mi>ω</mi></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>El conjunto delgas-escobillas rectifica mecánicamente esa tensión para obtener una tensión continua. El par en el eje se calcula con un sencillo balance de potencias:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "Ecuación (2): par motor T. Del balance de potencias (potencia eléctrica convertida = potencia mecánica, E<sub>0</sub> · I<sub>a</sub> = T · ω) se obtiene que el par es proporcional a la corriente del motor. <em>Fórmula reconstruida a partir de la prosa del libro: en el original es una imagen que no se ha conservado.</em>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>E</mi><mn>0</mn></msub><mo>·</mo><msub><mi>I</mi><mi>a</mi></msub><mo>=</mo><mi>T</mi><mo>·</mo><mi>ω</mi><mspace width=\"1em\"/><mo>⇒</mo><mspace width=\"1em\"/><mi>T</mi><mo>=</mo><mi>K</mi><mo>·</mo><msub><mi>λ</mi><mtext>imán</mtext></msub><mo>·</mo><msub><mi>I</mi><mi>a</mi></msub></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Por tanto, <strong>el par motor es proporcional al consumo de corriente</strong>.</p><p>Como toda máquina eléctrica rotativa, el motor DC puede trabajar en <strong>modo motor</strong> o en <strong>modo generador</strong> (frenando), y girar en un sentido o en el otro:</p><ul><li>El <strong>sentido de giro</strong> se controla con la <strong>polaridad</strong> de la alimentación: si se invierte la polaridad, se invierte el sentido de giro.</li><li>El <strong>modo</strong> lo determina el sentido de la corriente: si la corriente entra por el terminal positivo, funciona como motor; si sale por el terminal positivo, funciona como generador (está frenando).</li></ul><table class=\"tabla-datos\"><thead><tr><th>Caso</th><th>Sentido de giro</th><th>Corriente I<sub>a</sub></th><th>Funcionamiento</th></tr></thead><tbody><tr><td>a) + motor</td><td>Positivo</td><td>Entra por el terminal positivo</td><td>Motor</td></tr><tr><td>b) + freno</td><td>Positivo</td><td>Sale por el terminal positivo</td><td>Generador (frena)</td></tr><tr><td>c) − motor</td><td>Negativo</td><td>Entra por el terminal positivo</td><td>Motor</td></tr><tr><td>d) − freno</td><td>Negativo</td><td>Sale por el terminal positivo</td><td>Generador (frena)</td></tr></tbody></table><h3>12.6.2 Control de velocidad</h3><p>La velocidad de un motor de continua se controla variando la <strong>tensión media</strong> de entrada. Se ve claramente si en el modelo eléctrico se desprecian la inductancia, la resistencia y la pila de las escobillas: queda solo la fuente E<sub>0</sub> conectada a U<sub>CC</sub>.</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "Ecuación (3): en el modelo simplificado (sin inductancia, resistencia ni caída en las escobillas) la tensión de alimentación es igual a la tensión inducida. <em>Fórmula reconstruida a partir de la prosa y del modelo simplificado (Figura 99) del libro.</em>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>U</mi><mi>CC</mi></msub><mo>=</mo><msub><mi>E</mi><mn>0</mn></msub><mo>=</mo><mi>K</mi><mo>·</mo><msub><mi>λ</mi><mtext>imán</mtext></msub><mo>·</mo><mi>ω</mi></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>y, por tanto, la velocidad ω es proporcional a la tensión de alimentación del motor:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "Ecuación (4): la velocidad es proporcional a la tensión (media) de alimentación, y cambia de signo si se invierte la polaridad de U<sub>CC</sub>. <em>Fórmula reconstruida a partir de la prosa del libro.</em>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><mi>ω</mi><mo>=</mo><mfrac><msub><mi>U</mi><mi>CC</mi></msub><mrow><mi>K</mi><mo>·</mo><msub><mi>λ</mi><mtext>imán</mtext></msub></mrow></mfrac></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Según (4), si se invierte la polaridad de U<sub>CC</sub> se invierte también el sentido de giro (signo negativo de ω), como se indicó antes.</p><p>Con la electrónica actual, la forma más sencilla de variar la tensión media de una señal es la <strong>modulación de ancho de pulso (PWM)</strong>: una onda cuadrada de frecuencia constante cuyos pulsos tienen ancho variable, es decir, cuyo <strong>factor de servicio</strong> (<em>duty cycle</em>: proporción del periodo en que la onda está a nivel alto) es variable. Las señales PWM se generan fácilmente con electrónica digital, por ejemplo con un micro, pero son de <strong>baja potencia</strong> y no se pueden conectar directamente a un motor: hace falta un amplificador de potencia, el <strong>driver</strong>. Para motores DC los más habituales son los <strong>choppers</strong> y los <strong>puentes en H</strong> (inversores de cuatro cuadrantes).</p><ul><li>El <strong>chopper</strong> es más sencillo: usa solo dos elementos de conmutación (un interruptor y un diodo de libre circulación). El interruptor conecta y desconecta la fuente V<sub>E</sub> al motor, que ve una tensión pulsante de valor medio U<sub>CC,med</sub>. Solo da tensiones positivas.</li><li>El <strong>puente en H</strong> usa cuatro elementos de conmutación, pero puede dar tensiones <strong>positivas y negativas</strong>, es decir, controlar los dos sentidos de giro. Hoy un puente en H integrado en un solo chip es barato y fácil de conseguir.</li></ul>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "Tensión media que da un <strong>chopper</strong> (un interruptor y un diodo) con factor de servicio D (0 ≤ D ≤ 1) y tensión de entrada V<sub>E</sub>: solo puede ser positiva. Ampliación: se deduce de la Figura 100 del libro, que no la escribe como ecuación.",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>U</mi><mrow><mi>CC</mi><mo>,</mo><mtext>med</mtext></mrow></msub><mo>=</mo><mi>D</mi><mo>·</mo><msub><mi>V</mi><mi>E</mi></msub></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Con un puente en H, el valor medio nulo se consigue con un <strong>factor de servicio del 50 %</strong> (ancho de pulso Dc = Per/2): el motor no se mueve. Si el ancho del pulso supera la mitad del periodo (duty cycle &gt; 0,5), el valor medio es mayor que 0 y el motor gira en <strong>sentido positivo</strong>; cuanto mayor es el ancho, mayor es el valor medio, hasta el caso extremo del 100 %, en que la señal deja de ser periódica y es una continua perfecta de valor máximo. Si el ancho del pulso es menor que la mitad del periodo (duty cycle &lt; 0,5), el valor medio es negativo y el motor gira en <strong>sentido negativo</strong>.</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "Tensión media en bornes del motor con un <strong>puente en H</strong> gobernado con un PWM y su complementario (durante D·T el motor ve +V<sub>motor</sub> y durante el resto del periodo −V<sub>motor</sub>). Ampliación: se deduce de la Figura 101 del libro, que no la escribe como ecuación: D = 0,5 → 0 V (parado); D = 1 → +V<sub>motor</sub>; D = 0 → −V<sub>motor</sub>.",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>U</mi><mtext>med</mtext></msub><mo>=</mo><mi>D</mi><mo>·</mo><msub><mi>V</mi><mtext>motor</mtext></msub><mo>+</mo><mo>(</mo><mn>1</mn><mo>−</mo><mi>D</mi><mo>)</mo><mo>·</mo><mo>(</mo><mo>−</mo><msub><mi>V</mi><mtext>motor</mtext></msub><mo>)</mo><mo>=</mo><mo>(</mo><mn>2</mn><mi>D</mi><mo>−</mo><mn>1</mn><mo>)</mo><mo>·</mo><msub><mi>V</mi><mtext>motor</mtext></msub></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Un puente en H (llamado así por la forma del circuito) consta de <strong>cuatro transistores</strong> (interruptores controlados) y <strong>cuatro diodos</strong>; sin los diodos el motor no podría frenar. Los cuatro transistores se controlan con señales PWM de baja potencia: el <strong>transistor superior izquierdo y el inferior derecho</strong> reciben la señal PWM, y el <strong>inferior izquierdo y el superior derecho</strong> reciben la señal PWM <strong>invertida</strong>. El libro muestra los cuatro casos de funcionamiento:</p><ul><li><strong>+ motor:</strong> conducen el transistor superior izquierdo y el inferior derecho; la corriente atraviesa el motor de izquierda a derecha y lo hace girar en sentido positivo.</li><li><strong>+ freno:</strong> el motor sigue girando en sentido positivo, pero la corriente vuelve hacia la fuente a través de los diodos: funciona como generador y frena.</li><li><strong>− motor:</strong> conducen el transistor superior derecho y el inferior izquierdo; la corriente atraviesa el motor en sentido contrario y lo hace girar en sentido negativo.</li><li><strong>− freno:</strong> giro negativo con la corriente devuelta a través de los diodos (generador).</li></ul><p>Mueve el factor de servicio y observa la tensión media, el sentido de giro y qué transistores conducen. Empieza en el 50 % (parado) con 9 V de motor y PWM de 20 kHz, como en el montaje del L293D:</p><div class=\"mpi-mount\" data-componente=\"sim-puente-h\" data-config='{\"dc\":50,\"vmotor\":9,\"pwmHz\":20000}'></div><h3>12.6.3 L293D</h3><p>El chip <strong>L293D</strong>, llamado <strong>doble puente en H</strong>, es un controlador de potencia para <strong>dos motores</strong> de corriente continua. Con <strong>un motor</strong> conectado puede darle una corriente máxima de <strong>1 A</strong>; con <strong>dos motores</strong>, <strong>0,5 A</strong> a cada uno. Cada motor se controla con una mitad del chip: el motor 1 con la parte izquierda (pines 2, 3, 6, 7 y 8) y el motor 2 con la derecha. Si solo se usa un motor, basta con no usar los pines 9, 10, 11, 14 y 15. La función de cada pin es:</p><ul><li><strong>Pines 1 y 9:</strong> habilitadores de cada puente en H (el 1 para el motor 1 y el 9 para el motor 2). Si se ponen a 5 V se pueden controlar ambos motores.</li><li><strong>Pin 8:</strong> tensión que se quiere dar al motor. Suele ser la de las baterías, de <strong>9 V a 12 V</strong>.</li><li><strong>Pin 16:</strong> alimentación de toda la electrónica (lógica) del chip.</li><li><strong>Pines 4, 5, 12 y 13:</strong> referencia (masa) del chip.</li><li><strong>Pines 2 y 7:</strong> señal de control <strong>directa e invertida</strong> del motor 1. Suele ser un PWM, por lo que se conectan a los módulos PWM del micro; en el esquema del libro, a los pines <strong>PWM1H</strong> y <strong>PWM1L</strong> (en la figura, el pin 2 del L293D va a PWM1L y el pin 7 a PWM1H; como las dos señales son complementarias, intercambiarlas solo invierte el sentido de giro asociado a cada factor de servicio). Se recomienda una frecuencia de PWM de unos <strong>20 kHz</strong>. El factor de servicio va de 0 % (motor en sentido negativo a máxima velocidad) a 100 % (sentido positivo a máxima velocidad), con el <strong>50 % = motor parado</strong>.</li><li><strong>Pines 10 y 15:</strong> los homólogos de los anteriores para el motor 2.</li><li><strong>Pines 3 y 6</strong> (motor 1) y <strong>11 y 14</strong> (motor 2): salidas a las que se conectan los bornes de cada motor.</li></ul><table class=\"tabla-datos\"><thead><tr><th>Pin del L293D</th><th>Función</th><th>Conexión en el ejemplo con el dsPIC33FJ32MC202</th></tr></thead><tbody><tr><td>1 / 9</td><td>Habilitación del puente 1 / 2</td><td>EN1 / EN2 (a 5 V o a un pin del micro)</td></tr><tr><td>2 / 7</td><td>Control directo / invertido del motor 1</td><td>PWM1L1 (pin 26, RB15) / PWM1H1 (pin 25, RB14)</td></tr><tr><td>3, 6</td><td>Salidas al motor 1</td><td>Bornes del motor 1</td></tr><tr><td>4, 5, 12, 13</td><td>Masa</td><td>GND</td></tr><tr><td>8</td><td>Alimentación de los motores</td><td>V<sub>in</sub> (baterías, 9-12 V)</td></tr><tr><td>10 / 15</td><td>Control del motor 2</td><td>PWM1L2 (pin 24, RB13) / PWM1H2 (pin 23, RB12)</td></tr><tr><td>11, 14</td><td>Salidas al motor 2</td><td>Bornes del motor 2</td></tr><tr><td>16</td><td>Alimentación de la lógica</td><td>5 V</td></tr></tbody></table><p>En el dsPIC33FJ32MC202, <strong>PWM1H1 = RB14 (pin 25)</strong> y <strong>PWM1L1 = RB15 (pin 26)</strong> (datasheet, diagrama de pines del encapsulado de 28 pines). En modo complementario el módulo PWM genera en PWM1L1 justo el complemento de PWM1H1 (datasheet, sección 15.0), que es lo que necesitan las entradas «directa e invertida» del L293D. El módulo PWM del micro se estudia en su propio tema.</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>En la PicTrainer.</strong> RB12-RB15, que son las salidas PWM1H2, PWM1L2, PWM1H1 y PWM1L1, son también los pines de los LEDs D9, D8, D7 y D6 y están disponibles en el conector de expansión P7 (pines 3 a 6). Para usarlos con un L293D conviene retirar el puente JP3, que deshabilita los LEDs (el anexo C prevé los puentes JP1-JP3 precisamente para poder usar esos pines en otros menesteres)."
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Párrafo recolocado.</strong> En la conversión del libro, la descripción de los pines 2/7 y 10/15 del L293D aparece desplazada dentro de 17.5.3 (Servos); aquí se ha devuelto a su sitio, en 17.5.2.3."
+        }
+      ]
+    },
+    {
+      "titulo": "12.7 Servos",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Un <strong>servo</strong> es un dispositivo que, mediante un motor eléctrico con reductor y un circuito electrónico, consigue girar su eje de salida un cierto <strong>ángulo</strong> en función de una señal que se puede generar con un circuito de control, por ejemplo un micro.</p><p>Típicamente la señal de control es un <strong>pulso de entre 0,5 ms y 2,5 ms</strong> que se repite <strong>cada 20 ms aproximadamente</strong> (50 Hz). Sobre un ángulo efectivo de trabajo de 180°:</p><table class=\"tabla-datos\"><thead><tr><th>Ancho del pulso</th><th>Ángulo</th><th>Ángulo con la escala 0-180°</th></tr></thead><tbody><tr><td>0,5 ms</td><td>−90°</td><td>0°</td></tr><tr><td>1,0 ms</td><td>−45°</td><td>45°</td></tr><tr><td>1,5 ms</td><td>0°</td><td>90°</td></tr><tr><td>2,0 ms</td><td>+45°</td><td>135°</td></tr><tr><td>2,5 ms</td><td>+90°</td><td>180°</td></tr></tbody></table><p>El texto del libro usa la escala −90° … +90° y su figura rotula las mismas posiciones como 0°, 90° y 180°: es la misma escala desplazada 90°. Las filas de ±45° se obtienen con la relación lineal:</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "Ancho del pulso de control de un servo en función del ángulo θ (en grados, entre −90° y +90°): 0,5 ms → −90°, 1,5 ms → 0°, 2,5 ms → +90°. Ampliación: relación lineal deducida de los tres puntos que da el libro, que no la escribe como ecuación.",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>t</mi><mtext>pulso</mtext></msub><mtext>&#160;(ms)</mtext><mo>=</mo><mn>1,5</mn><mo>+</mo><mfrac><mi>θ</mi><mrow><mn>90</mn><mo>°</mo></mrow></mfrac></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Si se intenta sobrepasar los márgenes del ancho del pulso, el servo se <strong>bloquea</strong> y su consumo aumenta mucho (incluso se puede quemar). Todos estos valores tienen cierta <strong>tolerancia</strong>, así que para conocer los valores exactos de un servo hay que hacer experimentos, aunque sean del mismo fabricante y tipo.</p><p>Cambia el ancho del pulso y observa el ángulo del eje; parte de 1,5 ms (0°) con un periodo de 20 ms:</p><div class=\"mpi-mount\" data-componente=\"sim-servo\" data-config='{\"anchoMs\":1.5,\"periodoMs\":20}'></div><p>El <strong>funcionamiento interno</strong> aproximado es un lazo de control de posición:</p><ol><li>La señal de control (el «PWM de posición») se transforma en una tensión continua.</li><li>Esa tensión se compara con la que da un <strong>potenciómetro</strong> unido al eje de salida (realimentación de la posición real). A la diferencia se le llama <strong>error</strong>.</li><li>Si el error es 0, la amplificación es 0 y el motor no se mueve. Si es positivo, el motor gira en un sentido a una velocidad proporcional al error (cuanta más diferencia, más rápido), hasta que el error se anula y el motor se detiene. Si es negativo, hace lo mismo en el otro sentido.</li><li>Para variar la velocidad en función del error, el bloque de control genera un «PWM de velocidad» comparando la tensión del error con una onda triangular, y ese PWM ataca un <strong>puente en H</strong> que mueve el motor DC; con error 0 el PWM queda al 50 % y el motor parado, como en 17.5.2.</li><li>El motor mueve el eje de salida a través de unos <strong>engranajes</strong> (reductor), y el potenciómetro cierra el lazo.</li></ol>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>Ampliación (no está en el libro).</strong> Con el micro, la señal de un servo se puede generar con un timer y una salida, como en el tema de timers: con F<sub>CY</sub> = 40 MHz y pre-escalado 1:64 (1,6 µs por cuenta), el periodo de 20 ms corresponde a 20 ms / 1,6 µs = 12 500 cuentas (cabe en un registro de 16 bits) y un pulso de 1,5 ms a 937,5 ≈ 938 cuentas."
+        }
+      ]
+    },
+    {
+      "titulo": "12.8 Programación del micro",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Para programar y depurar el dsPIC33FJ32MC202 con herramientas como el MPLAB ICD 3, el PICkit 3 o un depurador con licencia hace falta un <strong>circuito de adaptación</strong> muy sencillo. Se pueden usar los pares de pines <strong>EMUC-EMUD</strong>, EMUC1-EMUD1 o EMUC2-EMUD2, junto con los pines PGC y PGD. El ejemplo del libro usa EMUC y EMUD.</p><p>El conector que une el programador con la tarjeta tiene <strong>6 pines</strong>, que se conectan así:</p><table class=\"tabla-datos\"><thead><tr><th>Pin del conector</th><th>Pin del microcontrolador</th></tr></thead><tbody><tr><td>Pin 1</td><td><span style=\"text-decoration:overline\">MCLR</span></td></tr><tr><td>Pin 2</td><td>V<sub>DD</sub></td></tr><tr><td>Pin 3</td><td>GND</td></tr><tr><td>Pin 4</td><td>EMUD (PGD)</td></tr><tr><td>Pin 5</td><td>EMUC (PGC)</td></tr><tr><td>Pin 6</td><td>NC (no conectado)</td></tr></tbody></table><p>Además, como el pin de reset está <strong>negado</strong> (activo a nivel bajo), hay que colocar una <strong>resistencia de pull-up de 4,7 kΩ a V<sub>DD</sub></strong> para asegurarse de que está siempre a 1 salvo cuando el programador necesite reiniciar el micro. En el esquema del libro el reset lleva también un pulsador a masa y un condensador de 100 nF. Finalmente, se conecta el pin PGD con EMUD y PGC con EMUC.</p><p>En el datasheet del dsPIC33FJ32MC202 estos pines se llaman <strong>PGEDx/PGECx</strong> (x = 1, 2 o 3); los nombres EMUDx/EMUCx y PGDx/PGCx son los de revisiones anteriores (datasheet, historial de revisiones). En el encapsulado de 28 pines están en:</p><table class=\"tabla-datos\"><thead><tr><th>Canal</th><th>Datos (PGEDx)</th><th>Reloj (PGECx)</th></tr></thead><tbody><tr><td>1</td><td>PGED1 = RB0 (pin 4)</td><td>PGEC1 = RB1 (pin 5)</td></tr><tr><td>2</td><td>PGED2 = RB10 (pin 21)</td><td>PGEC2 = RB11 (pin 22)</td></tr><tr><td>3</td><td>PGED3 = RB5 (pin 14)</td><td>PGEC3 = RB6 (pin 15)</td></tr></tbody></table><p>El canal que usa el depurador se elige con los bits de configuración ICS&lt;1:0&gt; del registro FICD (11 = PGEC1/PGED1; datasheet, sección 21.0). Mientras se depura, dos pines y los primeros 80 bytes de RAM de datos quedan reservados para el depurador (sección 21.7).</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>En la PicTrainer.</strong> El conector de programación es <strong>P4</strong> (tira de 6 pines, soldada para que quede accesible por la cara inferior) y sigue la misma asignación: 1 = Reset (<span style=\"text-decoration:overline\">MCLR</span>), 2 = +3,3 V, 3 = GND, 4 = PGD, 5 = PGC, 6 = sin conectar (esquema del anexo C, Figura 126). PGD y PGC van a los pines 4 y 5 del micro, es decir, al <strong>canal 1 (PGED1 = RB0, PGEC1 = RB1)</strong>. El reset usa una pull-up R11 de 10 kΩ, una resistencia serie R13 de 470 Ω, el condensador C12 de 100 nF y el pulsador SW1. El datasheet (sección 2.4) recomienda una pull-up ≤ 10 kΩ en <span style=\"text-decoration:overline\">MCLR</span> y una resistencia serie ≤ 470 Ω; los 4,7 kΩ del libro también cumplen. El datasheet (sección 2.5) desaconseja poner pull-ups o condensadores en PGECx/PGEDx."
+        }
+      ]
+    },
+    {
+      "titulo": "12.9 Comunicaciones RS232",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>El puerto serie <strong>RS-232</strong> es el estándar en que se basa el puerto serie del ordenador. Usa un <strong>conector DB-9</strong> de 9 pines. Sus señales de datos son digitales, con niveles de <strong>+15 V para el 0 lógico</strong> y <strong>−15 V para el 1 lógico</strong> (lógica negativa), y el <strong>estado de reposo</strong> de las líneas de datos es <strong>−15 V</strong>. Según la velocidad de transmisión, se pueden usar cables de hasta 15 metros.</p><p>Las señales más importantes son <strong>TXD</strong> (transmitir datos, salida) y <strong>RXD</strong> (recibir datos, entrada). En el conector DB-9:</p><table class=\"tabla-datos\"><thead><tr><th>Pin DB-9</th><th>Señal</th><th>Descripción</th></tr></thead><tbody><tr><td>2</td><td>RxD</td><td>Recepción</td></tr><tr><td>3</td><td>TxD</td><td>Transmisión</td></tr><tr><td>5</td><td>GND</td><td>Tierra</td></tr></tbody></table><p>Los pines del conector se numeran del 1 al 5 en la fila larga y del 6 al 9 en la corta; en el conector macho y en el hembra la numeración aparece en espejo, porque uno se enchufa frente al otro.</p><p>El RS-232 puede transmitir datos en grupos de <strong>5, 6, 7 u 8 bits</strong>, a velocidades determinadas (2400, 4800, 9600 bps…). Tras los datos va un bit opcional de <strong>paridad</strong> y después <strong>1, 1,5 o 2 bits de stop</strong>. El protocolo más habitual es el <strong>8N1</strong>: 8 bits de datos, sin paridad y 1 bit de stop. Una vez que ha empezado la transmisión de un dato, los bits tienen que llegar uno detrás de otro a velocidad constante y en instantes determinados.</p>"
+        },
+        {
+          "tipo": "formula",
+          "descripcion": "Duración de un bit y de una trama 8N1 (1 bit de start + 8 de datos + 1 de stop = 10 bits). Con 9600 baudios: T<sub>bit</sub> ≈ 104,2 µs y T<sub>trama</sub> ≈ 1,04 ms, es decir, unos 960 caracteres por segundo como máximo. <em>Ampliación: el libro no da esta fórmula en el capítulo 17.</em>",
+          "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mrow><msub><mi>T</mi><mtext>bit</mtext></msub><mo>=</mo><mfrac><mn>1</mn><mtext>baudios</mtext></mfrac><mspace width=\"2em\"/><msub><mi>T</mi><mtext>trama 8N1</mtext></msub><mo>=</mo><mn>10</mn><mo>·</mo><msub><mi>T</mi><mtext>bit</mtext></msub></mrow></math>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Por ejemplo (ejemplo propio, no está en el libro), el dato <code>0x2A</code> (el carácter <code>'*'</code>, 0010 1010 en binario) a 9600 baudios en 8N1 se envía con el bit menos significativo primero: start (0), 0, 1, 0, 1, 0, 1, 0, 0, stop (1). En niveles RS-232 eso es +15 V para el start y para cada 0, y −15 V para cada 1, para el stop y para el reposo (el estándar admite entre ±3 V y ±15 V: los ±15 V son el valor máximo, no el único posible). Compara la misma trama en niveles TTL del micro y en niveles RS-232:</p><div class=\"mpi-mount\" data-componente=\"vis-rs232\" data-config='{\"dato\":\"0x2A\",\"baudios\":9600}'></div><p>Los parámetros que hay que configurar en ambos extremos son: el protocolo serie (8N1), la velocidad y el <strong>control de flujo</strong>, que puede ser por hardware (<strong>RTS/CTS</strong>) o por software (<strong>XON/XOFF</strong>). El libro usa en adelante control por software.</p><p>Para conectar el micro al puerto serie del ordenador hace falta un circuito que convierta los niveles lógicos del micro (0 V / 3,3 V en el dsPIC33FJ32MC202) a los −15 V / +15 V del RS-232. El integrado más típico, aunque no el único, es el <strong>MAX233</strong>. La salida de transmisión de la UART del micro (U1TX) entra al MAX233 por su pin 2 y la salida de recepción del MAX233 (pin 3) va a la entrada de recepción de la UART (U1RX); el MAX233 se alimenta a +5 V (pin 7); su pin 4 recibe la señal TxD del ordenador (pin 3 del DB-9) y su pin 5 entrega la señal RxD al ordenador (pin 2 del DB-9). Como la UART del dsPIC33FJ32MC202 es remapeable, U1RX debe asignarse a un pin <strong>tolerante a 5 V</strong> (RB5, pin 14, lo es; RB4, pin 11, no), porque es el que recibe la salida de 5 V del MAX233; U1TX no tiene ese problema, porque es el micro quien la genera.</p>"
+        },
+        {
+          "tipo": "nota",
+          "html": "<strong>En la PicTrainer.</strong> La tarjeta no tiene conector DB-9 ni MAX233: usa el chip <strong>FT230XS</strong>, un conversor de USB a interfaz serie asíncrona conectado a la UART del micro (U1TX = RB4, pin 11; U1RX = RB5, pin 14) a través del selector K2 (posición 1-2 USB; 2-3 conector Arduino). Las señales entre el micro y el FT230XS son de nivel lógico, y el ordenador ve un <strong>puerto COM virtual</strong> que se configura igual que un RS-232 (velocidad, 8N1, control de flujo). Es decir, el FT230XS sustituye a la vez al MAX233 y al cable RS-232 físico."
+        }
+      ]
+    }
+  ],
+  "ejercicios": {
+    "organizacion-sistema-digital-1": {
+      "titulo": "Fuente lineal y autonomía de una batería",
+      "enunciado": "<p>Una tarjeta con micro consume <strong>0,5 A a 5 V</strong> y se alimenta con un regulador lineal <strong>7805</strong>.</p>",
+      "contexto": "<ul><li>7805: entrada de 7 V a 35 V, hasta 1 A; la corriente de entrada es prácticamente igual a la de salida.</li><li>Rendimiento aproximado: η ≈ 5 V / V<sub>in</sub>.</li><li>Potencia disipada: P = (V<sub>in</sub> − 5 V) · I.</li><li>Autonomía de una batería: t (h) = C (Ah) / I (A).</li></ul>",
+      "preguntas": [
+        {
+          "texto": "Si la entrada del 7805 es de 9 V, ¿cuál es el rendimiento aproximado de la fuente?",
+          "opciones": [
+            "≈ 44 %",
+            "≈ 56 %",
+            "≈ 80 %",
+            "≈ 97 %"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>η ≈ V<sub>out</sub> / V<sub>in</sub> = 5 / 9 ≈ <strong>0,56 (56 %)</strong>. El 44 % es la fracción que se pierde ((9 − 5) / 9), y el 97 % es el rendimiento que el libro atribuye a una fuente conmutada, no a una lineal.</p>"
+        },
+        {
+          "texto": "Con 9 V de entrada y 0,5 A de consumo, ¿qué potencia disipa el 7805?",
+          "opciones": [
+            "0,5 W",
+            "2,5 W",
+            "2 W",
+            "4,5 W"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>P = (V<sub>in</sub> − 5) · I = (9 − 5) · 0,5 = <strong>2 W</strong>. 4,5 W es la potencia total que entrega la fuente de 9 V (9 · 0,5), de la que 2,5 W llegan a la placa (5 · 0,5) y 2 W se pierden en el regulador: 2,5 / 4,5 ≈ 56 %, coherente con el apartado anterior.</p>"
+        },
+        {
+          "texto": "Si se sube la entrada a 12 V con el mismo consumo, ¿qué ocurre?",
+          "opciones": [
+            "η ≈ 42 % y el 7805 disipa 3,5 W",
+            "η ≈ 58 % y el 7805 disipa 3,5 W",
+            "η ≈ 42 % y el 7805 disipa 6 W",
+            "No cambia nada: el 7805 siempre da 5 V"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>η ≈ 5 / 12 ≈ <strong>42 %</strong> y P = (12 − 5) · 0,5 = <strong>3,5 W</strong>. La salida sigue siendo de 5 V, pero se pierde más energía en calor; por eso el libro dice que el 7805 solo debe usarse con tensiones de entrada cercanas a 7 V, y el anexo C recomienda 7,5-9 V para la PicTrainer. 6 W es la potencia total de entrada (12 · 0,5).</p>"
+        },
+        {
+          "texto": "La tarjeta se alimenta ahora con un pack de 6 pilas alcalinas AA en serie (9 V, 2 Ah) a través del mismo 7805. ¿Cuánto tiempo funcionará aproximadamente?",
+          "opciones": [
+            "1 h",
+            "4 h",
+            "7,2 h",
+            "18 h"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>En un regulador lineal la corriente que sale de la batería es prácticamente la misma que consume la placa, 0,5 A. Autonomía = C / I = 2 Ah / 0,5 A = <strong>4 h</strong>. Los 7,2 h serían los de una fuente conmutada ideal, que tomaría de la batería solo 0,5 · 5 / 9 ≈ 0,28 A. En la práctica dura algo menos: al descargarse, la tensión del pack baja y el 7805 deja de regular cuando la entrada cae por debajo de unos 7 V.</p>"
+        }
+      ]
+    },
+    "organizacion-sistema-digital-2": {
+      "titulo": "Relés, motor DC y puente en H",
+      "enunciado": "<p>Se quiere gobernar un motor de corriente continua desde el dsPIC33FJ32MC202, primero con relés y después con un L293D alimentado con <strong>V<sub>motor</sub> = 9 V</strong> en el pin 8 y un PWM de 20 kHz en los pines 2 y 7.</p>",
+      "contexto": "<ul><li>Relés: SPST, SPDT, DPST, DPDT.</li><li>Con puente en H: U<sub>med</sub> = (2D − 1) · V<sub>motor</sub>, con D el factor de servicio.</li><li>La velocidad del motor es proporcional a la tensión media; el signo indica el sentido de giro.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "Si solo se quiere cambiar el sentido de giro del motor con un relé, ¿qué tipo de relé hace falta?",
+          "opciones": [
+            "SPST",
+            "SPDT",
+            "DPST",
+            "DPDT"
+          ],
+          "correcta": 3,
+          "explicacion": "<p>Para invertir el giro hay que invertir la polaridad en los <strong>dos</strong> bornes del motor a la vez, y cada borne tiene que poder conmutar entre +V y masa: dos polos con dos contactos cada uno, un <strong>DPDT</strong> (<em>dual pole dual throw</em>). Es el ejemplo de uso que da el libro (17.5.1.1). Un SPST solo enciende y apaga, un SPDT conmuta un único circuito y un DPST enciende y apaga dos circuitos sin conmutarlos.</p>"
+        },
+        {
+          "texto": "¿Para qué se pone un diodo en paralelo con la bobina (actuador) del relé?",
+          "opciones": [
+            "Para aislar galvánicamente el micro del circuito de 220 V",
+            "Para limitar la corriente de base del transistor",
+            "Para evitar la sobretensión en el solenoide cuando el transistor pasa a corte",
+            "Para rectificar la tensión alterna que conmuta el relé"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>El solenoide es una bobina: al cortarse el transistor, el cambio brusco de corriente genera una sobretensión. El <strong>diodo de libre circulación</strong> da camino a esa corriente y protege el transistor. El aislamiento galvánico lo proporciona el propio relé, y la corriente de base la limita la resistencia de base.</p>"
+        },
+        {
+          "texto": "Con el puente en H del L293D, ¿qué factor de servicio deja el motor parado?",
+          "opciones": [
+            "0 %",
+            "50 %",
+            "100 %",
+            "Cualquiera, si el pin 1 (enable) está a 5 V"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>Con un puente en H el motor ve +V<sub>motor</sub> durante D·T y −V<sub>motor</sub> el resto del periodo, así que U<sub>med</sub> = (2D − 1) · V<sub>motor</sub>. Con <strong>D = 50 %</strong>, U<sub>med</sub> = 0 y el motor no se mueve. Con 0 % gira a máxima velocidad en sentido negativo y con 100 % a máxima velocidad en sentido positivo. El enable debe estar activo para poder controlar el motor, pero no fija la velocidad.</p>"
+        },
+        {
+          "texto": "¿Qué tensión media y sentido de giro se obtienen con un factor de servicio del 75 %?",
+          "opciones": [
+            "+4,5 V, sentido positivo",
+            "+6,75 V, sentido positivo",
+            "−4,5 V, sentido negativo",
+            "0 V, motor parado"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>U<sub>med</sub> = (2 · 0,75 − 1) · 9 V = 0,5 · 9 V = <strong>+4,5 V</strong>: como es mayor que 0 (D &gt; 50 %), el motor gira en <strong>sentido positivo</strong>, a la mitad de su velocidad máxima. 6,75 V (0,75 · 9) sería la tensión media de un chopper, que no puede dar tensiones negativas.</p>"
+        }
+      ]
+    },
+    "organizacion-sistema-digital-3": {
+      "titulo": "Servos y niveles RS-232",
+      "enunciado": "<p>Un dsPIC33FJ32MC202 controla un servo y envía datos a un PC por un puerto serie RS-232 a través de un MAX233.</p>",
+      "contexto": "<ul><li>Servo: pulso de 0,5 ms (−90°), 1,5 ms (0°) o 2,5 ms (+90°) cada 20 ms aproximadamente.</li><li>RS-232: niveles de ±15 V; protocolo 8N1.</li></ul>",
+      "preguntas": [
+        {
+          "texto": "¿Qué ancho de pulso hay que dar al servo para que gire a +45°?",
+          "opciones": [
+            "1 ms",
+            "1,5 ms",
+            "2 ms",
+            "2,5 ms"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>La relación es lineal: t<sub>pulso</sub> (ms) = 1,5 + θ / 90°. Para θ = +45°: 1,5 + 45 / 90 = 1,5 + 0,5 = <strong>2 ms</strong>, a medio camino entre 1,5 ms (0°) y 2,5 ms (+90°). El pulso se sigue repitiendo cada 20 ms.</p>"
+        },
+        {
+          "texto": "¿Y para que gire a −45°?",
+          "opciones": [
+            "0,5 ms",
+            "1 ms",
+            "1,25 ms",
+            "2 ms"
+          ],
+          "correcta": 1,
+          "explicacion": "<p>t<sub>pulso</sub> = 1,5 + (−45) / 90 = 1,5 − 0,5 = <strong>1 ms</strong>, a medio camino entre 0,5 ms (−90°) y 1,5 ms (0°). Un pulso fuera del margen de 0,5-2,5 ms puede bloquear el servo y disparar su consumo.</p>"
+        },
+        {
+          "texto": "En la línea de datos de un RS-232, ¿qué nivel de tensión representa un 0 lógico?",
+          "opciones": [
+            "0 V",
+            "+5 V",
+            "+15 V",
+            "−15 V"
+          ],
+          "correcta": 2,
+          "explicacion": "<p>El RS-232 usa lógica negativa: <strong>+15 V = 0 lógico</strong> y −15 V = 1 lógico (libro, 17.7). 0 V y +5 V son los niveles de la lógica TTL de 5 V; por eso hace falta un MAX233 entre el micro y el conector DB-9.</p>"
+        },
+        {
+          "texto": "¿A qué tensión está la línea TxD de un RS-232 cuando no se transmite nada?",
+          "opciones": [
+            "−15 V, que es un 1 lógico",
+            "+15 V, que es un 0 lógico",
+            "0 V",
+            "Alterna entre +15 V y −15 V a la velocidad configurada"
+          ],
+          "correcta": 0,
+          "explicacion": "<p>El estado de reposo es <strong>−15 V</strong> (1 lógico). Cada trama empieza con el bit de start, que es un 0 (+15 V), y termina con el bit de stop, un 1 (−15 V), que devuelve la línea al reposo. Con 8N1 cada carácter ocupa 10 bits: a 9600 baudios, unos 1,04 ms.</p>"
+        }
+      ]
+    }
+  },
+  "ejerciciosEnTema": [
+    "organizacion-sistema-digital-1",
+    "organizacion-sistema-digital-2",
+    "organizacion-sistema-digital-3"
+  ],
+  "tituloEjercicios": "Ejercicios y cuestiones",
+  "resumen": [
+    "Diseñar un sistema digital es decidir sus <strong>sensores, actuadores y comunicaciones</strong>, cómo se implementan las tarjetas, cómo se evita el <strong>ruido</strong> (compatibilidad electromagnética), qué micro se usa y cómo se programa, y cuáles son sus <strong>necesidades energéticas</strong>.",
+    "Todo chip lleva un <strong>condensador de desacoplo de 100 nF</strong> en sus pines de alimentación, lo más cerca posible del chip; los filtros EMI evitan que el sistema perturbe a otros.",
+    "La <strong>fuente lineal</strong> (7805: entrada de 7 a 35 V, 1 A) es barata y silenciosa, pero su rendimiento es η ≈ 5 / V<sub>in</sub> (56 % con 9 V, 42 % con 12 V) y disipa (V<sub>in</sub> − 5) · I. La <strong>conmutada</strong> (LM2675: 8-40 V, 1 A, diodo Schottky, bobina &gt; 100 µH) llega a un rendimiento cercano al 97 %, pero es cara, compleja y ruidosa.",
+    "Una batería se elige por tensión por celda, <strong>capacidad en Ah</strong> (autonomía = Ah / A), densidad, curva de descarga, resistencia interna, recargabilidad y coste.",
+    "Los <strong>relés</strong> dan aislamiento galvánico; pueden ser SPST, SPDT, DPST o DPDT (este último invierte el giro de un motor DC), lacheados o no lacheados, y necesitan un <strong>diodo de libre circulación</strong> en paralelo con la bobina.",
+    "En un <strong>motor DC</strong>, E<sub>0</sub> = K · λ<sub>imán</sub> · ω: el par es proporcional a la corriente y la velocidad a la tensión media, que se controla con <strong>PWM</strong>. Con un <strong>puente en H</strong> (L293D: 1 A con un motor, 0,5 A con dos; PWM ≈ 20 kHz en los pines 2/7 desde el par complementario PWM1L1/PWM1H1), el <strong>50 %</strong> deja el motor parado, más del 50 % lo hace girar en un sentido y menos en el otro.",
+    "Un <strong>servo</strong> se posiciona con un pulso de <strong>0,5 ms (−90°), 1,5 ms (0°) o 2,5 ms (+90°)</strong> repetido cada 20 ms: ancho (ms) = 1,5 + ángulo / 90°.",
+    "El programador se conecta con <strong>6 pines</strong> (<span style=\"text-decoration:overline\">MCLR</span>, V<sub>DD</sub>, GND, PGD, PGC, NC) y <span style=\"text-decoration:overline\">MCLR</span> lleva una pull-up (P4 en la PicTrainer). El <strong>RS-232</strong> usa DB-9 (2 RxD, 3 TxD, 5 GND), +15 V = 0 y −15 V = 1 (reposo a −15 V), 8N1 y un MAX233; la PicTrainer lo sustituye por USB con el FT230XS."
+  ]
+}
