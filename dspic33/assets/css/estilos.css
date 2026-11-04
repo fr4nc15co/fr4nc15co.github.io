@@ -1969,6 +1969,43 @@ button.cm-bit:hover { background: var(--bg-3); }
 }
 
 
+/* --- divisor-potenciometro --- */
+/* ---------- Componente: divisor-potenciometro (RV1 como divisor de tensión) ---------- */
+.mpi-divisor-potenciometro { container-type: inline-size; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-divisor-potenciometro .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .7rem; }
+.mpi-divisor-potenciometro code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+
+.dp-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr); gap: .9rem; align-items: start; }
+@container (min-width: 560px) { .dp-cuerpo { grid-template-columns: minmax(0, 220px) minmax(0, 1fr); } }
+
+.dp-esquema { background: var(--bg); border: 1px solid var(--borde-2); border-radius: 8px; padding: .5rem; min-width: 0; }
+.dp-svg { display: block; width: 100%; height: auto; max-width: 220px; margin: 0 auto; font-family: var(--sans); }
+.dp-r1-box, .dp-r2-box { transition: stroke-width .15s; }
+
+.dp-panel { display: flex; flex-direction: column; gap: .6rem; min-width: 0; }
+.dp-lab { font-size: .88rem; color: var(--txt-2); }
+.dp-lab strong { font-family: var(--mono); color: var(--num); }
+.dp-cursor { width: 100%; accent-color: var(--acento); }
+.dp-botones { display: flex; flex-wrap: wrap; gap: .4rem; }
+.dp-ej { font-family: var(--mono); background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .3rem .55rem; cursor: pointer; font-size: .78rem; }
+.dp-ej:hover { border-color: var(--acento); }
+.dp-ej:focus-visible, .dp-cursor:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 2px; }
+
+.dp-resultados { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin: .9rem 0; }
+@container (min-width: 560px) { .dp-resultados { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.dp-res { background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; padding: .4rem .55rem; text-align: center; }
+.dp-res-tit { display: block; color: var(--txt-tenue); font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; margin-bottom: .15rem; }
+.dp-res strong { font-family: var(--mono); color: var(--num); font-size: .95rem; }
+
+.dp-nota { font-size: .85rem; color: var(--txt-2); line-height: 1.55; background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; padding: .55rem .7rem; }
+.dp-nota code { font-size: .85em; }
+
+@media (max-width: 420px) {
+  .mpi-divisor-potenciometro { padding: .85rem; }
+  .dp-resultados { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+
 /* --- mini-scl --- */
 /* ---------- Componente: mini-scl (intérprete reducido de SCL del simulador de MPLAB X) ---------- */
 .mpi-mini-scl { --msc-lh: 1.35rem; container-type: inline-size; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
@@ -2467,6 +2504,45 @@ button.cm-bit:hover { background: var(--bg-3); }
 }
 @media (prefers-reduced-motion: reduce) {
   .sadc-caja, .sadc-led-luz, .sadc-tarjeta { transition: none; }
+}
+
+
+/* --- sim-adc-sensor --- */
+/* ---------- Componente: sim-adc-sensor (el A/D en acción, con un sensor de luz) ---------- */
+.mpi-adc-sensor { container-type: inline-size; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem 1.2rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-adc-sensor .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .7rem; }
+.mpi-adc-sensor code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+
+.as-escena { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; margin: .8rem 0; }
+.as-fuente { text-align: center; flex: 0 0 auto; max-width: 150px; }
+.as-sol { width: 84px; height: 84px; display: block; margin: 0 auto; }
+.as-disco, .as-rayos { transition: opacity .12s; }
+.as-slider { display: block; color: var(--txt-2); font-size: .85rem; margin-top: .3rem; }
+.as-slider input { width: 130px; accent-color: var(--amarillo); display: block; margin: .25rem auto 0; }
+.as-pie { display: block; color: var(--txt-tenue); font-size: .72rem; line-height: 1.35; margin-top: .4rem; }
+
+.as-flecha { color: var(--txt-tenue); font-size: 1.4rem; text-align: center; flex: 1 1 60px; min-width: 60px; }
+.as-flecha small { display: block; font-size: .68rem; line-height: 1.2; margin-top: .1rem; }
+
+.as-analog { display: flex; align-items: center; gap: .5rem; flex: 0 0 auto; }
+.as-gauge { width: 26px; height: 84px; border: 1px solid var(--borde-2); border-radius: 4px; background: var(--bg); position: relative; overflow: hidden; }
+.as-nivel { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background: linear-gradient(to top, var(--acento-2), var(--azul-cl)); transform: scaleY(0); transform-origin: bottom; transition: transform .12s; }
+.as-vin { font-size: .85rem; color: var(--txt-2); font-family: var(--mono); }
+
+.as-digital { text-align: center; flex: 0 0 auto; }
+.as-chip { display: inline-block; background: var(--bg-3); border: 1px solid var(--acento); color: var(--acento); font-family: var(--mono); font-size: .8rem; padding: .25rem .7rem; border-radius: 5px; margin-bottom: .4rem; }
+.as-bits { display: flex; gap: 2px; justify-content: center; }
+.as-bit { width: 17px; padding: .2rem 0; font-family: var(--mono); font-size: .8rem; text-align: center; background: var(--bg); border: 1px solid var(--borde); border-radius: 3px; color: var(--txt-tenue); }
+.as-bit.as-on { background: color-mix(in srgb, var(--acento) 18%, transparent); border-color: var(--acento); color: var(--acento); font-weight: 700; }
+.as-num { margin-top: .4rem; font-family: var(--mono); color: var(--txt); }
+.as-num small { color: var(--txt-tenue); }
+
+.as-detalle { margin: .7rem 0; font-size: .85rem; color: var(--txt-2); line-height: 1.55; background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; padding: .55rem .7rem; }
+.as-codigo { margin: 0; }
+
+@media (max-width: 480px) {
+  .mpi-adc-sensor { padding: .85rem; }
+  .as-escena { justify-content: center; }
 }
 
 
@@ -3685,6 +3761,58 @@ b.sfd-f3, th.sfd-f3, span.sfd-f3, text.sfd-f3 { color: var(--morado); fill: var(
 .spp-rmw-veredicto { font-size: .9rem; margin: 0; }
 .spp-ok { color: var(--acento); }
 .spp-mal { color: var(--rojo); }
+
+
+/* --- sim-pulsador-led --- */
+/* ---------- Componente: sim-pulsador-led (pull-up/pull-down, LED activo a nivel bajo/alto) ---------- */
+.mpi-sim-pulsador-led { container-type: inline-size; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-sim-pulsador-led .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .7rem; }
+.mpi-sim-pulsador-led code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+
+.spl-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr); gap: .9rem; align-items: start; }
+@container (min-width: 560px) { .spl-cuerpo { grid-template-columns: minmax(0, 220px) minmax(0, 1fr); } }
+
+.spl-esquema { background: var(--bg); border: 1px solid var(--borde-2); border-radius: 8px; padding: .5rem; min-width: 0; }
+.spl-svg { display: block; width: 100%; height: auto; max-width: 220px; margin: 0 auto; font-family: var(--sans); }
+.spl-r rect { transition: stroke-width .2s; }
+
+.spl-sw-dot { transition: fill .15s; }
+.spl-sw-brazo { transform-origin: 60px 130px; transition: transform .15s ease-out; }
+.spl-sw.spl-sw-cerrado .spl-sw-brazo { transform: rotate(-28deg); stroke: var(--acento); }
+.spl-sw.spl-sw-cerrado .spl-sw-dot { fill: var(--acento); }
+
+.spl-led-dibujo { transition: fill .15s, stroke .15s, filter .15s; }
+.spl-led-dibujo.spl-on { fill: var(--naranja); filter: drop-shadow(0 0 6px var(--naranja)); }
+
+.spl-panel { display: flex; flex-direction: column; gap: .65rem; min-width: 0; }
+.spl-radios { display: flex; flex-direction: column; gap: .35rem; font-size: .85rem; color: var(--txt-2); }
+.spl-radios label { display: flex; align-items: center; gap: .4rem; cursor: pointer; }
+.spl-radios input { accent-color: var(--acento); }
+
+.spl-boton, .spl-interruptor { font-family: var(--mono); background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .5rem .7rem; cursor: pointer; font-size: .85rem; text-align: center; user-select: none; touch-action: manipulation; }
+.spl-boton:hover, .spl-interruptor:hover { border-color: var(--acento); }
+.spl-boton small, .spl-interruptor .spl-int-pista { display: block; color: var(--txt-tenue); font-size: .72rem; font-weight: 400; margin-top: .15rem; }
+.spl-boton.spl-apretado { background: var(--acento); border-color: var(--acento); color: #06231d; font-weight: 700; }
+.spl-boton.spl-apretado small { color: #06231d; }
+.spl-boton:focus-visible, .spl-interruptor:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 2px; }
+
+.spl-interruptor { display: flex; flex-direction: column; align-items: center; gap: .1rem; }
+.spl-int-tit { color: var(--txt-tenue); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
+.spl-int-val { font-size: 1.3rem; font-weight: 700; color: var(--num); }
+
+.spl-lectura { display: flex; align-items: baseline; gap: .5rem; }
+.spl-bit { font-family: var(--mono); font-size: 1.8rem; font-weight: 700; color: var(--rojo); background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; padding: .1rem .55rem; }
+.spl-bit.spl-bit-uno { color: var(--acento); }
+.spl-lectura small { color: var(--txt-tenue); font-size: .78rem; }
+
+.spl-estado { font-size: .85rem; color: var(--txt-2); line-height: 1.5; background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; padding: .5rem .6rem; }
+.spl-estado small { color: var(--txt-tenue); }
+
+.spl-codigo { margin: .8rem 0 0; }
+
+@media (max-width: 420px) {
+  .mpi-sim-pulsador-led { padding: .85rem; }
+}
 
 
 /* --- sim-pwm-dspic --- */

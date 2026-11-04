@@ -1,88 +1,12 @@
 {
-  "slug": "laboratorio-pictrainer",
-  "titulo": "Laboratorio: tarjeta PicTrainer v3.0 y entorno",
-  "temaNum": 17,
+  "slug": "laboratorio-pictrainer-sw",
+  "titulo": "Laboratorio: entorno y programación (software)",
+  "temaNum": "17b",
   "lenguaje": "c",
-  "lead": "Repaso de lo necesario para trabajar en el laboratorio: la tarjeta <strong>PicTrainer v3.0</strong> (pines, polaridades, puentes, conectores, alimentación y programación), la plantilla de <code>main</code>, MPLAB X, los drivers del curso, la comunicación con el PC, Visual Studio y los errores típicos.",
+  "lead": "Repaso del entorno de trabajo del laboratorio: la plantilla de <code>main</code>, MPLAB X, los drivers del curso, la comunicación con el PC, Visual Studio y los errores típicos.",
   "secciones": [
     {
-      "titulo": "17.1 La tarjeta PicTrainer v3.0",
-      "bloques": [
-        {
-          "tipo": "prosa",
-          "html": "<p>Tarjeta de desarrollo del laboratorio, que cada grupo suelda en la Práctica 1. El esquema (anexo C) la divide en tres bloques, unidos por <code>USB_Power</code>, <code>USB_Txd</code>/<code>USB_Rxd</code> y <code>Vin</code>:</p><table class=\"tabla-datos\"><thead><tr><th>Bloque</th><th>Qué contiene</th><th>Para qué sirve</th></tr></thead><tbody><tr><td><strong>USB_uart</strong></td><td>USB J1, ferrita L1, chip <strong>FT230XS</strong> (U1), LED naranja D1-D2 (tráfico de recepción y transmisión).</td><td>USB ↔ serie: el PC ve la tarjeta como un puerto COM (L.7). Lleva los 5 V del USB a la alimentación.</td></tr><tr><td><strong>Alimentación</strong></td><td>Jack J2, diodo D3, regulador <strong>MC7805</strong> (U2); selección de fuente (K1 o automática con Q1, U4, R7-R10); regulador <strong>MCP1700</strong> (U3); LED verdes <strong>D4 (5 V)</strong> y <strong>D5 (3,3 V)</strong>; puntos de prueba P1 (3,3 V), P2 (masa), P3 (5 V).</td><td>5 V y 3,3 V desde USB, fuente externa o baterías (L.3).</td></tr><tr><td><strong>MicroControlador</strong></td><td><strong>dsPIC33FJ32MC202</strong> (U5) en zócalo de 28 pines, reset (SW1), C16 (V<sub>CAP</sub>), conector de programación <strong>P4</strong>, SW2, RV1, LED D6-D9, puentes JP1-JP3 y K2, conectores <strong>P5-P8</strong> (Arduino).</td><td>El sistema digital y los periféricos de prácticas (L.2).</td></tr></tbody></table><ul><li>El micro solo necesita 3,3 V, el reset y <strong>C16</strong> (10 µF X7R en el pin 20, V<sub>CAP</sub>, regulador interno del núcleo). Lo demás son periféricos de prácticas que se desconectan con puentes.</li><li>El micro va en <strong>zócalo</strong> (se cambia si se estropea o se lleva a la tarjeta del proyecto): la muesca del chip, con la del zócalo.</li></ul>"
-        },
-        {
-          "tipo": "prosa",
-          "html": "<p>Haz clic en cada LED, pulsador, puente o conector para ver su pin, su nivel activo, su puente y el código C:</p><div class=\"mpi-mount\" data-componente=\"pictrainer-board\" data-config='{\"resaltar\":\"todo\"}'></div>"
-        },
-        {
-          "tipo": "nota",
-          "html": "La serigrafía de cada conector (P4, P5…) está <strong>junto al pin 1</strong>. P4 se suelda <strong>al revés</strong>: el programador se conecta por la cara inferior."
-        }
-      ]
-    },
-    {
-      "titulo": "17.2 Periféricos, polaridades y puentes",
-      "bloques": [
-        {
-          "tipo": "prosa",
-          "html": "<p>Con la plantilla de L.4 ya ejecutada (<code>AD1PCFGL = 0xFFFF; PORTB = 0xEFFF; TRISB = 0x0FFF;</code>):</p><table class=\"tabla-datos\"><thead><tr><th>Elemento</th><th>Pin del micro</th><th>Nivel activo</th><th>Puente</th><th>Código C</th></tr></thead><tbody><tr><td>LED <strong>D6</strong></td><td>RB15 (pin 26)</td><td><strong>bajo</strong>: 0 = encendido</td><td>JP3</td><td><code>PORTB &amp;= ~0x8000;</code> enciende<br><code>PORTB |= 0x8000;</code> apaga</td></tr><tr><td>LED <strong>D7</strong></td><td>RB14 (pin 25)</td><td><strong>bajo</strong>: 0 = encendido</td><td>JP3</td><td><code>PORTB &amp;= ~0x4000;</code> enciende<br><code>PORTB |= 0x4000;</code> apaga</td></tr><tr><td>LED <strong>D8</strong></td><td>RB13 (pin 24)</td><td><strong>bajo</strong>: 0 = encendido</td><td>JP3</td><td><code>PORTB &amp;= ~0x2000;</code> enciende<br><code>PORTB |= 0x2000;</code> apaga</td></tr><tr><td>LED <strong>D9</strong></td><td>RB12 (pin 23)</td><td><strong>bajo</strong>: 0 = encendido</td><td>JP3</td><td><code>PORTB &amp;= ~0x1000;</code> enciende<br><code>PORTB |= 0x1000;</code> apaga</td></tr><tr><td>Pulsador <strong>SW2</strong></td><td>RB2 / AN4 (pin 6)</td><td><strong>bajo</strong>: pulsado = 0</td><td>JP1</td><td><code>if ((PORTB &amp; 0x0004) == 0)</code> → pulsado<br>(exige <code>AD1PCFGL = 0xFFFF</code>)</td></tr><tr><td>Potenciómetro <strong>RV1</strong> (10 kΩ)</td><td>RB3 / AN5 (pin 7)</td><td>analógico: 0 … 3,3 V → 0 … 1023</td><td>JP2</td><td><code>init_ad(0x20);</code> una vez<br><code>valor = get_ad(5);</code></td></tr><tr><td>Reset <strong>SW1</strong></td><td>MCLR (pin 1)</td><td><strong>bajo</strong>: pulsado = reset</td><td>—</td><td>— (hardware)</td></tr><tr><td>UART <strong>U1TX</strong></td><td>RB4 / RP4 (pin 11)</td><td>reposo = 1</td><td>— (va al FT230XS y a P8, pin 2)</td><td><code>RemapeaPerifericos();</code><br><code>InicializarUART();</code></td></tr><tr><td>UART <strong>U1RX</strong></td><td>RB5 / RP5 (pin 14)</td><td>reposo = 1</td><td>K2 (1-2 FT230XS, 2-3 P8 pin 1)</td><td>Ídem</td></tr><tr><td>LED <strong>D4</strong> / <strong>D5</strong> (verdes)</td><td>—</td><td>lucen si hay 5 V / 3,3 V</td><td>—</td><td>—</td></tr><tr><td>LED <strong>D1</strong> / <strong>D2</strong> (naranja)</td><td>— (FT230XS)</td><td>parpadean con el tráfico USB ↔ serie</td><td>—</td><td>—</td></tr></tbody></table><p>El orden en la placa va al revés que el de los bits: <strong>D6 = RB15</strong> (bit más alto) … <strong>D9 = RB12</strong>. El LED «de RB12» de los ejemplos del libro es D9.</p>"
-        },
-        {
-          "tipo": "codigo",
-          "descripcion": "<p>Uso con máscaras: <code>&amp;= ~máscara</code> pone a 0 y <code>|= máscara</code> pone a 1. Entre dos escrituras seguidas de PORTB va un <code>asm(\"nop\");</code> (regla RMW, L.4):</p>",
-          "codigo": "/* Encender D7 (RB14 a 0) */\nPORTB &= ~0x4000;\n\n/* Apagar D7 (RB14 a 1) */\nPORTB |= 0x4000;\n\n/* Invertir D9 (RB12) */\nPORTB ^= 0x1000;\n\n/* Encender D6 y apagar D9 */\nPORTB &= ~0x8000;\nasm(\"nop\");\nPORTB |= 0x1000;\n\n/* Mostrar n (0 a 15) en los cuatro LED: activos a nivel bajo, se escribe ~n */\nPORTB &= ~0xF000;                  // 1) bits 15-12 a 0\nasm(\"nop\");\nPORTB |= (~n & 0x000F) << 12;      // 2) escribir ~n\n\n/* Leer el pulsador SW2 (RB2): pulsado = 0 */\nif ((PORTB & 0x0004) == 0) {\n    /* SW2 pulsado */\n}"
-        },
-        {
-          "tipo": "prosa",
-          "html": "<h3>Puentes (jumpers)</h3><table class=\"tabla-datos\"><thead><tr><th>Puente</th><th>Puesto (K1/K2: 1-2)</th><th>Quitado (K1/K2: 2-3)</th></tr></thead><tbody><tr><td><strong>JP1</strong></td><td>SW2 conectado a RB2</td><td>RB2 libre (P6, pin 5); sin nada conectado queda al aire y su lectura es imprevisible.</td></tr><tr><td><strong>JP2</strong></td><td>RV1 conectado a RB3/AN5</td><td>RB3/AN5 libre (P6, pin 6) para otro sensor.</td></tr><tr><td><strong>JP3</strong></td><td>LED D6-D9 habilitados</td><td>RB12-RB15 libres (P7, pines 3-6), sin la carga de los LED.</td></tr><tr><td><strong>K2</strong> (3 pines)</td><td><strong>1-2: USB</strong> (U1RX recibe del FT230XS, es decir, del PC)</td><td><strong>2-3: conector Arduino</strong> (U1RX recibe de P8, pin 1)</td></tr><tr><td><strong>K1</strong> (3 pines)</td><td>1-2: fuente externa o baterías</td><td>2-3: USB. No se monta en la tarjeta del laboratorio, que selecciona la fuente sola (L.3).</td></tr></tbody></table><p>La bolsa de la Práctica 1 trae cuatro jumpers: JP1-JP3 y K2 (no K1).</p>"
-        },
-        {
-          "tipo": "nota",
-          "html": "<strong>RB12-RB15 para PWM o para el proyecto.</strong> Son también las salidas de PWM1 (PWM1H2 = RB12, PWM1L2 = RB13, PWM1H1 = RB14, PWM1L1 = RB15) y salen por <strong>P7 (pines 3-6)</strong>. Para gobernar con ellos un L293D, un servo u otro circuito, <strong>quita JP3</strong>. Igual con RB2 (JP1) y RB3 (JP2)."
-        },
-        {
-          "tipo": "nota",
-          "html": "<strong>K2 solo conmuta la recepción.</strong> El anexo C dice que K2 conecta «el puerto serie» del micro al PC (FT230XS) o al conector de expansión, pero según el esquema (figura 126) K2 solo conmuta la <strong>recepción</strong>: pin 2 = U1RX (RB5), pin 1 ← TXD del FT230XS (<code>USB_Txd</code>), pin 3 ← pin 1 de P8. La <strong>transmisión</strong> (U1TX, RB4) va siempre a la vez al RXD del FT230XS y al pin 2 de P8, así que con K2 en 2-3 lo que envía el micro sigue llegando al PC."
-        },
-        {
-          "tipo": "nota",
-          "html": "<strong>K2 es la UART, no la alimentación.</strong> La Práctica 2 (P2.1) pide «configurar el jumper para funcionar con alimentación USB (Jumper K2)», pero según el anexo C y el esquema, <strong>K2 selecciona la UART</strong> (1-2 USB, 2-3 Arduino) y la alimentación se elige con <strong>K1</strong> (manual: 2-3 USB, 1-2 externa) o sola con Q1/U4 (tarjeta del laboratorio). Al trabajar con el PC, K2 va en 1-2, pero por la UART."
-        },
-        {
-          "tipo": "prosa",
-          "html": "<h3>Conectores</h3><p><strong>P4, programación</strong> (6 pines, por la cara inferior; el esquema lo rotula «Conector JTAG», pero se usa para ICSP):</p><table class=\"tabla-datos\"><thead><tr><th>Pin de P4</th><th>Señal</th><th>Pin del micro</th></tr></thead><tbody><tr><td>1</td><td>Reset (MCLR)</td><td>1 (directo; R13 lo separa de la red de reset)</td></tr><tr><td>2</td><td>+3,3 V</td><td>13 y 28</td></tr><tr><td>3</td><td>GND</td><td>8, 19 y 27</td></tr><tr><td>4</td><td>PGD</td><td>4 (RB0 = PGED1)</td></tr><tr><td>5</td><td>PGC</td><td>5 (RB1 = PGEC1)</td></tr><tr><td>6</td><td>Sin conectar</td><td>—</td></tr></tbody></table><p><strong>P5-P8, expansión compatible con Arduino Uno</strong>: todas las señales del micro; UART en P8 (pines 1-2), I2C en P7 (pines 9-10) y SPI en P7 (pines 3-6), donde están RB12-RB15 por ser remapeables (RP12-RP15).</p><table class=\"tabla-datos\"><thead><tr><th>Pin</th><th>P5 (alimentación)</th><th>P6 (6 pines)</th><th>P7 (10 pines)</th><th>P8 (8 pines)</th></tr></thead><tbody><tr><td>1</td><td>Sin conectar</td><td>RA0 / AN0</td><td>RA3</td><td>U1ARX (a K2, pin 3)</td></tr><tr><td>2</td><td>+5 V</td><td>RA1 / AN1</td><td>RA4</td><td>U1ATX (RB4)</td></tr><tr><td>3</td><td>Reset_n (no va al MCLR)</td><td>PGD (RB0)</td><td>RB12 (D9)</td><td>RA2</td></tr><tr><td>4</td><td>+3,3 V</td><td>PGC (RB1)</td><td>RB13 (D8)</td><td>RB6</td></tr><tr><td>5</td><td>+5 V</td><td>RB2 (SW2)</td><td>RB14 (D7)</td><td>RB7</td></tr><tr><td>6</td><td>GND</td><td>RB3 / AN5 (RV1)</td><td>RB15 (D6)</td><td>SDA (RB9)</td></tr><tr><td>7</td><td>GND</td><td>—</td><td>GND</td><td>RB10</td></tr><tr><td>8</td><td>Vin (entrada de alimentación)</td><td>—</td><td>Sin conectar</td><td>RB11</td></tr><tr><td>9</td><td>—</td><td>—</td><td>SDA (RB9)</td><td>—</td></tr><tr><td>10</td><td>—</td><td>—</td><td>SCL (RB8)</td><td>—</td></tr></tbody></table>"
-        },
-        {
-          "tipo": "nota",
-          "html": "Reset_n (P5) <strong>no está conectado al MCLR</strong>: la tarjeta ShieldComm lleva un supervisor de reset push-pull que interferiría con SW1 y con el programador. El reset de una tarjeta Arduino acoplada no resetea el dsPIC."
-        },
-        {
-          "tipo": "prosa",
-          "html": "<h3>Qué pines quedan libres</h3><table class=\"tabla-datos\"><thead><tr><th>Pines</th><th>En la PicTrainer</th><th>Comentario</th></tr></thead><tbody><tr><td>RA0-RA4 (pines 2, 3, 9, 10, 12)</td><td><strong>Libres</strong> (P6, P7, P8)</td><td>RA0/RA1 = AN0/AN1. RA2/RA3 (OSC1/OSC2) libres: el reloj es el FRC interno, sin cristal.</td></tr><tr><td>RB6-RB11 (pines 15-18, 21, 22)</td><td><strong>Libres</strong> (P7, P8)</td><td>RB8-RB11 son también PWM (PWM2H1/PWM2L1, PWM1H3/PWM1L3); RB8/RB9 = SCL/SDA.</td></tr><tr><td>RB0, RB1 (pines 4, 5)</td><td>Programación (P4) y P6</td><td>Usables, pero sin cargas en PGD/PGC (datasheet, sección 2.5).</td></tr><tr><td>RB2, RB3 (pines 6, 7)</td><td>SW2 / RV1</td><td>Libres al quitar JP1 / JP2.</td></tr><tr><td>RB4, RB5 (pines 11, 14)</td><td>UART</td><td>Reservados para el PC.</td></tr><tr><td>RB12-RB15 (pines 23-26)</td><td>LED D9-D6</td><td>Libres al quitar JP3 (P7, pines 3-6).</td></tr></tbody></table><p>Tabla completa de pines: tema <em>Introducción al dsPIC33FJ32MC202</em>; bit ↔ pin del puerto B: tema <em>Puertos paralelo</em>.</p>"
-        }
-      ]
-    },
-    {
-      "titulo": "17.3 Alimentación y programación",
-      "bloques": [
-        {
-          "tipo": "prosa",
-          "html": "<h3>Fuentes de alimentación</h3><table class=\"tabla-datos\"><thead><tr><th>Fuente</th><th>Camino</th><th>Condiciones</th></tr></thead><tbody><tr><td><strong>USB</strong> (<code>USB_Power</code>)</td><td>Directa</td><td>Lo normal en el laboratorio; el mismo cable lleva la comunicación serie.</td></tr><tr><td><strong>Jack J2</strong></td><td>Diodo D3 (protección contra inversión de polaridad) y <strong>MC7805</strong> → 5 V</td><td>Continua, no hace falta regulada; <strong>más de 7 V</strong>, recomendado <strong>7,5-9 V</strong>.</td></tr><tr><td><strong>Vin</strong> (P5, pin 8)</td><td>Nodo entre D3 y el MC7805</td><td>Por ejemplo, baterías; mismos márgenes.</td></tr></tbody></table><ul><li><strong>No más de 9 V</strong>: el MC7805 es lineal y disipa I·(V<sub>in</sub> − 5 V); con 100 mA, 0,4 W a 9 V y 0,7 W a 12 V (véase <em>Organización de un sistema digital</em>).</li><li><strong>Selección manual</strong>: tira K1 con jumper en 2-3 (USB) o 1-2 (externa); sin Q1, U4 ni R7-R10.</li><li><strong>Selección automática</strong> (la de la tarjeta del laboratorio): Q1 (PMOS), U4 (LM2903), R7-R10. Si hay fuente externa (umbral ≈ 6,6 V en Vin: R8 = R9 = 24 kΩ dividen entre dos y comparan con 3,3 V), Q1 corta el USB.</li><li><strong>MCP1700</strong> (U3): 5 V → 3,3 V para el micro. <strong>D4 (5 V)</strong> y <strong>D5 (3,3 V)</strong> encendidos = alimentación correcta; si no lucen, el fallo no está en el programa.</li></ul>"
-        },
-        {
-          "tipo": "prosa",
-          "html": "<h3>Comprobaciones de hardware (Práctica 1)</h3><ol><li>Sin alimentar: <strong>sin</strong> continuidad entre P3 y P2 (5 V-masa) ni entre P1 y P2 (3,3 V-masa).</li><li>Con el USB: <strong>D4 y D5</strong> encendidos.</li><li>En el zócalo: <strong>pines 1 (MCLR), 13 (V<sub>DD</sub>) y 28 (AV<sub>DD</sub>) a 3,3 V</strong>; <strong>pines 8, 19 (V<sub>SS</sub>) y 27 (AV<sub>SS</sub>) a 0 V</strong>.</li></ol>"
-        },
-        {
-          "tipo": "prosa",
-          "html": "<h3>Reset y programación</h3><ul><li><strong>MCLR activo a nivel bajo</strong>: SW1 pulsado = reset; al soltarlo, el programa empieza desde el principio.</li><li>Programador: al USB del PC y a <strong>P4</strong> (pin 1 = MCLR, junto a la serigrafía). La tarjeta se alimenta <strong>aparte</strong> (otro USB o fuente de 7,5-9 V).</li><li>Canal de programación 1: <strong>PGED1 = RB0</strong> (pin 4), <strong>PGEC1 = RB1</strong> (pin 5). Nada que cargue esos pines (P6, pines 3-4) al programar o depurar (datasheet, sección 2.5).</li></ul>"
-        }
-      ]
-    },
-    {
-      "titulo": "17.4 Plantilla de un programa",
+      "titulo": "17b.1 Plantilla de un programa",
       "bloques": [
         {
           "tipo": "prosa",
@@ -121,7 +45,7 @@
       ]
     },
     {
-      "titulo": "17.5 MPLAB X: compilar, programar, depurar y simular",
+      "titulo": "17b.2 MPLAB X: compilar, programar, depurar y simular",
       "bloques": [
         {
           "tipo": "prosa",
@@ -138,7 +62,7 @@
       ]
     },
     {
-      "titulo": "17.6 Drivers y ficheros del curso",
+      "titulo": "17b.3 Drivers y ficheros del curso",
       "bloques": [
         {
           "tipo": "prosa",
@@ -159,7 +83,7 @@
       ]
     },
     {
-      "titulo": "17.7 Comunicación con el PC",
+      "titulo": "17b.4 Comunicación con el PC",
       "bloques": [
         {
           "tipo": "prosa",
@@ -176,7 +100,7 @@
       ]
     },
     {
-      "titulo": "17.8 El lado del PC: Visual Studio y C++",
+      "titulo": "17b.5 El lado del PC: Visual Studio y C++",
       "bloques": [
         {
           "tipo": "prosa",
@@ -191,7 +115,7 @@
       ]
     },
     {
-      "titulo": "17.9 Errores típicos y lista de comprobación",
+      "titulo": "17b.6 Errores típicos y lista de comprobación",
       "bloques": [
         {
           "tipo": "prosa",
@@ -205,47 +129,7 @@
     }
   ],
   "ejercicios": {
-    "laboratorio-pictrainer-1": {
-      "titulo": "Polaridades de la PicTrainer",
-      "enunciado": "<p>Responde con la tarjeta del laboratorio en mente.</p>",
-      "contexto": "<ul><li>LED D6 = RB15, D7 = RB14, D8 = RB13, D9 = RB12, <strong>activos a nivel bajo</strong> (JP3).</li><li>Pulsador SW2 en RB2: <strong>pulsado = 0</strong> (JP1).</li><li>Potenciómetro RV1 en RB3/AN5 (JP2). UART: U1TX = RB4, U1RX = RB5, selector K2.</li><li>Plantilla ya ejecutada: <code>AD1PCFGL = 0xFFFF; PORTB = 0xEFFF; TRISB = 0x0FFF;</code></li></ul>",
-      "preguntas": [
-        {
-          "texto": "Se quiere encender <strong>solo D7</strong> y dejar apagados los otros tres LED. ¿Qué valor se escribe en PORTB?",
-          "opciones": [
-            "0x4000",
-            "0xBFFF",
-            "0xDFFF",
-            "0x7FFF"
-          ],
-          "correcta": 1,
-          "explicacion": "<p>D7 está en <strong>RB14</strong> y los LED son activos a nivel bajo: el bit 14 debe valer 0 y los bits 15, 13 y 12 deben valer 1 (apagados). 1011 1111 1111 1111 = <strong>0xBFFF</strong>. 0x4000 haría justo lo contrario en los LED (D7 apagado y los otros tres encendidos); 0xDFFF encendería D8 (RB13) y 0x7FFF, D6 (RB15).</p>"
-        },
-        {
-          "texto": "Con SW2 <strong>pulsado</strong>, ¿cuánto vale la expresión <code>PORTB &amp; 0x0004</code>?",
-          "opciones": [
-            "0x0004",
-            "0",
-            "0x0002",
-            "Depende de cómo esté JP3"
-          ],
-          "correcta": 1,
-          "explicacion": "<p>SW2 está en RB2 (bit 2, máscara 0x0004) y <strong>pulsado lee 0</strong>: la expresión vale <strong>0</strong>. JP3 solo afecta a los LED; el puente del pulsador es JP1.</p>"
-        },
-        {
-          "texto": "¿Qué línea enciende D7 sin modificar el resto de pines?",
-          "opciones": [
-            "<code>PORTB |= 0x4000;</code>",
-            "<code>PORTB &amp;= 0x4000;</code>",
-            "<code>PORTB &amp;= ~0x4000;</code>",
-            "<code>PORTB = 0x4000;</code>"
-          ],
-          "correcta": 2,
-          "explicacion": "<p>D7 (RB14) es activo a nivel bajo: encenderlo es poner a <strong>0</strong> el bit 14 sin tocar los demás, <code>PORTB &amp;= ~0x4000;</code> (<code>~0x4000</code> = 0xBFFF). <code>PORTB |= 0x4000</code> lo <em>apaga</em>; <code>PORTB &amp;= 0x4000</code> deja el bit 14 como estaba y pone a 0 todos los demás (enciende D6, D8 y D9); <code>PORTB = 0x4000</code> cambia todos los pines.</p>"
-        }
-      ]
-    },
-    "laboratorio-pictrainer-2": {
+    "laboratorio-pictrainer-sw-1": {
       "titulo": "Pulsador: lectura por nivel o por flanco",
       "enunciado": "<p>Se quiere que D9 cambie de estado cada vez que se pulsa SW2, dentro de <code>while(1)</code> y con la plantilla ya ejecutada.</p>",
       "contexto": "<ul><li>SW2 en RB2 (máscara 0x0004), <strong>activo a nivel bajo</strong>: pulsado = 0 (JP1 puesto).</li><li>D9 en RB12 (máscara 0x1000), activo a nivel bajo.</li><li><strong>Por nivel</strong>: la condición se cumple mientras el pulsador está pulsado. <strong>Por flanco</strong>: se detecta solo el instante en que cambia (comparando la lectura actual con la anterior).</li></ul>",
@@ -296,7 +180,7 @@
         }
       ]
     },
-    "laboratorio-pictrainer-3": {
+    "laboratorio-pictrainer-sw-2": {
       "titulo": "Hacer parpadear un LED",
       "enunciado": "<p>Se quiere que D6 parpadee cada medio segundo (encendido 500 ms, apagado 500 ms), con el driver de retardos de la Práctica 3:</p><pre><code class=\"lang-c\">#include \"config.h\"\n#include \"retardo.h\"\n\nint main(void)\n{\n    InicializarReloj();\n    PORTB = 0xFFFF;      // LED apagados (activos a nivel bajo)\n    TRISB = 0x0FFF;\n    while (1) {\n        PORTB &amp;= ~0x8000;   // enciende D6\n        retardo(500);\n        PORTB |= 0x8000;     // apaga D6\n        retardo(500);\n    }\n    return 0;\n}</code></pre>",
       "contexto": "<ul><li>D6 en RB15 (máscara 0x8000), activo a nivel bajo.</li><li><code>retardo(mseg)</code> (driver de la Práctica 3) bloquea el programa <code>mseg</code> milisegundos, usando el Timer 1 por <em>polling</em>; no usa interrupciones.</li><li>JP3 debe estar puesto para que D6-D9 funcionen.</li></ul>",
@@ -347,7 +231,7 @@
         }
       ]
     },
-    "laboratorio-pictrainer-4": {
+    "laboratorio-pictrainer-sw-3": {
       "titulo": "Desplazamiento de los LED",
       "enunciado": "<p>Se quiere mover una «luz» por los cuatro LED, en el sentido D9 → D8 → D7 → D6 → D9 → …, cambiando cada 300 ms:</p><pre><code class=\"lang-c\">#include \"config.h\"\n#include \"retardo.h\"\n\nint main(void)\n{\n    unsigned int patron = 0x0001;   // bit 0 = D9, bit 1 = D8, bit 2 = D7, bit 3 = D6\n\n    InicializarReloj();\n    PORTB = 0xFFFF;\n    TRISB = 0x0FFF;\n    while (1) {\n        PORTB = (~patron &amp; 0x000F) &lt;&lt; 12;\n        retardo(300);\n        patron &lt;&lt;= 1;\n        if (patron == 0x0010)\n            patron = 0x0001;\n    }\n    return 0;\n}</code></pre>",
       "contexto": "<ul><li>D9 = RB12 (bit 12), D8 = RB13, D7 = RB14, D6 = RB15; activos a nivel bajo.</li><li><code>patron</code> lleva un único bit a 1, en la posición del LED que debe estar encendido.</li><li><code>retardo(mseg)</code>: espera bloqueante del driver de la Práctica 3.</li></ul>",
@@ -398,7 +282,7 @@
         }
       ]
     },
-    "laboratorio-pictrainer-5": {
+    "laboratorio-pictrainer-sw-4": {
       "titulo": "Usar las funciones del driver de la UART",
       "enunciado": "<p>Se quiere hacer un «eco»: cada carácter que llega por el PC se reenvía tal cual, con el driver <code>uart.c</code> / <code>uart.h</code> de la Práctica 7:</p><pre><code class=\"lang-c\">#include \"config.h\"\n#include \"uart.h\"\n\nint main(void)\n{\n    unsigned char c;\n\n    InicializarReloj();\n    RemapeaPerifericos();\n    AD1PCFGL = 0xFFFF;\n    InicializarUART();\n    while (1) {\n        if (HayAlgoRecibido()) {\n            c = SacarDeColaRecepcionUART();\n            PonerEnColaTransmisionUART(c);\n            Transmite();\n        }\n    }\n    return 0;\n}</code></pre>",
       "contexto": "<ul><li><code>InicializarUART()</code>: configura el módulo (38 400 baudios, 8N1) y las interrupciones de transmisión y recepción.</li><li><code>HayAlgoRecibido()</code>: distinto de 0 si hay algo en la cola de recepción.</li><li><code>SacarDeColaRecepcionUART()</code>: saca y devuelve el siguiente carácter recibido.</li><li><code>PonerEnColaTransmisionUART(c)</code>: mete <code>c</code> en la cola de transmisión.</li><li><code>Transmite()</code>: hace <code>IFS0bits.U1TXIF = 1;</code> para que la ISR de transmisión empiece (o siga) a vaciar la cola.</li></ul>",
@@ -449,7 +333,7 @@
         }
       ]
     },
-    "laboratorio-pictrainer-6": {
+    "laboratorio-pictrainer-sw-5": {
       "titulo": "Leer el potenciómetro con el A/D",
       "enunciado": "<p>Se quiere leer el potenciómetro RV1 y mostrar su valor por los cuatro LED, con el driver del conversor A/D de la Práctica 8:</p><pre><code class=\"lang-c\">#include \"config.h\"\n#include \"ad.h\"\n\nint main(void)\n{\n    InicializarReloj();\n    PORTB = 0xFFFF;      // LEDs apagados (activos a nivel bajo)\n    TRISB = 0x0FFF;\n    init_ad(0x20);        // deja analógico solo AN5 (RV1)\n    while (1) {\n        PORTB = (get_ad(5) &lt;&lt; 6) &amp; 0xF000;\n    }\n    return 0;\n}</code></pre>",
       "contexto": "<ul><li>Potenciómetro RV1 en AN5 = RB3 (JP2), 0 … 3,3 V.</li><li><code>init_ad(canales)</code>: deja analógicos solo los pines de la máscara (<code class=\"reg\">AD1PCFGL</code> = ~canales) y configura el módulo; <code>0x20</code> es el bit 5, AN5.</li><li><code>get_ad(canal)</code>: selecciona el canal, arranca el muestreo (<code>SAMP = 1</code>) y espera a que termine la conversión; devuelve un valor de <strong>10 bits</strong> (0 … 1023).</li><li>LED D6 = RB15, D7 = RB14, D8 = RB13, D9 = RB12, activos a nivel bajo.</li></ul>",
@@ -500,7 +384,7 @@
         }
       ]
     },
-    "laboratorio-pictrainer-7": {
+    "laboratorio-pictrainer-sw-6": {
       "titulo": "La plantilla de main",
       "enunciado": "<p>Todos los programas del laboratorio empiezan así:</p><pre><code class=\"lang-c\">InicializarReloj();\nRemapeaPerifericos();\nAD1PCFGL = 0xFFFF;\nPORTB = 0xEFFF;\nTRISB = 0x0FFF;</code></pre>",
       "contexto": "<ul><li>Tras el reset, AN0-AN5 (RA0, RA1, RB0-RB3) son analógicos (<code class=\"reg\">AD1PCFGL</code> = 0x0000) y se leen como 0.</li><li>Tras el reset, TRISB = 0xFFFF y el latch de salida de PORTB tiene un valor indefinido.</li></ul>",
@@ -553,20 +437,15 @@
     }
   },
   "ejerciciosEnTema": [
-    "laboratorio-pictrainer-1",
-    "laboratorio-pictrainer-2",
-    "laboratorio-pictrainer-3",
-    "laboratorio-pictrainer-4",
-    "laboratorio-pictrainer-5",
-    "laboratorio-pictrainer-6",
-    "laboratorio-pictrainer-7"
+    "laboratorio-pictrainer-sw-1",
+    "laboratorio-pictrainer-sw-2",
+    "laboratorio-pictrainer-sw-3",
+    "laboratorio-pictrainer-sw-4",
+    "laboratorio-pictrainer-sw-5",
+    "laboratorio-pictrainer-sw-6"
   ],
   "tituloEjercicios": "Ejercicios y cuestiones",
   "resumen": [
-    "La PicTrainer v3.0 tiene tres bloques: <strong>USB_uart</strong> (FT230XS), <strong>alimentación</strong> (USB, jack J2 de 7,5-9 V con MC7805 o Vin de P5; selección automática con Q1/U4 o manual con K1; LED D4 = 5 V y D5 = 3,3 V) y <strong>micro</strong> (dsPIC33FJ32MC202 en zócalo, reset, P4, periféricos y P5-P8 Arduino).",
-    "LED <strong>D6 = RB15, D7 = RB14, D8 = RB13, D9 = RB12</strong>, <strong>activos a nivel bajo</strong> (0 = encendido), puente JP3.",
-    "Pulsador <strong>SW2 en RB2</strong>: <strong>pulsado = 0</strong> (JP1). Potenciómetro <strong>RV1 en AN5 = RB3</strong> (JP2). Reset SW1: MCLR activo a nivel bajo.",
-    "UART: <strong>U1TX = RB4 (pin 11), U1RX = RB5 (pin 14)</strong>; <strong>K2</strong> elige de dónde recibe U1RX: 1-2 USB, 2-3 conector Arduino (según el esquema, U1TX va siempre a los dos). La alimentación no depende de K2. P4: 1 MCLR, 2 3,3 V, 3 GND, 4 PGD = RB0, 5 PGC = RB1. Para usar RB12-RB15 fuera de la tarjeta (P7), quitar JP3.",
     "Plantilla: <code>#include \"config.h\"</code>, <code>InicializarReloj()</code>, <code>RemapeaPerifericos()</code>, <code>AD1PCFGL = 0xFFFF</code> (si no, RB2 lee siempre 0), <code>PORTB = 0xEFFF</code> <strong>antes</strong> que <code>TRISB = 0x0FFF</code>, y <code>while (1)</code>. Máscaras: <code>PORTB &amp;= ~0x4000;</code> pone a 0, <code>PORTB |= 0x4000;</code> a 1; dos modificaciones seguidas de PORT: variable o <code>asm(\"nop\")</code> (regla RMW).",
     "MPLAB X: proyecto Standalone, dsPIC33FJ32MC202, Licensed Debugger, XC16, en D: y sin espacios ni acentos. Release programa y se desconecta; debug permite breakpoints (dos como máximo), Step Into/Over y Watches; el simulador no necesita hardware.",
     "PC: driver VCP de FTDI → «USB Serial Port (COMx)» en <code>devmgmt.msc</code>; CoolTerm/comDebug a 38 400 8N1 enviando en hexadecimal; en Visual Studio, Console App C++, <code>_CRT_SECURE_NO_WARNINGS</code>, <code>#pragma once</code> y la clase <code>CSerial</code> (<code>LPCTSTR</code>, <code>\\\\.\\COM14</code> a partir de COM10)."

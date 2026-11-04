@@ -1,0 +1,36 @@
+/* ---------- Componente: sim-adc-sensor (el A/D en acción, con un sensor de luz) ---------- */
+.mpi-adc-sensor { container-type: inline-size; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem 1.2rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-adc-sensor .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .7rem; }
+.mpi-adc-sensor code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+
+.as-escena { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; margin: .8rem 0; }
+.as-fuente { text-align: center; flex: 0 0 auto; max-width: 150px; }
+.as-sol { width: 84px; height: 84px; display: block; margin: 0 auto; }
+.as-disco, .as-rayos { transition: opacity .12s; }
+.as-slider { display: block; color: var(--txt-2); font-size: .85rem; margin-top: .3rem; }
+.as-slider input { width: 130px; accent-color: var(--amarillo); display: block; margin: .25rem auto 0; }
+.as-pie { display: block; color: var(--txt-tenue); font-size: .72rem; line-height: 1.35; margin-top: .4rem; }
+
+.as-flecha { color: var(--txt-tenue); font-size: 1.4rem; text-align: center; flex: 1 1 60px; min-width: 60px; }
+.as-flecha small { display: block; font-size: .68rem; line-height: 1.2; margin-top: .1rem; }
+
+.as-analog { display: flex; align-items: center; gap: .5rem; flex: 0 0 auto; }
+.as-gauge { width: 26px; height: 84px; border: 1px solid var(--borde-2); border-radius: 4px; background: var(--bg); position: relative; overflow: hidden; }
+.as-nivel { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background: linear-gradient(to top, var(--acento-2), var(--azul-cl)); transform: scaleY(0); transform-origin: bottom; transition: transform .12s; }
+.as-vin { font-size: .85rem; color: var(--txt-2); font-family: var(--mono); }
+
+.as-digital { text-align: center; flex: 0 0 auto; }
+.as-chip { display: inline-block; background: var(--bg-3); border: 1px solid var(--acento); color: var(--acento); font-family: var(--mono); font-size: .8rem; padding: .25rem .7rem; border-radius: 5px; margin-bottom: .4rem; }
+.as-bits { display: flex; gap: 2px; justify-content: center; }
+.as-bit { width: 17px; padding: .2rem 0; font-family: var(--mono); font-size: .8rem; text-align: center; background: var(--bg); border: 1px solid var(--borde); border-radius: 3px; color: var(--txt-tenue); }
+.as-bit.as-on { background: color-mix(in srgb, var(--acento) 18%, transparent); border-color: var(--acento); color: var(--acento); font-weight: 700; }
+.as-num { margin-top: .4rem; font-family: var(--mono); color: var(--txt); }
+.as-num small { color: var(--txt-tenue); }
+
+.as-detalle { margin: .7rem 0; font-size: .85rem; color: var(--txt-2); line-height: 1.55; background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; padding: .55rem .7rem; }
+.as-codigo { margin: 0; }
+
+@media (max-width: 480px) {
+  .mpi-adc-sensor { padding: .85rem; }
+  .as-escena { justify-content: center; }
+}

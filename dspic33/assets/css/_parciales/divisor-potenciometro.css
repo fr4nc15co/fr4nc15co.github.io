@@ -1,0 +1,34 @@
+/* ---------- Componente: divisor-potenciometro (RV1 como divisor de tensión) ---------- */
+.mpi-divisor-potenciometro { container-type: inline-size; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-divisor-potenciometro .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .7rem; }
+.mpi-divisor-potenciometro code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+
+.dp-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr); gap: .9rem; align-items: start; }
+@container (min-width: 560px) { .dp-cuerpo { grid-template-columns: minmax(0, 220px) minmax(0, 1fr); } }
+
+.dp-esquema { background: var(--bg); border: 1px solid var(--borde-2); border-radius: 8px; padding: .5rem; min-width: 0; }
+.dp-svg { display: block; width: 100%; height: auto; max-width: 220px; margin: 0 auto; font-family: var(--sans); }
+.dp-r1-box, .dp-r2-box { transition: stroke-width .15s; }
+
+.dp-panel { display: flex; flex-direction: column; gap: .6rem; min-width: 0; }
+.dp-lab { font-size: .88rem; color: var(--txt-2); }
+.dp-lab strong { font-family: var(--mono); color: var(--num); }
+.dp-cursor { width: 100%; accent-color: var(--acento); }
+.dp-botones { display: flex; flex-wrap: wrap; gap: .4rem; }
+.dp-ej { font-family: var(--mono); background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .3rem .55rem; cursor: pointer; font-size: .78rem; }
+.dp-ej:hover { border-color: var(--acento); }
+.dp-ej:focus-visible, .dp-cursor:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 2px; }
+
+.dp-resultados { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin: .9rem 0; }
+@container (min-width: 560px) { .dp-resultados { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.dp-res { background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; padding: .4rem .55rem; text-align: center; }
+.dp-res-tit { display: block; color: var(--txt-tenue); font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; margin-bottom: .15rem; }
+.dp-res strong { font-family: var(--mono); color: var(--num); font-size: .95rem; }
+
+.dp-nota { font-size: .85rem; color: var(--txt-2); line-height: 1.55; background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; padding: .55rem .7rem; }
+.dp-nota code { font-size: .85em; }
+
+@media (max-width: 420px) {
+  .mpi-divisor-potenciometro { padding: .85rem; }
+  .dp-resultados { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

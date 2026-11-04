@@ -31,7 +31,15 @@
         },
         {
           "tipo": "prosa",
-          "html": "<table class=\"tabla-datos\"><thead><tr><th>Tensión en el pin</th><th>Código N (decimal)</th><th>Código N (hex)</th></tr></thead><tbody><tr><td>0 V (= V<sub>ref−</sub>)</td><td>0</td><td><code>0x000</code></td></tr><tr><td>0,5 V</td><td>155</td><td><code>0x09B</code></td></tr><tr><td>1 V</td><td>310</td><td><code>0x136</code></td></tr><tr><td>1,65 V (mitad)</td><td>512</td><td><code>0x200</code></td></tr><tr><td>2 V</td><td>620</td><td><code>0x26C</code></td></tr><tr><td>3,3 V (= V<sub>ref+</sub>)</td><td>1023</td><td><code>0x3FF</code></td></tr></tbody></table><p>Estrictamente, un conversor de 10 bits reparte el rango en 2<sup>10</sup> = 1024 escalones (3,3 V / 1024 ≈ 3,22 mV) y satura en 1023; con la aproximación V · 1023 / 3,3 redondeada al entero más próximo los códigos de la tabla son los mismos. Ojo con 1,65 V: cae justo en la frontera entre 511 (<code>0x1FF</code>) y 512 (<code>0x200</code>), así que en la placa real, con un poco de ruido, el código puede alternar entre ambos valores.</p><h3>Tiempos de una conversión</h3><p>Otro aspecto clave son los <strong>tiempos de espera</strong>. Una conversión completa tiene dos fases consecutivas:</p>"
+          "html": "<table class=\"tabla-datos\"><thead><tr><th>Tensión en el pin</th><th>Código N (decimal)</th><th>Código N (hex)</th></tr></thead><tbody><tr><td>0 V (= V<sub>ref−</sub>)</td><td>0</td><td><code>0x000</code></td></tr><tr><td>0,5 V</td><td>155</td><td><code>0x09B</code></td></tr><tr><td>1 V</td><td>310</td><td><code>0x136</code></td></tr><tr><td>1,65 V (mitad)</td><td>512</td><td><code>0x200</code></td></tr><tr><td>2 V</td><td>620</td><td><code>0x26C</code></td></tr><tr><td>3,3 V (= V<sub>ref+</sub>)</td><td>1023</td><td><code>0x3FF</code></td></tr></tbody></table><p>Estrictamente, un conversor de 10 bits reparte el rango en 2<sup>10</sup> = 1024 escalones (3,3 V / 1024 ≈ 3,22 mV) y satura en 1023; con la aproximación V · 1023 / 3,3 redondeada al entero más próximo los códigos de la tabla son los mismos. Ojo con 1,65 V: cae justo en la frontera entre 511 (<code>0x1FF</code>) y 512 (<code>0x200</code>), así que en la placa real, con un poco de ruido, el código puede alternar entre ambos valores.</p>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>El A/D en acción</h3><p>Antes de contar tiempos y registros, un ejemplo completo con un sensor de luz: una <strong>LDR</strong> montada en divisor de tensión (en un pin analógico libre, por ejemplo AN0/RA0) da una tensión analógica que el conversor convierte en un código de 10 bits. Mueve la luz ambiente y sigue la cadena completa, de la magnitud física al número que lee el programa:</p><div class=\"mpi-mount\" data-componente=\"sim-adc-sensor\" data-config='{}'></div>"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<h3>Tiempos de una conversión</h3><p>Otro aspecto clave son los <strong>tiempos de espera</strong>. Una conversión completa tiene dos fases consecutivas:</p>"
         },
         {
           "tipo": "lista",

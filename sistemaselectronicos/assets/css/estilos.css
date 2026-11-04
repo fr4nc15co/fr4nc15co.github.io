@@ -1088,3 +1088,73 @@ math.formula { font-size: 1.3rem; margin: 1rem 0; color: var(--txt); display: bl
   color: var(--acento);
   font-weight: 500;
 }
+
+/* === Simuladores del transistor NPN (3.5) y del relé (3.7) === */
+.mpi-sim-trn, .mpi-sim-rle { background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1rem 1.2rem; margin: 1.2rem 0; }
+.trn-cuerpo { display: flex; flex-wrap: wrap; gap: 1rem 1.6rem; align-items: center; margin: .6rem 0; }
+.trn-col { flex: 1 1 280px; min-width: 0; }
+.trn-svg, .trn-graf, .rle-svg { width: 100%; height: auto; display: block; margin: 0 auto; }
+.trn-svg { max-width: 440px; }
+.trn-graf { max-width: 360px; }
+.rle-svgbox { margin: .2rem 0 .6rem; }
+.rle-svg { max-width: 720px; }
+.trn-svg text, .trn-graf text, .rle-svg text { font-family: var(--mono); }
+
+/* corriente animada: rayas que avanzan en el sentido de la corriente */
+.trn-flujo, .rle-flujo { fill: none; stroke-width: 3.4; stroke-linecap: round; stroke-dasharray: 2 9; animation: trn-corre .8s linear infinite; }
+.rle-ac { animation-direction: alternate; animation-timing-function: ease-in-out; }
+@keyframes trn-corre { to { stroke-dashoffset: -11; } }
+@media (prefers-reduced-motion: reduce) { .trn-flujo, .rle-flujo { animation: none; stroke-dasharray: 2 6; } }
+
+/* insignia de estado */
+.trn-badge { font-family: var(--mono); font-size: .92rem; padding: .5rem .8rem; border-radius: 8px; border: 2px solid var(--borde); margin-bottom: .8rem; text-align: center; transition: border-color .15s, color .15s; }
+.trn-badge.trn-corte  { border-color: var(--acento-2); color: var(--acento-2); }
+.trn-badge.trn-lineal { border-color: var(--naranja);  color: var(--naranja); }
+.trn-badge.trn-sat    { border-color: var(--acento);   color: var(--acento); }
+
+/* botones GPIO 0 / 1 */
+.trn-btns { display: flex; gap: .6rem; margin-bottom: .8rem; }
+.trn-btn, .rle-btn { flex: 1; display: flex; flex-direction: column; align-items: center; background: var(--bg-3); border: 2px solid var(--borde); border-radius: 8px; color: var(--txt); padding: .4rem .8rem; cursor: pointer; font-family: var(--mono); font-size: .95rem; font-weight: 700; }
+.trn-btn small, .rle-btn small { font-weight: normal; font-size: .7rem; color: var(--txt-tenue); }
+.trn-btn:hover, .rle-btn:hover { border-color: var(--acento-2); }
+.trn-btn.trn-on, .rle-btn.rle-on { border-color: var(--acento); background: #1f3a35; color: var(--acento); }
+.trn-btn.trn-on small, .rle-btn.rle-on small { color: var(--acento); }
+
+/* sliders */
+.trn-fila, .rle-fila { display: flex; align-items: center; gap: .6rem; margin: .35rem 0; color: var(--txt-2); font-size: .9rem; }
+.trn-fila > span, .rle-lbl { flex: 0 0 4.2rem; color: var(--txt-2); }
+.trn-fila input[type="range"], .rle-fila input[type="range"] { flex: 1 1 auto; min-width: 0; accent-color: var(--acento); }
+.trn-fila output, .rle-fila output { flex: 0 0 4.6rem; font-family: var(--mono); color: var(--azul-cl); text-align: right; }
+.trn-reset, .rle-reparar { margin-top: .6rem; background: var(--bg-3); color: var(--txt-2); border: 1px solid var(--borde); border-radius: 6px; padding: .35rem .7rem; font-size: .82rem; cursor: pointer; }
+.trn-reset:hover, .rle-reparar:hover { border-color: var(--acento); color: var(--txt); }
+.rle-reparar { display: none; border-color: var(--rojo); color: var(--rojo); }
+
+/* panel de datos del transistor */
+.trn-datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: .45rem; }
+.trn-dato { background: var(--bg-3); border: 1px solid var(--borde-2); border-radius: 6px; padding: .35rem .55rem; display: flex; flex-direction: column; gap: .1rem; }
+.trn-dato span { font-size: .72rem; color: var(--txt-tenue); }
+.trn-dato b { font-family: var(--mono); font-size: .95rem; color: var(--txt); font-weight: 600; }
+.trn-dato small { color: var(--txt-tenue); font-weight: normal; }
+.trn-dato.trn-ok b { color: var(--acento); }
+.trn-dato.trn-aviso b { color: var(--naranja); }
+.trn-msg, .rle-msg { margin-top: .8rem; font-size: .92rem; }
+.trn-nota { color: var(--txt-tenue); }
+
+/* relé: controles y cadena de etapas */
+.rle-ctrl { margin-top: .6rem; }
+.rle-ctrl .rle-fila label { display: inline-flex; align-items: center; gap: .3rem; flex-wrap: nowrap; }
+.rle-ctrl .rle-fila { flex-wrap: wrap; }
+.rle-chk { accent-color: var(--acento); }
+.rle-ctrl input[type="radio"] { accent-color: var(--acento); }
+.rle-ctrl .rle-btn { flex: 0 0 auto; min-width: 4.4rem; }
+.rle-cadena { display: flex; flex-wrap: wrap; align-items: stretch; gap: .4rem; margin: .4rem 0 .6rem; }
+.rle-etapa { flex: 1 1 150px; background: var(--bg-3); border: 1px solid var(--borde-2); border-radius: 8px; padding: .45rem .6rem; font-size: .8rem; color: var(--txt-2); transition: border-color .15s; }
+.rle-etapa div { line-height: 1.45; }
+.rle-et-tit { font-family: var(--mono); font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; color: var(--acento); margin-bottom: .15rem; }
+.rle-et-on { border-color: var(--acento); }
+.rle-et-mal { border-color: var(--naranja); }
+.rle-etapa small { color: var(--txt-tenue); }
+.rle-flecha { align-self: center; color: var(--txt-tenue); font-size: 1.1rem; }
+.rle-ok { color: var(--acento); }
+.rle-ko { color: var(--rojo); }
+@media (max-width: 760px) { .rle-flecha { display: none; } }

@@ -1,0 +1,49 @@
+/* ---------- Componente: sim-pulsador-led (pull-up/pull-down, LED activo a nivel bajo/alto) ---------- */
+.mpi-sim-pulsador-led { container-type: inline-size; background: var(--bg-2); border: 1px solid var(--borde); border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; min-width: 0; }
+.mpi-sim-pulsador-led .mpi-sim-cab { font-weight: 600; color: var(--acento); font-size: 1rem; margin-bottom: .7rem; }
+.mpi-sim-pulsador-led code { font-family: var(--mono); font-size: .88em; background: var(--bg-3); color: var(--azul-cl); padding: .05rem .3rem; border-radius: 4px; }
+
+.spl-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr); gap: .9rem; align-items: start; }
+@container (min-width: 560px) { .spl-cuerpo { grid-template-columns: minmax(0, 220px) minmax(0, 1fr); } }
+
+.spl-esquema { background: var(--bg); border: 1px solid var(--borde-2); border-radius: 8px; padding: .5rem; min-width: 0; }
+.spl-svg { display: block; width: 100%; height: auto; max-width: 220px; margin: 0 auto; font-family: var(--sans); }
+.spl-r rect { transition: stroke-width .2s; }
+
+.spl-sw-dot { transition: fill .15s; }
+.spl-sw-brazo { transform-origin: 60px 130px; transition: transform .15s ease-out; }
+.spl-sw.spl-sw-cerrado .spl-sw-brazo { transform: rotate(-28deg); stroke: var(--acento); }
+.spl-sw.spl-sw-cerrado .spl-sw-dot { fill: var(--acento); }
+
+.spl-led-dibujo { transition: fill .15s, stroke .15s, filter .15s; }
+.spl-led-dibujo.spl-on { fill: var(--naranja); filter: drop-shadow(0 0 6px var(--naranja)); }
+
+.spl-panel { display: flex; flex-direction: column; gap: .65rem; min-width: 0; }
+.spl-radios { display: flex; flex-direction: column; gap: .35rem; font-size: .85rem; color: var(--txt-2); }
+.spl-radios label { display: flex; align-items: center; gap: .4rem; cursor: pointer; }
+.spl-radios input { accent-color: var(--acento); }
+
+.spl-boton, .spl-interruptor { font-family: var(--mono); background: var(--bg-3); color: var(--txt); border: 1px solid var(--borde); border-radius: 6px; padding: .5rem .7rem; cursor: pointer; font-size: .85rem; text-align: center; user-select: none; touch-action: manipulation; }
+.spl-boton:hover, .spl-interruptor:hover { border-color: var(--acento); }
+.spl-boton small, .spl-interruptor .spl-int-pista { display: block; color: var(--txt-tenue); font-size: .72rem; font-weight: 400; margin-top: .15rem; }
+.spl-boton.spl-apretado { background: var(--acento); border-color: var(--acento); color: #06231d; font-weight: 700; }
+.spl-boton.spl-apretado small { color: #06231d; }
+.spl-boton:focus-visible, .spl-interruptor:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 2px; }
+
+.spl-interruptor { display: flex; flex-direction: column; align-items: center; gap: .1rem; }
+.spl-int-tit { color: var(--txt-tenue); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
+.spl-int-val { font-size: 1.3rem; font-weight: 700; color: var(--num); }
+
+.spl-lectura { display: flex; align-items: baseline; gap: .5rem; }
+.spl-bit { font-family: var(--mono); font-size: 1.8rem; font-weight: 700; color: var(--rojo); background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; padding: .1rem .55rem; }
+.spl-bit.spl-bit-uno { color: var(--acento); }
+.spl-lectura small { color: var(--txt-tenue); font-size: .78rem; }
+
+.spl-estado { font-size: .85rem; color: var(--txt-2); line-height: 1.5; background: var(--bg); border: 1px solid var(--borde-2); border-radius: 6px; padding: .5rem .6rem; }
+.spl-estado small { color: var(--txt-tenue); }
+
+.spl-codigo { margin: .8rem 0 0; }
+
+@media (max-width: 420px) {
+  .mpi-sim-pulsador-led { padding: .85rem; }
+}

@@ -128,7 +128,7 @@
         },
         {
           "tipo": "prosa",
-          "html": "<div class=\"mpi-mount\" data-componente=\"fig-circuito\" data-config='{\"fig\":\"transistor\"}'></div>"
+          "html": "<div class=\"mpi-mount\" data-componente=\"sim-transistor\" data-config='{}'></div>"
         }
       ]
     },
@@ -179,7 +179,7 @@
         },
         {
           "tipo": "prosa",
-          "html": "<div class=\"mpi-mount\" data-componente=\"fig-circuito\" data-config='{\"fig\":\"rele\"}'></div>"
+          "html": "<div class=\"mpi-mount\" data-componente=\"sim-rele\" data-config='{}'></div>"
         }
       ]
     },
