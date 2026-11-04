@@ -139,6 +139,10 @@
           "tipo": "registro",
           "registro": "IPC2",
           "valor": "0x00000008"
+        },
+        {
+          "tipo": "prosa",
+          "html": "<p>Pruébalo tú: lanza peticiones de varias fuentes, cambia su prioridad y subprioridad y observa cuándo una interrupción <strong>anida</strong> dentro de otra y cuándo se queda <strong>pendiente</strong>. Los escenarios reproducen los casos típicos de examen, incluido el desempate por subprioridad (<code class=\"reg\">IPCx</code>bits.xxIS) antes de recurrir al orden natural:</p><div class=\"mpi-mount\" data-componente=\"sim-prioridades\" data-config='{}'></div>"
         }
       ]
     },
