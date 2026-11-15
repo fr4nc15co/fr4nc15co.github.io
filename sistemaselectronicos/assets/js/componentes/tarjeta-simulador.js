@@ -16,7 +16,7 @@ MPI.componentes = MPI.componentes || {};
 
 (function () {
   var DEF = {
-    url: 'https://icai-interactive-lab.netlify.app/',
+    url: 'https://icai-interactive-lab.netlify.app/#/banco/raspberry-pi-4',
     img: 'assets/img/placa-lab.svg',
     titulo: 'Simulador del puesto de laboratorio',
     subtitulo: 'La Raspberry Pi 4 con la iMAT HAT en el navegador: LED, pulsadores, ' +
