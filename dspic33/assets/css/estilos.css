@@ -2164,59 +2164,30 @@ button.cm-bit:hover { background: var(--bg-3); }
 .ptb-dibujo { flex: 1 1 420px; min-width: 0; max-width: 620px; }
 .ptb-svg { display: block; width: 100%; height: auto; }
 
-/* --- Dibujo SVG --- */
-.ptb-pcb { fill: #13261f; stroke: #2f5244; stroke-width: 2; }
-.ptb-taladro { fill: var(--bg-2); stroke: #2f5244; stroke-width: 2; }
-.ptb-pista { fill: none; stroke: #2f6b54; stroke-width: 3; stroke-linecap: round; }
-.ptb-titulo { font: 700 17px var(--sans); fill: #6f8f82; letter-spacing: .04em; }
-.ptb-t { font: 700 13px var(--sans); fill: var(--txt); }
-.ptb-tx { font: 10px var(--sans); fill: #a9bdb4; }
-.ptb-ts { font: 700 11px var(--sans); fill: #e6e6e6; }
-.ptb-tic { font: 700 11px var(--mono); fill: #d0d0d0; }
-.ptb-tchip { font: 700 13px var(--mono); fill: #d8d8d8; }
-
-.ptb-metal { fill: #9aa3ab; stroke: #5d656c; stroke-width: 1.5; }
-.ptb-hueco { fill: #3a3f44; stroke: #2a2e31; }
-.ptb-ic { fill: #1b1b1b; stroke: #555; stroke-width: 1.2; }
-.ptb-pata { stroke: #b7bec4; stroke-width: 2.5; fill: none; }
-.ptb-cuerpo { fill: #161616; stroke: #4a4a4a; }
-.ptb-cpin { fill: #d4b24c; stroke: #8a7330; stroke-width: 1; }
-.ptb-cpin1 { fill: #e8c45a; }
-.ptb-cap { fill: #2a64c8; stroke: #8fb4f0; stroke-width: 1; opacity: .92; }
-.ptb-cap.ptb-oculto { display: none; }
-.ptb-nomontado { fill: none; stroke: #8b949e; stroke-dasharray: 3 3; }
-.ptb-zocalo { fill: #2b2b2b; stroke: #5a5a5a; }
-.ptb-chip { fill: #141414; stroke: #4a4a4a; }
-.ptb-muesca { fill: #3a3a3a; }
-.ptb-punto { fill: #3a3a3a; }
-.ptb-dpin { fill: #b9bec3; stroke: #707579; stroke-width: .8; transition: fill .15s; }
+/* --- Dibujo SVG (dibujo a escala en mm; los colores de los componentes van
+   en el propio SVG, como en una foto de la placa) --- */
+.ptb-t { font: 700 1.7px var(--sans); fill: var(--txt); }
+.ptb-tx { font: 1.25px var(--sans); fill: #a9bdb4; }
+.ptb-dpin { fill: #b9bec3; stroke: #707579; stroke-width: .12; transition: fill .15s; }
 .ptb-dpin.ptb-pin-f { fill: var(--acento); }
 .ptb-dpin.ptb-pin-s { fill: var(--amarillo); stroke: #fff; }
-.ptb-npin { font: 700 10px var(--mono); fill: var(--amarillo); display: none; }
+.ptb-npin { font: 700 1.3px var(--mono); fill: var(--amarillo); display: none; }
 .ptb-npin.ptb-visible { display: inline; }
 .ptb-npin:not(.ptb-npin-s) { fill: var(--acento); }
-.ptb-boton { fill: #2b2b2b; stroke: #111; stroke-width: 2; }
-.ptb-pot { fill: #2d5fb0; stroke: #1b3a6e; }
-.ptb-ranura { stroke: #ddd; stroke-width: 3; stroke-linecap: round; }
-.ptb-res { fill: #c8b48c; stroke: #7a6a48; }
-.ptb-led { stroke-width: 1.5; }
-.ptb-led-r { fill: #e05a4a; stroke: #ff9b8c; }
-.ptb-led-v { fill: #4fbf66; stroke: #9be6a9; }
-.ptb-led-n { fill: #e8933a; stroke: #f5c08a; }
-.ptb-cable { fill: none; stroke: var(--amarillo); stroke-width: 1.6; stroke-dasharray: 5 4; opacity: .85; }
+.ptb-cap.ptb-oculto { display: none; }
+.ptb-cable { fill: none; stroke: var(--amarillo); stroke-width: .22; stroke-dasharray: .7 .55; opacity: .85; }
 
 /* Elementos interactivos */
 .ptb-el { cursor: pointer; outline: none; transition: opacity .15s; }
 .ptb-hit { fill: rgba(0,0,0,0); stroke: none; pointer-events: all; }
-.ptb-el:hover .ptb-hit { fill: rgba(78,201,176,.08); stroke: var(--acento); stroke-width: 1.5; stroke-dasharray: 4 3; }
-.ptb-el:focus-visible .ptb-hit { stroke: var(--amarillo); stroke-width: 2.5; stroke-dasharray: none; }
-.ptb-el.ptb-sel .ptb-hit { fill: rgba(86,156,214,.16); stroke: var(--acento-2); stroke-width: 2.5; stroke-dasharray: none; }
+.ptb-el:hover .ptb-hit { fill: rgba(78,201,176,.1); stroke: var(--acento); stroke-width: .22; stroke-dasharray: .6 .45; }
+.ptb-el:focus-visible .ptb-hit { stroke: var(--amarillo); stroke-width: .35; stroke-dasharray: none; }
+.ptb-el.ptb-sel .ptb-hit { fill: rgba(86,156,214,.18); stroke: var(--acento-2); stroke-width: .35; stroke-dasharray: none; }
 .ptb-el.ptb-sel:focus-visible .ptb-hit { stroke: var(--amarillo); }
 .ptb-filtrando .ptb-el { opacity: .3; }
 .ptb-filtrando .ptb-el.ptb-on, .ptb-filtrando .ptb-el.ptb-sel, .ptb-filtrando .ptb-el:hover, .ptb-filtrando .ptb-el:focus-visible { opacity: 1; }
-.ptb-filtrando .ptb-el.ptb-on .ptb-hit { stroke: var(--acento); stroke-width: 2; }
-.ptb-el.ptb-sinpuente .ptb-led, .ptb-el.ptb-sinpuente .ptb-boton, .ptb-el.ptb-sinpuente .ptb-pot { opacity: .35; }
-.ptb-el.ptb-sinpuente .ptb-led-r { fill: #4a2a26; }
+.ptb-filtrando .ptb-el.ptb-on .ptb-hit { stroke: var(--acento); stroke-width: .3; }
+.ptb-el.ptb-sinpuente .ptb-atenua { opacity: .35; }
 
 /* --- Panel de detalle --- */
 .ptb-panel { flex: 1 1 320px; min-width: 0; background: var(--bg); border: 1px solid var(--borde); border-radius: 8px; padding: .8rem .9rem; font-size: .88rem; line-height: 1.45; }
