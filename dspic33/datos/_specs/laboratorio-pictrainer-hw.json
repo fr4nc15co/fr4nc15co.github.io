@@ -105,6 +105,19 @@
           "html": "<h3>Reset y programación</h3><ul><li><strong>MCLR activo a nivel bajo</strong>: SW1 pulsado = reset; al soltarlo, el programa empieza desde el principio.</li><li>Programador: al USB del PC y a <strong>P4</strong> (pin 1 = MCLR, junto a la serigrafía). La tarjeta se alimenta <strong>aparte</strong> (otro USB o fuente de 7,5-9 V).</li><li>Canal de programación 1: <strong>PGED1 = RB0</strong> (pin 4), <strong>PGEC1 = RB1</strong> (pin 5). Nada que cargue esos pines (P6, pines 3-4) al programar o depurar (datasheet, sección 2.5).</li></ul>"
         }
       ]
+    },
+    {
+      "titulo": "17.5 Practicar sin la placa: el simulador",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Antes de bajar al laboratorio puedes ensayar el montaje en el <strong>simulador interactivo del puesto</strong>: reproduce la <strong>PicTrainer v3.0</strong> con el <strong>dsPIC33FJ32MC202</strong> —los LED, los pulsadores, los potenciómetros y las salidas PWM—, de modo que se puede comprobar la lógica de un programa y familiarizarse con el mapa de pines sin riesgo de estropear la tarjeta.</p><div class=\"mpi-mount\" data-componente=\"tarjeta-simulador\"></div>"
+        },
+        {
+          "tipo": "nota",
+          "html": "El simulador es una <strong>ayuda para preparar la práctica</strong>, no un sustituto: los conflictos de pines, las polaridades de los periféricos y el cableado real solo se ven en la placa."
+        }
+      ]
     }
   ],
   "ejercicios": {

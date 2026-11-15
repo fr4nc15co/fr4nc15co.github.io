@@ -86,10 +86,9 @@ MPI.config = {
       '<iframe style="border-radius:12px" src="https://open.spotify.com/embed/show/6s0F8jXYRTIjrWTdMzUJNy?utm_source=generator" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>' +
       '</section>';
 
-    html += '<section class="mpi-inicio-seccion"><h2>Simulador de la placa</h2>' +
-      '<p>Practica el laboratorio sin hardware: la Raspberry Pi 4 con la placa iMAT HAT, ' +
-      'simulada en el navegador (LEDs, pulsadores, sensores, PWM y el ADC MCP3008).</p>' +
-      '<p><a class="mpi-boton-examen" href="https://icai-interactive-lab.netlify.app/" target="_blank" rel="noopener">🧪 Abrir el simulador interactivo</a></p>' +
+    html += '<section class="mpi-inicio-seccion"><h2>Practicar sin la placa</h2>' +
+      '<p>Antes de bajar al laboratorio, ensaya el montaje en el simulador:</p>' +
+      '<div class="mpi-mount" data-componente="tarjeta-simulador"></div>' +
       '</section>';
 
     html += '<section class="mpi-inicio-seccion"><h2>Referencias</h2><ul>' +

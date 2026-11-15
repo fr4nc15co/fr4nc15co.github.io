@@ -250,6 +250,19 @@
           "html": "<p>¿Sería válido sustituir el bucle por <code>LATC = PORTB &gt;&gt; PIN_PULSADOR;</code>? En este ejemplo concreto funciona, porque solo se usan el bit 13 del puerto B y el bit 0 del C; pero en cualquier aplicación real esa instrucción <strong>machacaría los 16 bits del puerto C</strong> en cada vuelta del bucle. Por eso se trabaja siempre con máscaras sobre <code class=\"reg\">LATC</code>.</p>"
         }
       ]
+    },
+    {
+      "titulo": "3.9 Practicar sin la placa: el simulador",
+      "bloques": [
+        {
+          "tipo": "prosa",
+          "html": "<p>Todo lo de este tema —poner un pin como digital, fijar su dirección, escribir en <code class=\"reg\">LATC</code> y leer <code class=\"reg\">PORTB</code>— se puede ensayar en el <strong>simulador interactivo del puesto de laboratorio</strong>, que reproduce la placa <strong>PicTrainer32</strong> con el PIC32MX230F064D: los cuatro LED <code>D6</code>–<code>D9</code> cableados a <code>RC0</code>–<code>RC3</code>, el pulsador <code>SW2</code> en <code>RB5</code> y el potenciómetro <code>RV1</code> en <code>RB3</code>/AN5. Sirve para ver qué pin mueve qué y para comprobar la lógica de un bucle de scan antes de bajar al laboratorio.</p><div class=\"mpi-mount\" data-componente=\"tarjeta-simulador\"></div>"
+        },
+        {
+          "tipo": "nota",
+          "html": "El simulador es una <strong>ayuda para preparar la práctica</strong>, no un sustituto del montaje real: los conflictos de pines, los tiempos y el cableado solo se ven en la placa."
+        }
+      ]
     }
   ],
   "registros": {

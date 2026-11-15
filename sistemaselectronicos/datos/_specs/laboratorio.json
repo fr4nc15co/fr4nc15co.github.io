@@ -70,7 +70,7 @@
       "bloques": [
         {
           "tipo": "prosa",
-          "html": "<p>Antes de bajar al laboratorio puedes ensayar el montaje en el <strong>simulador interactivo de la Raspberry Pi 4 con la iMAT HAT</strong>: reproduce los LED, los pulsadores, las entradas analógicas del MCP3008 y las salidas PWM, de modo que se puede comprobar la lógica de un programa y familiarizarse con el mapa de pines sin riesgo de estropear la tarjeta.</p><p><a class=\"mpi-boton-examen\" href=\"https://icai-interactive-lab.netlify.app/\" target=\"_blank\" rel=\"noopener\">🧪 Abrir el simulador interactivo</a></p>"
+          "html": "<p>Antes de bajar al laboratorio puedes ensayar el montaje en el <strong>simulador interactivo del puesto</strong>: reproduce la Raspberry Pi 4 con la iMAT HAT encima —los LED, los pulsadores, las entradas analógicas del MCP3008 y las salidas PWM—, de modo que se puede comprobar la lógica de un programa y familiarizarse con el mapa de pines sin riesgo de estropear la tarjeta.</p><div class=\"mpi-mount\" data-componente=\"tarjeta-simulador\"></div>"
         },
         {
           "tipo": "nota",

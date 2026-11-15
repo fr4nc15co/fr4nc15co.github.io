@@ -82,6 +82,10 @@ MPI.contenidoTemas = MPI.contenidoTemas || {};
       '</div>' +
       '</a>' +
       '</section>';
+    html += '<section class="mpi-inicio-seccion"><h2>Practicar sin la placa</h2>' +
+      '<p>Antes de bajar al laboratorio, ensaya el montaje en el simulador:</p>' +
+      '<div class="mpi-mount" data-componente="tarjeta-simulador"></div>' +
+      '</section>';
     html += '<section class="mpi-inicio-seccion"><h2>Referencias</h2>' +
       '<ul>' +
       '<li><strong>Datasheet:</strong> PIC32MX1XX/2XX 32-bit Microcontroller (DS60001168L) — Microchip Technology — especificaciones de registros, periféricos, vectores de interrupción.</li>' +

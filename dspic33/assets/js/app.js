@@ -85,6 +85,11 @@ MPI.config = {
     });
     html += '</div>';
 
+    html += '<section class="mpi-inicio-seccion"><h2>Practicar sin la placa</h2>' +
+      '<p>Antes de bajar al laboratorio, ensaya el montaje en el simulador:</p>' +
+      '<div class="mpi-mount" data-componente="tarjeta-simulador"></div>' +
+      '</section>';
+
     // --- Secciones opcionales de portada (descomenta y rellena) -------------
     // Podcast / vídeo incrustado:
     // html += '<section class="mpi-inicio-seccion"><h2>Antes de ir a clase</h2>' +

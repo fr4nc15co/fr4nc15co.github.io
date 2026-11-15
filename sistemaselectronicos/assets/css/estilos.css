@@ -1158,3 +1158,33 @@ math.formula { font-size: 1.3rem; margin: 1rem 0; color: var(--txt); display: bl
 .rle-ok { color: var(--acento); }
 .rle-ko { color: var(--rojo); }
 @media (max-width: 760px) { .rle-flecha { display: none; } }
+
+/* ---------- Tarjeta del simulador de la placa (portada y tema de laboratorio) ---------- */
+/* Se adapta al ancho DISPONIBLE (en el tema la columna es estrecha por el índice
+   lateral): si no caben el dibujo y el texto en la misma línea, el texto baja. */
+.mpi-tarjeta-sim {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .9rem 1.2rem;
+  margin: 1rem 0 0; padding: 1.1rem 1.3rem;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1b4a43 0%, #18303f 55%, #231f3a 100%);
+  color: var(--txt);
+  text-decoration: none;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.mpi-tarjeta-sim:hover {
+  text-decoration: none;
+  transform: scale(1.015);
+  border-color: var(--acento);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
+}
+.mpi-tarjeta-sim img {
+  flex: 0 0 auto;
+  width: 148px; max-width: 100%; height: auto;
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .45);
+}
+.mpi-tarjeta-sim-txt { flex: 1 1 230px; min-width: 0; }
+.mpi-tarjeta-sim-tit { display: block; font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: .2rem; }
+.mpi-tarjeta-sim-sub { display: block; font-size: .92rem; color: var(--txt-2); }
+.mpi-tarjeta-sim-cta { display: block; margin-top: .55rem; font-size: .88rem; font-weight: 600; color: var(--acento); }
