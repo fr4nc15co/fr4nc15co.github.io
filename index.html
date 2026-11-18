@@ -318,11 +318,41 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
-    <meta name="theme-color" content="#F1F3F1" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#111D29" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#111D29">
+    <script>
+        /* Modo oscuro por defecto; el visitante puede cambiarlo y se recuerda */
+        (function () {
+            var t = 'dark';
+            try { if (localStorage.getItem('theme') === 'light') t = 'light'; } catch (e) {}
+            document.documentElement.dataset.theme = t;
+        })();
+    </script>
     <style>
         /* ---------- Tokens ---------- */
         :root {
+            --paper: #111D29;  /* grid at night */
+            --surface: #182838;
+            --ink: #E4EAEE;
+            --ink-2: #B4C1C9;
+            --muted: #8797A2;
+            --rule: #2B3D4F;
+            --link: #8EAEFF;
+            --solar: #F2B632;
+            --solar-ink: #F2B632;
+            --teal: #4CC29A;
+
+            --font-display: 'Barlow Semi Condensed', 'Barlow', 'Arial Narrow', sans-serif;
+            --font-text: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+
+            --step--1: 0.875rem;
+            --step-0: 1.0625rem;
+            --step-1: 1.25rem;
+            --step-2: 1.75rem;
+            --measure: 68ch;
+            color-scheme: dark;
+        }
+
+        :root[data-theme="light"] {
             --paper: #F1F3F1;      /* porcelain insulator */
             --surface: #FFFFFF;
             --ink: #14263A;        /* slate ink */
@@ -333,32 +363,7 @@
             --solar: #E0A00E;      /* solar amber: "live" things only */
             --solar-ink: #8A5F00;
             --teal: #1F8A70;
-
-            --font-display: 'Barlow Semi Condensed', 'Barlow', 'Arial Narrow', sans-serif;
-            --font-text: 'Source Serif 4', Georgia, 'Times New Roman', serif;
-
-            --step--1: 0.875rem;
-            --step-0: 1.0625rem;
-            --step-1: 1.25rem;
-            --step-2: 1.75rem;
-            --measure: 68ch;
             color-scheme: light;
-        }
-
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --paper: #111D29;  /* grid at night */
-                --surface: #182838;
-                --ink: #E4EAEE;
-                --ink-2: #B4C1C9;
-                --muted: #8797A2;
-                --rule: #2B3D4F;
-                --link: #8EAEFF;
-                --solar: #F2B632;
-                --solar-ink: #F2B632;
-                --teal: #4CC29A;
-                color-scheme: dark;
-            }
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -415,12 +420,14 @@
             position: relative;
         }
 
-        .lang-switcher {
+        .lang-switcher, .theme-switcher {
             display: flex;
             justify-content: flex-end;
             gap: 2px;
-            margin-bottom: 28px;
         }
+
+        .lang-switcher { margin-bottom: 2px; }
+        .theme-switcher { margin-bottom: 28px; }
 
         .lang-btn {
             font-family: var(--font-display);
@@ -1238,7 +1245,7 @@
         @media (max-width: 640px) {
             .container, .nav-tabs, .footer-content { padding-left: 16px; padding-right: 16px; }
             header { padding-top: 16px; }
-            .lang-switcher { margin-bottom: 16px; }
+            .theme-switcher { margin-bottom: 16px; }
             /* Photo sits beside the name instead of above it */
             .header-content { grid-template-columns: minmax(0, 1fr) 64px; column-gap: 0; }
             .profile-photo { grid-column: 2; grid-row: 1; width: 64px; }
@@ -1306,6 +1313,10 @@
             <div class="lang-switcher" role="group" aria-label="Idioma" data-i18n-label="langLabel">
                 <a class="lang-btn active" href="/" hreflang="es" lang="es" data-lang="es" aria-current="page"><span aria-hidden="true">🇪🇸</span> ES</a>
                 <a class="lang-btn" href="/en/" hreflang="en" lang="en" data-lang="en"><span aria-hidden="true">🇬🇧</span> EN</a>
+            </div>
+            <div class="theme-switcher" role="group" aria-label="Modo de color" data-i18n-label="themeLabel">
+                <button type="button" class="lang-btn" data-theme-set="dark" aria-pressed="true"><span aria-hidden="true">🌙</span> <span data-i18n="themeDark">Oscuro</span></button>
+                <button type="button" class="lang-btn" data-theme-set="light" aria-pressed="false"><span aria-hidden="true">☀️</span> <span data-i18n="themeLight">Claro</span></button>
             </div>
             <div class="header-content">
                 <div class="profile-photo">
@@ -1539,7 +1550,7 @@
                         <div class="title"><a href="https://doi.org/10.1016/j.nxener.2026.101181" target="_blank" rel="noopener">Building engaging apps for active consumer participation in electricity markets</a></div>
                         <div class="authors">Rodríguez-Vilches, R., <b>Martín, F.</b>, Sánchez, A.</div>
                         <div class="authors venue">Next Energy, Vol. 14, pp. 101181, January 2027</div>
-                        <div class="doi-link"><a href="https://doi.org/10.1016/j.nxener.2026.101181" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.nxener.2026.101181</a></div>
+                        <div class="metrics">JCR-JIF: 6.400 Q2 (2025) · SJR: 1.101 Q1 (2025)</div><div class="doi-link"><a href="https://doi.org/10.1016/j.nxener.2026.101181" target="_blank" rel="noopener" tabindex="-1">DOI: 10.1016/j.nxener.2026.101181</a></div>
                     </div>
                     <div class="article-item">
                         <div class="year">2026</div>
@@ -2193,6 +2204,23 @@
             if (typeof gtag === 'function') gtag('event', name, params || {});
         }
 
+        // Selector de modo de color (oscuro por defecto)
+        (() => {
+            const root = document.documentElement;
+            const buttons = document.querySelectorAll('[data-theme-set]');
+            const sync = () => buttons.forEach(b => {
+                const on = b.dataset.themeSet === root.dataset.theme;
+                b.classList.toggle('active', on);
+                b.setAttribute('aria-pressed', on);
+            });
+            buttons.forEach(b => b.addEventListener('click', () => {
+                root.dataset.theme = b.dataset.themeSet;
+                try { localStorage.setItem('theme', b.dataset.themeSet); } catch (e) {}
+                sync();
+            }));
+            sync();
+        })();
+
         // Un único listener delegado registra qué tabs y elementos clickables se usan.
         document.addEventListener('click', (event) => {
             const el = event.target.closest('a[href], button');
@@ -2203,7 +2231,7 @@
 
             if (el.classList.contains('nav-tab')) {
                 gaEvent('select_tab', { tab_name: el.dataset.section || label });
-            } else if (el.classList.contains('lang-btn')) {
+            } else if (el.classList.contains('lang-btn') && el.dataset.lang) {
                 gaEvent('change_language', { language: el.dataset.lang || label });
             } else if (el.tagName === 'A') {
                 const href = el.getAttribute('href') || '';
@@ -2437,6 +2465,9 @@
                 tabCv: 'CV',
                 tabsLabel: 'Sections',
                 langLabel: 'Language',
+                themeLabel: 'Colour mode',
+                themeDark: 'Dark',
+                themeLight: 'Light',
                 skipLink: 'Skip to content',
                 selectedHeading: 'Selected papers',
                 selectedLead: 'Demand flexibility, end to end: how to assess it, how aggregators deploy it, and what it is worth in system planning.',
@@ -2569,6 +2600,9 @@
                 tabCv: 'CV',
                 tabsLabel: 'Secciones',
                 langLabel: 'Idioma',
+                themeLabel: 'Modo de color',
+                themeDark: 'Oscuro',
+                themeLight: 'Claro',
                 skipLink: 'Saltar al contenido',
                 selectedHeading: 'Artículos destacados',
                 selectedLead: 'La flexibilidad de la demanda, de principio a fin: cómo evaluarla, cómo la despliegan los agregadores y cuánto vale en la planificación del sistema.',
